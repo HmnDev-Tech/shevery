@@ -1,0 +1,4 @@
+[submodule "api"]
+	path = api
+	url = https://github.com/RikkaApps/Shizuku-API.git
+	branch = master

@@ -1,0 +1,45 @@
+name: Feature Request
+description: Suggest a new feature or enhancement for Shizuku
+labels: [ "enhancement" ]
+
+body:
+  - type: markdown
+    attributes:
+      value: |
+        Feature requests must be clear and justified. Generic or vague requests will be closed without notice.
+
+  - type: checkboxes
+    id: requirements
+    attributes:
+      label: Requirements
+      options:
+        - label: I have searched existing issues and this is not a duplicate.
+          required: true
+        - label: This is a core Shizuku request (not for a 3rd-party app).
+          required: true
+        - label: I have a specific use case that cannot be solved with current features.
+          required: true
+
+  - type: textarea
+    id: problem
+    attributes:
+      label: Problem
+      description: What is the current limitation or problem?
+      placeholder: Explain the problem clearly.
+    validations:
+      required: true
+
+  - type: textarea
+    id: solution
+    attributes:
+      label: Proposed Solution
+      description: How should Shizuku address this?
+      placeholder: Describe the requested behavior.
+    validations:
+      required: true
+
+  - type: textarea
+    id: context
+    attributes:
+      label: Additional Context
+      description: Use cases, UI mockups, or technical details.

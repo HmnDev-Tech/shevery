@@ -1,0 +1,397 @@
+<resources>
+    <string name="app_name" translatable="false">Shevery</string>
+
+    <!-- To translators: you can leave your here -->
+    <string name="translation_contributors" />
+
+    <!-- Accessibility -->
+    <string name="accessibility_navigate_up">Navigate up</string>
+    <string name="accessibility_close">Close</string>
+    <string name="accessibility_more_options">More options</string>
+    <string name="accessibility_open_on_github">Open on GitHub</string>
+
+    <!-- Home - Status -->
+    <string name="home_status_service_is_running">%1$s is running</string>
+    <string name="home_status_service_not_running">%1$s is not running</string>
+    <string name="home_status_service_version">Version %2$s, %1$s</string>
+    <string name="home_status_service_version_update"><![CDATA[Version %2$s, %1$s<br>Start again to update to version %3$s]]></string>
+
+    <!-- Home - Adb -->
+    <string name="home_adb_title"><![CDATA[Start by connecting to a computer]]></string>
+    <string name="home_adb_description"><![CDATA[For devices without root, you need to use adb to start Shevery (requires computer connection). This process needs to be repeated every time the device is restarted. Please <b><a href=\"%1$s\">read the help</a></b>.]]></string>
+    <string name="home_adb_button_view_help">Read help</string>
+    <string name="home_adb_button_view_command">View command</string>
+    <string name="home_adb_dialog_view_command_message"><![CDATA[<font face="monospace">%1$s</font><br><br>* There are some other considerations, please confirm that you have read the help first.]]></string>
+    <string name="home_adb_dialog_view_command_copy_button">Copy</string>
+    <string name="home_adb_dialog_view_command_button_send">Send</string>
+
+    <!-- Home - Wireless Adb -->
+    <string name="home_wireless_adb_title"><![CDATA[Start via Wireless debugging]]></string>
+    <string name="home_wireless_adb_description"><![CDATA[On Android 11 or above, you can enable Wireless debugging and start Shevery directly from your device, without connecting to a computer.<p>Please view the step-by-step guide first.]]></string>
+    <string name="home_wireless_adb_description_pre_11"><![CDATA[Before Android 11, connecting to a computer is required to enable Wireless debugging.]]></string>
+    <string name="home_wireless_adb_view_guide_button">Step-by-step guide</string>
+    <string name="home_local_network_title">Local network access</string>
+    <string name="home_local_network_description">Wireless debugging needs %1$s on this Android version.</string>
+    <string name="home_local_network_granted">%1$s is granted.</string>
+    <string name="home_local_network_missing">%1$s is not granted.</string>
+    <string name="home_local_network_grant">Grant access</string>
+    <string name="home_local_network_permission_denied">Local network access is required for Wireless debugging.</string>
+
+    <!-- Adb -->
+    <string name="dialog_adb_discovery">Searching for wireless debugging service</string>
+    <string name="dialog_adb_discovery_message">Please enable \"Wireless debugging\" in \"Developer options\". \"Wireless debugging\" is automatically disabled when network changes.\n\nNote, do not disable \"Developer options\" or \"USB debugging\", or Shevery will be stopped.</string>
+    <string name="dialog_adb_discovery_message_toggle_wireless_debugging">Please try to disable and enable \"Wireless debugging\" if it keeps searching.</string>
+    <string name="dialog_adb_port">Port</string>
+    <string name="dialog_adb_invalid_port">Port is an integer ranging from 1 to 65535.</string>
+    <string name="adb_pairing">Pairing</string>
+    <string name="dialog_adb_pairing_title">Pair with device</string>
+    <string name="dialog_adb_pairing_discovery">Searching for pairing service</string>
+    <string name="dialog_adb_pairing_paring_code">Pairing code</string>
+    <string name="paring_code_is_wrong">Pairing code is wrong.</string>
+    <string name="cannot_connect_port">Can\'t connect to wireless debugging service.</string>
+    <string name="dialog_wireless_adb_not_enabled">Wireless debugging is not enabled.\nNote, before Android 11, to enable wireless debugging, computer connection is a must.</string>
+    <string name="dialog_adb_pairing_message">Please start paring by the following steps: \"Developer Options\" - \"Wireless debugging\" - \"Pairing device using pairing code\".\n\nAfter the pairing process starts, you will able to input the pairing code.</string>
+    <string name="adb_pairing_requires_multi_window">Please enter split-screen (multi-window) mode first.</string>
+    <string name="adb_pairing_requires_multi_window_reason">The system requires the pairing dialog always visible, using split-screen mode is the only way to let this app and system dialog visible at the same time.</string>
+    <string name="adb_error_key_store">Unable to generate key for wireless debugging.\nThis may be because KeyStore mechanism of this device is broken.</string>
+    <string name="adb_pair_required">Please go through the pairing step first.</string>
+    <string name="development_settings">Developer options</string>
+    <string name="notification_settings">Notification options</string>
+    <string name="adb_pairing_tutorial_title">Pair Shevery with your device</string>
+    <string name="adb_pairing_tutorial_content_notification">A notification from Shevery will help you complete the pairing.</string>
+    <string name="adb_pairing_tutorial_content_steps">Enter \"Developer options\" - \"Wireless debugging\". Tap \"Pair device with pairing code\", you will see a six-digit code.</string>
+    <string name="adb_pairing_tutorial_content_enter_pairing_code">Enter the code in the notification to complete pairing.</string>
+    <string name="adb_pairing_tutorial_content_notification_blocked">The pairing process needs you to interact with a notification from Shevery. Please allow Shevery to post notifications.</string>
+    <string name="adb_pairing_tutorial_content_miui">MIUI users may need to switch notification style to \"Android\" from \"Notification\" - \"Notification shade\" in system settings.</string>
+    <string name="adb_pairing_tutorial_content_miui_2">Otherwise, you may not able to enter paring code from the notification.</string>
+    <string name="adb_pairing_tutorial_content_left_is_clickable">Please note, left part of the \"Wireless debugging\" option is clickable, tapping it will open a new page. Only turing on the switch on the right is incorrect.</string>
+    <string name="adb_pairing_tutorial_content_finish">Back to Shevery and start Shevery.</string>
+    <string name="adb_pairing_tutorial_content_network">Shevery needs to access local network. It is controlled by the network permission.</string>
+    <string name="adb_pairing_tutorial_content_network_limation_not_foreground">Some systems (such as MIUI) disallow apps to access the network when they are not visible, even if the app uses foreground service as standard. Please disable battery optimization features for Shevery on such systems.</string>
+
+    <!-- Home - Root -->
+    <string name="home_root_title"><![CDATA[Start (for rooted devices)]]></string>
+    <string name="home_root_description"><![CDATA[In addition, Shevery can be started automatically on boot. If not, please check if your system or third-party tools have restricted Shevery.<br>You can refer to %s.]]></string>
+    <string name="home_root_description_sui"><![CDATA[If you are using Magisk, you can try %1$s. For root users, it will eventually replace Shevery. Note, existing applications needs to change a little to use %2$s.]]></string>
+    <string name="home_root_button_start">Start</string>
+    <string name="home_root_button_restart">Restart</string>
+
+    <!-- Home - Application management -->
+    <string name="home_app_management_title">Application management</string>
+    <plurals name="home_app_management_authorized_apps_count">
+        <item quantity="one"><![CDATA[Authorized %d application]]></item>
+        <item quantity="other"><![CDATA[Authorized %d applications]]></item>
+    </plurals>
+    <string name="home_app_management_view_authorized_apps"><![CDATA[Tap to manage authorized apps]]></string>
+    <string name="home_app_management_empty">Apps that has requested or declared Shevery will show here.</string>
+
+    <!-- Home - Learn more -->
+    <string name="home_learn_more_title">Learn Shevery</string>
+    <string name="home_learn_more_description">Learn how to develop with Shevery</string>
+
+    <!-- Home - Diagnostics -->
+    <string name="home_refresh">Refresh</string>
+    <string name="home_diagnostics_title">Diagnostics</string>
+    <string name="home_diagnostics_copy">Copy diagnostics</string>
+    <string name="home_diagnostics_copied">Diagnostics copied.</string>
+    <string name="home_modules_description">Install and manage ADB-backed modules</string>
+
+    <!-- Home - Adb permissions limited -->
+    <string name="home_adb_is_limited_title">You need to take an extra step</string>
+    <string name="home_adb_is_limited_description">Your device manufacturer has restricted adb permissions and apps using Shevery will not work properly.\n\nUsually, this limitation can be lifted by adjusting some options in \"Developer options\". Please read the help for details on how to do this.\n\nYou may need to restart Shevery for the operation to take effect.</string>
+
+    <!-- Application management -->
+    <string name="app_management_select_all">Select all</string>
+    <string name="app_management_deselect_all">Deselect all</string>
+    <string name="app_management_dialog_adb_is_limited_title">The permission of adb is limited</string>
+    <string name="app_management_dialog_adb_is_limited_message"><![CDATA[It\'s highly possible that your device manufacturer limits the permission of adb.<p>There may be a solution for your system in <b><a href=\"%1$s\">this document</a></b>.]]></string>
+    <string name="app_management_item_summary_requires_root">* requires Shevery runs with root</string>
+
+    <!-- Terminal -->
+    <string name="home_terminal_title">Use Shevery in terminal apps</string>
+    <string name="home_terminal_description">Run commands through Shevery in terminal apps you like</string>
+    <string name="terminal_tutorial_1">First, Export files to any where you want. You will find two files, %1$s and %2$s.</string>
+    <string name="terminal_tutorial_1_description">If there are files with the same name in the selected folder, they will be deleted.\n\nThe export function uses SAF (Storage Access Framework). It\'s reported that MIUI breaks the functions of SAF. If you are using MIUI, you may have to extract the file from Shevery\'s apk or download from GitHub.</string>
+    <string name="terminal_export_files">Export files</string>
+    <string name="terminal_tutorial_2">Then, use any text editor to open and edit %1$s.</string>
+    <string name="terminal_tutorial_2_description">For example, if you want to use Shevery in %1$s, you should replace %2$s with %3$s (%4$s is the package name of %1$s).</string>
+    <string name="terminal_tutorial_3">Finally, move the files to somewhere where your terminal app can access, you will be able to use %1$s to run commands through Shevery.</string>
+    <string name="terminal_tutorial_3_description">Some tips: grant execute permission to %1$s and add it to %2$s, you will able to use %1$s directly.</string>
+    <string name="rish_description"><![CDATA[
+With %1$s, in any terminal app, you can connect to and interact with the shell runs by Shevery.
+<p>About the detailed usage %1$s, tap to view the document.
+    ]]></string>
+
+    <!-- Settings -->
+    <string name="settings_title">Settings</string>
+    <string name="settings_language">Language</string>
+    <string name="settings_user_interface">Appearance</string>
+    <string name="settings_black_night_theme">Black night theme</string>
+    <string name="settings_black_night_theme_summary">Use the pure black theme if night mode is enabled</string>
+    <string name="settings_startup">Startup</string>
+    <string name="settings_translation_contributors">Translation contributors</string>
+    <string name="settings_translation">Participate in translation</string>
+    <string name="settings_translation_summary">Help us translate %s into your language</string>
+    <string name="settings_start_on_boot">Start on boot</string>
+    <string name="settings_start_on_boot_summary">Shevery can start automatically on boot after it has been started successfully.</string>
+    <string name="settings_use_system_color">Use system theme color</string>
+
+    <!-- ADB modules -->
+    <string name="modules_title">ADB Modules</string>
+    <string name="modules_settings_title">Modules</string>
+    <string name="modules_settings_summary">Install ZIP modules and run their actions through the active Shevery ADB/root server</string>
+    <string name="modules_header_summary">%1$d installed, %2$d enabled</string>
+    <string name="modules_version_label">Version: %s</string>
+    <string name="modules_author_label">Author: %s</string>
+    <string name="modules_access_mode">Module access mode</string>
+    <string name="modules_access_mode_safe">Safe</string>
+    <string name="modules_access_mode_safe_summary">No shell bridge, no WebUI download, no actions, no services.</string>
+    <string name="modules_access_mode_custom">Custom</string>
+    <string name="modules_access_mode_custom_summary">Choose action, service, WebUI bridge, network, and download permissions manually.</string>
+    <string name="modules_access_mode_full">Full access</string>
+    <string name="modules_access_mode_full_summary">Allows shell bridge, actions, services, and WebUI downloads. WebView internet stays blocked.</string>
+    <string name="modules_custom_permissions">Custom permissions</string>
+    <string name="modules_custom_permissions_summary">Configure every module permission separately</string>
+    <string name="modules_permission_action">Run Action</string>
+    <string name="modules_permission_action_summary">Allow manual action.sh execution.</string>
+    <string name="modules_permission_service">Run Service</string>
+    <string name="modules_permission_service_summary">Allow service.sh when background actions are also enabled.</string>
+    <string name="modules_permission_web_bridge">WebUI shell bridge</string>
+    <string name="modules_permission_web_bridge_summary">Expose window.Shevery only for local WebUI and only when WebView internet is off.</string>
+    <string name="modules_permission_web_network">WebView internet</string>
+    <string name="modules_permission_web_network_summary">Allow HTTPS navigation/assets. This disables shell bridge exposure for that WebView.</string>
+    <string name="modules_permission_web_download">WebUI download()</string>
+    <string name="modules_permission_web_download_summary">Allow HTTPS file downloads into the WebUI folder, except index.html.</string>
+    <string name="modules_background_actions">Allow background actions</string>
+    <string name="modules_background_actions_summary">Permit installed modules to request background ADB work in full access mode</string>
+    <string name="modules_background_allowed">Background allowed</string>
+    <string name="modules_background_blocked">Background blocked</string>
+    <string name="modules_install_zip">Install ZIP</string>
+    <string name="modules_empty_title">No modules installed</string>
+    <string name="modules_empty_summary">ADB modules use a KernelSU/Magisk-style ZIP with module.prop, optional banner, WebUI, action.sh and service.sh.</string>
+    <string name="modules_install_success">Installed %s</string>
+    <string name="modules_install_failed">Install failed: %s</string>
+    <string name="modules_enabled">Enabled</string>
+    <string name="modules_disabled">Disabled</string>
+    <string name="modules_enable">Enable</string>
+    <string name="modules_disable">Disable</string>
+    <string name="modules_full_trust">Full Trust</string>
+    <string name="modules_trust">Trust</string>
+    <string name="modules_untrust">Untrust</string>
+    <string name="modules_run_action">Action</string>
+    <string name="modules_run_service">Service</string>
+    <string name="modules_running">Running module script…</string>
+    <string name="modules_open_webui">WebUI</string>
+    <string name="modules_webui">Module WebUI</string>
+    <string name="modules_delete">Delete</string>
+    <string name="modules_delete_title">Delete module?</string>
+    <string name="modules_delete_message">%s will be removed from Shevery module storage.</string>
+    <string name="modules_action_result">Action finished: exit %d</string>
+    <string name="modules_action_failed">Action failed</string>
+    <string name="modules_service_result">Service finished: exit %d</string>
+    <string name="modules_service_failed">Service failed</string>
+    <string name="modules_recommand_title">ReCommand</string>
+    <string name="modules_recommand_source">%1$s / %2$s</string>
+    <string name="modules_recommand_expand">Expand</string>
+    <string name="modules_recommand_collapse">Collapse</string>
+    <string name="modules_recommand_copy">Copy</string>
+    <string name="modules_recommand_execute">Execute</string>
+    <string name="modules_recommand_close">Close</string>
+    <string name="modules_recommand_command_clip_label">Module command</string>
+    <string name="modules_recommand_webui">ReCommand for WebUI</string>
+    <string name="modules_recommand_webui_summary">Show a confirmation dialog before WebUI shell exec.</string>
+    <string name="modules_recommand_action">ReCommand for Action</string>
+    <string name="modules_recommand_action_summary">Show a confirmation dialog before action.sh.</string>
+    <string name="modules_ai">AI</string>
+    <string name="modules_ai_api_key">API key</string>
+    <string name="modules_ai_api_key_summary">Stored encrypted with Android Keystore.</string>
+    <string name="modules_ai_unlocked">AI checker unlocked</string>
+    <string name="modules_ai_hidden">AI checker hidden</string>
+    <string name="modules_ai_failed">AI check failed: %s</string>
+    <string name="modules_tab_installed">Installed</string>
+    <string name="modules_tab_catalog">Catalog</string>
+    <string name="modules_check_updates">Check updates</string>
+    <string name="modules_checking_updates">Checking for updates…</string>
+    <string name="modules_no_updates">All modules are up to date</string>
+    <string name="modules_update_available">Update available: v%s</string>
+    <string name="modules_update_button">Update</string>
+    <string name="modules_updating">Updating module…</string>
+    <string name="modules_update_success">Module updated to v%s</string>
+    <string name="modules_download_downloads">Download to Downloads</string>
+    <string name="modules_download_install">Download &amp; Install</string>
+    <string name="modules_downloading">Downloading…</string>
+    <string name="modules_download_enqueued">Download started in background</string>
+    <string name="modules_search_placeholder">Search catalog modules…</string>
+
+    <!-- About -->
+    <string name="action_about">About</string>
+    <string name="about_source_code_button">Source code</string>
+    <string name="about_view_source_code"><![CDATA[View source code at %s]]></string>
+
+    <!-- Stop -->
+    <string name="action_stop">Stop Shevery</string>
+    <string name="dialog_stop_message">Shevery service will be stopped.</string>
+
+    <!-- Notification -->
+    <string name="notification_channel_service_status">Service start status</string>
+    <string name="notification_service_starting">Shevery service is starting…</string>
+    <string name="notification_service_start_failed">Start Shevery service failed.</string>
+    <string name="notification_service_start_no_root">Failed to request root permission.</string>
+    <string name="notification_working">Working…</string>
+    <string name="notification_channel_adb_pairing">Wireless debugging pairing</string>
+    <string name="notification_adb_pairing_input_paring_code">Enter pairing code</string>
+    <string name="notification_adb_pairing_searching_for_service_title">Searching for pairing service</string>
+    <string name="notification_adb_pairing_service_found_title">Pairing service found</string>
+    <string name="notification_adb_pairing_stop_searching">Stop searching</string>
+    <string name="notification_adb_pairing_working_title">Pairing in progress</string>
+    <string name="notification_adb_pairing_succeed_title">Pairing successful</string>
+    <string name="notification_adb_pairing_succeed_text">You can start Shevery service now.</string>
+    <string name="notification_adb_pairing_failed_title">Pairing failed</string>
+    <string name="notification_adb_pairing_retry">Retry</string>
+
+    <!-- Permission related, appears in system permission UI -->
+    <string name="permission_group_label" translatable="false">Shevery</string>
+    <string name="permission_group_description" translatable="false">@string/permission_label</string>
+    <string name="permission_label">access Shevery</string>
+    <string name="permission_description">Allow the app to use Shevery.</string>
+    <string name="permission_warning_template"><![CDATA[Allow <b>%1$s</b> to %2$s?]]></string>
+    <string name="grant_dialog_button_allow_always">Allow all the time</string>
+    <string name="grant_dialog_button_deny">"Deny"</string>
+
+    <!-- Starter -->
+    <string name="starter">Starter</string>
+    <string name="starting_root_shell" translatable="false">Starting root shell…</string>
+    <string name="start_with_root_failed">Can\'t start service because root permission is not granted or this device is not rooted.</string>
+
+    <!-- Misc -->
+    <string name="dialog_cannot_open_browser_title">Can\'t start browser</string>
+    <string name="toast_copied_to_clipboard">%s\nhas been copied to clipboard.</string>
+    <string name="toast_copied_to_clipboard_with_text"><![CDATA[<b>%s</b> has been copied to clipboard.]]></string>
+
+    <!-- Messages for legacy -->
+    <string name="dialog_legacy_not_support_title">%1$s does not support modern Shevery</string>
+    <string name="dialog_legacy_not_support_message"><![CDATA[Legacy Shevery has been deprecated since March 2019. Also, legacy Shevery does not work on newer Android systems.<p>Please ask the developer of <b>%1$s</b> to update.]]></string>
+    <string name="dialog_requesting_legacy_title">%1$s is requesting legacy Shevery</string>
+    <string name="dialog_requesting_legacy_message"><![CDATA[<b>%1$s</b> has modern Shevery support, but it\'s requesting legacy Shevery. This could because Shevery is not running, please check in Shevery app.<p>Legacy Shevery has been deprecated since March 2019.]]></string>
+    <string name="dialog_requesting_legacy_button_open_shizuku">Open Shevery</string>
+
+    <!-- Lab Features -->
+    <string name="lab_features_title">Lab Features</string>
+    <string name="lab_features_summary">Experimental features</string>
+    <string name="shizuku_connectors_title">Shevery Connectors</string>
+    <string name="shizuku_connectors_summary">Allow plugins to activate Shevery</string>
+    <string name="unsafe_warning_title">Warning</string>
+    <string name="unsafe_warning_message">Enabling this feature is UNSAFE. Are you sure?</string>
+    <string name="dhizuku_mode_title">Dhizuku Mode</string>
+    <string name="dhizuku_mode_summary">Allow Shevery to operate via binding to Dhizuku</string>
+    <string name="home_dhizuku_title"><![CDATA[Start (via Dhizuku)]]></string>
+    <string name="home_dhizuku_description"><![CDATA[For devices managed by Dhizuku, you can start Shevery directly using Device Owner privileges.]]></string>
+    <string name="dhizuku_warning_title">Warning: Dhizuku Mode</string>
+    <string name="dhizuku_warning_message">Dhizuku is designed for Device Owner/admin privileges. Some shell and ADB-specific commands may not work properly or may be entirely unsupported when running Shevery via Dhizuku. Are you sure you want to proceed?</string>
+    <string name="settings_tcp_mode">TCP Mode</string>
+    <string name="settings_tcp_mode_summary">Attempt to reconnect and restart server via local ADB on port 5555 (watchdog)</string>
+    <string name="settings_auto_disable_usb_debugging">Auto-disable USB debugging</string>
+    <string name="settings_auto_disable_usb_debugging_summary">Turn off USB debugging after reboot when Shevery is not configured to start on boot</string>
+    <string name="settings_service_group">Service Maintenance</string>
+
+    <!-- Lab Features - Service Behavior -->
+    <string name="lab_service_behavior_title">Service Behavior</string>
+    <string name="lab_keep_alive_title">Keep Service Alive</string>
+    <string name="lab_keep_alive_summary">Periodically check that the Shevery service is running and restart it if needed</string>
+    <string name="lab_auto_restart_title">Auto-Restart on Crash</string>
+    <string name="lab_auto_restart_summary">Automatically attempt to restart the Shevery service if it crashes unexpectedly</string>
+    <string name="lab_notify_death_title">Notify on Service Stop</string>
+    <string name="lab_notify_death_summary">Show a notification when the Shevery service stops unexpectedly</string>
+
+    <!-- Lab Features - Debugging -->
+    <string name="lab_debugging_title">Debugging</string>
+    <string name="lab_verbose_logging_title">Verbose Logging</string>
+    <string name="lab_verbose_logging_summary">Write detailed debug logs to Logcat. Disable in production to save battery</string>
+    <string name="notification_channel_watchdog">Service Watchdog</string>
+    <string name="notification_watchdog_title">Shevery Service Stopped</string>
+    <string name="notification_watchdog_text">The Shevery service has stopped unexpectedly.</string>
+    <string name="watchdog_service_title">Shevery watchdog is active</string>
+    <string name="watchdog_service_text">Monitoring the Shevery service for keep-alive recovery</string>
+
+    <!-- Shevery Control Notification -->
+    <string name="notification_control_channel_name">Shevery Control</string>
+    <string name="notification_control_title_running">Shevery is running</string>
+    <string name="notification_control_title_stopped">Shevery is stopped</string>
+    <string name="notification_control_text_running">Tap to open Shevery, or use actions below to stop it.</string>
+    <string name="notification_control_text_stopped">Tap to open Shevery, or use actions below to start it.</string>
+    <string name="notification_control_action_start">Start</string>
+    <string name="notification_control_action_stop">Stop</string>
+    <!-- Update Settings -->
+    <string name="update_settings_title">Update Settings</string>
+    <string name="update_settings_catalog">Module Catalog</string>
+    <string name="update_settings_catalog_enabled">Enable catalog</string>
+    <string name="update_settings_catalog_enabled_summary">Show discovered modules from GitHub Topics</string>
+    <string name="update_settings_frequency">Update Frequency</string>
+    <string name="update_settings_frequency_label">Check for updates</string>
+    <string name="update_settings_frequency_manual">Manual</string>
+    <string name="update_settings_frequency_daily">Daily</string>
+    <string name="update_settings_frequency_weekly">Weekly</string>
+    <string name="update_settings_install_mode">Install Mode</string>
+    <string name="update_settings_install_mode_label">Default install method</string>
+    <string name="update_settings_install_mode_sources">Build from sources</string>
+    <string name="update_settings_install_mode_release">Download release ZIP</string>
+    <string name="update_settings_github">GitHub</string>
+    <string name="update_settings_github_pat">Personal access token</string>
+    <string name="update_settings_github_pat_set">Token set</string>
+    <string name="update_settings_github_pat_unset">Not set (60 requests/hour)</string>
+    <string name="update_settings_github_pat_title">GitHub Personal Access Token</string>
+    <string name="update_settings_github_pat_description">Optional. A GitHub PAT increases API rate limits from 60 to 5000 requests/hour. Only needs public_repo scope for public repositories.</string>
+    <string name="update_settings_github_pat_label">Token</string>
+    <string name="update_settings_github_pat_show">Show</string>
+    <string name="update_settings_github_pat_hide">Hide</string>
+    <string name="update_settings_github_pat_clear">Clear</string>
+    <string name="update_settings_github_pat_delete">Delete token</string>
+    <string name="update_settings_github_pat_delete_summary">Remove stored GitHub token</string>
+
+    <!-- Module Catalog -->
+    <string name="modules_catalog">Catalog</string>
+    <string name="modules_catalog_title">Module Catalog</string>
+    <string name="modules_catalog_empty">No modules found</string>
+    <string name="modules_catalog_sort_newest">Newest</string>
+    <string name="modules_catalog_sort_oldest">Oldest</string>
+    <string name="modules_catalog_sort_stars">Stars</string>
+    <string name="modules_catalog_sort_official">Official</string>
+    <string name="modules_catalog_install_sources">Install from sources</string>
+    <string name="modules_catalog_install_release">Download release ZIP</string>
+    <string name="modules_catalog_install_description">Choose how to install this module:</string>
+    <string name="modules_catalog_install_success">Module installed successfully</string>
+    <string name="modules_catalog_install_failed">Install failed: %s</string>
+    <string name="modules_catalog_token_required">GitHub token required</string>
+    <string name="modules_catalog_token_hint">GitHub Personal Access Token</string>
+    <string name="modules_catalog_token_description">A token is needed to search GitHub for modules. You can create one at github.com/settings/tokens</string>
+    <string name="modules_catalog_token_format_warning">Token should start with ghp_ or github_pat_ and be at least 30 characters</string>
+    <string name="modules_catalog_loading">Loading catalog…</string>
+    <string name="modules_catalog_error">Failed to load catalog</string>
+    <string name="modules_catalog_install">Install</string>
+    <string name="modules_catalog_installing">Installing…</string>
+    <string name="modules_catalog_view_github">View on GitHub</string>
+    <string name="modules_catalog_skip_token">Skip</string>
+    <string name="modules_catalog_open">Open Catalog</string>
+
+    <!-- TV Status -->
+    <string name="tv_status_active">ACTIVE</string>
+    <string name="tv_status_disabled">DISABLED</string>
+    <string name="tv_status_trusted">TRUSTED</string>
+
+    <!-- Wear Catalog -->
+    <string name="wear_catalog_sort_newest">Newest</string>
+    <string name="wear_catalog_sort_stars">Stars</string>
+    <string name="wear_catalog_sort_official">Official</string>
+    <string name="wear_catalog_sort_by">Sort by</string>
+    <string name="wear_catalog_filter">Filter</string>
+
+    <!-- ErrorProtect & TCP 5555 -->
+    <string name="error_protect_title">ErrorProtect</string>
+    <string name="error_protect_summary">Check process health and transactional errors every 10 seconds. Automatically stops and restarts Shevery if issues are found.</string>
+    <string name="settings_tcp_5555_title">TCP Binding 5555</string>
+    <string name="settings_tcp_5555_summary">Bind local ADB server to port 5555 to keep it working without Wireless Debugging port updates.</string>
+    <string name="settings_tcp_5555_button">Bind to 5555</string>
+    <string name="settings_tcp_5555_bind_success">Successfully bound ADB to TCP port 5555</string>
+    <string name="settings_tcp_5555_bind_failed">Failed to bind ADB to port 5555: %1$s</string>
+    <string name="settings_tcp_5555_bind_failed_generic">Root, Dhizuku, or active Shevery is required.</string>
+</resources>

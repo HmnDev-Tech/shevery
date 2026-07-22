@@ -1,0 +1,66 @@
+plugins {
+    id 'com.android.application'
+    id 'dev.rikka.tools.refine'
+}
+
+android {
+    namespace 'rikka.shizuku.shell'
+    defaultConfig {
+        versionCode rootProject.ext.versionCode
+        versionName rootProject.ext.versionName
+        buildConfigField "String", "MANAGER_APPLICATION_ID", "\"com.hamondev.shevery\""
+    }
+    buildTypes {
+        debug {
+            multiDexEnabled false
+        }
+        release {
+            minifyEnabled true
+            proguardFiles 'proguard-rules.pro'
+        }
+    }
+    dependenciesInfo {
+        includeInApk false
+    }
+    lint {
+        checkReleaseBuilds false
+    }
+    buildFeatures {
+        buildConfig = true
+    }
+}
+
+def registerShellDexCopyTask(String variantName) {
+    def capitalized = variantName.capitalize()
+    tasks.register("copy${capitalized}ShellDex") {
+        dependsOn("assemble${capitalized}")
+
+        def apkFiles = fileTree(layout.buildDirectory.dir("outputs/apk/${variantName}")) {
+            include '*.apk'
+        }
+        def dexPath = rootProject.layout.projectDirectory.dir("manager/build/generated/rish/${variantName}/assets")
+
+        inputs.files(apkFiles)
+        outputs.file(dexPath.file("rish_shizuku.dex"))
+
+        doLast {
+            def apk = apkFiles.files.find { it.name.endsWith(".apk") }
+            if (apk == null) {
+                throw new GradleException("Shell ${variantName} APK was not found")
+            }
+            copy {
+                from zipTree(apk).matching { include 'classes*.dex' }.singleFile
+                into dexPath
+                rename { 'rish_shizuku.dex' }
+            }
+        }
+    }
+}
+
+registerShellDexCopyTask("debug")
+registerShellDexCopyTask("release")
+
+dependencies {
+    implementation libs.hidden.compat
+    compileOnly libs.hidden.stub
+}

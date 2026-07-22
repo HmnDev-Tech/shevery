@@ -1,0 +1,17 @@
+name: Issue Similarity Check
+on:
+  issues:
+    types: [opened, edited]
+
+jobs:
+  check-duplicates:
+    runs-on: ubuntu-latest
+    permissions:
+      issues: write
+    steps:
+      - uses: actions-cool/issues-similarity-analysis@v1.1.0
+        with:
+          filter-threshold: 0.8
+          title-excludes: 'bug, enhancement, feature'
+          comment-title: '### 🤖 Potential Duplicate Issue Found'
+          comment-body: 'Hello! I am an AI bot. It looks like this issue might be a duplicate of the following issues. Please review them carefully. If it is an exact duplicate, please close this issue to keep our tracker clean!'

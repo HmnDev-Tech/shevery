@@ -1,0 +1,113 @@
+apply from: 'manifest.gradle'
+
+allprojects {
+    tasks.withType(Javadoc) {
+        options.addStringOption('Xdoclint:none', '-quiet')
+    }
+}
+
+subprojects {
+    afterEvaluate { project ->
+        if (!(it.findProperty('publishLibrary') ?: false)) {
+            return
+        }
+
+        plugins.apply('maven-publish')
+        plugins.apply('signing')
+
+        if (project.parent == rootProject) {
+            group = "${groupIdBase}"
+        } else {
+            group = "${groupIdBase}.${project.parent.name}"
+        }
+        version = api_version_name
+        println("${project.displayName}: ${group}:${project.name}:${version}")
+
+        publishing {
+            publications {
+                mavenJava(MavenPublication) {
+                    group project.group
+                    artifactId project.name
+                    version api_version_name
+                    afterEvaluate {
+                        from components.release
+                    }
+                    pom {
+                        name = POM_NAME
+                        description = POM_DESCRIPTION
+                        url = POM_URL
+                        licenses {
+                            license {
+                                name = POM_LICENCE_NAME
+                                url = POM_LICENCE_URL
+                            }
+                        }
+                        developers {
+                            developer {
+                                name = POM_DEVELOPER_NAME
+                                url = POM_DEVELOPER_URL
+                            }
+                        }
+                        scm {
+                            connection = POM_SCM_CONNECTION
+                            url = POM_SCM_URL
+                        }
+                    }
+                }
+            }
+            repositories {
+                maven {
+                    name 'ossrh'
+                    url 'https://s01.oss.sonatype.org/service/local/staging/deploy/maven2/'
+                    credentials(PasswordCredentials)
+                }
+            }
+        }
+
+        android {
+            publishing {
+                singleVariant("release") {
+                    withSourcesJar()
+                    withJavadocJar()
+                }
+            }
+        }
+
+        signing {
+            def signingKey = findProperty("signingKey")
+            def signingPassword = findProperty("signingPassword")
+            def secretKeyRingFile = findProperty("signing.secretKeyRingFile")
+
+            if (secretKeyRingFile != null && file(secretKeyRingFile).exists()) {
+                sign publishing.publications
+            } else if (signingKey != null) {
+                useInMemoryPgpKeys(signingKey, signingPassword)
+                sign publishing.publications
+            }
+        }
+    }
+}
+
+task clean(type: Delete) {
+    delete rootProject.buildDir
+}
+
+ext {
+    groupIdBase = "dev.rikka.shizuku"
+
+    POM_INCEPTION_YEAR = "2021"
+    POM_PACKAGING = "aar"
+
+    POM_URL = "https://github.com/RikkaApps/Shizuku-API"
+    POM_SCM_URL = "https://github.com/RikkaApps/Shizuku-API"
+    POM_SCM_CONNECTION = "scm:git@github.com:RikkaApps/Shizuku-API.git"
+    POM_SCM_DEV_CONNECTION = "scm:git@github.com:RikkaApps/Shizuku-API.git"
+
+    POM_LICENCE_NAME = "MIT License"
+    POM_LICENCE_URL = "https://github.com/RikkaApps/Shizuku-API/blob/master/LICENSE"
+    POM_LICENCE_DIST = "repo"
+
+    POM_DEVELOPER_ID = "rikka"
+    POM_DEVELOPER_NAME = "Rikka"
+    POM_DEVELOPER_URL = "https://github.com/RikkaW"
+}

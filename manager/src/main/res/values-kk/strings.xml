@@ -1,0 +1,9 @@
+<?xml version="1.0" encoding="utf-8"?>
+<resources>
+    <!-- ErrorProtect & TCP 5555 -->
+    <string name="error_protect_title">ErrorProtect</string>
+    <string name="error_protect_summary">Процестің жұмыс істеу қабілетін және транзакциялық қателерді әр 10 секунд сайын тексеріңіз. Мәселелер анықталса, Shevery-ді автоматты түрде тоқтатады және қайта іске қосады.</string>
+    <string name="settings_tcp_5555_title">TCP байланыстыру 5555</string>
+    <string name="settings_tcp_5555_summary">Сымсыз жөндеу портын жаңартпай-ақ жұмыс істеуі үшін жергілікті ADB серверін 5555 портына байланыстырыңыз.</string>
+    <string name="settings_tcp_5555_button">5555 портына байланыстыру</string>
+</resources>

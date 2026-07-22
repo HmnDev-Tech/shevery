@@ -1,0 +1,81 @@
+pluginManagement {
+    repositories {
+        google()
+        mavenLocal()
+        mavenCentral()
+    }
+    plugins {
+        id("com.android.application") version "9.3.0-alpha03"
+        id("com.android.library") version "9.3.0-alpha03"
+        id("org.jetbrains.kotlin.plugin.compose") version "2.2.10"
+        id("org.jetbrains.kotlin.plugin.serialization") version "2.2.10"
+        id("dev.rikka.tools.autoresconfig") version "1.2.2"
+        id("dev.rikka.tools.materialthemebuilder") version "1.5.1"
+        id("dev.rikka.tools.refine") version "4.4.0"
+    }
+}
+dependencyResolutionManagement {
+    repositoriesMode.set(RepositoriesMode.FAIL_ON_PROJECT_REPOS)
+    repositories {
+        google()
+        mavenLocal()
+        mavenCentral()
+        maven {
+            url = uri("https://jitpack.io")
+            content {
+                includeGroup("com.github.topjohnwu.libsu")
+                includeGroup("io.github.iamr0s")
+                includeGroup("com.github.iamr0s")
+            }
+        }
+    }
+    versionCatalogs {
+        libs {
+            version('hidden-api', '4.4.0')
+            library('hidden-compat', 'dev.rikka.hidden', 'compat').versionRef('hidden-api')
+            library('hidden-stub', 'dev.rikka.hidden', 'stub').versionRef('hidden-api')
+
+            version('refine', '4.4.0')
+            library('refine-runtime', 'dev.rikka.tools.refine', 'runtime').versionRef('refine')
+            library('refine-annotation', 'dev.rikka.tools.refine', 'annotation').versionRef('refine')
+            library('refine-annotation-processor', 'dev.rikka.tools.refine', 'annotation-processor').versionRef('refine')
+        }
+    }
+}
+
+include ':server', ':starter', ':shell'
+include ':manager'
+include ':common'
+
+def root = "api"
+
+def propFile = file('local.properties')
+def props = new Properties()
+
+if (propFile.canRead()) {
+    props.load(new FileInputStream(propFile))
+
+    if (props != null) {
+        if (props["api.useLocal"].equals("true")) {
+            root = props["api.dir"]
+        }
+    }
+}
+
+include ':aidl'
+project(':aidl').projectDir = file("$root${File.separator}aidl")
+
+include ':rish'
+project(':rish').projectDir = file("$root${File.separator}rish")
+
+include ':shared'
+project(':shared').projectDir = file("$root${File.separator}shared")
+
+include ':api'
+project(':api').projectDir = file("$root${File.separator}api")
+
+include ':provider'
+project(':provider').projectDir = file("$root${File.separator}provider")
+
+include ':server-shared'
+project(':server-shared').projectDir = file("$root${File.separator}server-shared")

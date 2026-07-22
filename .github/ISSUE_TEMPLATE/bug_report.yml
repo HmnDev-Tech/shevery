@@ -1,0 +1,74 @@
+name: Bug Report
+description: Report a bug in Shizuku
+labels: [ "bug" ]
+
+body:
+  - type: markdown
+    attributes:
+      value: |
+        Please provide detailed information so we can reproduce and fix the issue. Incomplete reports may be closed.
+  
+  - type: checkboxes
+    id: requirements
+    attributes:
+      label: Requirements
+      options:
+        - label: I am using the latest version from GitHub Releases.
+          required: true
+        - label: I am using a standard, tested ROM (no custom/untested forks).
+          required: true
+        - label: I have searched existing issues and this is not a duplicate.
+          required: true
+        - label: I am providing text logs, not screenshots of logs.
+          required: true
+
+  - type: input
+    id: shizuku_version
+    attributes:
+      label: Shizuku Version
+      placeholder: e.g. v13.6.0.r24
+    validations:
+      required: true
+
+  - type: dropdown
+    id: mode
+    attributes:
+      label: Operation Mode
+      options:
+        - ADB Mode
+        - Root Mode
+        - Manual Mode (sh)
+    validations:
+      required: true
+
+  - type: input
+    id: device_info
+    attributes:
+      label: Device Model & OS Version
+      placeholder: e.g. Pixel 7 Pro - Android 14
+    validations:
+      required: true
+
+  - type: textarea
+    id: reproducer
+    attributes:
+      label: Steps to Reproduce
+      placeholder: |
+        1. Open the app
+        2. Tap on X
+        3. Observe Y
+    validations:
+      required: true
+
+  - type: textarea
+    id: logs
+    attributes:
+      label: Logcat / Crash Logs
+      description: |
+        Provide the relevant `adb logcat` output or crash trace. Wrap logs in ```log blocks.
+      placeholder: |
+        ```log
+        Paste logcat here.
+        ```
+    validations:
+      required: true

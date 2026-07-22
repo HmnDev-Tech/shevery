@@ -1,0 +1,346 @@
+<?xml version="1.0" encoding="utf-8"?>
+<resources>
+    <string name="dialog_requesting_legacy_button_open_shizuku">Открыть Shevery</string>
+    <string name="dialog_requesting_legacy_message">&lt;b&gt;%1$s&lt;/b&gt; имеет поддержку актуального Shevery, но запрашивает его устаревшую версию. Возможно это происходит оттого, что Shevery не запущен, пожалуйста, перепроверьте в приложении Shevery.&lt;p&gt;Изначальная версия Shevery признана устаревшей ещё в марте 2019 года.</string>
+    <string name="dialog_requesting_legacy_title">%1$s запрашивает устаревшую версию Shevery</string>
+    <string name="dialog_legacy_not_support_message">Изначальная версия Shevery устарела с марта 2019 года. Кроме того, она не работает на новых системах Android.&lt;p&gt;Пожалуйста, попросите разработчика &lt;b&gt;%1$s&lt;/b&gt; внести поправки.</string>
+    <string name="dialog_legacy_not_support_title">%1$s не поддерживает актуальную версию Shevery</string>
+    <string name="toast_copied_to_clipboard_with_text">&lt;b&gt;%s&lt;/b&gt; было скопировано в буфер обмена.</string>
+    <string name="toast_copied_to_clipboard">%s
+\nбыло скопировано в буфер обмена.</string>
+    <string name="dialog_cannot_open_browser_title">Не удается запустить браузер</string>
+    <string name="start_with_root_failed">Не удалось запустить службу. Root права не выданы или они недоступны на устройстве.</string>
+    <string name="starter">Запуск</string>
+    <string name="permission_label">доступ Shevery</string>
+    <string name="notification_working">Работает…</string>
+    <string name="notification_service_start_no_root">Не удалось запросить root права.</string>
+    <string name="notification_service_start_failed">Не удалось запустить службу Shevery.</string>
+    <string name="notification_service_starting">Служба Shevery запускается…</string>
+    <string name="notification_channel_service_status">Состояние работы службы</string>
+    <string name="dialog_stop_message">Служба Shevery будет остановлена.</string>
+    <string name="action_stop">Остановить Shevery</string>
+    <string name="about_view_source_code">Исходный код доступен на %s</string>
+    <string name="action_about">О приложении</string>
+    <string name="about_source_code_button">Исходный код</string>
+    <string name="settings_translation_summary">Помогите перевести %s на ваш язык</string>
+    <string name="settings_translation">Участвуйте в переводе</string>
+    <string name="settings_translation_contributors">Авторы перевода</string>
+    <string name="settings_startup">Запуск при включении устройства</string>
+    <string name="settings_black_night_theme_summary">Глубокий черный цвет фона при работе темной темы</string>
+    <string name="settings_black_night_theme">Черная тема</string>
+    <string name="settings_user_interface">Внешний вид</string>
+    <string name="settings_language">Язык</string>
+    <string name="settings_title">Настройки</string>
+    <string name="app_management_select_all">Выбрать все</string>
+    <string name="app_management_deselect_all">Отменить все</string>
+    <string name="app_management_item_summary_requires_root">* требуется Shevery, запущенный с root правами</string>
+    <string name="app_management_dialog_adb_is_limited_message">Возможно, что производитель вашего устройства ограничивает доступ к adb.&lt;p&gt;Решение для вашей системы может быть описано &lt;b&gt;&lt;a href=\"%1$s\"&gt;здесь&lt;/a&gt;&lt;/b&gt;.</string>
+    <string name="app_management_dialog_adb_is_limited_title">Доступ к adb ограничен</string>
+    <string name="home_learn_more_description">Узнайте, как начать разрабатывать с Shevery</string>
+    <string name="home_learn_more_title">Узнать больше о Shevery</string>
+    <string name="home_app_management_view_authorized_apps">Нажмите для управления списком допущенных приложений</string>
+    <plurals name="home_app_management_authorized_apps_count">
+        <item quantity="one">Доступно для %d приложения</item>
+        <item quantity="few">Доступно для %d приложений</item>
+        <item quantity="many">Доступно для %d приложений</item>
+        <item quantity="other">Доступно для %d приложений</item>
+    </plurals>
+    <string name="home_app_management_title">Управление приложениями</string>
+    <string name="home_root_button_restart">Перезапустить</string>
+    <string name="home_root_button_start">Запустить</string>
+    <string name="home_root_description">В дополнение, Shevery может запускаться сразу после загрузки системы. Если этого не происходит, проверьте, нет ли ограничений со стороны вашей системы или сторонних инструментов.&lt;br&gt;Вы можете обратиться в %s.</string>
+    <string name="home_root_title">Запуск (для устройств с root правами)</string>
+    <string name="development_settings">Параметры разработчика</string>
+    <string name="adb_pair_required">Пожалуйста, сперва пройдите процедуру сопряжения.</string>
+    <string name="adb_error_key_store">Не удалось сгенерировать ключ для отладки по Wi-Fi.
+\nВозможно, что механизм KeyStore у данного устройства нерабочий.</string>
+    <string name="adb_pairing_requires_multi_window_reason">Системе нужно постоянно видеть диалоговое окно сопряжения, и многооконный режим – это единственный способ вывести на экран и это приложение, и системное окно одновременно.</string>
+    <string name="adb_pairing_requires_multi_window">Пожалуйста, сначала активируйте режим разделения экрана (многооконный режим).</string>
+    <string name="dialog_adb_pairing_message">Пожалуйста, для подключения выполните следующие шаги: «Для разработчиков» – «Отладка по Wi-Fi» – «Подключиться к устройству, используя код».
+\n
+\nПосле начала процесса вы сможете ввести код подключения.</string>
+    <string name="dialog_wireless_adb_not_enabled">Отладка по Wi-Fi не включена.
+\nВнимание: на системах старше Android 11 для включения этой отладки необходимо соединение с компьютером.</string>
+    <string name="cannot_connect_port">Не удается подключиться к службе отладки по Wi-Fi.</string>
+    <string name="paring_code_is_wrong">Неверный код сопряжения.</string>
+    <string name="dialog_adb_pairing_paring_code">Код сопряжения</string>
+    <string name="dialog_adb_pairing_discovery">Поиск службы соединения</string>
+    <string name="dialog_adb_pairing_title">Сопряжение с устройством</string>
+    <string name="adb_pairing">Сопряжение</string>
+    <string name="dialog_adb_invalid_port">Порт – это целое число в диапазоне от 1 до 65535.</string>
+    <string name="dialog_adb_port">Порт</string>
+    <string name="dialog_adb_discovery_message">Пожалуйста, включите пункт «Отладка по Wi-Fi» в меню «Для разработчиков». «Отладка по Wi-Fi» автоматически отключается при изменении сети.
+\n
+\nВнимание: не отключайте пункт «Для разработчиков» или «Отладка по USB», иначе Shevery остановит работу.</string>
+    <string name="dialog_adb_discovery">Ожидание службы отладки по Wi-Fi</string>
+    <string name="home_wireless_adb_title">Запуск через отладку по Wi-Fi</string>
+    <string name="home_adb_dialog_view_command_button_send">Отправить</string>
+    <string name="home_adb_dialog_view_command_copy_button">Скопировать</string>
+    <string name="home_adb_dialog_view_command_message">&lt;font face=monospace&gt;%1$s&lt;/font&gt;&lt;br&gt;&lt;br&gt;* Есть и другие способы; сначала убедитесь, что сперва прочли справку.</string>
+    <string name="home_adb_button_view_command">Просмотр команды</string>
+    <string name="home_adb_button_view_help">Читать справку</string>
+    <string name="home_adb_description">Для устройств без root прав потребуется обращаться к adb для запуска Shevery (не обойтись без соединения с компьютером). Этот процесс нужно повторять каждый раз, когда устройство перезагружается. Пожалуйста, <b><a href="%1$s">прочтите справку</a></b>.</string>
+    <string name="home_adb_title">Запуск через соединение с ПК</string>
+    <string name="home_status_service_version_update">Версия %2$s, %1$s&lt;br&gt;Запустите снова что бы обновиться до версии %3$s</string>
+    <string name="home_status_service_version">Версия %2$s, %1$s</string>
+    <string name="home_status_service_not_running">%1$s не запущен</string>
+    <string name="home_status_service_is_running">%1$s запущен</string>
+    <string name="translation_contributors">sermart1234, ruvlad</string>
+    <string name="settings_start_on_boot_summary">На устройствах с root правами Shevery может автоматически запускаться после загрузки системы</string>
+    <string name="settings_start_on_boot">Автозапуск (с root правами)</string>
+    <string name="grant_dialog_button_allow_always">Разрешить всегда</string>
+    <string name="grant_dialog_button_deny">Запретить</string>
+    <string name="permission_warning_template">Разрешить <b>%1$s</b> следующее: %2$s\?</string>
+    <string name="home_root_description_sui">Если вы пользуетесь Magisk, можете попробовать %1$s. Для пользователей с root правами он в конечном итоге заменит Shevery. Обратите внимание, что в уже вышедшие приложения должны внести небольшие изменения, чтобы они заработали с %2$s.</string>
+    <string name="permission_description">Разрешить приложению использовать Shevery.</string>
+    <string name="terminal_tutorial_3_description">Небольшой совет: выдайте %1$s права на выполнение и пропишите в %2$s, чтобы обращаться к %1$s напрямую.</string>
+    <string name="terminal_tutorial_3">И последнее: переместите файлы туда, куда сможет обращаться ваше приложение-терминал, и отныне станет возможным запускать команды через Shevery посредством %1$s.</string>
+    <string name="terminal_tutorial_2_description">К примеру: если вы захотите использовать Shevery внутри %1$s, нужно заменить %2$s на %3$s (%4$s – это имя пакета эмулятора терминала %1$s).</string>
+    <string name="terminal_tutorial_2">Затем откройте и отредактируйте %1$s любым текстовым редактором.</string>
+    <string name="terminal_export_files">Экспорт файлов</string>
+    <string name="terminal_tutorial_1_description">Если в выбранной папке уже есть файлы с такими же именами, они будут удалены.
+\n
+\nДля работы функции экспорта используется SAF (Storage Access Framework). Сообщается, что на MIUI сломаны механизмы SAF, поэтому там может понадобиться вручную извлечь файл из .apk Shevery или скачать его с GitHub.</string>
+    <string name="terminal_tutorial_1">Сначала экспортируйте файлы в любое место на свое усмотрение. Там появятся два файла: %1$s и %2$s.</string>
+    <string name="home_terminal_description">Запуск команд через Shevery прямиком из любимых приложений-терминалов</string>
+    <string name="home_terminal_title">Применение Shevery в эмуляторах терминала</string>
+    <string name="home_wireless_adb_description">На Android 11 или выше Вы можете включить отладку по Wi-Fi без дополнительного ПО, без подключения к компьютеру. Пожалуйста, сперва просмотрите инструкцию</string>
+    <string name="adb_pairing_tutorial_content_miui">На оболочке MIUI может потребоваться сменить параметр в пункте системных настроек «Уведомления» – «Стиль уведомлений» на «Android».</string>
+    <string name="adb_pairing_tutorial_content_steps">Перейдите в «Параметры разработчика» – «Отладка по Wi-Fi». Нажмите на «Сопряжение устройства с помощью кода сопряжения» и увидите шестизначный код.</string>
+    <string name="adb_pairing_tutorial_content_enter_pairing_code">Введите код в уведомление для завершения процедуры сопряжения.</string>
+    <string name="adb_pairing_tutorial_content_notification">Уведомление от Shevery поможет завершить процедуру сопряжения.</string>
+    <string name="rish_description">Посредством %1$s из любого приложения-терминала можно подключаться и взаимодействовать с shell, запущенной Shevery. &lt;p&gt;Нажмите здесь для просмотра инструкции по работе с %1$s.</string>
+    <string name="notification_adb_pairing_working_title">Выполняется сопряжение</string>
+    <string name="notification_adb_pairing_succeed_title">Сопряжение выполнено</string>
+    <string name="notification_adb_pairing_succeed_text">Теперь можете запустить службу Shevery.</string>
+    <string name="notification_adb_pairing_failed_title">Не удалось выполнить сопряжение</string>
+    <string name="notification_adb_pairing_retry">Повторить попытку</string>
+    <string name="adb_pairing_tutorial_title">Сопряжение Shevery с вашим устройством</string>
+    <string name="home_wireless_adb_description_pre_11">"Для отладки по Wi-Fi в Android до 11 версии  потребуется соединения с компьютером."</string>
+    <string name="home_wireless_adb_view_guide_button">Пошаговая инструкция</string>
+    <string name="notification_settings">Настройки уведомлений</string>
+    <string name="adb_pairing_tutorial_content_notification_blocked">Процедура сопряжения подразумевает взаимодействие с уведомлением от Shevery. Для продолжения выдайте Shevery разрешение на показ уведомлений.</string>
+    <string name="adb_pairing_tutorial_content_finish">Вернитесь в приложение Shevery и запустите его.</string>
+    <string name="notification_channel_adb_pairing">Сопряжение с отладкой по Wi-Fi</string>
+    <string name="notification_adb_pairing_input_paring_code">Введите код подключения</string>
+    <string name="notification_adb_pairing_searching_for_service_title">Ожидание службы сопряжения</string>
+    <string name="notification_adb_pairing_service_found_title">Служба найдена</string>
+    <string name="notification_adb_pairing_stop_searching">Прекратить поиск</string>
+    <string name="adb_pairing_tutorial_content_miui_2">Иначе вы, вероятнее всего, не сможете ввести код сопряжения из уведомления.</string>
+    <string name="adb_pairing_tutorial_content_network">Shevery требуется доступ к локальной сети. Он управляется сетевым разрешением.</string>
+    <string name="adb_pairing_tutorial_content_network_limation_not_foreground">Некоторые системы (та же MIUI) не разрешают приложениям доступ к сети, когда они не на экране, даже если те в основе задействуют службу переднего плана. Пожалуйста, добавьте Shevery в исключения алгоритмов оптимизации заряда батареи на таких системах.</string>
+    <string name="settings_use_system_color">Палитра цветов из системы</string>
+    <string name="modules_title">ADB-модули</string>
+    <string name="modules_settings_title">Модули</string>
+    <string name="modules_settings_summary">ZIP-модули с запуском действий через активный ADB/root сервер Shevery</string>
+    <string name="modules_header_summary">Установлено: %1$d, включено: %2$d</string>
+    <string name="modules_version_label">Версия: %s</string>
+    <string name="modules_author_label">Автор: %s</string>
+    <string name="modules_access_mode">Режим доступа модулей</string>
+    <string name="modules_access_mode_safe">Safe</string>
+    <string name="modules_access_mode_safe_summary">Без shell bridge, WebUI download, Action и Service.</string>
+    <string name="modules_access_mode_custom">Custom</string>
+    <string name="modules_access_mode_custom_summary">Ручной выбор разрешений: Action, Service, WebUI bridge, сеть и download.</string>
+    <string name="modules_access_mode_full">Full access</string>
+    <string name="modules_access_mode_full_summary">Разрешает shell bridge, Action, Service и WebUI download. Интернет WebView остается выключенным.</string>
+    <string name="modules_custom_permissions">Custom-разрешения</string>
+    <string name="modules_custom_permissions_summary">Настроить каждое разрешение модуля отдельно</string>
+    <string name="modules_permission_action">Запуск Action</string>
+    <string name="modules_permission_action_summary">Разрешить ручной запуск action.sh.</string>
+    <string name="modules_permission_service">Запуск Service</string>
+    <string name="modules_permission_service_summary">Разрешить service.sh, если фоновые действия тоже включены.</string>
+    <string name="modules_permission_web_bridge">WebUI shell bridge</string>
+    <string name="modules_permission_web_bridge_summary">Открывать window.Shevery только локальному WebUI и только при выключенном интернете WebView.</string>
+    <string name="modules_permission_web_network">Интернет WebView</string>
+    <string name="modules_permission_web_network_summary">Разрешить HTTPS-навигацию и ассеты. Shell bridge для такого WebView отключается.</string>
+    <string name="modules_permission_web_download">WebUI download()</string>
+    <string name="modules_permission_web_download_summary">Разрешить HTTPS-загрузки в папку WebUI, кроме index.html.</string>
+    <string name="modules_background_actions">Фоновые действия</string>
+    <string name="modules_background_actions_summary">Разрешить установленным модулям запрашивать фоновую ADB-работу в full access</string>
+    <string name="modules_background_allowed">Фон разрешен</string>
+    <string name="modules_background_blocked">Фон заблокирован</string>
+    <string name="modules_install_zip">Установить ZIP</string>
+    <string name="modules_empty_title">Модули не установлены</string>
+    <string name="modules_empty_summary">ADB-модули используют ZIP в стиле KernelSU/Magisk: module.prop, опционально banner, WebUI, action.sh и service.sh.</string>
+    <string name="modules_install_success">Установлен %s</string>
+    <string name="modules_install_failed">Ошибка установки: %s</string>
+    <string name="modules_enabled">Включен</string>
+    <string name="modules_disabled">Выключен</string>
+    <string name="modules_enable">Включить</string>
+    <string name="modules_disable">Выключить</string>
+    <string name="modules_full_trust">Full Trust</string>
+    <string name="modules_trust">Trust</string>
+    <string name="modules_untrust">Untrust</string>
+    <string name="modules_run_action">Action</string>
+    <string name="modules_run_service">Service</string>
+    <string name="modules_running">Выполняется скрипт модуля…</string>
+    <string name="modules_open_webui">WebUI</string>
+    <string name="modules_webui">WebUI модуля</string>
+    <string name="modules_delete">Удалить</string>
+    <string name="modules_delete_title">Удалить модуль?</string>
+    <string name="modules_delete_message">%s будет удален из хранилища модулей Shevery.</string>
+    <string name="modules_action_result">Action завершен: exit %d</string>
+    <string name="modules_action_failed">Action не выполнен</string>
+    <string name="modules_service_result">Service завершен: exit %d</string>
+    <string name="modules_service_failed">Service не выполнен</string>
+    <string name="modules_recommand_title">ReCommand</string>
+    <string name="modules_recommand_source">%1$s / %2$s</string>
+    <string name="modules_recommand_expand">Раскрыть</string>
+    <string name="modules_recommand_collapse">Свернуть</string>
+    <string name="modules_recommand_copy">Копировать</string>
+    <string name="modules_recommand_execute">Выполнить</string>
+    <string name="modules_recommand_close">Закрыть</string>
+    <string name="modules_recommand_command_clip_label">Команда модуля</string>
+    <string name="modules_recommand_webui">ReCommand для WebUI</string>
+    <string name="modules_recommand_webui_summary">Показывать подтверждение перед shell exec из WebUI.</string>
+    <string name="modules_recommand_action">ReCommand для Action</string>
+    <string name="modules_recommand_action_summary">Показывать подтверждение перед action.sh.</string>
+    <string name="modules_ai">AI</string>
+    <string name="modules_ai_api_key">API-ключ</string>
+    <string name="modules_ai_api_key_summary">Хранится в зашифрованном виде через Android Keystore.</string>
+    <string name="modules_ai_unlocked">AI checker разблокирован</string>
+    <string name="modules_ai_hidden">AI checker скрыт</string>
+    <string name="modules_ai_failed">AI-проверка не выполнена: %s</string>
+    <string name="modules_tab_installed">Установленные</string>
+    <string name="modules_tab_catalog">Каталог модулей</string>
+    <string name="modules_check_updates">Проверить обновления</string>
+    <string name="modules_checking_updates">Проверка обновлений…</string>
+    <string name="modules_no_updates">Все модули актуальны</string>
+    <string name="modules_update_available">Доступно обновление: v%s</string>
+    <string name="modules_update_button">Обновить</string>
+    <string name="modules_updating">Обновление модуля…</string>
+    <string name="modules_update_success">Модуль обновлен до v%s</string>
+    <string name="modules_download_downloads">Скачать в Загрузки</string>
+    <string name="modules_download_install">Скачать и установить</string>
+    <string name="modules_downloading">Загрузка…</string>
+    <string name="modules_download_enqueued">Загрузка запущена в фоновом режиме</string>
+    <string name="modules_search_placeholder">Поиск по каталогу модулей…</string>
+
+
+    <string name="adb_pairing_tutorial_content_left_is_clickable">Обратите внимание, что левая часть опции \"Беспроводная отладка\" является кликабельной, нажатие на нее открывает новую страницу. Нажатие только на переключатель (справа) является неправильным.</string>
+    <string name="dialog_adb_discovery_message_toggle_wireless_debugging">Попробуй выключить и снова включить \"Отладка по Wi-Fi\", если поиск продолжается.</string>
+    <string name="home_app_management_empty">Приложения, которые запросили или задекларировали использование Shevery будут отображаться здесь.</string>
+    <string name="home_modules_description">Установка и управление ADB-модулями</string>
+    <string name="home_adb_is_limited_description">Производитель вашего устройства ограничил права ADB, приложения использующие Shevery будут работать не корректно.
+\n
+\nОбычно эти ограничения можно снять в настройках для разработчиков. Пожалуйста, прочитай раздел помощи, чтобы узнать как это сделать.
+\n
+\nВозможно Вам понадобится перезапустить Shevery для применения изменений.</string>
+    <string name="home_adb_is_limited_title">Нужен дополнительный шаг</string>
+    <!-- Lab Features -->
+    <string name="lab_features_title">Лаборатория (Lab Features)</string>
+    <string name="lab_features_summary">Экспериментальные функции</string>
+    <string name="shizuku_connectors_title">Shevery Connectors</string>
+    <string name="shizuku_connectors_summary">Разрешить плагинам активировать Shevery</string>
+    <string name="unsafe_warning_title">Внимание</string>
+    <string name="unsafe_warning_message">Включение этой функции НЕБЕЗОПАСНО. Вы уверены?</string>
+    <string name="dhizuku_mode_title">Dhizuku Mode</string>
+    <string name="dhizuku_mode_summary">Позволить Shevery работать через привязку к Dhizuku</string>
+    <string name="dhizuku_warning_title">Внимание: Dhizuku Mode</string>
+    <string name="dhizuku_warning_message">Dhizuku предназначен для управления правами администратора устройства (Device Owner). Некоторые функции ADB и оболочки могут работать некорректно или не поддерживаться при активации Shevery через Dhizuku. Вы уверены, что хотите продолжить?</string>
+    <string name="settings_tcp_mode">TCP Mode</string>
+    <string name="settings_tcp_mode_summary">Попытаться переподключиться и перезапустить сервер через локальный ADB на порту 5555 (watchdog)</string>
+    <string name="settings_service_group">Обслуживание службы</string>
+
+    <!-- Lab Features - Service Behavior -->
+    <string name="lab_service_behavior_title">Поведение службы</string>
+    <string name="lab_keep_alive_title">Держать службу активной</string>
+    <string name="lab_keep_alive_summary">Периодически проверять, что служба Shevery запущена, и перезапускать её при необходимости</string>
+    <string name="lab_auto_restart_title">Автоперезапуск при сбое</string>
+    <string name="lab_auto_restart_summary">Автоматически перезапускать службу Shevery при неожиданном сбое</string>
+    <string name="lab_notify_death_title">Уведомление об остановке службы</string>
+    <string name="lab_notify_death_summary">Показывать уведомление, когда служба Shevery неожиданно останавливается</string>
+
+    <!-- Lab Features - Debugging -->
+    <string name="lab_debugging_title">Отладка</string>
+    <string name="lab_verbose_logging_title">Подробное логирование</string>
+    <string name="lab_verbose_logging_summary">Записывать подробные отладочные логи в Logcat. Отключите в производственной среде для экономии заряда</string>
+    <string name="notification_channel_watchdog">Сторож службы</string>
+    <string name="notification_watchdog_title">Служба Shevery остановлена</string>
+    <string name="notification_watchdog_text">Служба Shevery неожиданно остановилась.</string>
+
+    <!-- Shevery Control Notification -->
+    <string name="notification_control_channel_name">Управление Shevery</string>
+    <string name="notification_control_title_running">Shevery запущена</string>
+    <string name="notification_control_title_stopped">Shevery остановлена</string>
+    <string name="notification_control_text_running">Нажмите, чтобы открыть Shevery, или используйте кнопки ниже для остановки.</string>
+    <string name="notification_control_text_stopped">Нажмите, чтобы открыть Shevery, или используйте кнопки ниже для запуска.</string>
+    <string name="notification_control_action_start">Запустить</string>
+    <string name="notification_control_action_stop">Остановить</string>
+    <!-- Update Settings -->
+    <string name="update_settings_title">Настройки обновлений</string>
+    <string name="update_settings_catalog">Каталог модулей</string>
+    <string name="update_settings_catalog_enabled">Включить каталог</string>
+    <string name="update_settings_catalog_enabled_summary">Показывать обнаруженные модули из GitHub Topics</string>
+    <string name="update_settings_frequency">Частота обновлений</string>
+    <string name="update_settings_frequency_label">Проверять обновления</string>
+    <string name="update_settings_frequency_manual">Вручную</string>
+    <string name="update_settings_frequency_daily">Ежедневно</string>
+    <string name="update_settings_frequency_weekly">Еженедельно</string>
+    <string name="update_settings_install_mode">Режим установки</string>
+    <string name="update_settings_install_mode_label">Метод установки по умолчанию</string>
+    <string name="update_settings_install_mode_sources">Собрать из исходников</string>
+    <string name="update_settings_install_mode_release">Скачать ZIP-релиз</string>
+    <string name="update_settings_github">GitHub</string>
+    <string name="update_settings_github_pat">Персональный токен доступа</string>
+    <string name="update_settings_github_pat_set">Токен установлен</string>
+    <string name="update_settings_github_pat_unset">Не установлен (60 запросов/час)</string>
+    <string name="update_settings_github_pat_title">GitHub Personal Access Token</string>
+    <string name="update_settings_github_pat_description">Необязательно. GitHub PAT увеличивает лимит API с 60 до 5000 запросов/час. Нужен только scope public_repo для публичных репозиториев.</string>
+    <string name="update_settings_github_pat_label">Токен</string>
+    <string name="update_settings_github_pat_show">Показать</string>
+    <string name="update_settings_github_pat_hide">Скрыть</string>
+    <string name="update_settings_github_pat_clear">Очистить</string>
+    <string name="update_settings_github_pat_delete">Удалить токен</string>
+    <string name="update_settings_github_pat_delete_summary">Удалить сохранённый токен GitHub</string>
+
+    <!-- Module Catalog -->
+    <string name="modules_catalog">Каталог</string>
+    <string name="modules_catalog_title">Каталог модулей</string>
+    <string name="modules_catalog_empty">Модули не найдены</string>
+    <string name="modules_catalog_sort_newest">Новые</string>
+    <string name="modules_catalog_sort_oldest">Старые</string>
+    <string name="modules_catalog_sort_stars">По звёздам</string>
+    <string name="modules_catalog_sort_official">Официальные</string>
+    <string name="modules_catalog_install_sources">Установить из исходников</string>
+    <string name="modules_catalog_install_release">Скачать ZIP-релиз</string>
+    <string name="modules_catalog_install_description">Выберите способ установки этого модуля:</string>
+    <string name="modules_catalog_install_success">Модуль успешно установлен</string>
+    <string name="modules_catalog_install_failed">Ошибка установки: %s</string>
+    <string name="modules_catalog_token_required">Требуется токен GitHub</string>
+    <string name="modules_catalog_token_hint">GitHub Personal Access Token</string>
+    <string name="modules_catalog_token_description">Токен нужен для поиска модулей на GitHub. Создать его можно на github.com/settings/tokens</string>
+    <string name="modules_catalog_loading">Загрузка каталога…</string>
+    <string name="modules_catalog_error">Не удалось загрузить каталог</string>
+    <string name="modules_catalog_install">Установить</string>
+    <string name="modules_catalog_installing">Установка…</string>
+    <string name="modules_catalog_view_github">Открыть на GitHub</string>
+    <string name="modules_catalog_skip_token">Пропустить</string>
+    <string name="modules_catalog_open">Открыть каталог</string>
+
+    <string name="app_name">Shevery</string>
+    <string name="home_local_network_title">Доступ к локальной сети</string>
+    <string name="home_local_network_description">Для беспроводной отладки требуется %1$s на этой версии Android.</string>
+    <string name="home_local_network_granted">%1$s предоставлено.</string>
+    <string name="home_local_network_missing">%1$s не предоставлено.</string>
+    <string name="home_local_network_grant">Предоставить доступ</string>
+    <string name="home_local_network_permission_denied">Для беспроводной отладки требуется доступ к локальной сети.</string>
+    <string name="home_refresh">Обновить</string>
+    <string name="home_diagnostics_title">Диагностика</string>
+    <string name="home_diagnostics_copy">Скопировать диагностику</string>
+    <string name="home_diagnostics_copied">Данные диагностики скопированы.</string>
+    <string name="permission_group_label">Shevery</string>
+    <string name="permission_group_description">@string/permission_label</string>
+    <string name="starting_root_shell">Запуск root-оболочки…</string>
+    <string name="home_dhizuku_title">Запуск (через Dhizuku)</string>
+    <string name="home_dhizuku_description">Для устройств под управлением Dhizuku вы можете запустить Shevery напрямую, используя привилегии владельца устройства.</string>
+    <string name="modules_catalog_token_format_warning">Токен должен начинаться с ghp_ или github_pat_ и состоять как минимум из 30 символов</string>
+    <string name="tv_status_active">АКТИВНО</string>
+    <string name="tv_status_disabled">ОТКЛЮЧЕНО</string>
+    <string name="tv_status_trusted">ДОВЕРЕННОЕ</string>
+    <string name="wear_catalog_sort_newest">Новые</string>
+    <string name="wear_catalog_sort_stars">Звезды</string>
+    <string name="wear_catalog_sort_official">Официальные</string>
+    <string name="wear_catalog_sort_by">Сортировка</string>
+    <string name="wear_catalog_filter">Фильтр</string>
+</resources>
