@@ -58,6 +58,7 @@ import moe.shizuku.manager.ShizukuSettings.NIGHT_MODE
 import moe.shizuku.manager.app.ThemeHelper
 import moe.shizuku.manager.app.ThemeHelper.KEY_BLACK_NIGHT_THEME
 import moe.shizuku.manager.app.ThemeHelper.KEY_USE_SYSTEM_COLOR
+import moe.shizuku.manager.utils.EnvironmentUtils
 import moe.shizuku.manager.ktx.isComponentEnabled
 import moe.shizuku.manager.ktx.setComponentEnabled
 import moe.shizuku.manager.compat.StubManager
@@ -330,6 +331,9 @@ fun SettingsScreen() {
                             componentName,
                             ShizukuSettings.getStartOnBoot() || ShizukuSettings.getStartOnBootAdb()
                         )
+                        if (enabled) {
+                            EnvironmentUtils.requestIgnoreBatteryOptimizations(context)
+                        }
                     }
                 )
                 if (Build.VERSION.SDK_INT >= Build.VERSION_CODES.R) {
@@ -352,6 +356,7 @@ fun SettingsScreen() {
                                         componentName,
                                         ShizukuSettings.getStartOnBoot() || ShizukuSettings.getStartOnBootAdb()
                                     )
+                                    EnvironmentUtils.requestIgnoreBatteryOptimizations(context)
                                     if (!tcpMode) {
                                         Toast.makeText(
                                             context,
