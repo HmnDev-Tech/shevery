@@ -33,7 +33,7 @@ object TokenStore {
      * normal getOrCreateEncryptedPrefs success path — calling it there would
      * delete the active encrypted prefs file on every cold start and lose the token.
      */
-    private fun cleanupStaleEncrypedPrefs(appContext: Context) {
+    private fun cleanupStaleEncryptedPrefs(appContext: Context) {
         try {
             appContext.deleteSharedPreferences(ENCRYPTED_PREFS_NAME)
         } catch (_: Exception) {
@@ -43,10 +43,10 @@ object TokenStore {
 
     private fun getOrCreateEncryptedPrefs(context: Context): SharedPreferences {
         val appContext = context.applicationContext
-        val masterKey = MasterKey.Builder(appContext)
-            .setKeyScheme(MasterKey.KeyScheme.AES256_GCM)
-            .build()
         return try {
+            val masterKey = MasterKey.Builder(appContext)
+                .setKeyScheme(MasterKey.KeyScheme.AES256_GCM)
+                .build()
             val prefs = createEncryptedPrefs(appContext, masterKey)
             // One-time happy-path migration: if legacy plaintext has a token
             // and the new encrypted prefs is empty, copy it over and delete
@@ -57,7 +57,9 @@ object TokenStore {
                 val legacyToken = legacy.getString(KEY_GITHUB_PAT, null)
                 if (!legacyToken.isNullOrBlank() &&
                     prefs.getString(KEY_GITHUB_PAT, null).isNullOrBlank()) {
-                    prefs.edit().putString(KEY_GITHUB_PAT, legacyToken).commit()
+                    if (!prefs.edit().putString(KEY_GITHUB_PAT, legacyToken).commit()) {
+                        throw IOException("Failed to persist migrated token into encrypted prefs")
+                    }
                     appContext.deleteSharedPreferences(PREFS_NAME)
                 }
             } catch (e: Exception) {
@@ -94,23 +96,24 @@ object TokenStore {
         //    delete the .enc file — that would wipe a valid user token on keystore
         //    invalidation. Guard against silent data loss.
         if (!legacyToken.isNullOrBlank()) {
-            cleanupStaleEncrypedPrefs(appContext)
+            cleanupStaleEncryptedPrefs(appContext)
         }
-        val fresh = try {
-            createEncryptedPrefs(appContext, masterKey)
-        } catch (e: Exception) {
-            Log.e(TAG, "Failed to create new encrypted prefs; legacy file kept", e)
-            throw e
-        }
+        return try {
+            val masterKey = MasterKey.Builder(appContext)
+                .setKeyScheme(MasterKey.KeyScheme.AES256_GCM)
+                .build()
+            val fresh = createEncryptedPrefs(appContext, masterKey)
 
-        // 3) Copy token into encrypted prefs BEFORE deleting legacy file
-        if (!legacyToken.isNullOrBlank()) {
-            try {
-                fresh.edit().putString(KEY_GITHUB_PAT, legacyToken).commit()
-            } catch (e: Exception) {
-                Log.w(TAG, "Failed to persist migrated token into encrypted prefs", e)
-                throw e
+            // 3) Copy token into encrypted prefs BEFORE deleting legacy file
+            if (!legacyToken.isNullOrBlank()) {
+                if (!fresh.edit().putString(KEY_GITHUB_PAT, legacyToken).commit()) {
+                    throw IOException("Failed to persist migrated token into encrypted prefs")
+                }
             }
+            fresh
+        } catch (e: Exception) {
+            Log.e(TAG, "Failed to recreate encrypted prefs; legacy file kept", e)
+            throw e
         }
 
         // 4) Only now invalidate cache + delete ONLY the legacy plaintext file.
