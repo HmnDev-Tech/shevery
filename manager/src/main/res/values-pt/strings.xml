@@ -555,9 +555,7 @@ Pronto para receber comandos.]]></string>
     <string name="comput_no_macros">Nenhuma macro salva ainda. Clique em \'Gravar Macro\' para começar a gravar comandos do console.</string>
 
     <string name="tcp_prompt_dialog_title"><![CDATA[Habilitar modo TCP persistente?]]></string>
-    <string name="tcp_prompt_dialog_message"><![CDATA[Shevery está em execução, mas o modo TCP persistente está desativado no momento.
-
-A ativação do modo TCP permite que o Shevery continue funcionando e se reconecte automaticamente em segundo plano – mesmo sem Wi-Fi – até que o dispositivo seja reiniciado.]]></string>
+    <string name="tcp_prompt_dialog_message"><![CDATA[Shevery está em execução, mas o modo TCP persistente está desativado no momento.\n\nA ativação do modo TCP permite que o Shevery continue funcionando e se reconecte automaticamente em segundo plano – mesmo sem Wi-Fi – até que o dispositivo seja reiniciado.]]></string>
     <string name="tcp_prompt_dialog_enable"><![CDATA[Habilitar]]></string>
     <string name="tcp_prompt_dialog_later"><![CDATA[Agora não]]></string>
     <string name="tcp_prompt_dialog_do_not_remind"><![CDATA[Não me lembre de novo]]></string>

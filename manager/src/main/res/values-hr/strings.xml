@@ -544,9 +544,7 @@ Za detaljne upute o korištenju %1$s-a, dodirnite da biste vidjeli dokument.]]><
     <string name="comput_no_macros">Još nema spremljenih makronaredbi. Pritisnite \'Snimi makronaredbu\' za početak snimanja naredbi konzole.</string>
 
     <string name="tcp_prompt_dialog_title"><![CDATA[Omogućiti trajni TCP način?]]></string>
-    <string name="tcp_prompt_dialog_message"><![CDATA[Shevery je pokrenut, ali Persistent TCP Mode trenutno je onemogućen.
-
-Omogućavanje TCP načina rada omogućuje Sheveryju da ostane aktivan i da se automatski ponovno poveže u pozadini—čak i bez Wi-Fi-ja—dok se vaš uređaj ponovno ne pokrene.]]></string>
+    <string name="tcp_prompt_dialog_message"><![CDATA[Shevery je pokrenut, ali Persistent TCP Mode trenutno je onemogućen.\n\nOmogućavanje TCP načina rada omogućuje Sheveryju da ostane aktivan i da se automatski ponovno poveže u pozadini—čak i bez Wi-Fi-ja—dok se vaš uređaj ponovno ne pokrene.]]></string>
     <string name="tcp_prompt_dialog_enable"><![CDATA[Omogućiti]]></string>
     <string name="tcp_prompt_dialog_later"><![CDATA[Ne sada]]></string>
     <string name="tcp_prompt_dialog_do_not_remind"><![CDATA[Nemoj me ponovno podsjećati]]></string>

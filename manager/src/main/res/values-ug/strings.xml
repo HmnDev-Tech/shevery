@@ -555,9 +555,7 @@ You may need to restart Shevery for the operation to take effect.]]></string>
     <string name="adb_pairing_tutorial_content_miui">MIUI ئىشلەتكۈچىلەر سىستېما تەڭشىكىدە ئۇقتۇرۇش ئۇسلۇبىنى «ئۇقتۇرۇش» - «ئۇقتۇرۇش سايىسى» دىن «ئاندىرويىد» قا ئۆزگەرتىشى مۇمكىن.</string>
 
     <string name="tcp_prompt_dialog_title"><![CDATA[تۇراقلىق TCP ھالىتىنى قوزغىتامسىز؟]]></string>
-    <string name="tcp_prompt_dialog_message"><![CDATA[Shevery ئىجرا بولۇۋاتىدۇ ، ئەمما ئىزچىل TCP ھالىتى چەكلەنگەن.
-
-TCP ھالىتىنى قوزغىتىش Shevery نى ئۈسكۈنىڭىز قايتا قوزغىتىلغۇچە ، ھەتتا Wi-Fi بولمىسىمۇ ئارقا سۇپىدا ئاپتوماتىك ئۇلىنالايدۇ.]]></string>
+    <string name="tcp_prompt_dialog_message"><![CDATA[Shevery ئىجرا بولۇۋاتىدۇ ، ئەمما ئىزچىل TCP ھالىتى چەكلەنگەن.\n\nTCP ھالىتىنى قوزغىتىش Shevery نى ئۈسكۈنىڭىز قايتا قوزغىتىلغۇچە ، ھەتتا Wi-Fi بولمىسىمۇ ئارقا سۇپىدا ئاپتوماتىك ئۇلىنالايدۇ.]]></string>
     <string name="tcp_prompt_dialog_enable"><![CDATA[قوزغىتىش]]></string>
     <string name="tcp_prompt_dialog_later"><![CDATA[ھازىر ئەمەس]]></string>
     <string name="tcp_prompt_dialog_do_not_remind"><![CDATA[ماڭا قايتا ئەسكەرتمەڭ]]></string>

@@ -555,9 +555,7 @@ You may need to restart Shevery for the operation to take effect.]]></string>
     <string name="comput_no_macros"><![CDATA[هێشتا هیچ ماکرۆیەکی پاشەکەوت نەکراوە. کرتە بکە لەسەر \'تۆمارکردنی ماکرۆ\' بۆ دەستپێکردنی تۆمارکردنی فەرمانەکانی کۆنسۆل.]]></string>
 
     <string name="tcp_prompt_dialog_title"><![CDATA[Moda TCP-a Berdewam çalak bike?]]></string>
-    <string name="tcp_prompt_dialog_message"><![CDATA[Shevery dimeşe, lê Moda TCP-ya Berdewam niha neçalak e.
-
-Çalakkirina Moda TCP-ê dihêle ku Shevery di paşîn de bimîne û bixweber ve-girêde-tewra bêyî Wi-Fi- heya ku cîhaza we ji nû ve dest pê bike.]]></string>
+    <string name="tcp_prompt_dialog_message"><![CDATA[Shevery dimeşe, lê Moda TCP-ya Berdewam niha neçalak e.\n\nÇalakkirina Moda TCP-ê dihêle ku Shevery di paşîn de bimîne û bixweber ve-girêde-tewra bêyî Wi-Fi- heya ku cîhaza we ji nû ve dest pê bike.]]></string>
     <string name="tcp_prompt_dialog_enable"><![CDATA[Bikêrkirin]]></string>
     <string name="tcp_prompt_dialog_later"><![CDATA[Guhê xwe nedenê]]></string>
     <string name="tcp_prompt_dialog_do_not_remind"><![CDATA[Careke din neyê bîra min]]></string>

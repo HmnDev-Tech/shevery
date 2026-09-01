@@ -555,9 +555,7 @@
     <string name="comput_no_macros">Ще немає збережених макросів. Натисніть \'Записати макрос\', щоб почати запис консольних команд.</string>
 
     <string name="tcp_prompt_dialog_title"><![CDATA[Увімкнути постійний режим TCP?]]></string>
-    <string name="tcp_prompt_dialog_message"><![CDATA[Shevery працює, але постійний режим TCP наразі вимкнено.
-
-Увімкнення режиму TCP дозволяє Shevery працювати й автоматично повторно підключатися у фоновому режимі, навіть без Wi-Fi, доки ваш пристрій не буде перезапущено.]]></string>
+    <string name="tcp_prompt_dialog_message"><![CDATA[Shevery працює, але постійний режим TCP наразі вимкнено.\n\nУвімкнення режиму TCP дозволяє Shevery працювати й автоматично повторно підключатися у фоновому режимі, навіть без Wi-Fi, доки ваш пристрій не буде перезапущено.]]></string>
     <string name="tcp_prompt_dialog_enable"><![CDATA[Увімкнути]]></string>
     <string name="tcp_prompt_dialog_later"><![CDATA[Не зараз]]></string>
     <string name="tcp_prompt_dialog_do_not_remind"><![CDATA[Не нагадуй мені знову]]></string>

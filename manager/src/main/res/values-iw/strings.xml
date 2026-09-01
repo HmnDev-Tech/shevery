@@ -555,9 +555,7 @@ has been copied to clipboard.]]></string>
     <string name="comput_no_macros">אין עדיין פקודות מאקרו שמורות. לחץ על \'הקלט מאקרו\' כדי להתחיל להקליט פקודות מסוף.</string>
 
     <string name="tcp_prompt_dialog_title"><![CDATA[להפעיל מצב TCP מתמשך?]]></string>
-    <string name="tcp_prompt_dialog_message"><![CDATA[Shevery פועל, אך מצב TCP מתמשך מושבת כעת.
-
-הפעלת מצב TCP מאפשרת ל-Severy להישאר פועל ולהתחבר אוטומטית ברקע - אפילו ללא Wi-Fi - עד שהמכשיר שלך יופעל מחדש.]]></string>
+    <string name="tcp_prompt_dialog_message"><![CDATA[Shevery פועל, אך מצב TCP מתמשך מושבת כעת.\n\nהפעלת מצב TCP מאפשרת ל-Severy להישאר פועל ולהתחבר אוטומטית ברקע - אפילו ללא Wi-Fi - עד שהמכשיר שלך יופעל מחדש.]]></string>
     <string name="tcp_prompt_dialog_enable"><![CDATA[לְאַפשֵׁר]]></string>
     <string name="tcp_prompt_dialog_later"><![CDATA[לא עכשיו]]></string>
     <string name="tcp_prompt_dialog_do_not_remind"><![CDATA[אל תזכיר לי שוב]]></string>

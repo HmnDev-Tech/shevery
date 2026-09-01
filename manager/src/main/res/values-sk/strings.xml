@@ -555,9 +555,7 @@ Sme pripravení prijímať príkazy.]]></string>
     <string name="comput_no_macros">Zatiaľ žiadne uložené makrá. Kliknutím na \'Nahrať makro\' spustíte nahrávanie príkazov konzoly.</string>
 
     <string name="tcp_prompt_dialog_title"><![CDATA[Povoliť trvalý režim TCP?]]></string>
-    <string name="tcp_prompt_dialog_message"><![CDATA[Shevery je spustený, ale trvalý režim TCP je momentálne zakázaný.
-
-Povolenie režimu TCP umožňuje Shevery zostať spustený a automaticky sa znova pripojiť na pozadí – dokonca aj bez Wi-Fi – až do reštartovania zariadenia.]]></string>
+    <string name="tcp_prompt_dialog_message"><![CDATA[Shevery je spustený, ale trvalý režim TCP je momentálne zakázaný.\n\nPovolenie režimu TCP umožňuje Shevery zostať spustený a automaticky sa znova pripojiť na pozadí – dokonca aj bez Wi-Fi – až do reštartovania zariadenia.]]></string>
     <string name="tcp_prompt_dialog_enable"><![CDATA[Povoliť]]></string>
     <string name="tcp_prompt_dialog_later"><![CDATA[Teraz nie]]></string>
     <string name="tcp_prompt_dialog_do_not_remind"><![CDATA[Už mi to nepripomínaj]]></string>

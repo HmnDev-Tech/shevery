@@ -555,9 +555,7 @@ Android 11未満ではパソコン接続が必要です。]]></string>
     <string name="comput_no_macros">保存されたマクロはまだありません。 「マクロの記録」をクリックして、コンソール コマンドの記録を開始します。</string>
 
     <string name="tcp_prompt_dialog_title"><![CDATA[永続的な TCP モードを有効にしますか?]]></string>
-    <string name="tcp_prompt_dialog_message"><![CDATA[Shevery は実行されていますが、永続的な TCP モードは現在無効になっています。
-
-TCP モードを有効にすると、デバイスが再起動されるまで、Wi-Fi がなくても Shevery が実行され続け、バックグラウンドで自動再接続されます。]]></string>
+    <string name="tcp_prompt_dialog_message"><![CDATA[Shevery は実行されていますが、永続的な TCP モードは現在無効になっています。\n\nTCP モードを有効にすると、デバイスが再起動されるまで、Wi-Fi がなくても Shevery が実行され続け、バックグラウンドで自動再接続されます。]]></string>
     <string name="tcp_prompt_dialog_enable"><![CDATA[有効にする]]></string>
     <string name="tcp_prompt_dialog_later"><![CDATA[今じゃない]]></string>
     <string name="tcp_prompt_dialog_do_not_remind"><![CDATA[二度と思い出さないでください]]></string>
