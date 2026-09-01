@@ -553,4 +553,12 @@ Komutlara hazır.]]></string>
     <string name="settings_compat_stub_none"><![CDATA[Kullanılabilir kanal yok (önce Shevery\'i başlatın)]]></string>
     <string name="adb_pairing_tutorial_content_miui">MIUI kullanıcılarının, sistem ayarlarında "Bildirim" - "Bildirim gölgesi" bölümünden bildirim stilini "Android" olarak değiştirmeleri gerekebilir.</string>
     <string name="comput_no_macros">Henüz kayıtlı makro yok. Konsol komutlarını kaydetmeye başlamak için \'Makro Kaydet\'i tıklayın.</string>
+
+    <string name="tcp_prompt_dialog_title">Kalıcı TCP Modu Etkinleştirilsin mi?</string>
+    <string name="tcp_prompt_dialog_message">Shevery çalışıyor ancak Kalıcı TCP Modu şu anda devre dışı.
+
+TCP Modunun etkinleştirilmesi, cihazınız yeniden başlatılana kadar Shevery'nin çalışmaya devam etmesine ve Wi-Fi olmasa bile arka planda otomatik olarak yeniden bağlanmaya devam etmesine olanak tanır.</string>
+    <string name="tcp_prompt_dialog_enable">Olanak vermek</string>
+    <string name="tcp_prompt_dialog_later">Şimdi değil</string>
+    <string name="tcp_prompt_dialog_do_not_remind">Bana bir daha hatırlatma</string>
 </resources>

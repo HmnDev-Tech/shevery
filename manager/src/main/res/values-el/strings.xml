@@ -553,4 +553,12 @@
 <p>Για λεπτομερείς πληροφορίες σχετικά με τη χρήση του %1$s, πατήστε εδώ για να δείτε το έγγραφο.]]></string>
     <string name="adb_pairing_tutorial_content_miui">Οι χρήστες του MIUI μπορεί να χρειαστεί να αλλάξουν το στυλ ειδοποίησης σε "Android" από το "Notification" - "Notification shade" στις ρυθμίσεις συστήματος.</string>
     <string name="comput_no_macros">Δεν υπάρχουν ακόμα αποθηκευμένες μακροεντολές. Κάντε κλικ στο \'Εγγραφή μακροεντολής\' για να ξεκινήσετε την εγγραφή εντολών κονσόλας.</string>
+
+    <string name="tcp_prompt_dialog_title">Ενεργοποίηση μόνιμης λειτουργίας TCP;</string>
+    <string name="tcp_prompt_dialog_message">Το Severy εκτελείται, αλλά η Λειτουργία Μόνιμης TCP είναι αυτήν τη στιγμή απενεργοποιημένη.
+
+Η ενεργοποίηση της λειτουργίας TCP επιτρέπει στο Shevery να παραμείνει σε λειτουργία και να επανασυνδεθεί αυτόματα στο παρασκήνιο—ακόμα και χωρίς Wi-Fi—μέχρι να γίνει επανεκκίνηση της συσκευής σας.</string>
+    <string name="tcp_prompt_dialog_enable">Καθιστώ ικανό</string>
+    <string name="tcp_prompt_dialog_later">Όχι τώρα</string>
+    <string name="tcp_prompt_dialog_do_not_remind">Μη μου το ξαναθυμίσεις</string>
 </resources>

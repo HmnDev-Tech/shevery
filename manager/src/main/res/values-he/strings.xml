@@ -553,4 +553,12 @@ has been copied to clipboard.]]></string>
 מוכן לקבלת פקודות.]]></string>
     <string name="adb_pairing_tutorial_content_miui">ייתכן שמשתמשי MIUI יצטרכו לשנות את סגנון ההתראה ל-"Android" מ-"Notification" - "Notification shade" בהגדרות המערכת.</string>
     <string name="comput_no_macros">אין עדיין פקודות מאקרו שמורות. לחץ על \'הקלט מאקרו\' כדי להתחיל להקליט פקודות מסוף.</string>
+
+    <string name="tcp_prompt_dialog_title">להפעיל מצב TCP מתמשך?</string>
+    <string name="tcp_prompt_dialog_message">Shevery פועל, אך מצב TCP מתמשך מושבת כעת.
+
+הפעלת מצב TCP מאפשרת ל-Severy להישאר פועל ולהתחבר אוטומטית ברקע - אפילו ללא Wi-Fi - עד שהמכשיר שלך יופעל מחדש.</string>
+    <string name="tcp_prompt_dialog_enable">לְאַפשֵׁר</string>
+    <string name="tcp_prompt_dialog_later">לא עכשיו</string>
+    <string name="tcp_prompt_dialog_do_not_remind">אל תזכיר לי שוב</string>
 </resources>

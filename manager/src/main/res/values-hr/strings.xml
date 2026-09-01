@@ -542,4 +542,12 @@ Izvršavanje...]]></string>
 Za detaljne upute o korištenju %1$s-a, dodirnite da biste vidjeli dokument.]]></string>
     <string name="adb_pairing_tutorial_content_miui">Korisnici MIUI-a možda će morati promijeniti stil obavijesti na "Android" iz "Obavijest" - "Zaslon obavijesti" u postavkama sustava.</string>
     <string name="comput_no_macros">Još nema spremljenih makronaredbi. Pritisnite \'Snimi makronaredbu\' za početak snimanja naredbi konzole.</string>
+
+    <string name="tcp_prompt_dialog_title">Omogućiti trajni TCP način?</string>
+    <string name="tcp_prompt_dialog_message">Shevery je pokrenut, ali Persistent TCP Mode trenutno je onemogućen.
+
+Omogućavanje TCP načina rada omogućuje Sheveryju da ostane aktivan i da se automatski ponovno poveže u pozadini—čak i bez Wi-Fi-ja—dok se vaš uređaj ponovno ne pokrene.</string>
+    <string name="tcp_prompt_dialog_enable">Omogućiti</string>
+    <string name="tcp_prompt_dialog_later">Ne sada</string>
+    <string name="tcp_prompt_dialog_do_not_remind">Nemoj me ponovno podsjećati</string>
 </resources>

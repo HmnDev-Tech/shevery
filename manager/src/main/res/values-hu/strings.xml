@@ -554,4 +554,12 @@ Készen áll a parancsok fogadására.]]></string>
     <string name="starting_root_shell"><![CDATA[A root shell elindítása…]]></string>
     <string name="adb_pairing_tutorial_content_miui">Előfordulhat, hogy a MIUI-felhasználóknak át kell váltaniuk az értesítési stílust "Android"-ra a "Notification" - "Notification shade" közül a rendszerbeállításokban.</string>
     <string name="comput_no_macros">Még nincsenek mentett makrók. Kattintson a \'Makró rögzítése\' gombra a konzolparancsok rögzítésének elindításához.</string>
+
+    <string name="tcp_prompt_dialog_title">Engedélyezi az Állandó TCP módot?</string>
+    <string name="tcp_prompt_dialog_message">A Shever fut, de a Persistent TCP Mode jelenleg le van tiltva.
+
+A TCP mód engedélyezése lehetővé teszi, hogy a Shevery továbbra is működjön, és automatikusan újracsatlakozzon a háttérben – Wi-Fi nélkül is – egészen az eszköz újraindításáig.</string>
+    <string name="tcp_prompt_dialog_enable">Engedélyezés</string>
+    <string name="tcp_prompt_dialog_later">Most nem</string>
+    <string name="tcp_prompt_dialog_do_not_remind">Ne emlékeztess többé</string>
 </resources>

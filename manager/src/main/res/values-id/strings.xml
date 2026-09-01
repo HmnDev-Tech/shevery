@@ -553,4 +553,12 @@ Fungsi ekspor ini menggunakan SAF (Storage Access Framework). Dilaporkan bahwa M
  telah disalin ke papan klip.]]></string>
     <string name="adb_pairing_tutorial_content_miui">Pengguna MIUI mungkin perlu mengganti gaya notifikasi ke "Android" dari "Notification" - "Notification shade" di pengaturan sistem.</string>
     <string name="comput_no_macros">Belum ada makro yang disimpan. Klik \'Rekam Makro\' untuk mulai merekam perintah konsol.</string>
+
+    <string name="tcp_prompt_dialog_title">Aktifkan Mode TCP Persisten?</string>
+    <string name="tcp_prompt_dialog_message">Shevery sedang berjalan, tetapi Mode TCP Persisten saat ini dinonaktifkan.
+
+Mengaktifkan Mode TCP memungkinkan Shevery untuk tetap berjalan dan menyambung kembali secara otomatis di latar belakang—bahkan tanpa Wi-Fi—hingga perangkat Anda dimulai ulang.</string>
+    <string name="tcp_prompt_dialog_enable">Memungkinkan</string>
+    <string name="tcp_prompt_dialog_later">Tidak Sekarang</string>
+    <string name="tcp_prompt_dialog_do_not_remind">Jangan ingatkan aku lagi</string>
 </resources>

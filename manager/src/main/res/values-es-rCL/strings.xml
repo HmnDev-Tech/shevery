@@ -544,4 +544,12 @@ Listo.]]></string>
     <string name="settings_restart_dialog_message_wifi_required"><![CDATA[Se necesita conexión Wi-Fi para el primer reinicio, ya que Shevery debe conectarse al puerto de depuración inalámbrica actual antes de cambiar el ADB al 5555.]]></string>
     <string name="adb_pairing_tutorial_content_miui">Es posible que los usuarios de MIUI necesiten cambiar el estilo de notificación a "Android" desde "Notificación" - "Tono de notificación" en la configuración del sistema.</string>
     <string name="comput_no_macros">Aún no hay macros guardadas. Haga clic en \'Grabar macro\' para comenzar a grabar los comandos de la consola.</string>
+
+    <string name="tcp_prompt_dialog_title">¿Habilitar el modo TCP persistente?</string>
+    <string name="tcp_prompt_dialog_message">Shevery se está ejecutando, pero el modo TCP persistente está actualmente deshabilitado.
+
+Habilitar el modo TCP permite que Shevery siga funcionando y se reconecte automáticamente en segundo plano, incluso sin Wi-Fi, hasta que se reinicie su dispositivo.</string>
+    <string name="tcp_prompt_dialog_enable">Permitir</string>
+    <string name="tcp_prompt_dialog_later">Ahora no</string>
+    <string name="tcp_prompt_dialog_do_not_remind">No me lo vuelvas a recordar</string>
 </resources>

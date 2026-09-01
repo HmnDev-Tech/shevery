@@ -553,4 +553,12 @@
 جاهز لتلقي الأوامر.]]></string>
     <string name="adb_pairing_tutorial_content_miui">قد يحتاج مستخدمو MIUI إلى تبديل نمط الإشعارات إلى "Android" من "الإشعارات" - "مركز الإشعارات" في إعدادات النظام.</string>
     <string name="comput_no_macros">لا توجد وحدات ماكرو محفوظة حتى الآن. انقر فوق \'تسجيل ماكرو\' لبدء تسجيل أوامر وحدة التحكم.</string>
+
+    <string name="tcp_prompt_dialog_title">تمكين وضع TCP المستمر؟</string>
+    <string name="tcp_prompt_dialog_message">Shevery قيد التشغيل، ولكن وضع TCP المستمر معطل حاليًا.
+
+يتيح تمكين وضع TCP لـ Shevery الاستمرار في العمل وإعادة الاتصال تلقائيًا في الخلفية - حتى بدون شبكة Wi-Fi - حتى يتم إعادة تشغيل جهازك.</string>
+    <string name="tcp_prompt_dialog_enable">يُمكَِن</string>
+    <string name="tcp_prompt_dialog_later">ليس الآن</string>
+    <string name="tcp_prompt_dialog_do_not_remind">لا تذكرني مرة أخرى</string>
 </resources>

@@ -537,4 +537,12 @@ Ijro etilmoqda...]]></string>
     <string name="settings_compat_stub_none"><![CDATA[Hech qanday kanal mavjud emas (avvalo Sheveryni ishga tushiring)]]></string>
     <string name="adb_pairing_tutorial_content_miui">MIUI foydalanuvchilari tizim sozlamalarida bildirishnoma uslubini “Xabarnoma” – “Bildirishnomalar soyasi”dan “Android”ga o‘tkazishlari kerak bo‘lishi mumkin.</string>
     <string name="comput_no_macros">Hali saqlangan makroslar yo\'q. Konsol buyruqlarini yozishni boshlash uchun "Makroni yozib olish" tugmasini bosing.</string>
+
+    <string name="tcp_prompt_dialog_title">Doimiy TCP rejimi yoqilsinmi?</string>
+    <string name="tcp_prompt_dialog_message">Shevery ishlamoqda, lekin Doimiy TCP rejimi hozirda o'chirilgan.
+
+TCP rejimini yoqish Shevery-ga qurilmangiz qayta ishga tushirilgunga qadar, hatto Wi-Fisiz ham ishlashda davom etishi va avtomatik ravishda qayta ulanishi mumkin.</string>
+    <string name="tcp_prompt_dialog_enable">Yoqish</string>
+    <string name="tcp_prompt_dialog_later">Hozir emas</string>
+    <string name="tcp_prompt_dialog_do_not_remind">Menga boshqa eslatma</string>
 </resources>

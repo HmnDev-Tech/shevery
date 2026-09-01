@@ -553,4 +553,10 @@ Pronto para receber comandos.]]></string>
     <string name="settings_compat_stub_none"><![CDATA[Nenhum canal disponível (comece pelo Shevery primeiro)]]></string>
     <string name="adb_pairing_tutorial_content_miui">Os usuários MIUI podem precisar mudar o estilo de notificação para "Android" de "Notificação" - "Tom de notificação" nas configurações do sistema.</string>
     <string name="comput_no_macros">Nenhuma macro salva ainda. Clique em \'Gravar Macro\' para começar a gravar comandos do console.</string>
+
+    <string name="tcp_prompt_dialog_title">Habilitar modo TCP persistente?</string>
+    <string name="tcp_prompt_dialog_message">Error 500 (Server Error)!!1500.That’s an error.There was an error. Please try again later.That’s all we know.</string>
+    <string name="tcp_prompt_dialog_enable">Habilitar</string>
+    <string name="tcp_prompt_dialog_later">Agora não</string>
+    <string name="tcp_prompt_dialog_do_not_remind">Não me lembre de novo</string>
 </resources>

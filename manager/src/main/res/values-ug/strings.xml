@@ -553,4 +553,12 @@ You may need to restart Shevery for the operation to take effect.]]></string>
     <string name="home_dhizuku_description"><![CDATA[Dhizuku باشقۇرىدىغان ئۈسكۈنىلەرگە قارىتا، ئۈسكۈنە ئىگىسى ھوقۇقىدىن پايدىلىنىپ Shevery نى بىۋاستە قوزغىتالايسىز.]]></string>
     <string name="comput_no_macros"><![CDATA[تېخىچە ساقلىۋېلىنغان ماكرو يوق. \'Record Macro\' نى چېكىپ، كونۇپكا بۇيرۇقىنى ئۈنگە ئېلىشنى باشلاڭ.]]></string>
     <string name="adb_pairing_tutorial_content_miui">MIUI ئىشلەتكۈچىلەر سىستېما تەڭشىكىدە ئۇقتۇرۇش ئۇسلۇبىنى «ئۇقتۇرۇش» - «ئۇقتۇرۇش سايىسى» دىن «ئاندىرويىد» قا ئۆزگەرتىشى مۇمكىن.</string>
+
+    <string name="tcp_prompt_dialog_title">تۇراقلىق TCP ھالىتىنى قوزغىتامسىز؟</string>
+    <string name="tcp_prompt_dialog_message">Shevery ئىجرا بولۇۋاتىدۇ ، ئەمما ئىزچىل TCP ھالىتى چەكلەنگەن.
+
+TCP ھالىتىنى قوزغىتىش Shevery نى ئۈسكۈنىڭىز قايتا قوزغىتىلغۇچە ، ھەتتا Wi-Fi بولمىسىمۇ ئارقا سۇپىدا ئاپتوماتىك ئۇلىنالايدۇ.</string>
+    <string name="tcp_prompt_dialog_enable">قوزغىتىش</string>
+    <string name="tcp_prompt_dialog_later">ھازىر ئەمەس</string>
+    <string name="tcp_prompt_dialog_do_not_remind">ماڭا قايتا ئەسكەرتمەڭ</string>
 </resources>

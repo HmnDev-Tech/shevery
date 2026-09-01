@@ -553,4 +553,12 @@ Sẵn sàng nhận lệnh.]]></string>
     <string name="settings_compat_stub_none"><![CDATA[Không có kênh nào khả dụng (bắt đầu từ Shevery trước)]]></string>
     <string name="adb_pairing_tutorial_content_miui">Người dùng MIUI có thể cần chuyển kiểu thông báo sang "Android" từ "Thông báo" - "Bóng thông báo" trong cài đặt hệ thống.</string>
     <string name="comput_no_macros">Chưa có macro nào được lưu. Nhấp vào \'Ghi Macro\' để bắt đầu ghi các lệnh trên bàn điều khiển.</string>
+
+    <string name="tcp_prompt_dialog_title">Bật Chế độ TCP liên tục?</string>
+    <string name="tcp_prompt_dialog_message">Shevery đang chạy nhưng Chế độ TCP liên tục hiện bị tắt.
+
+Việc bật Chế độ TCP cho phép Shevery tiếp tục chạy và tự động kết nối lại ở chế độ nền—ngay cả khi không có Wi-Fi—cho đến khi thiết bị của bạn được khởi động lại.</string>
+    <string name="tcp_prompt_dialog_enable">Cho phép</string>
+    <string name="tcp_prompt_dialog_later">Không phải bây giờ</string>
+    <string name="tcp_prompt_dialog_do_not_remind">Đừng nhắc tôi nữa</string>
 </resources>

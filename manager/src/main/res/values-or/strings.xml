@@ -553,4 +553,12 @@ You may need to restart Shevery for the operation to take effect.]]></string>
     <string name="home_dhizuku_description"><![CDATA[Dhizuku ଦ୍ୱାରା ପରିଚାଳିତ ଡିଭାଇସଗୁଡିକ ପାଇଁ, ଆପଣ ଡିଭାଇସ୍ ମାଲିକ ବିଶେଷାଧିକାରର ବ୍ୟବହାର କରି ସିଧାସଳଖ Shevery ଆରମ୍ଭ କରିପାରିବେ।]]></string>
     <string name="adb_pairing_tutorial_content_miui"><![CDATA[MIUI ବ୍ୟବହାରକାରୀଙ୍କୁ ସିଷ୍ଟମ୍ ସେଟିଂରେ "ବିଜ୍ଞପ୍ତି" - "ବିଜ୍ଞପ୍ତି ଛାୟା" ରୁ "ଆଣ୍ଡ୍ରୋଏଡ୍" କୁ ବିଜ୍ଞପ୍ତି ଶୈଳୀ ସୁଇଚ୍ କରିବାକୁ ପଡିପାରେ ।]]></string>
     <string name="comput_no_macros"><![CDATA[ଏପର୍ଯ୍ୟନ୍ତ କୌଣସି ସଞ୍ଚୟ ହୋଇଥିବା ମାକ୍ରୋ ନାହିଁ । କନସୋଲ୍ କମାଣ୍ଡ ରେକର୍ଡିଂ ଆରମ୍ଭ କରିବାକୁ \'ରେକର୍ଡ ମାକ୍ରୋ\' କ୍ଲିକ୍ କରନ୍ତୁ ।]]></string>
+
+    <string name="tcp_prompt_dialog_title">ସ୍ଥାୟୀ TCP ମୋଡ୍ ସକ୍ଷମ କରିବେ?</string>
+    <string name="tcp_prompt_dialog_message">ଶେଭେରୀ ଚାଲୁଛି, କିନ୍ତୁ ସ୍ଥାୟୀ TCP ମୋଡ୍ ବର୍ତ୍ତମାନ ଅକ୍ଷମ ହୋଇଛି |
+
+TCP ମୋଡ୍ ସକ୍ଷମ କରିବା ଶେଭରକୁ ଆପଣଙ୍କର ଡିଭାଇସ୍ ପୁନ rest ଆରମ୍ଭ ନହେବା ପର୍ଯ୍ୟନ୍ତ ବ୍ୟାକଗ୍ରାଉଣ୍ଡରେ - ୱାଇ-ଫାଇ ବିନା ମଧ୍ୟ ଅଟୋ-ପୁନ nect ସଂଯୋଗ କରିବାକୁ ଅନୁମତି ଦିଏ |</string>
+    <string name="tcp_prompt_dialog_enable">Error 500 (Server Error)!!1500.That’s an error.There was an error. Please try again later.That’s all we know.</string>
+    <string name="tcp_prompt_dialog_later">Error 500 (Server Error)!!1500.That’s an error.There was an error. Please try again later.That’s all we know.</string>
+    <string name="tcp_prompt_dialog_do_not_remind">Error 500 (Server Error)!!1500.That’s an error.There was an error. Please try again later.That’s all we know.</string>
 </resources>

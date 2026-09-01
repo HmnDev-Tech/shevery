@@ -542,4 +542,10 @@ Dalam pelaksanaan...]]></string>
 Mengenai penggunaan terperinci %1$s, ketik untuk melihat dokumen.]]></string>
     <string name="adb_pairing_tutorial_content_miui">Pengguna MIUI mungkin perlu menukar gaya pemberitahuan kepada "Android" daripada "Pemberitahuan" - "Teduhan pemberitahuan" dalam tetapan sistem.</string>
     <string name="comput_no_macros">Tiada makro disimpan lagi. Klik \'Rekod Makro\' untuk mula merakam arahan konsol.</string>
+
+    <string name="tcp_prompt_dialog_title">Dayakan Mod TCP Berterusan?</string>
+    <string name="tcp_prompt_dialog_message">Error 500 (Server Error)!!1500.That’s an error.There was an error. Please try again later.That’s all we know.</string>
+    <string name="tcp_prompt_dialog_enable">Dayakan</string>
+    <string name="tcp_prompt_dialog_later">Error 500 (Server Error)!!1500.That’s an error.There was an error. Please try again later.That’s all we know.</string>
+    <string name="tcp_prompt_dialog_do_not_remind">Error 500 (Server Error)!!1500.That’s an error.There was an error. Please try again later.That’s all we know.</string>
 </resources>

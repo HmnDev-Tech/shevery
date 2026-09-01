@@ -553,4 +553,12 @@ Gatava komandu pieņemšanai.]]></string>
 <p>Lai uzzinātu sīkāku informāciju par %1$s lietošanu, pieskarieties, lai apskatītu dokumentu.]]></string>
     <string name="adb_pairing_tutorial_content_miui">MIUI lietotājiem, iespējams, sistēmas iestatījumos būs jāpārslēdz paziņojumu stils uz "Android" no "Notification" - "Notification shade".</string>
     <string name="comput_no_macros">Vēl nav saglabātu makro. Noklikšķiniet uz \'Ierakstīt makro\', lai sāktu ierakstīt konsoles komandas.</string>
+
+    <string name="tcp_prompt_dialog_title">Vai iespējot pastāvīgo TCP režīmu?</string>
+    <string name="tcp_prompt_dialog_message">Shevery darbojas, bet pastāvīgais TCP režīms pašlaik ir atspējots.
+
+TCP režīma iespējošana ļauj Shevery turpināt darboties un automātiski atjaunot savienojumu fonā — pat bez Wi-Fi — līdz ierīce tiek restartēta.</string>
+    <string name="tcp_prompt_dialog_enable">Iespējot</string>
+    <string name="tcp_prompt_dialog_later">Ne tagad</string>
+    <string name="tcp_prompt_dialog_do_not_remind">Neatgādini man vēlreiz</string>
 </resources>

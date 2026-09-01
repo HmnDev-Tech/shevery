@@ -538,4 +538,12 @@
     <string name="settings_compat_stub_none"><![CDATA[کوئی چینل دستیاب نہیں ہے (سب سے پہلے شیوری شروع کریں)]]></string>
     <string name="adb_pairing_tutorial_content_miui">MIUI صارفین کو سسٹم سیٹنگز میں "Notification" - "Notification shade" سے "Android" میں نوٹیفکیشن اسٹائل کو تبدیل کرنے کی ضرورت پڑسکتی ہے۔</string>
     <string name="comput_no_macros">ابھی تک کوئی محفوظ شدہ میکرو نہیں ہے۔ کنسول کمانڈز کی ریکارڈنگ شروع کرنے کے لیے \'ریکارڈ میکرو\' پر کلک کریں۔</string>
+
+    <string name="tcp_prompt_dialog_title">مستقل TCP وضع کو فعال کریں؟</string>
+    <string name="tcp_prompt_dialog_message">شیوری چل رہا ہے، لیکن پرسسٹنٹ ٹی سی پی موڈ فی الحال غیر فعال ہے۔
+
+TCP موڈ کو فعال کرنے سے Shevery کو چلتے رہنے اور بیک گراؤنڈ میں خود بخود دوبارہ جڑنے کی اجازت ملتی ہے — یہاں تک کہ وائی فائی کے بغیر — جب تک کہ آپ کا آلہ دوبارہ شروع نہ ہو جائے۔</string>
+    <string name="tcp_prompt_dialog_enable">فعال کریں۔</string>
+    <string name="tcp_prompt_dialog_later">ابھی نہیں۔</string>
+    <string name="tcp_prompt_dialog_do_not_remind">مجھے دوبارہ یاد نہ کرو</string>
 </resources>

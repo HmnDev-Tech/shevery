@@ -553,4 +553,12 @@ Redo för kommandon.]]></string>
     <string name="settings_compat_stub_none"><![CDATA[Ingen kanal tillgänglig (börja med Shevery först)]]></string>
     <string name="adb_pairing_tutorial_content_miui">MIUI-användare kan behöva byta meddelandestil till "Android" från "Meddelande" - "Meddelandeskärm" i systeminställningarna.</string>
     <string name="comput_no_macros">Inga sparade makron ännu. Klicka på \'Spela in makro\' för att börja spela in konsolkommandon.</string>
+
+    <string name="tcp_prompt_dialog_title">Aktivera beständigt TCP-läge?</string>
+    <string name="tcp_prompt_dialog_message">Shevery körs, men beständigt TCP-läge är för närvarande inaktiverat.
+
+Genom att aktivera TCP-läge kan Shevery fortsätta att köra och återansluta automatiskt i bakgrunden – även utan Wi-Fi – tills din enhet startas om.</string>
+    <string name="tcp_prompt_dialog_enable">Aktivera</string>
+    <string name="tcp_prompt_dialog_later">Inte nu</string>
+    <string name="tcp_prompt_dialog_do_not_remind">Påminn mig inte igen</string>
 </resources>

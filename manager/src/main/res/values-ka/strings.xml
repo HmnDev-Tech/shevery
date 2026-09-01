@@ -542,4 +542,12 @@
 %1$s-ის დეტალური გამოყენებისთვის, დააჭირეთ დოკუმენტის სანახავად.]]></string>
     <string name="adb_pairing_tutorial_content_miui">MIUI მომხმარებლებს შეიძლება დასჭირდეთ შეტყობინებების სტილის შეცვლა „Android“-ზე „Notification“-დან - „Notification shade“ სისტემის პარამეტრებში.</string>
     <string name="comput_no_macros">შენახული მაკრო ჯერ არ არის. დააწკაპუნეთ \'მაკროს ჩაწერა\' კონსოლის ბრძანებების ჩაწერის დასაწყებად.</string>
+
+    <string name="tcp_prompt_dialog_title">ჩართოთ მუდმივი TCP რეჟიმი?</string>
+    <string name="tcp_prompt_dialog_message">Shevery მუშაობს, მაგრამ მუდმივი TCP რეჟიმი ამჟამად გამორთულია.
+
+TCP რეჟიმის ჩართვა Shevery-ს საშუალებას აძლევს დარჩეს გაშვებული და ავტომატური ხელახლა დაკავშირება ფონზე — Wi-Fi-ს გარეშეც კი — სანამ თქვენი მოწყობილობა არ გადაიტვირთება.</string>
+    <string name="tcp_prompt_dialog_enable">ჩართვა</string>
+    <string name="tcp_prompt_dialog_later">ახლა არა</string>
+    <string name="tcp_prompt_dialog_do_not_remind">აღარ გამახსენო</string>
 </resources>

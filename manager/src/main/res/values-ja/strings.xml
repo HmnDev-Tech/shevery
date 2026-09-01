@@ -553,4 +553,12 @@ Android 11未満ではパソコン接続が必要です。]]></string>
     <string name="settings_restart_dialog_message_wifi_required"><![CDATA[最初の再起動時にはWi-Fiが必要です。これは、ADBを5555に切り替える前に、Sheveryが現在のワイヤレスデバッグポートに接続する必要があるためです。]]></string>
     <string name="adb_pairing_tutorial_content_miui">MIUIユーザーは、システム設定の「通知」-「通知シェード」から通知スタイルを「Android」に切り替える必要がある場合があります。</string>
     <string name="comput_no_macros">保存されたマクロはまだありません。 「マクロの記録」をクリックして、コンソール コマンドの記録を開始します。</string>
+
+    <string name="tcp_prompt_dialog_title">永続的な TCP モードを有効にしますか?</string>
+    <string name="tcp_prompt_dialog_message">Shevery は実行されていますが、永続的な TCP モードは現在無効になっています。
+
+TCP モードを有効にすると、デバイスが再起動されるまで、Wi-Fi がなくても Shevery が実行され続け、バックグラウンドで自動再接続されます。</string>
+    <string name="tcp_prompt_dialog_enable">有効にする</string>
+    <string name="tcp_prompt_dialog_later">今じゃない</string>
+    <string name="tcp_prompt_dialog_do_not_remind">二度と思い出さないでください</string>
 </resources>

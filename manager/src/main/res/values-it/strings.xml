@@ -553,4 +553,12 @@ La funzione di esportazione utilizza SAF (Storage Access Framework). È stato se
 è stato copiato negli appunti.]]></string>
     <string name="adb_pairing_tutorial_content_miui">Gli utenti MIUI potrebbero dover cambiare lo stile di notifica su "Android" da "Notifica" - "Ombreggiatura notifiche" nelle impostazioni di sistema.</string>
     <string name="comput_no_macros">Nessuna macro ancora salvata. Fare clic su \'Registra macro\' per avviare la registrazione dei comandi della console.</string>
+
+    <string name="tcp_prompt_dialog_title">Abilitare la modalità TCP persistente?</string>
+    <string name="tcp_prompt_dialog_message">Shevery è in esecuzione, ma la modalità TCP persistente è attualmente disabilitata.
+
+L'abilitazione della modalità TCP consente a Shevery di rimanere in esecuzione e di riconnettersi automaticamente in background, anche senza Wi-Fi, fino al riavvio del dispositivo.</string>
+    <string name="tcp_prompt_dialog_enable">Abilitare</string>
+    <string name="tcp_prompt_dialog_later">Non adesso</string>
+    <string name="tcp_prompt_dialog_do_not_remind">Non ricordarmelo più</string>
 </resources>

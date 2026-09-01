@@ -538,4 +538,12 @@
 %1$s-ന്റെ വിശദമായ ഉപയോഗം കാണുന്നതിന് ഡോക്യുമെന്റ് കാണുക.]]></string>
     <string name="adb_pairing_tutorial_content_miui">MIUI ഉപയോക്താക്കൾക്ക് സിസ്റ്റം ക്രമീകരണങ്ങളിൽ "അറിയിപ്പ്" - "അറിയിപ്പ് ഷേഡ്" എന്നതിൽ നിന്ന് "Android" എന്നതിലേക്ക് അറിയിപ്പ് ശൈലി മാറേണ്ടി വന്നേക്കാം.</string>
     <string name="comput_no_macros">ഇതുവരെ സംരക്ഷിച്ച മാക്രോകളൊന്നുമില്ല. കൺസോൾ കമാൻഡുകൾ റെക്കോർഡുചെയ്യാൻ ആരംഭിക്കുന്നതിന് \'റെക്കോർഡ് മാക്രോ\' ക്ലിക്ക് ചെയ്യുക.</string>
+
+    <string name="tcp_prompt_dialog_title">Error 500 (Server Error)!!1500.That’s an error.There was an error. Please try again later.That’s all we know.</string>
+    <string name="tcp_prompt_dialog_message">Shevery പ്രവർത്തിക്കുന്നു, എന്നാൽ പെർസിസ്റ്റൻ്റ് TCP മോഡ് നിലവിൽ പ്രവർത്തനരഹിതമാണ്.
+
+TCP മോഡ് പ്രവർത്തനക്ഷമമാക്കുന്നത്, നിങ്ങളുടെ ഉപകരണം പുനരാരംഭിക്കുന്നത് വരെ, Wi-Fi ഇല്ലാതെ പോലും-ഓട്ടം തുടരാനും പശ്ചാത്തലത്തിൽ സ്വയമേവ വീണ്ടും കണക്റ്റുചെയ്യാനും Shevery-യെ അനുവദിക്കുന്നു.</string>
+    <string name="tcp_prompt_dialog_enable">പ്രവർത്തനക്ഷമമാക്കുക</string>
+    <string name="tcp_prompt_dialog_later">Error 500 (Server Error)!!1500.That’s an error.There was an error. Please try again later.That’s all we know.</string>
+    <string name="tcp_prompt_dialog_do_not_remind">എന്നെ വീണ്ടും ഓർമ്മിപ്പിക്കരുത്</string>
 </resources>

@@ -553,4 +553,12 @@
     <string name="settings_compat_stub_none"><![CDATA[Канал недоступний (спочатку запустіть Shevery)]]></string>
     <string name="adb_pairing_tutorial_content_miui">Користувачам MIUI може знадобитися змінити стиль сповіщень на «Android» зі «Сповіщення» - «Панель сповіщень» у налаштуваннях системи.</string>
     <string name="comput_no_macros">Ще немає збережених макросів. Натисніть \'Записати макрос\', щоб почати запис консольних команд.</string>
+
+    <string name="tcp_prompt_dialog_title">Увімкнути постійний режим TCP?</string>
+    <string name="tcp_prompt_dialog_message">Shevery працює, але постійний режим TCP наразі вимкнено.
+
+Увімкнення режиму TCP дозволяє Shevery працювати й автоматично повторно підключатися у фоновому режимі, навіть без Wi-Fi, доки ваш пристрій не буде перезапущено.</string>
+    <string name="tcp_prompt_dialog_enable">Увімкнути</string>
+    <string name="tcp_prompt_dialog_later">Не зараз</string>
+    <string name="tcp_prompt_dialog_do_not_remind">Не нагадуй мені знову</string>
 </resources>

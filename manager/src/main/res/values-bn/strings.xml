@@ -542,4 +542,12 @@
 %1$s-এর বিস্তারিত ব্যবহারের জন্য ডকুমেন্ট দেখতে ট্যাপ করুন।]]></string>
     <string name="adb_pairing_tutorial_content_miui">MIUI ব্যবহারকারীদের সিস্টেম সেটিংসে "নোটিফিকেশন" - "নোটিফিকেশন শেড" থেকে "Android"-এ বিজ্ঞপ্তি শৈলী পরিবর্তন করতে হতে পারে।</string>
     <string name="comput_no_macros">এখনও কোন সংরক্ষিত ম্যাক্রো. কনসোল কমান্ড রেকর্ড করা শুরু করতে \'রেকর্ড ম্যাক্রো\' ক্লিক করুন।</string>
+
+    <string name="tcp_prompt_dialog_title">স্থায়ী TCP মোড সক্ষম করবেন?</string>
+    <string name="tcp_prompt_dialog_message">Shevery চলছে, কিন্তু Persistent TCP মোড বর্তমানে নিষ্ক্রিয়।
+
+TCP মোড সক্ষম করলে আপনার ডিভাইস রিস্টার্ট না হওয়া পর্যন্ত শেভেরিকে চলমান থাকতে এবং ব্যাকগ্রাউন্ডে স্বয়ংক্রিয়ভাবে-পুনঃসংযোগ করার অনুমতি দেয়-এমনকি Wi-Fi ছাড়াই।</string>
+    <string name="tcp_prompt_dialog_enable">সক্ষম করুন</string>
+    <string name="tcp_prompt_dialog_later">এখন না</string>
+    <string name="tcp_prompt_dialog_do_not_remind">আমাকে আবার মনে করিয়ে দিও না</string>
 </resources>

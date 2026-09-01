@@ -553,4 +553,12 @@ Die Exportfunktion nutzt SAF (Storage Access Framework). Es gibt Berichte, dass 
 wurde in die Zwischenablage kopiert.]]></string>
     <string name="adb_pairing_tutorial_content_miui">MIUI-Benutzer müssen möglicherweise den Benachrichtigungsstil in den Systemeinstellungen von „Benachrichtigung“ – „Benachrichtigungsschatten“ auf „Android“ umstellen.</string>
     <string name="comput_no_macros">Noch keine gespeicherten Makros. Klicken Sie auf „Makro aufzeichnen“, um mit der Aufzeichnung von Konsolenbefehlen zu beginnen.</string>
+
+    <string name="tcp_prompt_dialog_title">Persistenten TCP-Modus aktivieren?</string>
+    <string name="tcp_prompt_dialog_message">Shevery wird ausgeführt, aber der persistente TCP-Modus ist derzeit deaktiviert.
+
+Durch die Aktivierung des TCP-Modus kann Shevery weiterlaufen und im Hintergrund automatisch die Verbindung wiederherstellen – auch ohne WLAN –, bis Ihr Gerät neu gestartet wird.</string>
+    <string name="tcp_prompt_dialog_enable">Aktivieren</string>
+    <string name="tcp_prompt_dialog_later">Nicht jetzt</string>
+    <string name="tcp_prompt_dialog_do_not_remind">Erinnere mich nicht noch einmal daran</string>
 </resources>
