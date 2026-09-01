@@ -555,9 +555,9 @@ Listo para comandos.]]></string>
     <string name="comput_no_macros">Aún no hay macros guardadas. Haga clic en \'Grabar macro\' para comenzar a grabar los comandos de la consola.</string>
 
     <!-- TCP Mode Enable Prompt Dialog -->
-    <string name="tcp_prompt_dialog_title"><![CDATA[¿Activar el modo TCP persistente?]]></string>
-    <string name="tcp_prompt_dialog_message"><![CDATA[Shevery está en ejecución, pero el modo TCP persistente está desactivado.\n\nActivar el modo TCP permite a Shevery mantenerse activo y reconectarse automáticamente en segundo plano, incluso sin Wi-Fi, hasta que el dispositivo se reinicie.]]></string>
-    <string name="tcp_prompt_dialog_enable"><![CDATA[Activar]]></string>
-    <string name="tcp_prompt_dialog_later"><![CDATA[Ahora no]]></string>
-    <string name="tcp_prompt_dialog_do_not_remind"><![CDATA[No volver a recordar]]></string>
+    
+    
+    
+    
+    
 </resources>

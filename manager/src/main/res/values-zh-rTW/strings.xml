@@ -554,9 +554,9 @@
     <string name="comput_no_macros">還沒有儲存的巨集。按一下「錄製巨集」開始錄製控制台指令。</string>
 
     <!-- TCP Mode Enable Prompt Dialog -->
-    <string name="tcp_prompt_dialog_title"><![CDATA[開啟持久 TCP 模式？]]></string>
-    <string name="tcp_prompt_dialog_message"><![CDATA[Shevery 正在運行，但持久 TCP 模式尚未開啟。\n\n開啟 TCP 模式可使 Shevery 在離線或背景自動重連（即使未連線 Wi-Fi），直到裝置重新啟動。]]></string>
-    <string name="tcp_prompt_dialog_enable"><![CDATA[開啟]]></string>
-    <string name="tcp_prompt_dialog_later"><![CDATA[暫不開啟]]></string>
-    <string name="tcp_prompt_dialog_do_not_remind"><![CDATA[不再提醒]]></string>
+    
+    
+    
+    
+    
 </resources>

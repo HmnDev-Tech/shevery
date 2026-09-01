@@ -554,9 +554,9 @@
     <string name="adb_pairing_tutorial_content_miui">Пользователям MIUI может потребоваться переключить стиль уведомлений на «Android» из «Уведомление» — «Тень уведомлений» в настройках системы.</string>
     <string name="comput_no_macros">Сохраненных макросов пока нет. Нажмите «Запись макроса», чтобы начать запись консольных команд.</string>
 
-    <string name="tcp_prompt_dialog_title">Включить постоянный режим TCP?</string>
-    <string name="tcp_prompt_dialog_message">Shevery работает, но режим постоянного TCP в настоящее время отключен.\n\nВключение режима TCP позволяет Shevery продолжать работать и автоматически переподключаться в фоновом режиме — даже без Wi-Fi — до тех пор, пока ваше устройство не будет перезагружено.</string>
-    <string name="tcp_prompt_dialog_enable">Давать возможность</string>
-    <string name="tcp_prompt_dialog_later">Не сейчас</string>
-    <string name="tcp_prompt_dialog_do_not_remind">Не напоминай мне больше</string>
+    <string name="tcp_prompt_dialog_title"><![CDATA[Включить постоянный режим TCP?]]></string>
+    <string name="tcp_prompt_dialog_message"><![CDATA[Shevery работает, но режим постоянного TCP в настоящее время отключен.\n\nВключение режима TCP позволяет Shevery продолжать работать и автоматически переподключаться в фоновом режиме — даже без Wi-Fi — до тех пор, пока ваше устройство не будет перезагружено.]]></string>
+    <string name="tcp_prompt_dialog_enable"><![CDATA[Давать возможность]]></string>
+    <string name="tcp_prompt_dialog_later"><![CDATA[Не сейчас]]></string>
+    <string name="tcp_prompt_dialog_do_not_remind"><![CDATA[Не напоминай мне больше]]></string>
 </resources>

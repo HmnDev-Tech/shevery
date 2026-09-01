@@ -554,9 +554,9 @@ Gata să primească comenzi.]]></string>
     <string name="adb_pairing_tutorial_content_miui">Este posibil ca utilizatorii MIUI să fie nevoiți să schimbe stilul de notificare la „Android” de la „Notificare” - „Nuanță de notificare” în setările sistemului.</string>
     <string name="comput_no_macros">Nicio macrocomandă salvată încă. Faceți clic pe „Înregistrați macrocomandă” pentru a începe înregistrarea comenzilor consolei.</string>
 
-    <string name="tcp_prompt_dialog_title">Activați modul TCP persistent?</string>
-    <string name="tcp_prompt_dialog_message">Shevery rulează, dar Modul TCP persistent este în prezent dezactivat.\n\nActivarea modului TCP îi permite lui Shevery să funcționeze și să se reconecteze automat în fundal, chiar și fără Wi-Fi, până când dispozitivul este repornit.</string>
-    <string name="tcp_prompt_dialog_enable">Permite</string>
-    <string name="tcp_prompt_dialog_later">Nu acum</string>
-    <string name="tcp_prompt_dialog_do_not_remind">Nu-mi mai aduce aminte</string>
+    <string name="tcp_prompt_dialog_title"><![CDATA[Activați modul TCP persistent?]]></string>
+    <string name="tcp_prompt_dialog_message"><![CDATA[Shevery rulează, dar Modul TCP persistent este în prezent dezactivat.\n\nActivarea modului TCP îi permite lui Shevery să funcționeze și să se reconecteze automat în fundal, chiar și fără Wi-Fi, până când dispozitivul este repornit.]]></string>
+    <string name="tcp_prompt_dialog_enable"><![CDATA[Permite]]></string>
+    <string name="tcp_prompt_dialog_later"><![CDATA[Nu acum]]></string>
+    <string name="tcp_prompt_dialog_do_not_remind"><![CDATA[Nu-mi mai aduce aminte]]></string>
 </resources>

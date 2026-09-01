@@ -554,9 +554,9 @@ Valmis käskude vastuvõtmiseks.]]></string>
     <string name="adb_pairing_tutorial_content_miui">MIUI kasutajad peavad võib-olla süsteemiseadetes vahetama teavitusstiiliks "Teavitamine" - "Teavitusvari".</string>
     <string name="comput_no_macros">Salvestatud makrosid pole veel. Konsooli käskude salvestamise alustamiseks klõpsake \'Salvesta makro\'.</string>
 
-    <string name="tcp_prompt_dialog_title">Kas lubada püsiv TCP-režiim?</string>
-    <string name="tcp_prompt_dialog_message">Shevery töötab, kuid püsiv TCP-režiim on praegu keelatud.\n\nTCP-režiimi lubamine võimaldab Sheveryl töötada ja taustal automaatselt uuesti ühenduda (isegi ilma WiFi-ühenduseta), kuni teie seade taaskäivitatakse.</string>
-    <string name="tcp_prompt_dialog_enable">Luba</string>
-    <string name="tcp_prompt_dialog_later">Mitte praegu</string>
-    <string name="tcp_prompt_dialog_do_not_remind">Ära tuleta mulle uuesti meelde</string>
+    <string name="tcp_prompt_dialog_title"><![CDATA[Kas lubada püsiv TCP-režiim?]]></string>
+    <string name="tcp_prompt_dialog_message"><![CDATA[Shevery töötab, kuid püsiv TCP-režiim on praegu keelatud.\n\nTCP-režiimi lubamine võimaldab Sheveryl töötada ja taustal automaatselt uuesti ühenduda (isegi ilma WiFi-ühenduseta), kuni teie seade taaskäivitatakse.]]></string>
+    <string name="tcp_prompt_dialog_enable"><![CDATA[Luba]]></string>
+    <string name="tcp_prompt_dialog_later"><![CDATA[Mitte praegu]]></string>
+    <string name="tcp_prompt_dialog_do_not_remind"><![CDATA[Ära tuleta mulle uuesti meelde]]></string>
 </resources>

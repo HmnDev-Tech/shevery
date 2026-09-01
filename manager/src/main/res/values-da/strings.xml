@@ -554,9 +554,9 @@ Klar til kommandoer.]]></string>
     <string name="adb_pairing_tutorial_content_miui">MIUI-brugere skal muligvis skifte notifikationsstil til "Android" fra "Notifikation" - "Notifikationsskygge" i systemindstillinger.</string>
     <string name="comput_no_macros">Ingen gemte makroer endnu. Klik på \'Optag makro\' for at begynde at optage konsolkommandoer.</string>
 
-    <string name="tcp_prompt_dialog_title">Aktiver vedvarende TCP-tilstand?</string>
-    <string name="tcp_prompt_dialog_message">Shevery kører, men vedvarende TCP-tilstand er i øjeblikket deaktiveret.\n\nAktivering af TCP-tilstand gør det muligt for Shevery at forblive kørende og automatisk genoprette forbindelsen i baggrunden – selv uden Wi-Fi – indtil din enhed genstartes.</string>
-    <string name="tcp_prompt_dialog_enable">Aktiver</string>
-    <string name="tcp_prompt_dialog_later">Ikke nu</string>
-    <string name="tcp_prompt_dialog_do_not_remind">Mind mig ikke om det igen</string>
+    <string name="tcp_prompt_dialog_title"><![CDATA[Aktiver vedvarende TCP-tilstand?]]></string>
+    <string name="tcp_prompt_dialog_message"><![CDATA[Shevery kører, men vedvarende TCP-tilstand er i øjeblikket deaktiveret.\n\nAktivering af TCP-tilstand gør det muligt for Shevery at forblive kørende og automatisk genoprette forbindelsen i baggrunden – selv uden Wi-Fi – indtil din enhed genstartes.]]></string>
+    <string name="tcp_prompt_dialog_enable"><![CDATA[Aktiver]]></string>
+    <string name="tcp_prompt_dialog_later"><![CDATA[Ikke nu]]></string>
+    <string name="tcp_prompt_dialog_do_not_remind"><![CDATA[Mind mig ikke om det igen]]></string>
 </resources>

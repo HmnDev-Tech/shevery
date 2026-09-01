@@ -554,9 +554,9 @@ Valmis ottamaan komentoja vastaan.]]></string>
     <string name="adb_pairing_tutorial_content_miui">MIUI-käyttäjien on ehkä vaihdettava ilmoitustyyliksi "Android" järjestelmäasetuksista "Ilmoitus" - "Ilmoitussävy".</string>
     <string name="comput_no_macros">Ei vielä tallennettuja makroja. Aloita konsolin komentojen tallennus napsauttamalla \'Tallenna makro\'.</string>
 
-    <string name="tcp_prompt_dialog_title">Ota pysyvä TCP-tila käyttöön?</string>
-    <string name="tcp_prompt_dialog_message">Shever on käynnissä, mutta Pysyvä TCP-tila on tällä hetkellä poissa käytöstä.\n\nTCP-tilan käyttöönotto sallii Sheveryn pysyä käynnissä ja muodostaa yhteyden automaattisesti taustalla – jopa ilman Wi-Fi-yhteyttä – kunnes laitteesi käynnistetään uudelleen.</string>
-    <string name="tcp_prompt_dialog_enable">Ota käyttöön</string>
-    <string name="tcp_prompt_dialog_later">Ei nyt</string>
-    <string name="tcp_prompt_dialog_do_not_remind">Älä muistuta minua uudelleen</string>
+    <string name="tcp_prompt_dialog_title"><![CDATA[Ota pysyvä TCP-tila käyttöön?]]></string>
+    <string name="tcp_prompt_dialog_message"><![CDATA[Shever on käynnissä, mutta Pysyvä TCP-tila on tällä hetkellä poissa käytöstä.\n\nTCP-tilan käyttöönotto sallii Sheveryn pysyä käynnissä ja muodostaa yhteyden automaattisesti taustalla – jopa ilman Wi-Fi-yhteyttä – kunnes laitteesi käynnistetään uudelleen.]]></string>
+    <string name="tcp_prompt_dialog_enable"><![CDATA[Ota käyttöön]]></string>
+    <string name="tcp_prompt_dialog_later"><![CDATA[Ei nyt]]></string>
+    <string name="tcp_prompt_dialog_do_not_remind"><![CDATA[Älä muistuta minua uudelleen]]></string>
 </resources>

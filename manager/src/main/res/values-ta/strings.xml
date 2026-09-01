@@ -548,9 +548,9 @@
     <string name="adb_pairing_tutorial_content_miui">MIUI பயனர்கள் சிஸ்டம் அமைப்புகளில் "அறிவிப்பு" - "அறிவிப்பு நிழல்" இலிருந்து "Android" க்கு அறிவிப்பு பாணியை மாற்ற வேண்டியிருக்கலாம்.</string>
     <string name="comput_no_macros">இதுவரை சேமிக்கப்பட்ட மேக்ரோக்கள் எதுவும் இல்லை. கன்சோல் கட்டளைகளைப் பதிவுசெய்யத் தொடங்க \'பதிவு மேக்ரோ\' என்பதைக் கிளிக் செய்யவும்.</string>
 
-    <string name="tcp_prompt_dialog_title">நிரந்தர TCP பயன்முறையை இயக்கவா?</string>
-    <string name="tcp_prompt_dialog_message">Shevery இயங்குகிறது, ஆனால் Persistent TCP பயன்முறை தற்போது முடக்கப்பட்டுள்ளது.\n\nTCP பயன்முறையை இயக்குவது, உங்கள் சாதனம் மறுதொடக்கம் செய்யப்படும் வரை, Wi-Fi இல்லாவிட்டாலும் கூட, Shevery இயங்கிக்கொண்டு பின்னணியில் தானாக மீண்டும் இணைக்க அனுமதிக்கிறது.</string>
-    <string name="tcp_prompt_dialog_enable">இயக்கு</string>
-    <string name="tcp_prompt_dialog_later">இப்போது இல்லை</string>
-    <string name="tcp_prompt_dialog_do_not_remind">என்னை மீண்டும் நினைவுபடுத்த வேண்டாம்</string>
+    <string name="tcp_prompt_dialog_title"><![CDATA[நிரந்தர TCP பயன்முறையை இயக்கவா?]]></string>
+    <string name="tcp_prompt_dialog_message"><![CDATA[Shevery இயங்குகிறது, ஆனால் Persistent TCP பயன்முறை தற்போது முடக்கப்பட்டுள்ளது.\n\nTCP பயன்முறையை இயக்குவது, உங்கள் சாதனம் மறுதொடக்கம் செய்யப்படும் வரை, Wi-Fi இல்லாவிட்டாலும் கூட, Shevery இயங்கிக்கொண்டு பின்னணியில் தானாக மீண்டும் இணைக்க அனுமதிக்கிறது.]]></string>
+    <string name="tcp_prompt_dialog_enable"><![CDATA[இயக்கு]]></string>
+    <string name="tcp_prompt_dialog_later"><![CDATA[இப்போது இல்லை]]></string>
+    <string name="tcp_prompt_dialog_do_not_remind"><![CDATA[என்னை மீண்டும் நினைவுபடுத்த வேண்டாம்]]></string>
 </resources>

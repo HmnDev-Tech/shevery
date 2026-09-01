@@ -554,9 +554,9 @@
     <string name="adb_pairing_tutorial_content_miui">MIUI-ի օգտատերերին կարող է անհրաժեշտ լինել համակարգի կարգավորումներում ծանուցման ոճը փոխել «Android»-ի «Notification»-ից՝ «Notification shade»:</string>
     <string name="comput_no_macros">Պահված մակրոներ դեռ չկան: Սեղմեք \'Record Macro\'՝ վահանակի հրամանները ձայնագրելու համար:</string>
 
-    <string name="tcp_prompt_dialog_title">Միացնե՞լ մշտական ​​TCP ռեժիմը:</string>
-    <string name="tcp_prompt_dialog_message">Shevery-ն աշխատում է, բայց մշտական ​​TCP ռեժիմն այս պահին անջատված է:\n\nTCP ռեժիմը միացնելը թույլ է տալիս Shevery-ին շարունակել աշխատել և ավտոմատ կերպով միանալ հետին պլանում, նույնիսկ առանց Wi-Fi-ի, մինչև ձեր սարքը վերագործարկվի:</string>
-    <string name="tcp_prompt_dialog_enable">Միացնել</string>
-    <string name="tcp_prompt_dialog_later">Ոչ հիմա</string>
-    <string name="tcp_prompt_dialog_do_not_remind">Այլևս մի հիշեցրու ինձ</string>
+    <string name="tcp_prompt_dialog_title"><![CDATA[Միացնե՞լ մշտական ​​TCP ռեժիմը:]]></string>
+    <string name="tcp_prompt_dialog_message"><![CDATA[Shevery-ն աշխատում է, բայց մշտական ​​TCP ռեժիմն այս պահին անջատված է:\n\nTCP ռեժիմը միացնելը թույլ է տալիս Shevery-ին շարունակել աշխատել և ավտոմատ կերպով միանալ հետին պլանում, նույնիսկ առանց Wi-Fi-ի, մինչև ձեր սարքը վերագործարկվի:]]></string>
+    <string name="tcp_prompt_dialog_enable"><![CDATA[Միացնել]]></string>
+    <string name="tcp_prompt_dialog_later"><![CDATA[Ոչ հիմա]]></string>
+    <string name="tcp_prompt_dialog_do_not_remind"><![CDATA[Այլևս մի հիշեցրու ինձ]]></string>
 </resources>

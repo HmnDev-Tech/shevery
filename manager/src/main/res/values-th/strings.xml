@@ -554,9 +554,9 @@
     <string name="adb_pairing_tutorial_content_miui">ผู้ใช้ MIUI อาจต้องเปลี่ยนรูปแบบการแจ้งเตือนเป็น "Android" จาก "การแจ้งเตือน" - "หน้าต่างแจ้งเตือน" ในการตั้งค่าระบบ</string>
     <string name="comput_no_macros">ยังไม่มีมาโครที่บันทึกไว้ คลิก \'บันทึกมาโคร\' เพื่อเริ่มบันทึกคำสั่งคอนโซล</string>
 
-    <string name="tcp_prompt_dialog_title">เปิดใช้งานโหมด TCP ถาวรหรือไม่</string>
-    <string name="tcp_prompt_dialog_message">Shevery กำลังทำงานอยู่ แต่โหมด Persistent TCP ถูกปิดใช้งานอยู่ในขณะนี้\n\nการเปิดใช้งานโหมด TCP ช่วยให้ Shevery ยังคงทำงานและเชื่อมต่อใหม่อัตโนมัติในพื้นหลัง—แม้ว่าจะไม่มี Wi-Fi—จนกว่าอุปกรณ์ของคุณจะรีสตาร์ท</string>
-    <string name="tcp_prompt_dialog_enable">เปิดใช้งาน</string>
-    <string name="tcp_prompt_dialog_later">ไม่ใช่ตอนนี้</string>
-    <string name="tcp_prompt_dialog_do_not_remind">อย่าเตือนฉันอีก</string>
+    <string name="tcp_prompt_dialog_title"><![CDATA[เปิดใช้งานโหมด TCP ถาวรหรือไม่]]></string>
+    <string name="tcp_prompt_dialog_message"><![CDATA[Shevery กำลังทำงานอยู่ แต่โหมด Persistent TCP ถูกปิดใช้งานอยู่ในขณะนี้\n\nการเปิดใช้งานโหมด TCP ช่วยให้ Shevery ยังคงทำงานและเชื่อมต่อใหม่อัตโนมัติในพื้นหลัง—แม้ว่าจะไม่มี Wi-Fi—จนกว่าอุปกรณ์ของคุณจะรีสตาร์ท]]></string>
+    <string name="tcp_prompt_dialog_enable"><![CDATA[เปิดใช้งาน]]></string>
+    <string name="tcp_prompt_dialog_later"><![CDATA[ไม่ใช่ตอนนี้]]></string>
+    <string name="tcp_prompt_dialog_do_not_remind"><![CDATA[อย่าเตือนฉันอีก]]></string>
 </resources>

@@ -549,9 +549,9 @@
     <string name="adb_pairing_tutorial_content_miui">MIUI उपयोगकर्ताओं को सिस्टम सेटिंग्स में अधिसूचना शैली को "अधिसूचना" - "अधिसूचना शेड" से "एंड्रॉइड" पर स्विच करने की आवश्यकता हो सकती है।</string>
     <string name="comput_no_macros">अभी तक कोई सहेजा गया मैक्रोज़ नहीं. कंसोल कमांड रिकॉर्ड करना शुरू करने के लिए \'रिकॉर्ड मैक्रो\' पर क्लिक करें।</string>
 
-    <string name="tcp_prompt_dialog_title">सतत टीसीपी मोड सक्षम करें?</string>
-    <string name="tcp_prompt_dialog_message">शेवरी चल रही है, लेकिन परसिस्टेंट टीसीपी मोड वर्तमान में अक्षम है।\n\nटीसीपी मोड को सक्षम करने से शेवेरी को चालू रहने और पृष्ठभूमि में ऑटो-रीकनेक्ट करने की अनुमति मिलती है - यहां तक ​​​​कि वाई-फाई के बिना भी - जब तक कि आपका डिवाइस पुनरारंभ न हो जाए।</string>
-    <string name="tcp_prompt_dialog_enable">सक्षम</string>
-    <string name="tcp_prompt_dialog_later">अभी नहीं</string>
-    <string name="tcp_prompt_dialog_do_not_remind">मुझे दोबारा याद मत दिलाना</string>
+    <string name="tcp_prompt_dialog_title"><![CDATA[सतत टीसीपी मोड सक्षम करें?]]></string>
+    <string name="tcp_prompt_dialog_message"><![CDATA[शेवरी चल रही है, लेकिन परसिस्टेंट टीसीपी मोड वर्तमान में अक्षम है।\n\nटीसीपी मोड को सक्षम करने से शेवेरी को चालू रहने और पृष्ठभूमि में ऑटो-रीकनेक्ट करने की अनुमति मिलती है - यहां तक ​​​​कि वाई-फाई के बिना भी - जब तक कि आपका डिवाइस पुनरारंभ न हो जाए।]]></string>
+    <string name="tcp_prompt_dialog_enable"><![CDATA[सक्षम]]></string>
+    <string name="tcp_prompt_dialog_later"><![CDATA[अभी नहीं]]></string>
+    <string name="tcp_prompt_dialog_do_not_remind"><![CDATA[मुझे दोबारा याद मत दिलाना]]></string>
 </resources>

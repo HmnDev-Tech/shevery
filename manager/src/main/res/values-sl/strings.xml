@@ -555,9 +555,9 @@ Pripravljena za ukaze.]]></string>
     <string name="adb_pairing_tutorial_content_miui">Uporabniki MIUI bodo morda morali preklopiti slog obvestil na »Android« iz »Obvestilo« – »Zasenčenje obvestil« v sistemskih nastavitvah.</string>
     <string name="comput_no_macros">Ni še shranjenih makrov. Kliknite \'Snemaj makro\', da začnete snemati ukaze konzole.</string>
 
-    <string name="tcp_prompt_dialog_title">Omogočiti trajni način TCP?</string>
-    <string name="tcp_prompt_dialog_message">Shevery se izvaja, vendar je trajni način TCP trenutno onemogočen.\n\nČe omogočite način TCP, lahko Shevery še naprej deluje in se samodejno znova poveže v ozadju – tudi brez povezave Wi-Fi – dokler se vaša naprava znova ne zažene.</string>
-    <string name="tcp_prompt_dialog_enable">Omogoči</string>
-    <string name="tcp_prompt_dialog_later">Ne zdaj</string>
-    <string name="tcp_prompt_dialog_do_not_remind">Ne spominjaj me več</string>
+    <string name="tcp_prompt_dialog_title"><![CDATA[Omogočiti trajni način TCP?]]></string>
+    <string name="tcp_prompt_dialog_message"><![CDATA[Shevery se izvaja, vendar je trajni način TCP trenutno onemogočen.\n\nČe omogočite način TCP, lahko Shevery še naprej deluje in se samodejno znova poveže v ozadju – tudi brez povezave Wi-Fi – dokler se vaša naprava znova ne zažene.]]></string>
+    <string name="tcp_prompt_dialog_enable"><![CDATA[Omogoči]]></string>
+    <string name="tcp_prompt_dialog_later"><![CDATA[Ne zdaj]]></string>
+    <string name="tcp_prompt_dialog_do_not_remind"><![CDATA[Ne spominjaj me več]]></string>
 </resources>

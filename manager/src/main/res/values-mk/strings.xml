@@ -541,9 +541,9 @@
     <string name="adb_pairing_tutorial_content_miui">Корисниците на MIUI можеби ќе треба да го префрлат стилот на известување во „Android“ од „Notification“ - „Notification shade“ во системските поставки.</string>
     <string name="comput_no_macros">Сè уште нема зачувани макроа. Кликнете на \'Сними макро\' за да започнете со снимање команди од конзолата.</string>
 
-    <string name="tcp_prompt_dialog_title">Овозможи постојан TCP режим?</string>
-    <string name="tcp_prompt_dialog_message">Severy работи, но постојаниот TCP режим во моментов е оневозможен.\n\nОвозможувањето на режимот TCP му овозможува на Shevery да продолжи да работи и автоматски да се поврзе во заднина - дури и без Wi-Fi - додека уредот не се рестартира.</string>
-    <string name="tcp_prompt_dialog_enable">Овозможи</string>
-    <string name="tcp_prompt_dialog_later">Не сега</string>
-    <string name="tcp_prompt_dialog_do_not_remind">Error 500 (Server Error)!!1500.That’s an error.There was an error. Please try again later.That’s all we know.</string>
+    <string name="tcp_prompt_dialog_title"><![CDATA[Овозможи постојан TCP режим?]]></string>
+    <string name="tcp_prompt_dialog_message"><![CDATA[Severy работи, но постојаниот TCP режим во моментов е оневозможен.\n\nОвозможувањето на режимот TCP му овозможува на Shevery да продолжи да работи и автоматски да се поврзе во заднина - дури и без Wi-Fi - додека уредот не се рестартира.]]></string>
+    <string name="tcp_prompt_dialog_enable"><![CDATA[Овозможи]]></string>
+    <string name="tcp_prompt_dialog_later"><![CDATA[Не сега]]></string>
+    <string name="tcp_prompt_dialog_do_not_remind"><![CDATA[Error 500 (Server Error)!!1500.That’s an error.There was an error. Please try again later.That’s all we know.]]></string>
 </resources>

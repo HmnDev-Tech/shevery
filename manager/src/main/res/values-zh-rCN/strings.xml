@@ -553,9 +553,9 @@
     <string name="comput_no_macros">还没有保存的宏。单击“录制宏”开始录制控制台命令。</string>
 
     <!-- TCP Mode Enable Prompt Dialog -->
-    <string name="tcp_prompt_dialog_title"><![CDATA[开启持久 TCP 模式？]]></string>
-    <string name="tcp_prompt_dialog_message"><![CDATA[Shevery 正在运行，但持久 TCP 模式尚未开启。\n\n开启 TCP 模式可使 Shevery 在离线或后台自动重连（即使未连接 Wi-Fi），直到设备重新启动。]]></string>
-    <string name="tcp_prompt_dialog_enable"><![CDATA[开启]]></string>
-    <string name="tcp_prompt_dialog_later"><![CDATA[暂不开启]]></string>
-    <string name="tcp_prompt_dialog_do_not_remind"><![CDATA[不再提醒]]></string>
+    
+    
+    
+    
+    
 </resources>

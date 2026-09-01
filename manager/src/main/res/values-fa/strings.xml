@@ -545,9 +545,9 @@
     <string name="adb_pairing_tutorial_content_miui">کاربران MIUI ممکن است نیاز داشته باشند سبک اعلان را از «Notification» - «Notification shade» در تنظیمات سیستم به «Android» تغییر دهند.</string>
     <string name="comput_no_macros">هنوز ماکرو ذخیره شده ای وجود ندارد. برای شروع ضبط دستورات کنسول، روی \'Record Macro\' کلیک کنید.</string>
 
-    <string name="tcp_prompt_dialog_title">حالت TCP دائمی فعال شود؟</string>
-    <string name="tcp_prompt_dialog_message">Shevery در حال اجرا است، اما حالت TCP مداوم در حال حاضر غیرفعال است.\n\nفعال کردن حالت TCP به Shevery اجازه می‌دهد تا زمانی که دستگاه شما راه‌اندازی مجدد نشود، در پس‌زمینه فعال بماند و دوباره به‌طور خودکار در پس‌زمینه وصل شود.</string>
-    <string name="tcp_prompt_dialog_enable">فعال کردن</string>
-    <string name="tcp_prompt_dialog_later">نه در حال حاضر</string>
-    <string name="tcp_prompt_dialog_do_not_remind">دیگه یادم نینداز</string>
+    <string name="tcp_prompt_dialog_title"><![CDATA[حالت TCP دائمی فعال شود؟]]></string>
+    <string name="tcp_prompt_dialog_message"><![CDATA[Shevery در حال اجرا است، اما حالت TCP مداوم در حال حاضر غیرفعال است.\n\nفعال کردن حالت TCP به Shevery اجازه می‌دهد تا زمانی که دستگاه شما راه‌اندازی مجدد نشود، در پس‌زمینه فعال بماند و دوباره به‌طور خودکار در پس‌زمینه وصل شود.]]></string>
+    <string name="tcp_prompt_dialog_enable"><![CDATA[فعال کردن]]></string>
+    <string name="tcp_prompt_dialog_later"><![CDATA[نه در حال حاضر]]></string>
+    <string name="tcp_prompt_dialog_do_not_remind"><![CDATA[دیگه یادم نینداز]]></string>
 </resources>

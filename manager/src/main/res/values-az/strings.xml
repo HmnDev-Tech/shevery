@@ -541,9 +541,9 @@ kopyalanıb kəsim lövhəsinə.]]></string>
     <string name="adb_pairing_tutorial_content_miui">MIUI istifadəçiləri sistem parametrlərində bildiriş tərzini "Bildiriş" - "Bildiriş kölgəsi"ndən "Android"ə keçirməli ola bilər.</string>
     <string name="comput_no_macros">Saxlanmış makro hələ yoxdur. Konsol əmrlərini yazmağa başlamaq üçün \'Makronu qeyd et\' üzərinə klikləyin.</string>
 
-    <string name="tcp_prompt_dialog_title">Davamlı TCP Rejimi aktiv edilsin?</string>
-    <string name="tcp_prompt_dialog_message">Shevery işləyir, lakin Davamlı TCP Rejimi hazırda deaktivdir.\n\nTCP Rejimini aktivləşdirmək Shevery-yə cihazınız yenidən işə salınana qədər arxa planda işləməyə və avtomatik qoşulmağa imkan verir, hətta Wi-Fi olmadan belə.</string>
-    <string name="tcp_prompt_dialog_enable">Aktivləşdirin</string>
-    <string name="tcp_prompt_dialog_later">İndi yox</string>
-    <string name="tcp_prompt_dialog_do_not_remind">Mənə bir daha xatırlatma</string>
+    <string name="tcp_prompt_dialog_title"><![CDATA[Davamlı TCP Rejimi aktiv edilsin?]]></string>
+    <string name="tcp_prompt_dialog_message"><![CDATA[Shevery işləyir, lakin Davamlı TCP Rejimi hazırda deaktivdir.\n\nTCP Rejimini aktivləşdirmək Shevery-yə cihazınız yenidən işə salınana qədər arxa planda işləməyə və avtomatik qoşulmağa imkan verir, hətta Wi-Fi olmadan belə.]]></string>
+    <string name="tcp_prompt_dialog_enable"><![CDATA[Aktivləşdirin]]></string>
+    <string name="tcp_prompt_dialog_later"><![CDATA[İndi yox]]></string>
+    <string name="tcp_prompt_dialog_do_not_remind"><![CDATA[Mənə bir daha xatırlatma]]></string>
 </resources>

@@ -554,9 +554,9 @@ Klaar voor opdrachten.]]></string>
     <string name="adb_pairing_tutorial_content_miui">MIUI-gebruikers moeten mogelijk de meldingsstijl wijzigen naar "Android" vanuit "Melding" - "Meldingenpaneel" in de systeeminstellingen.</string>
     <string name="comput_no_macros">Nog geen opgeslagen macro\'s. Klik op \'Macro opnemen\' om de opname van consoleopdrachten te starten.</string>
 
-    <string name="tcp_prompt_dialog_title">Error 500 (Server Error)!!1500.That’s an error.There was an error. Please try again later.That’s all we know.</string>
-    <string name="tcp_prompt_dialog_message">Error 500 (Server Error)!!1500.That’s an error.There was an error. Please try again later.That’s all we know.</string>
-    <string name="tcp_prompt_dialog_enable">Error 500 (Server Error)!!1500.That’s an error.There was an error. Please try again later.That’s all we know.</string>
-    <string name="tcp_prompt_dialog_later">Error 500 (Server Error)!!1500.That’s an error.There was an error. Please try again later.That’s all we know.</string>
-    <string name="tcp_prompt_dialog_do_not_remind">Error 500 (Server Error)!!1500.That’s an error.There was an error. Please try again later.That’s all we know.</string>
+    <string name="tcp_prompt_dialog_title"><![CDATA[Error 500 (Server Error)!!1500.That’s an error.There was an error. Please try again later.That’s all we know.]]></string>
+    <string name="tcp_prompt_dialog_message"><![CDATA[Error 500 (Server Error)!!1500.That’s an error.There was an error. Please try again later.That’s all we know.]]></string>
+    <string name="tcp_prompt_dialog_enable"><![CDATA[Error 500 (Server Error)!!1500.That’s an error.There was an error. Please try again later.That’s all we know.]]></string>
+    <string name="tcp_prompt_dialog_later"><![CDATA[Error 500 (Server Error)!!1500.That’s an error.There was an error. Please try again later.That’s all we know.]]></string>
+    <string name="tcp_prompt_dialog_do_not_remind"><![CDATA[Error 500 (Server Error)!!1500.That’s an error.There was an error. Please try again later.That’s all we know.]]></string>
 </resources>
