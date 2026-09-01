@@ -555,7 +555,9 @@
     <string name="comput_no_macros">لا توجد وحدات ماكرو محفوظة حتى الآن. انقر فوق \'تسجيل ماكرو\' لبدء تسجيل أوامر وحدة التحكم.</string>
 
     <string name="tcp_prompt_dialog_title"><![CDATA[تمكين وضع TCP المستمر؟]]></string>
-    <string name="tcp_prompt_dialog_message"><![CDATA[Shevery قيد التشغيل، ولكن وضع TCP المستمر معطل حاليًا.\n\nيتيح تمكين وضع TCP لـ Shevery الاستمرار في العمل وإعادة الاتصال تلقائيًا في الخلفية - حتى بدون شبكة Wi-Fi - حتى يتم إعادة تشغيل جهازك.]]></string>
+    <string name="tcp_prompt_dialog_message"><![CDATA[Shevery قيد التشغيل، ولكن وضع TCP المستمر معطل حاليًا.
+
+يتيح تمكين وضع TCP لـ Shevery الاستمرار في العمل وإعادة الاتصال تلقائيًا في الخلفية - حتى بدون شبكة Wi-Fi - حتى يتم إعادة تشغيل جهازك.]]></string>
     <string name="tcp_prompt_dialog_enable"><![CDATA[يُمكَِن]]></string>
     <string name="tcp_prompt_dialog_later"><![CDATA[ليس الآن]]></string>
     <string name="tcp_prompt_dialog_do_not_remind"><![CDATA[لا تذكرني مرة أخرى]]></string>

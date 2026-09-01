@@ -556,7 +556,9 @@ Készen áll a parancsok fogadására.]]></string>
     <string name="comput_no_macros">Még nincsenek mentett makrók. Kattintson a \'Makró rögzítése\' gombra a konzolparancsok rögzítésének elindításához.</string>
 
     <string name="tcp_prompt_dialog_title"><![CDATA[Engedélyezi az Állandó TCP módot?]]></string>
-    <string name="tcp_prompt_dialog_message"><![CDATA[A Shever fut, de a Persistent TCP Mode jelenleg le van tiltva.\n\nA TCP mód engedélyezése lehetővé teszi, hogy a Shevery továbbra is működjön, és automatikusan újracsatlakozzon a háttérben – Wi-Fi nélkül is – egészen az eszköz újraindításáig.]]></string>
+    <string name="tcp_prompt_dialog_message"><![CDATA[A Shever fut, de a Persistent TCP Mode jelenleg le van tiltva.
+
+A TCP mód engedélyezése lehetővé teszi, hogy a Shevery továbbra is működjön, és automatikusan újracsatlakozzon a háttérben – Wi-Fi nélkül is – egészen az eszköz újraindításáig.]]></string>
     <string name="tcp_prompt_dialog_enable"><![CDATA[Engedélyezés]]></string>
     <string name="tcp_prompt_dialog_later"><![CDATA[Most nem]]></string>
     <string name="tcp_prompt_dialog_do_not_remind"><![CDATA[Ne emlékeztess többé]]></string>

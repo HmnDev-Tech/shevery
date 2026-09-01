@@ -541,7 +541,9 @@ Sobre l\'ús detallat de %1$s, toqueu per veure el document.]]></string>
     <string name="comput_no_macros">Encara no s\'han desat macros. Feu clic a \'Enregistra la macro\' per començar a gravar les ordres de la consola.</string>
 
     <string name="tcp_prompt_dialog_title"><![CDATA[Habilita el mode TCP persistent?]]></string>
-    <string name="tcp_prompt_dialog_message"><![CDATA[Shevery s'està executant, però el mode TCP persistent actualment està desactivat.\n\nL'activació del mode TCP permet que Shevery continuï funcionant i es torni a connectar automàticament en segon pla, fins i tot sense Wi-Fi, fins que es reiniciï el dispositiu.]]></string>
+    <string name="tcp_prompt_dialog_message"><![CDATA[Shevery s'està executant, però el mode TCP persistent actualment està desactivat.
+
+L'activació del mode TCP permet que Shevery continuï funcionant i es torni a connectar automàticament en segon pla, fins i tot sense Wi-Fi, fins que es reiniciï el dispositiu.]]></string>
     <string name="tcp_prompt_dialog_enable"><![CDATA[Activa]]></string>
     <string name="tcp_prompt_dialog_later"><![CDATA[Ara no]]></string>
     <string name="tcp_prompt_dialog_do_not_remind"><![CDATA[No m'ho tornis a recordar]]></string>

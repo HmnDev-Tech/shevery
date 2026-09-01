@@ -555,7 +555,9 @@ Fungsi ekspor ini menggunakan SAF (Storage Access Framework). Dilaporkan bahwa M
     <string name="comput_no_macros">Belum ada makro yang disimpan. Klik \'Rekam Makro\' untuk mulai merekam perintah konsol.</string>
 
     <string name="tcp_prompt_dialog_title"><![CDATA[Aktifkan Mode TCP Persisten?]]></string>
-    <string name="tcp_prompt_dialog_message"><![CDATA[Shevery sedang berjalan, tetapi Mode TCP Persisten saat ini dinonaktifkan.\n\nMengaktifkan Mode TCP memungkinkan Shevery untuk tetap berjalan dan menyambung kembali secara otomatis di latar belakang—bahkan tanpa Wi-Fi—hingga perangkat Anda dimulai ulang.]]></string>
+    <string name="tcp_prompt_dialog_message"><![CDATA[Shevery sedang berjalan, tetapi Mode TCP Persisten saat ini dinonaktifkan.
+
+Mengaktifkan Mode TCP memungkinkan Shevery untuk tetap berjalan dan menyambung kembali secara otomatis di latar belakang—bahkan tanpa Wi-Fi—hingga perangkat Anda dimulai ulang.]]></string>
     <string name="tcp_prompt_dialog_enable"><![CDATA[Memungkinkan]]></string>
     <string name="tcp_prompt_dialog_later"><![CDATA[Tidak Sekarang]]></string>
     <string name="tcp_prompt_dialog_do_not_remind"><![CDATA[Jangan ingatkan aku lagi]]></string>

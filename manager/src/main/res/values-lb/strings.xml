@@ -544,7 +544,9 @@ Fir méi Informatiounen iwwer den detailléierten Asaz vu %1$s, tippt op d\'Doku
     <string name="comput_no_macros">Keng gespäichert Makroen nach. Klickt \'Record Macro\' fir d\'Konsolbefehl opzehuelen.</string>
 
     <string name="tcp_prompt_dialog_title"><![CDATA[Persistent TCP Modus aktivéieren?]]></string>
-    <string name="tcp_prompt_dialog_message"><![CDATA[Shevery leeft, awer de Persistent TCP Modus ass de Moment deaktivéiert.\n\nDen TCP Modus aktivéieren erlaabt de Shevery lafen ze bleiwen an automatesch am Hannergrond ze konnektéieren - och ouni Wi-Fi - bis Ären Apparat nei gestart gëtt.]]></string>
+    <string name="tcp_prompt_dialog_message"><![CDATA[Shevery leeft, awer de Persistent TCP Modus ass de Moment deaktivéiert.
+
+Den TCP Modus aktivéieren erlaabt de Shevery lafen ze bleiwen an automatesch am Hannergrond ze konnektéieren - och ouni Wi-Fi - bis Ären Apparat nei gestart gëtt.]]></string>
     <string name="tcp_prompt_dialog_enable"><![CDATA[Aktivéieren]]></string>
     <string name="tcp_prompt_dialog_later"><![CDATA[Net elo]]></string>
     <string name="tcp_prompt_dialog_do_not_remind"><![CDATA[Erënnere mech net erëm]]></string>

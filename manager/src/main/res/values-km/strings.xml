@@ -555,7 +555,9 @@ You may need to restart Shevery for the operation to take effect.]]></string>
     <string name="comput_no_macros"><![CDATA[មិនទាន់មានម៉ាក្រូដែលបានរក្សាទុកទេ។ចុច \'ថតម៉ាក្រូ\' ដើម្បីចាប់ផ្តើមកត់ត្រាពាក្យបញ្ជាកុងសូល។]]></string>
 
     <string name="tcp_prompt_dialog_title"><![CDATA[បើករបៀប TCP ជាប់លាប់?]]></string>
-    <string name="tcp_prompt_dialog_message"><![CDATA[Shevery កំពុងដំណើរការ ប៉ុន្តែមុខងារ Persistent TCP បច្ចុប្បន្នត្រូវបានបិទ។\n\nការបើកមុខងារ TCP អនុញ្ញាតឱ្យ Shevery បន្តដំណើរការ និងភ្ជាប់ឡើងវិញដោយស្វ័យប្រវត្តិក្នុងផ្ទៃខាងក្រោយ ទោះបីជាគ្មាន Wi-Fi ក៏ដោយ- រហូតដល់ឧបករណ៍របស់អ្នកត្រូវបានចាប់ផ្តើមឡើងវិញ។]]></string>
+    <string name="tcp_prompt_dialog_message"><![CDATA[Shevery កំពុងដំណើរការ ប៉ុន្តែមុខងារ Persistent TCP បច្ចុប្បន្នត្រូវបានបិទ។
+
+ការបើកមុខងារ TCP អនុញ្ញាតឱ្យ Shevery បន្តដំណើរការ និងភ្ជាប់ឡើងវិញដោយស្វ័យប្រវត្តិក្នុងផ្ទៃខាងក្រោយ ទោះបីជាគ្មាន Wi-Fi ក៏ដោយ- រហូតដល់ឧបករណ៍របស់អ្នកត្រូវបានចាប់ផ្តើមឡើងវិញ។]]></string>
     <string name="tcp_prompt_dialog_enable"><![CDATA[បើក]]></string>
     <string name="tcp_prompt_dialog_later"><![CDATA[មិនមែនឥឡូវនេះទេ។]]></string>
     <string name="tcp_prompt_dialog_do_not_remind"><![CDATA[កុំរំលឹកខ្ញុំម្តងទៀត]]></string>

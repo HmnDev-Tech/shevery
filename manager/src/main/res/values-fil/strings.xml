@@ -544,7 +544,9 @@ Pagkatapos magsimula ang proseso ng pag-paring, maaari mo nang ilagay ang pairin
     <string name="comput_no_macros">Wala pang naka-save na macro. I-click ang \'Record Macro\' upang simulan ang pagre-record ng mga console command.</string>
 
     <string name="tcp_prompt_dialog_title"><![CDATA[Paganahin ang Persistent TCP Mode?]]></string>
-    <string name="tcp_prompt_dialog_message"><![CDATA[Gumagana si Shevery, ngunit kasalukuyang naka-disable ang Persistent TCP Mode.\n\nAng pagpapagana ng TCP Mode ay nagbibigay-daan kay Shevery na manatiling tumatakbo at awtomatikong kumonekta muli sa background—kahit na walang Wi-Fi—hanggang sa ma-restart ang iyong device.]]></string>
+    <string name="tcp_prompt_dialog_message"><![CDATA[Gumagana si Shevery, ngunit kasalukuyang naka-disable ang Persistent TCP Mode.
+
+Ang pagpapagana ng TCP Mode ay nagbibigay-daan kay Shevery na manatiling tumatakbo at awtomatikong kumonekta muli sa background—kahit na walang Wi-Fi—hanggang sa ma-restart ang iyong device.]]></string>
     <string name="tcp_prompt_dialog_enable"><![CDATA[Paganahin]]></string>
     <string name="tcp_prompt_dialog_later"><![CDATA[Hindi Ngayon]]></string>
     <string name="tcp_prompt_dialog_do_not_remind"><![CDATA[Huwag mo nang ipaalala muli]]></string>

@@ -540,7 +540,9 @@
     <string name="comput_no_macros">ఇంకా సేవ్ చేయబడిన మాక్రోలు ఏవీ లేవు. కన్సోల్ ఆదేశాలను రికార్డ్ చేయడం ప్రారంభించడానికి \'రికార్డ్ మాక్రో\' క్లిక్ చేయండి.</string>
 
     <string name="tcp_prompt_dialog_title"><![CDATA[నిరంతర TCP మోడ్‌ని ప్రారంభించాలా?]]></string>
-    <string name="tcp_prompt_dialog_message"><![CDATA[Shevery అమలవుతోంది, కానీ పెర్సిస్టెంట్ TCP మోడ్ ప్రస్తుతం నిలిపివేయబడింది.\n\nTCP మోడ్‌ని ప్రారంభించడం వలన మీ పరికరం పునఃప్రారంభించబడే వరకు Wi-Fi లేకుండా కూడా-Shevery రన్ అవుతూనే ఉండటానికి మరియు నేపథ్యంలో స్వయంచాలకంగా మళ్లీ కనెక్ట్ అవ్వడానికి అనుమతిస్తుంది.]]></string>
+    <string name="tcp_prompt_dialog_message"><![CDATA[Shevery అమలవుతోంది, కానీ పెర్సిస్టెంట్ TCP మోడ్ ప్రస్తుతం నిలిపివేయబడింది.
+
+TCP మోడ్‌ని ప్రారంభించడం వలన మీ పరికరం పునఃప్రారంభించబడే వరకు Wi-Fi లేకుండా కూడా-Shevery రన్ అవుతూనే ఉండటానికి మరియు నేపథ్యంలో స్వయంచాలకంగా మళ్లీ కనెక్ట్ అవ్వడానికి అనుమతిస్తుంది.]]></string>
     <string name="tcp_prompt_dialog_enable"><![CDATA[ప్రారంభించు]]></string>
     <string name="tcp_prompt_dialog_later"><![CDATA[ఇప్పుడు కాదు]]></string>
     <string name="tcp_prompt_dialog_do_not_remind"><![CDATA[నాకు మళ్లీ గుర్తు చేయవద్దు]]></string>

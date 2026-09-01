@@ -555,7 +555,9 @@
     <string name="comput_no_macros">Δεν υπάρχουν ακόμα αποθηκευμένες μακροεντολές. Κάντε κλικ στο \'Εγγραφή μακροεντολής\' για να ξεκινήσετε την εγγραφή εντολών κονσόλας.</string>
 
     <string name="tcp_prompt_dialog_title"><![CDATA[Ενεργοποίηση μόνιμης λειτουργίας TCP;]]></string>
-    <string name="tcp_prompt_dialog_message"><![CDATA[Το Severy εκτελείται, αλλά η Λειτουργία Μόνιμης TCP είναι αυτήν τη στιγμή απενεργοποιημένη.\n\nΗ ενεργοποίηση της λειτουργίας TCP επιτρέπει στο Shevery να παραμείνει σε λειτουργία και να επανασυνδεθεί αυτόματα στο παρασκήνιο—ακόμα και χωρίς Wi-Fi—μέχρι να γίνει επανεκκίνηση της συσκευής σας.]]></string>
+    <string name="tcp_prompt_dialog_message"><![CDATA[Το Severy εκτελείται, αλλά η Λειτουργία Μόνιμης TCP είναι αυτήν τη στιγμή απενεργοποιημένη.
+
+Η ενεργοποίηση της λειτουργίας TCP επιτρέπει στο Shevery να παραμείνει σε λειτουργία και να επανασυνδεθεί αυτόματα στο παρασκήνιο—ακόμα και χωρίς Wi-Fi—μέχρι να γίνει επανεκκίνηση της συσκευής σας.]]></string>
     <string name="tcp_prompt_dialog_enable"><![CDATA[Καθιστώ ικανό]]></string>
     <string name="tcp_prompt_dialog_later"><![CDATA[Όχι τώρα]]></string>
     <string name="tcp_prompt_dialog_do_not_remind"><![CDATA[Μη μου το ξαναθυμίσεις]]></string>

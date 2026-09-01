@@ -555,7 +555,9 @@
     <string name="comput_no_macros">아직 저장된 매크로가 없습니다. 콘솔 명령 기록을 시작하려면 \'Record Macro\'를 클릭하세요.</string>
 
     <string name="tcp_prompt_dialog_title"><![CDATA[영구 TCP 모드를 활성화하시겠습니까?]]></string>
-    <string name="tcp_prompt_dialog_message"><![CDATA[Shevery가 실행 중이지만 현재 영구 TCP 모드가 비활성화되어 있습니다.\n\nTCP 모드를 활성화하면 Wi-Fi 없이도 장치가 다시 시작될 때까지 Shevery가 백그라운드에서 계속 실행되고 자동으로 다시 연결됩니다.]]></string>
+    <string name="tcp_prompt_dialog_message"><![CDATA[Shevery가 실행 중이지만 현재 영구 TCP 모드가 비활성화되어 있습니다.
+
+TCP 모드를 활성화하면 Wi-Fi 없이도 장치가 다시 시작될 때까지 Shevery가 백그라운드에서 계속 실행되고 자동으로 다시 연결됩니다.]]></string>
     <string name="tcp_prompt_dialog_enable"><![CDATA[할 수 있게 하다]]></string>
     <string name="tcp_prompt_dialog_later"><![CDATA[지금은 아님]]></string>
     <string name="tcp_prompt_dialog_do_not_remind"><![CDATA[다시 알림 안함]]></string>

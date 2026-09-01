@@ -555,7 +555,9 @@ You may need to restart Shevery for the operation to take effect.]]></string>
     <string name="comput_no_macros"><![CDATA[ଏପର୍ଯ୍ୟନ୍ତ କୌଣସି ସଞ୍ଚୟ ହୋଇଥିବା ମାକ୍ରୋ ନାହିଁ । କନସୋଲ୍ କମାଣ୍ଡ ରେକର୍ଡିଂ ଆରମ୍ଭ କରିବାକୁ \'ରେକର୍ଡ ମାକ୍ରୋ\' କ୍ଲିକ୍ କରନ୍ତୁ ।]]></string>
 
     <string name="tcp_prompt_dialog_title"><![CDATA[ସ୍ଥାୟୀ TCP ମୋଡ୍ ସକ୍ଷମ କରିବେ?]]></string>
-    <string name="tcp_prompt_dialog_message"><![CDATA[ଶେଭେରୀ ଚାଲୁଛି, କିନ୍ତୁ ସ୍ଥାୟୀ TCP ମୋଡ୍ ବର୍ତ୍ତମାନ ଅକ୍ଷମ ହୋଇଛି |\n\nTCP ମୋଡ୍ ସକ୍ଷମ କରିବା ଶେଭରକୁ ଆପଣଙ୍କର ଡିଭାଇସ୍ ପୁନ rest ଆରମ୍ଭ ନହେବା ପର୍ଯ୍ୟନ୍ତ ବ୍ୟାକଗ୍ରାଉଣ୍ଡରେ - ୱାଇ-ଫାଇ ବିନା ମଧ୍ୟ ଅଟୋ-ପୁନ nect ସଂଯୋଗ କରିବାକୁ ଅନୁମତି ଦିଏ |]]></string>
+    <string name="tcp_prompt_dialog_message"><![CDATA[ଶେଭେରୀ ଚାଲୁଛି, କିନ୍ତୁ ସ୍ଥାୟୀ TCP ମୋଡ୍ ବର୍ତ୍ତମାନ ଅକ୍ଷମ ହୋଇଛି |
+
+TCP ମୋଡ୍ ସକ୍ଷମ କରିବା ଶେଭରକୁ ଆପଣଙ୍କର ଡିଭାଇସ୍ ପୁନ rest ଆରମ୍ଭ ନହେବା ପର୍ଯ୍ୟନ୍ତ ବ୍ୟାକଗ୍ରାଉଣ୍ଡରେ - ୱାଇ-ଫାଇ ବିନା ମଧ୍ୟ ଅଟୋ-ପୁନ nect ସଂଯୋଗ କରିବାକୁ ଅନୁମତି ଦିଏ |]]></string>
     <string name="tcp_prompt_dialog_enable"><![CDATA[Error 500 (Server Error)!!1500.That’s an error.There was an error. Please try again later.That’s all we know.]]></string>
     <string name="tcp_prompt_dialog_later"><![CDATA[Error 500 (Server Error)!!1500.That’s an error.There was an error. Please try again later.That’s all we know.]]></string>
     <string name="tcp_prompt_dialog_do_not_remind"><![CDATA[Error 500 (Server Error)!!1500.That’s an error.There was an error. Please try again later.That’s all we know.]]></string>

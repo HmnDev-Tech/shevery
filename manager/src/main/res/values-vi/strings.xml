@@ -555,7 +555,9 @@ Sẵn sàng nhận lệnh.]]></string>
     <string name="comput_no_macros">Chưa có macro nào được lưu. Nhấp vào \'Ghi Macro\' để bắt đầu ghi các lệnh trên bàn điều khiển.</string>
 
     <string name="tcp_prompt_dialog_title"><![CDATA[Bật Chế độ TCP liên tục?]]></string>
-    <string name="tcp_prompt_dialog_message"><![CDATA[Shevery đang chạy nhưng Chế độ TCP liên tục hiện bị tắt.\n\nViệc bật Chế độ TCP cho phép Shevery tiếp tục chạy và tự động kết nối lại ở chế độ nền—ngay cả khi không có Wi-Fi—cho đến khi thiết bị của bạn được khởi động lại.]]></string>
+    <string name="tcp_prompt_dialog_message"><![CDATA[Shevery đang chạy nhưng Chế độ TCP liên tục hiện bị tắt.
+
+Việc bật Chế độ TCP cho phép Shevery tiếp tục chạy và tự động kết nối lại ở chế độ nền—ngay cả khi không có Wi-Fi—cho đến khi thiết bị của bạn được khởi động lại.]]></string>
     <string name="tcp_prompt_dialog_enable"><![CDATA[Cho phép]]></string>
     <string name="tcp_prompt_dialog_later"><![CDATA[Không phải bây giờ]]></string>
     <string name="tcp_prompt_dialog_do_not_remind"><![CDATA[Đừng nhắc tôi nữa]]></string>
