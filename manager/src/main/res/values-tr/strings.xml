@@ -555,9 +555,7 @@ Komutlara hazır.]]></string>
     <string name="comput_no_macros">Henüz kayıtlı makro yok. Konsol komutlarını kaydetmeye başlamak için \'Makro Kaydet\'i tıklayın.</string>
 
         <string name="tcp_prompt_dialog_title"><![CDATA[Kalıcı TCP Modu Etkinleştirilsin mi?]]></string>
-        <string name="tcp_prompt_dialog_message"><![CDATA[Shevery çalışıyor, ancak Kalıcı TCP Modu şu anda devre dışı.
-
-TCP Modunun etkinleştirilmesi, cihazınız yeniden başlatılana kadar Shevery'nin çalışmaya devam etmesine ve Wi-Fi olmasa bile arka planda otomatik olarak yeniden bağlanmasına olanak tanır.]]></string>
+        <string name="tcp_prompt_dialog_message"><![CDATA[Shevery çalışıyor, ancak Kalıcı TCP Modu şu anda devre dışı.\n\nTCP Modunun etkinleştirilmesi, cihazınız yeniden başlatılana kadar Shevery'nin çalışmaya devam etmesine ve Wi-Fi olmasa bile arka planda otomatik olarak yeniden bağlanmasına olanak tanır.]]></string>
         <string name="tcp_prompt_dialog_enable"><![CDATA[Etkinleştir]]></string>
         <string name="tcp_prompt_dialog_later"><![CDATA[Şimdi Değil]]></string>
         <string name="tcp_prompt_dialog_do_not_remind"><![CDATA[Bana bir daha hatırlatma]]></string>
