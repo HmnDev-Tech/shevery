@@ -553,9 +553,7 @@ Shevery-ді қайта іске қосу қажет болуы мүмкін.]]>
     <string name="comput_no_macros">Сақталған макростар әлі жоқ. Консоль пәрмендерін жазуды бастау үшін \'Макро жазу\' түймесін басыңыз.</string>
 
     <string name="tcp_prompt_dialog_title">Тұрақты TCP режимін қосу керек пе?</string>
-    <string name="tcp_prompt_dialog_message">Shevery жұмыс істейді, бірақ тұрақты TCP режимі қазір өшірілген.
-
-TCP режимін қосу Shevery-ге құрылғыңыз қайта іске қосылғанша жұмыс істеп тұруға және фондық режимде (тіпті Wi-Fi болмаса да) автоматты түрде қайта қосылуға мүмкіндік береді.</string>
+    <string name="tcp_prompt_dialog_message">Shevery жұмыс істейді, бірақ тұрақты TCP режимі қазір өшірілген.\n\nTCP режимін қосу Shevery-ге құрылғыңыз қайта іске қосылғанша жұмыс істеп тұруға және фондық режимде (тіпті Wi-Fi болмаса да) автоматты түрде қайта қосылуға мүмкіндік береді.</string>
     <string name="tcp_prompt_dialog_enable">Қосу</string>
     <string name="tcp_prompt_dialog_later">Қазір емес</string>
     <string name="tcp_prompt_dialog_do_not_remind">Қайта есіме түсірме</string>

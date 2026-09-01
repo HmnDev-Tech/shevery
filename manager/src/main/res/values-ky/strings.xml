@@ -541,9 +541,7 @@
     <string name="comput_no_macros">Азырынча сакталган макроолор жок. Консолдун буйруктарын жаздыруу үчүн \'Макро жаздыруу\' чыкылдатыңыз.</string>
 
     <string name="tcp_prompt_dialog_title">Туруктуу TCP режими иштетилсинби?</string>
-    <string name="tcp_prompt_dialog_message">Shevery иштеп жатат, бирок Туруктуу TCP режими учурда өчүрүлгөн.
-
-TCP режимин иштетүү Sheveryге түзмөгүңүз өчүрүлүп күйгүзүлгөнгө чейин, Wi-Fi жок болсо да, фондо иштеп турууга жана автоматтык түрдө кайра туташуу мүмкүнчүлүгүн берет.</string>
+    <string name="tcp_prompt_dialog_message">Shevery иштеп жатат, бирок Туруктуу TCP режими учурда өчүрүлгөн.\n\nTCP режимин иштетүү Sheveryге түзмөгүңүз өчүрүлүп күйгүзүлгөнгө чейин, Wi-Fi жок болсо да, фондо иштеп турууга жана автоматтык түрдө кайра туташуу мүмкүнчүлүгүн берет.</string>
     <string name="tcp_prompt_dialog_enable">Иштетүү</string>
     <string name="tcp_prompt_dialog_later">Азыр эмес</string>
     <string name="tcp_prompt_dialog_do_not_remind">Мага кайра эскертпе</string>

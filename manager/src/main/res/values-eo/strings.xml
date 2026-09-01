@@ -540,9 +540,7 @@ Pri la detala uzado de %1$s, frapetu por vidi la dokumenton.]]></string>
     <string name="comput_no_macros">Ankoraŭ neniuj konservitaj makrooj. Alklaku \'Registri Makroon\' por komenci registri konzolajn komandojn.</string>
 
     <string name="tcp_prompt_dialog_title">Ĉu ŝalti konstantan TCP-reĝimon?</string>
-    <string name="tcp_prompt_dialog_message">Shevery funkcias, sed Persistent TCP Mode estas nuntempe malŝaltita.
-
-Ebligi TCP-Reĝimon ebligas al Shevery resti funkcianta kaj aŭtomate rekonekti en la fono—eĉ sen Wi-Fi—ĝis via aparato rekomenciĝos.</string>
+    <string name="tcp_prompt_dialog_message">Shevery funkcias, sed Persistent TCP Mode estas nuntempe malŝaltita.\n\nEbligi TCP-Reĝimon ebligas al Shevery resti funkcianta kaj aŭtomate rekonekti en la fono—eĉ sen Wi-Fi—ĝis via aparato rekomenciĝos.</string>
     <string name="tcp_prompt_dialog_enable">Ebligu</string>
     <string name="tcp_prompt_dialog_later">Ne Nun</string>
     <string name="tcp_prompt_dialog_do_not_remind">Ne rememorigu min</string>

@@ -555,9 +555,7 @@ You may need to restart Shevery for the operation to take effect.]]></string>
     <string name="comput_no_macros"><![CDATA[ಇನ್ನೂ ಉಳಿಸಿದ ಮ್ಯಾಕ್ರೊಗಳು ಇಲ್ಲ. ರೆಕಾರ್ಡಿಂಗ್ ಕನ್ಸೋಲ್ ಆದೇಶಗಳನ್ನು ಪ್ರಾರಂಭಿಸಲು \'ರೆಕಾರ್ಡ್ ಮ್ಯಾಕ್ರೊ\' ಕ್ಲಿಕ್ ಮಾಡಿ.]]></string>
 
     <string name="tcp_prompt_dialog_title">ನಿರಂತರ TCP ಮೋಡ್ ಅನ್ನು ಸಕ್ರಿಯಗೊಳಿಸುವುದೇ?</string>
-    <string name="tcp_prompt_dialog_message">Shevery ಚಾಲನೆಯಲ್ಲಿದೆ, ಆದರೆ ನಿರಂತರ TCP ಮೋಡ್ ಅನ್ನು ಪ್ರಸ್ತುತ ನಿಷ್ಕ್ರಿಯಗೊಳಿಸಲಾಗಿದೆ.
-
-TCP ಮೋಡ್ ಅನ್ನು ಸಕ್ರಿಯಗೊಳಿಸುವುದರಿಂದ ನಿಮ್ಮ ಸಾಧನವನ್ನು ಮರುಪ್ರಾರಂಭಿಸುವವರೆಗೆ ವೈ-ಫೈ ಇಲ್ಲದಿದ್ದರೂ ಸಹ - ಚಾಲನೆಯಲ್ಲಿರಲು ಮತ್ತು ಹಿನ್ನೆಲೆಯಲ್ಲಿ ಸ್ವಯಂ-ಮರುಸಂಪರ್ಕಿಸಲು Shevery ಗೆ ಅನುಮತಿಸುತ್ತದೆ.</string>
+    <string name="tcp_prompt_dialog_message">Shevery ಚಾಲನೆಯಲ್ಲಿದೆ, ಆದರೆ ನಿರಂತರ TCP ಮೋಡ್ ಅನ್ನು ಪ್ರಸ್ತುತ ನಿಷ್ಕ್ರಿಯಗೊಳಿಸಲಾಗಿದೆ.\n\nTCP ಮೋಡ್ ಅನ್ನು ಸಕ್ರಿಯಗೊಳಿಸುವುದರಿಂದ ನಿಮ್ಮ ಸಾಧನವನ್ನು ಮರುಪ್ರಾರಂಭಿಸುವವರೆಗೆ ವೈ-ಫೈ ಇಲ್ಲದಿದ್ದರೂ ಸಹ - ಚಾಲನೆಯಲ್ಲಿರಲು ಮತ್ತು ಹಿನ್ನೆಲೆಯಲ್ಲಿ ಸ್ವಯಂ-ಮರುಸಂಪರ್ಕಿಸಲು Shevery ಗೆ ಅನುಮತಿಸುತ್ತದೆ.</string>
     <string name="tcp_prompt_dialog_enable">ಸಕ್ರಿಯಗೊಳಿಸಿ</string>
     <string name="tcp_prompt_dialog_later">ಈಗ ಅಲ್ಲ</string>
     <string name="tcp_prompt_dialog_do_not_remind">ನನಗೆ ಮತ್ತೆ ನೆನಪಿಸಬೇಡ</string>
