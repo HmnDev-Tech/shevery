@@ -555,7 +555,7 @@ Prêt pour les commandes.]]></string>
     <string name="comput_no_macros">Aucune macro enregistrée pour l\'instant. Cliquez sur \'Enregistrer une macro\' pour démarrer l\'enregistrement des commandes de la console.</string>
 
     <string name="tcp_prompt_dialog_title">Activer le mode TCP persistant ?</string>
-    <string name="tcp_prompt_dialog_message">Shevery est en cours d'exécution, mais le mode TCP persistant est actuellement désactivé.\n\nL'activation du mode TCP permet à Shevery de rester en cours d'exécution et de se reconnecter automatiquement en arrière-plan, même sans Wi-Fi, jusqu'au redémarrage de votre appareil.</string>
+    <string name="tcp_prompt_dialog_message">Shevery est en cours d\'exécution, mais le mode TCP persistant est actuellement désactivé.\n\nL\'activation du mode TCP permet à Shevery de rester en cours d\'exécution et de se reconnecter automatiquement en arrière-plan, même sans Wi-Fi, jusqu\'au redémarrage de votre appareil.</string>
     <string name="tcp_prompt_dialog_enable">Activer</string>
     <string name="tcp_prompt_dialog_later">Pas maintenant</string>
     <string name="tcp_prompt_dialog_do_not_remind">Ne me rappelle plus</string>

@@ -555,7 +555,7 @@ La funzione di esportazione utilizza SAF (Storage Access Framework). È stato se
     <string name="comput_no_macros">Nessuna macro ancora salvata. Fare clic su \'Registra macro\' per avviare la registrazione dei comandi della console.</string>
 
         <string name="tcp_prompt_dialog_title"><![CDATA[Abilitare la modalità TCP persistente?]]></string>
-        <string name="tcp_prompt_dialog_message"><![CDATA[Shevery è in esecuzione, ma la modalità TCP persistente è attualmente disabilitata.\n\nL'abilitazione della modalità TCP consente a Shevery di rimanere in esecuzione e di riconnettersi automaticamente in background, anche senza Wi-Fi, fino al riavvio del dispositivo.]]></string>
+        <string name="tcp_prompt_dialog_message"><![CDATA[Shevery è in esecuzione, ma la modalità TCP persistente è attualmente disabilitata.\n\nL\'abilitazione della modalità TCP consente a Shevery di rimanere in esecuzione e di riconnettersi automaticamente in background, anche senza Wi-Fi, fino al riavvio del dispositivo.]]></string>
         <string name="tcp_prompt_dialog_enable"><![CDATA[Abilitare]]></string>
         <string name="tcp_prompt_dialog_later"><![CDATA[Non adesso]]></string>
         <string name="tcp_prompt_dialog_do_not_remind"><![CDATA[Non ricordarmelo più]]></string>
