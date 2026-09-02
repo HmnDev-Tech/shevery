@@ -554,9 +554,9 @@ Gotowość do przyjmowania poleceń.]]></string>
     <string name="adb_pairing_tutorial_content_miui">Użytkownicy MIUI mogą potrzebować zmienić styl powiadomień na „Android” z „Powiadomienia” – „Zacień powiadomień” w ustawieniach systemu.</string>
     <string name="comput_no_macros">Nie ma jeszcze zapisanych makr. Kliknij \'Nagraj makro\', aby rozpocząć nagrywanie poleceń konsoli.</string>
 
-    <string name="tcp_prompt_dialog_title"><![CDATA[Error 500 (Server Error)!!1500.That’s an error.There was an error. Please try again later.That’s all we know.]]></string>
-    <string name="tcp_prompt_dialog_message"><![CDATA[Error 500 (Server Error)!!1500.That’s an error.There was an error. Please try again later.That’s all we know.]]></string>
+    <string name="tcp_prompt_dialog_title"><![CDATA[Włączyć trwały tryb TCP?]]></string>
+    <string name="tcp_prompt_dialog_message"><![CDATA[Shevery działa, ale trwały tryb TCP jest obecnie wyłączony.\\n\\nWłączenie trybu TCP umożliwi Shevery dalsze działanie i automatyczne ponowne łączenie się w tle, nawet bez Wi-Fi, do czasu ponownego uruchomienia urządzenia.]]></string>
     <string name="tcp_prompt_dialog_enable"><![CDATA[Włączać]]></string>
-    <string name="tcp_prompt_dialog_later"><![CDATA[Error 500 (Server Error)!!1500.That’s an error.There was an error. Please try again later.That’s all we know.]]></string>
+    <string name="tcp_prompt_dialog_later"><![CDATA[Nie teraz]]></string>
     <string name="tcp_prompt_dialog_do_not_remind"><![CDATA[Nie przypominaj mi więcej]]></string>
 </resources>

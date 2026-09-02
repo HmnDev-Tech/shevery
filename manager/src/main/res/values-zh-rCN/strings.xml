@@ -558,4 +558,9 @@
     
     
     
+<string name="tcp_prompt_dialog_title"><![CDATA[启用持久 TCP 模式？]]></string>
+    <string name="tcp_prompt_dialog_message"><![CDATA[Shevery 正在运行，但持久 TCP 模式当前已禁用。\n\n启用 TCP 模式将允许 Shevery 继续运行并在后台自动重新连接，即使没有 Wi-Fi，直到您的设备重新启动。]]></string>
+    <string name="tcp_prompt_dialog_enable"><![CDATA[启用]]></string>
+    <string name="tcp_prompt_dialog_later"><![CDATA[现在不行]]></string>
+    <string name="tcp_prompt_dialog_do_not_remind"><![CDATA[不要再提醒我]]></string>
 </resources>

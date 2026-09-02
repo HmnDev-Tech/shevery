@@ -560,4 +560,9 @@ Listo para comandos.]]></string>
     
     
     
+<string name="tcp_prompt_dialog_title"><![CDATA[¿Habilitar el modo TCP persistente?]]></string>
+    <string name="tcp_prompt_dialog_message"><![CDATA[Shevery está corriendo, pero el modo TCP persistente está actualmente deshabilitado.\\n\\nHabilitar el modo TCP permitirá que Shevery siga ejecutándose y se reconecte automáticamenteen segundo plano, incluso sin Wi-Fi, hasta que se reinicie su dispositivo.]]></string>
+    <string name="tcp_prompt_dialog_enable"><![CDATA[Habilitar]]></string>
+    <string name="tcp_prompt_dialog_later"><![CDATA[Ahora no]]></string>
+    <string name="tcp_prompt_dialog_do_not_remind"><![CDATA[No me lo recuerde de nuevo]]></string>
 </resources>

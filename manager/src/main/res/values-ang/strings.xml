@@ -553,4 +553,9 @@ You may need to restart Shevery for the operation to take effect.]]></string>
     <string name="dialog_requesting_legacy_message"><![CDATA[<b>%1$s</b> has modern Shevery support, but it\'s requesting legacy Shevery. This could because Shevery is not running, please check in Shevery app.<p>Legacy Shevery has been deprecated since March 2019.]]></string>
     <string name="home_dhizuku_title"><![CDATA[Start (via Dhizuku)]]></string>
     <string name="home_dhizuku_description"><![CDATA[For devices managed by Dhizuku, you can start Shevery directly using Device Owner privileges.]]></string>
+<string name="tcp_prompt_dialog_title"><![CDATA[Wilt thou enable the persistent TCP mode?]]></string>
+    <string name="tcp_prompt_dialog_message"><![CDATA[Shevery runneth, but persistent TCP mode is now fordone.\\n\\nTo enable TCP mode shall let Shevery keep runningand reconnect of itself in the background, e\'en without Wi-Fi, unto thy device be restored.]]></string>
+    <string name="tcp_prompt_dialog_enable"><![CDATA[Yea]]></string>
+    <string name="tcp_prompt_dialog_later"><![CDATA[Not now]]></string>
+    <string name="tcp_prompt_dialog_do_not_remind"><![CDATA[Remind me no more]]></string>
 </resources>

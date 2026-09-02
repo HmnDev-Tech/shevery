@@ -544,8 +544,8 @@ Mengenai penggunaan terperinci %1$s, ketik untuk melihat dokumen.]]></string>
     <string name="comput_no_macros">Tiada makro disimpan lagi. Klik \'Rekod Makro\' untuk mula merakam arahan konsol.</string>
 
     <string name="tcp_prompt_dialog_title"><![CDATA[Dayakan Mod TCP Berterusan?]]></string>
-    <string name="tcp_prompt_dialog_message"><![CDATA[Error 500 (Server Error)!!1500.That’s an error.There was an error. Please try again later.That’s all we know.]]></string>
+    <string name="tcp_prompt_dialog_message"><![CDATA[Shevery sedang berjalan, tetapi mod TCP berterusan dilumpuhkan pada masa ini.\\n\\nMendayakan mod TCP akan membolehkan Shevery terus berjalan dan menyambung semula secara automatik di latar belakang - walaupun tanpa Wi-Fi - sehingga peranti anda dimulakan semula.]]></string>
     <string name="tcp_prompt_dialog_enable"><![CDATA[Dayakan]]></string>
-    <string name="tcp_prompt_dialog_later"><![CDATA[Error 500 (Server Error)!!1500.That’s an error.There was an error. Please try again later.That’s all we know.]]></string>
-    <string name="tcp_prompt_dialog_do_not_remind"><![CDATA[Error 500 (Server Error)!!1500.That’s an error.There was an error. Please try again later.That’s all we know.]]></string>
+    <string name="tcp_prompt_dialog_later"><![CDATA[bukan sekarang]]></string>
+    <string name="tcp_prompt_dialog_do_not_remind"><![CDATA[Jangan ingatkan saya lagi]]></string>
 </resources>

@@ -552,7 +552,7 @@ Ready for commands.]]></string>
 
     <string name="tcp_prompt_dialog_title"><![CDATA[Persistent TCP မုဒ်ကို ဖွင့်မလား။]]></string>
     <string name="tcp_prompt_dialog_message"><![CDATA[Shevery လုပ်ဆောင်နေသော်လည်း Persistent TCP မုဒ်ကို လောလောဆယ် ပိတ်ထားသည်။\n\nTCP မုဒ်ကိုဖွင့်ခြင်းဖြင့် Shevery သည် သင့်စက်ပစ္စည်းကို ပြန်လည်စတင်မစမချင်း—Wi-Fi မရှိဘဲ—⁠နောက်ကွယ်တွင် အလိုအလျောက်ပြန်လည်ချိတ်ဆက်ရန်—⁠အလိုအလျောက်ပြန်လည်ချိတ်ဆက်နိုင်စေရန်ခွင့်ပြုသည်။]]></string>
-    <string name="tcp_prompt_dialog_enable"><![CDATA[Error 500 (Server Error)!!1500.That’s an error.There was an error. Please try again later.That’s all we know.]]></string>
+    <string name="tcp_prompt_dialog_enable"><![CDATA[ယခုဖွင့်ပါ။]]></string>
     <string name="tcp_prompt_dialog_later"><![CDATA[ယခုမဟုတ်ပါ]]></string>
-    <string name="tcp_prompt_dialog_do_not_remind"><![CDATA[Error 500 (Server Error)!!1500.That’s an error.There was an error. Please try again later.That’s all we know.]]></string>
+    <string name="tcp_prompt_dialog_do_not_remind"><![CDATA[ငါ့ကို ထပ်မသတိပေးနဲ့]]></string>
 </resources>
