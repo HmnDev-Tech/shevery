@@ -100,12 +100,18 @@ class AdbStartWorker(context: Context, params: WorkerParameters) : CoroutineWork
             }
 
             val tcpPort = EnvironmentUtils.getAdbTcpPort()
+            val livePort = EnvironmentUtils.getLiveAdbTcpPort()
 
-            val port = if (!EnvironmentUtils.isWifiRequired()) {
+            val port = if (livePort > 0) {
+                livePort
+            } else if (!EnvironmentUtils.isWifiRequired()) {
+
                 tcpPort
             } else if (EnvironmentUtils.isTelevision()) {
+
                 // TV devices with a configured/static TCP port use TCP directly;
                 // avoid mDNS discovery which is unreliable on LEANBACK.
+
                 if (tcpPort > 0) tcpPort else throw SecurityException("TV device requires TCP ADB port to be configured")
             } else {
                 callbackFlow {
