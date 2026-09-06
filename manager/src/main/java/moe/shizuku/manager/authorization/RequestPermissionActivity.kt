@@ -3,28 +3,26 @@ package moe.shizuku.manager.authorization
 import android.content.pm.ApplicationInfo
 import android.content.pm.PackageManager
 import android.os.Bundle
-import android.text.method.LinkMovementMethod
-import android.widget.TextView
 import androidx.activity.compose.setContent
-import androidx.appcompat.app.AlertDialog as AppCompatAlertDialog
+import androidx.compose.foundation.layout.Arrangement
+import androidx.compose.foundation.layout.Row
 import androidx.compose.material3.AlertDialog
 import androidx.compose.material3.Button
 import androidx.compose.material3.Icon
 import androidx.compose.material3.MaterialTheme
+import androidx.compose.material3.OutlinedButton
 import androidx.compose.material3.Text
 import androidx.compose.material3.TextButton
 import androidx.compose.ui.res.painterResource
 import androidx.compose.ui.res.stringResource
-import com.google.android.material.dialog.MaterialAlertDialogBuilder
+import androidx.compose.ui.unit.dp
 import moe.shizuku.manager.Helps
 import moe.shizuku.manager.R
 import moe.shizuku.manager.app.AppActivity
-import moe.shizuku.manager.ktx.toHtml
 import moe.shizuku.manager.ui.compose.ShizukuExpressiveTheme
 import moe.shizuku.manager.ui.compose.htmlToPlainText
+import moe.shizuku.manager.utils.CustomTabsHelper
 import moe.shizuku.manager.utils.Logger.LOGGER
-import rikka.core.res.resolveColor
-import rikka.html.text.HtmlCompat
 import rikka.shizuku.Shizuku
 import rikka.shizuku.ShizukuApiConstants.REQUEST_PERMISSION_REPLY_ALLOWED
 import rikka.shizuku.ShizukuApiConstants.REQUEST_PERMISSION_REPLY_IS_ONETIME
@@ -47,22 +45,52 @@ class RequestPermissionActivity : AppActivity() {
         val permission = Shizuku.checkRemotePermission("android.permission.GRANT_RUNTIME_PERMISSIONS") == PackageManager.PERMISSION_GRANTED
         if (permission) return true
 
-        val icon = getDrawable(R.drawable.ic_system_icon)
-        icon?.setTint(theme.resolveColor(android.R.attr.colorAccent))
-
-        val dialog = MaterialAlertDialogBuilder(this)
-                .setIcon(icon)
-                .setTitle("Shizuku: ${getString(R.string.app_management_dialog_adb_is_limited_title)}")
-                .setMessage(getString(R.string.app_management_dialog_adb_is_limited_message, Helps.ADB.get()).toHtml(HtmlCompat.FROM_HTML_OPTION_TRIM_WHITESPACE))
-                .setPositiveButton(android.R.string.ok, null)
-                .setOnDismissListener { finish() }
-                .create()
-        dialog.setOnShowListener {
-            (it as AppCompatAlertDialog).findViewById<TextView>(android.R.id.message)?.movementMethod = LinkMovementMethod.getInstance()
-        }
-        try {
-            dialog.show()
-        } catch (ignored: Throwable) {
+        setContent {
+            ShizukuExpressiveTheme {
+                AlertDialog(
+                    onDismissRequest = { finish() },
+                    icon = {
+                        Icon(
+                            painter = painterResource(R.drawable.ic_system_icon),
+                            contentDescription = null
+                        )
+                    },
+                    title = {
+                        Text("${stringResource(R.string.app_name)}: ${stringResource(R.string.app_management_dialog_adb_is_limited_title)}")
+                    },
+                    text = {
+                        Text(
+                            text = htmlToPlainText(
+                                getString(
+                                    R.string.app_management_dialog_adb_is_limited_message,
+                                    Helps.ADB.get()
+                                )
+                            ),
+                            style = MaterialTheme.typography.bodyMedium,
+                            color = MaterialTheme.colorScheme.onSurfaceVariant
+                        )
+                    },
+                    confirmButton = {
+                        Row(horizontalArrangement = Arrangement.spacedBy(8.dp)) {
+                            OutlinedButton(
+                                onClick = {
+                                    CustomTabsHelper.launchUrlOrCopy(
+                                        this@RequestPermissionActivity,
+                                        Helps.ADB.get()
+                                    )
+                                }
+                            ) {
+                                Text(stringResource(R.string.home_adb_button_view_help))
+                            }
+                            Button(onClick = { finish() }) {
+                                Text(stringResource(android.R.string.ok))
+                            }
+                        }
+                    },
+                    containerColor = MaterialTheme.colorScheme.surfaceContainerHigh,
+                    shape = MaterialTheme.shapes.extraLarge
+                )
+            }
         }
         return false
     }

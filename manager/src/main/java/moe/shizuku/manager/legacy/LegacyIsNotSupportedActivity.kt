@@ -4,12 +4,23 @@ import android.app.Activity
 import android.content.Intent
 import android.content.pm.PackageManager
 import android.os.Bundle
-import com.google.android.material.dialog.MaterialAlertDialogBuilder
+import androidx.activity.compose.setContent
+import androidx.compose.foundation.layout.Arrangement
+import androidx.compose.foundation.layout.Row
+import androidx.compose.material3.AlertDialog
+import androidx.compose.material3.Button
+import androidx.compose.material3.Icon
+import androidx.compose.material3.MaterialTheme
+import androidx.compose.material3.OutlinedButton
+import androidx.compose.material3.Text
+import androidx.compose.ui.res.painterResource
+import androidx.compose.ui.res.stringResource
+import androidx.compose.ui.unit.dp
 import moe.shizuku.manager.MainActivity
 import moe.shizuku.manager.R
 import moe.shizuku.manager.app.AppActivity
-import moe.shizuku.manager.ktx.toHtml
-import rikka.html.text.HtmlCompat
+import moe.shizuku.manager.ui.compose.ShizukuExpressiveTheme
+import moe.shizuku.manager.ui.compose.htmlToPlainText
 
 class LegacyIsNotSupportedActivity : AppActivity() {
 
@@ -50,32 +61,72 @@ class LegacyIsNotSupportedActivity : AppActivity() {
         }
 
         val v3Support = ai.metaData?.getBoolean("moe.shizuku.client.V3_SUPPORT") == true
-        if (v3Support) {
-            MaterialAlertDialogBuilder(this)
-                    .setTitle(getString(R.string.dialog_requesting_legacy_title, label))
-                    .setMessage(getString(R.string.dialog_requesting_legacy_message, label).toHtml(HtmlCompat.FROM_HTML_OPTION_TRIM_WHITESPACE))
-                    .setPositiveButton(android.R.string.ok, null)
-                    .setNeutralButton(R.string.dialog_requesting_legacy_button_open_shizuku) { _, _ ->
-                        startActivity(Intent(this, MainActivity::class.java)
-                                .addFlags(Intent.FLAG_ACTIVITY_NEW_TASK))
-                    }
-                    .setOnDismissListener {
+
+        setContent {
+            ShizukuExpressiveTheme {
+                AlertDialog(
+                    onDismissRequest = {
                         setResult(RESULT_ERROR)
                         finish()
-                    }
-                    .setCancelable(false)
-                    .show()
-        } else {
-            MaterialAlertDialogBuilder(this)
-                    .setTitle(getString(R.string.dialog_legacy_not_support_title, label))
-                    .setMessage(getString(R.string.dialog_legacy_not_support_message, label).toHtml(HtmlCompat.FROM_HTML_OPTION_TRIM_WHITESPACE))
-                    .setPositiveButton(android.R.string.ok, null)
-                    .setOnDismissListener {
-                        setResult(RESULT_ERROR)
-                        finish()
-                    }
-                    .setCancelable(false)
-                    .show()
+                    },
+                    icon = {
+                        Icon(
+                            painter = painterResource(R.drawable.ic_system_icon),
+                            contentDescription = null
+                        )
+                    },
+                    title = {
+                        Text(
+                            text = if (v3Support) {
+                                stringResource(R.string.dialog_requesting_legacy_title, label)
+                            } else {
+                                stringResource(R.string.dialog_legacy_not_support_title, label)
+                            }
+                        )
+                    },
+                    text = {
+                        Text(
+                            text = htmlToPlainText(
+                                if (v3Support) {
+                                    getString(R.string.dialog_requesting_legacy_message, label)
+                                } else {
+                                    getString(R.string.dialog_legacy_not_support_message, label)
+                                }
+                            ),
+                            style = MaterialTheme.typography.bodyMedium,
+                            color = MaterialTheme.colorScheme.onSurfaceVariant
+                        )
+                    },
+                    confirmButton = {
+                        Row(horizontalArrangement = Arrangement.spacedBy(8.dp)) {
+                            if (v3Support) {
+                                OutlinedButton(
+                                    onClick = {
+                                        startActivity(
+                                            Intent(this@LegacyIsNotSupportedActivity, MainActivity::class.java)
+                                                .addFlags(Intent.FLAG_ACTIVITY_NEW_TASK)
+                                        )
+                                        setResult(RESULT_ERROR)
+                                        finish()
+                                    }
+                                ) {
+                                    Text(stringResource(R.string.dialog_requesting_legacy_button_open_shizuku))
+                                }
+                            }
+                            Button(
+                                onClick = {
+                                    setResult(RESULT_ERROR)
+                                    finish()
+                                }
+                            ) {
+                                Text(stringResource(android.R.string.ok))
+                            }
+                        }
+                    },
+                    containerColor = MaterialTheme.colorScheme.surfaceContainerHigh,
+                    shape = MaterialTheme.shapes.extraLarge
+                )
+            }
         }
     }
 }
