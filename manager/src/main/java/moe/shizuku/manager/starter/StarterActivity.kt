@@ -3,6 +3,7 @@
 package moe.shizuku.manager.starter
 
 import android.content.Context
+import android.net.Uri
 import android.os.Bundle
 import android.util.Log
 import androidx.activity.compose.setContent
@@ -71,6 +72,7 @@ class StarterActivity : AppActivity() {
 
     override fun onCreate(savedInstanceState: Bundle?) {
         super.onCreate(savedInstanceState)
+        moe.shizuku.manager.service.WatchdogManager.isStarterActive = true
 
         val startedWithRoot = intent.getBooleanExtra(EXTRA_IS_ROOT, true)
         val startedWithDhizuku = intent.getBooleanExtra(EXTRA_IS_DHIZUKU, false)
@@ -93,6 +95,9 @@ class StarterActivity : AppActivity() {
                 viewModel.appendOutput("Waiting for service...")
 
                 lifecycleScope.launch {
+                    runCatching {
+                        contentResolver.getType(Uri.parse("content://$packageName.shizuku"))
+                    }
                     val running = ShizukuStateMachine.awaitRunning(12_000L)
 
                     if (running) {
@@ -208,6 +213,11 @@ class StarterActivity : AppActivity() {
         }
     }
 
+    override fun onDestroy() {
+        super.onDestroy()
+        moe.shizuku.manager.service.WatchdogManager.isStarterActive = false
+    }
+
     companion object {
 
         const val EXTRA_IS_ROOT = "$EXTRA.IS_ROOT"
@@ -228,6 +238,7 @@ private class ViewModel(context: Context, root: Boolean, dhizuku: Boolean, host:
     val output = _output as LiveData<Resource<String>>
 
     init {
+        prewarmManagerProvider()
         try {
             when {
                 dhizuku -> startDhizuku(context)
@@ -236,6 +247,13 @@ private class ViewModel(context: Context, root: Boolean, dhizuku: Boolean, host:
             }
         } catch (e: Throwable) {
             postResult(e)
+        }
+    }
+
+    private fun prewarmManagerProvider() {
+        runCatching {
+            val uri = Uri.parse("content://${appContext.packageName}.shizuku")
+            appContext.contentResolver.getType(uri)
         }
     }
 

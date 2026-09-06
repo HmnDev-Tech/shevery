@@ -54,6 +54,9 @@ object WatchdogManager {
     private const val KEY_USER_STOP_REQUESTED = "watchdog_user_stop_requested"
 
     @Volatile
+    var isStarterActive = false
+
+    @Volatile
     var expectingDeath = false
         set(value) {
             field = value
@@ -107,6 +110,11 @@ object WatchdogManager {
 
     private fun onServiceDied(context: Context) {
         logd("Service died detected by watchdog")
+
+        if (isStarterActive) {
+            logi("Service death occurred while StarterActivity is active. Suppressing watchdog restart.")
+            return
+        }
 
         if (consumeExpectedDeath()) {
             logi("Service death was expected. Resetting expected-death flag.")
@@ -202,6 +210,11 @@ object WatchdogManager {
     fun attemptRestart(context: Context) {
         val appContext = context.applicationContext
         clearExpectedDeathWhenStale()
+
+        if (isStarterActive) {
+            logi("Skipping watchdog restart because StarterActivity is active")
+            return
+        }
 
         if (isUserStopRequested()) {
             logi("Skipping watchdog restart because the last stop was user-initiated")

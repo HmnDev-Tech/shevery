@@ -8,6 +8,7 @@ import kotlinx.coroutines.CancellationException
 import kotlinx.coroutines.delay
 import moe.shizuku.manager.ShizukuSettings
 import moe.shizuku.manager.starter.Starter
+import moe.shizuku.manager.utils.EnvironmentUtils
 import java.io.EOFException
 import java.net.SocketException
 
@@ -28,7 +29,8 @@ object AdbStarter {
         val targetPort = if (tcpMode) TCP_MODE_PORT else port
 
         try {
-            if (tcpMode && port != targetPort) {
+            val isTargetAlreadyLive = EnvironmentUtils.isAdbPortLive(targetPort)
+            if (tcpMode && port != targetPort && !isTargetAlreadyLive) {
                 log?.invoke("Switching ADB from port $port to TCP port $targetPort...")
                 switchToTcp(host, port, targetPort, key)
             }
