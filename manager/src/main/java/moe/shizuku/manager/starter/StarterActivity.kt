@@ -3,6 +3,7 @@
 package moe.shizuku.manager.starter
 
 import android.content.Context
+import android.net.Uri
 import android.os.Bundle
 import android.util.Log
 import androidx.activity.compose.setContent
@@ -93,6 +94,9 @@ class StarterActivity : AppActivity() {
                 viewModel.appendOutput("Waiting for service...")
 
                 lifecycleScope.launch {
+                    runCatching {
+                        contentResolver.getType(Uri.parse("content://$packageName.shizuku"))
+                    }
                     val running = ShizukuStateMachine.awaitRunning(12_000L)
 
                     if (running) {
@@ -228,6 +232,7 @@ private class ViewModel(context: Context, root: Boolean, dhizuku: Boolean, host:
     val output = _output as LiveData<Resource<String>>
 
     init {
+        prewarmManagerProvider()
         try {
             when {
                 dhizuku -> startDhizuku(context)
@@ -236,6 +241,13 @@ private class ViewModel(context: Context, root: Boolean, dhizuku: Boolean, host:
             }
         } catch (e: Throwable) {
             postResult(e)
+        }
+    }
+
+    private fun prewarmManagerProvider() {
+        runCatching {
+            val uri = Uri.parse("content://${appContext.packageName}.shizuku")
+            appContext.contentResolver.getType(uri)
         }
     }
 
