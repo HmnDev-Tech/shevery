@@ -8,7 +8,7 @@ import android.net.Uri;
 
 import androidx.browser.customtabs.CustomTabsIntent;
 
-import com.google.android.material.dialog.MaterialAlertDialogBuilder;
+import android.widget.Toast;
 
 import moe.shizuku.manager.R;
 import rikka.core.util.ClipboardUtils;
@@ -76,11 +76,9 @@ public class CustomTabsHelper {
                 try {
                     ClipboardUtils.put(context, url);
 
-                    new MaterialAlertDialogBuilder(context)
-                            .setTitle(R.string.dialog_cannot_open_browser_title)
-                            .setMessage(HtmlCompat.fromHtml(context.getString(R.string.toast_copied_to_clipboard_with_text, url)))
-                            .setPositiveButton(android.R.string.ok, null)
-                            .show();
+                    Toast.makeText(context,
+                            HtmlCompat.fromHtml(context.getString(R.string.toast_copied_to_clipboard_with_text, url)),
+                            Toast.LENGTH_LONG).show();
                 } catch (Throwable ignored) {
                 }
             }

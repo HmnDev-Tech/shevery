@@ -209,6 +209,8 @@ abstract class HomeActivity : AppActivity() {
             var showStopDialog by rememberSaveable { mutableStateOf(false) }
             var showAdbCommandDialog by rememberSaveable { mutableStateOf(false) }
             var showWadbNotEnabledDialog by rememberSaveable { mutableStateOf(false) }
+            var showAdbDiscoveryDialog by rememberSaveable { mutableStateOf(false) }
+            var showAdbPairDialog by rememberSaveable { mutableStateOf(false) }
 
             LaunchedEffect(serviceResource?.status, serviceResource?.data?.uid) {
                 val status = serviceResource?.data ?: return@LaunchedEffect
@@ -281,10 +283,19 @@ abstract class HomeActivity : AppActivity() {
                                     onStartRoot = ::startRoot,
                                     onStartWirelessAdb = {
                                         runWithLocalNetworkAccess {
-                                            startWirelessAdb { showWadbNotEnabledDialog = true }
+                                            startWirelessAdb(
+                                                onShowDiscoveryDialog = { showAdbDiscoveryDialog = true },
+                                                onWadbNotEnabled = { showWadbNotEnabledDialog = true }
+                                            )
                                         }
                                     },
-                                    onPairWirelessAdb = { runWithLocalNetworkAccess(::pairWirelessAdb) },
+                                    onPairWirelessAdb = {
+                                        runWithLocalNetworkAccess {
+                                            pairWirelessAdb(
+                                                onShowPairDialog = { showAdbPairDialog = true }
+                                            )
+                                        }
+                                    },
                                     onOpenWirelessGuide = { CustomTabsHelper.launchUrlOrCopy(this@HomeActivity, Helps.ADB_ANDROID11.get()) },
                                     onShowAdbCommand = { showAdbCommandDialog = true },
                                     onOpenAdbHelp = { CustomTabsHelper.launchUrlOrCopy(this@HomeActivity, Helps.ADB.get()) },
@@ -575,6 +586,35 @@ abstract class HomeActivity : AppActivity() {
                         shape = MaterialTheme.shapes.extraLarge
                     )
                 }
+
+                if (Build.VERSION.SDK_INT >= Build.VERSION_CODES.R) {
+                    if (showAdbDiscoveryDialog) {
+                        AdbDiscoveryDialog(
+                            onDismissRequest = { showAdbDiscoveryDialog = false },
+                            onStartService = { port ->
+                                showAdbDiscoveryDialog = false
+                                val intent = Intent(this@HomeActivity, StarterActivity::class.java).apply {
+                                    putExtra(StarterActivity.EXTRA_IS_ROOT, false)
+                                    putExtra(StarterActivity.EXTRA_HOST, "127.0.0.1")
+                                    putExtra(StarterActivity.EXTRA_PORT, port)
+                                }
+                                startActivity(intent)
+                            }
+                        )
+                    }
+
+                    if (showAdbPairDialog) {
+                        val inPairingWindow = (display?.displayId ?: -1) > 0 || isInMultiWindowMode
+                        AdbPairDialog(
+                            inPairingWindow = inPairingWindow,
+                            onDismissRequest = { showAdbPairDialog = false },
+                            onPairSuccess = {
+                                showAdbPairDialog = false
+                                showAdbDiscoveryDialog = true
+                            }
+                        )
+                    }
+                }
                 }
             }
         }
@@ -617,10 +657,13 @@ abstract class HomeActivity : AppActivity() {
         )
     }
 
-    private fun startWirelessAdb(onWadbNotEnabled: () -> Unit) {
+    private fun startWirelessAdb(
+        onShowDiscoveryDialog: () -> Unit,
+        onWadbNotEnabled: () -> Unit
+    ) {
         moe.shizuku.manager.service.WatchdogManager.clearUserStopRequest(this@HomeActivity)
         if (Build.VERSION.SDK_INT >= Build.VERSION_CODES.R) {
-            AdbDialogFragment().show(supportFragmentManager, "adb")
+            onShowDiscoveryDialog()
             return
         }
 
@@ -642,11 +685,11 @@ abstract class HomeActivity : AppActivity() {
         onWadbNotEnabled()
     }
 
-    private fun pairWirelessAdb() {
+    private fun pairWirelessAdb(onShowPairDialog: () -> Unit) {
         if (Build.VERSION.SDK_INT < Build.VERSION_CODES.R) return
 
-        if ((display?.displayId ?: -1) > 0) {
-            AdbPairDialogFragment().show(supportFragmentManager, "adb_pair")
+        if ((display?.displayId ?: -1) > 0 || isInMultiWindowMode) {
+            onShowPairDialog()
         } else {
             startActivity(Intent(this, moe.shizuku.manager.adb.AdbPairingTutorialActivity::class.java))
         }

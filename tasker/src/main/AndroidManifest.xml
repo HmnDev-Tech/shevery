@@ -6,7 +6,7 @@
             android:name=".EditActivity"
             android:exported="true"
             android:label="@string/tasker_plugin_name"
-            android:theme="@android:style/Theme.DeviceDefault.Dialog.Alert">
+            android:theme="@android:style/Theme.Translucent.NoTitleBar">
             <intent-filter>
                 <action android:name="com.twofortyfouram.locale.intent.action.EDIT_SETTING" />
             </intent-filter>
