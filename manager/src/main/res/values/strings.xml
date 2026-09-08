@@ -436,7 +436,7 @@ Wi-Fi is required for the first restart because Shevery must connect to the curr
     <string name="shevery_update_modules_group_title">Module Updates &amp; Catalog</string>
     <string name="shevery_update_check_failed">Update check failed: %s</string>
     <string name="home_update_available_title">Shevery update available: %s</string>
-    <string name="home_update_available_body">A newer version is ready. Tap to download.</string>
+    <string name="home_update_available_body">A newer version is ready. Tap to update.</string>
 
     <!-- Module Catalog -->
     <string name="modules_catalog">Catalog</string>
