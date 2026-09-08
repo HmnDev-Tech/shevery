@@ -1023,9 +1023,9 @@ private fun HomeScreen(
                 }
                 val version = pendingVersion.value
                 val url = pendingUrl.value
-                if (!version.isNullOrEmpty() && !url.isNullOrEmpty())) {
-                    val showAppUpdateInstall = remember { mutableStateOf(false) }
-                    if (showAppUpdateInstall.value)) {
+                val showAppUpdateInstall = remember { mutableStateOf(false) }
+                if (!version.isNullOrEmpty() && !url.isNullOrEmpty()) {
+                    if (showAppUpdateInstall.value) {
                         SheveryAppUpdateDialog(
                             result = SheveryAppUpdateResult(
                                 hasUpdate = true,

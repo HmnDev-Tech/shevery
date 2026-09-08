@@ -70,8 +70,8 @@ fun AppUpdateSettingsGroup() {
     val version = pendingVersion.value
     val url = pendingUrl.value
     val showPendingInstall = remember { mutableStateOf(false) }
-    if (!version.isNullOrEmpty() && !url.isNullOrEmpty())) {
-        if (showPendingInstall.value)) {
+    if (!version.isNullOrEmpty() && !url.isNullOrEmpty()) {
+        if (showPendingInstall.value) {
             SheveryAppUpdateDialog(
                 result = SheveryAppUpdateResult(
                     hasUpdate = true,
