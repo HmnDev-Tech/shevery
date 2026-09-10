@@ -499,8 +499,7 @@ fun SettingsScreen(
         }
 
         item {
-            SettingsGroup(title = stringResource(R.string.settings_appearance)) {
-                SectionHeader(stringResource(R.string.settings_language))
+            SettingsGroup(title = stringResource(R.string.settings_language)) {
                 SettingsRow(
                     icon = R.drawable.ic_outline_translate_24,
                     title = stringResource(R.string.settings_language),
@@ -528,8 +527,11 @@ fun SettingsScreen(
                         CustomTabsHelper.launchUrlOrCopy(context, context.getString(R.string.translation_url))
                     }
                 )
-                GroupDivider()
-                SectionHeader(stringResource(rikka.core.R.string.dark_theme))
+            }
+        }
+
+        item {
+            SettingsGroup(title = stringResource(R.string.settings_appearance)) {
                 SettingsRow(
                     icon = R.drawable.ic_outline_dark_mode_24,
                     title = stringResource(rikka.core.R.string.dark_theme),
