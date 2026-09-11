@@ -6,7 +6,7 @@ android {
     namespace 'moe.shizuku.privileged.api'
     defaultConfig {
         applicationId "moe.shizuku.privileged.api"
-        versionCode 600
+        versionCode 2000000000
         versionName "13.9.0"
     }
     buildFeatures {
