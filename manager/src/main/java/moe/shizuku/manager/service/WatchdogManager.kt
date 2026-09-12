@@ -12,6 +12,7 @@ import com.topjohnwu.superuser.Shell
 import kotlinx.coroutines.CoroutineScope
 import kotlinx.coroutines.Dispatchers
 import kotlinx.coroutines.launch
+import kotlinx.coroutines.runInterruptible
 import kotlinx.coroutines.suspendCancellableCoroutine
 import kotlinx.coroutines.withTimeoutOrNull
 import moe.shizuku.manager.MainActivity
@@ -40,7 +41,7 @@ object WatchdogManager {
     private const val CHANNEL_ID = "service_watchdog"
     private const val DEATH_CHANNEL_ID = "service_watchdog_death"
     private const val NOTIFICATION_ID = 1001
-    private const val EXPECTED_DEATH_WINDOW_MS = 10_000L
+    private const val EXPECTED_DEATH_WINDOW_MS = 30_000L
     private const val DHIZUKU_BIND_TIMEOUT_MS = 10_000L
     private const val KEY_USER_STOP_REQUESTED = "watchdog_user_stop_requested"
 
@@ -83,6 +84,7 @@ object WatchdogManager {
 
         Shizuku.addBinderReceivedListenerSticky {
             expectingDeath = false
+            clearUserStopRequest(appContext)
         }
 
         Shizuku.addBinderDeadListener {
@@ -95,10 +97,11 @@ object WatchdogManager {
     }
 
     /**
-     * True while the expected-death suppression window (10s( is still open. A stale
-     *  flag must not block the watchdog poll loop forever when no binder transition fires.
+     * True while the expected-death suppression window is still open or starter is active.
+     * A stale flag must not block the watchdog poll loop forever when no binder transition fires.
      */
     fun isExpectingDeathActive(): Boolean {
+        if (isStarterActive) return true
         if (!expectingDeath) return false
         val deadline = expectedDeathDeadlineMillis
         if (deadline == 0L) return true
@@ -306,7 +309,7 @@ object WatchdogManager {
         return ShizukuStateMachine.awaitStopped(timeoutMs)
     }
 
-    private fun forceStopServerProcess(): String? {
+    private suspend fun forceStopServerProcess(): String? {
         return try {
             if (!Shizuku.pingBinder()) return null
             val binder = Shizuku.getBinder() ?: return "binder was null"
@@ -316,7 +319,12 @@ object WatchdogManager {
                 null,
                 null
             )
-            val exitCode = process.waitFor()
+            val exitCode = withTimeoutOrNull(3_000L) {
+                runInterruptible { process.waitFor() }
+            } ?: run {
+                process.destroy()
+                -1
+            }
             if (exitCode == 0) null else "fallback kill exit code $exitCode"
         } catch (e: Throwable) {
             logd("Failed to force-stop Shevery service process: ${e.message}")

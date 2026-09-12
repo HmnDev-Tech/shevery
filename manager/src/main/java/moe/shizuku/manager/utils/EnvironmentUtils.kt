@@ -60,6 +60,13 @@ object EnvironmentUtils {
         return candidates.firstOrNull { isAdbPortLive(it) } ?: -1
     }
 
+    fun getActiveAdbPort(): Int {
+        return getLiveAdbTcpPort().takeIf { it > 0 }
+            ?: getAdbTcpPort().takeIf { it > 0 }
+            ?: ShizukuSettings.getLastAdbPort().takeIf { it > 0 }
+            ?: -1
+    }
+
     fun isAdbPortLive(port: Int): Boolean {
         return try {
             Socket().use { socket ->

@@ -323,7 +323,9 @@ class AdbStartWorker(context: Context, params: WorkerParameters) : CoroutineWork
                         }
                     }
 
-                    Settings.Global.putInt(cr, "adb_wifi_enabled", 1)
+                    if (hasSecureSettingsPermission) {
+                        Settings.Global.putInt(cr, "adb_wifi_enabled", 1)
+                    }
                     val uri = Settings.Global.getUriFor("adb_wifi_enabled")
                     if (uri != null) {
                         cr.registerContentObserver(uri, false, observer)

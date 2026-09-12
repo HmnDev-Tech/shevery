@@ -78,6 +78,7 @@ import androidx.compose.runtime.MutableState
 import androidx.compose.runtime.mutableIntStateOf
 import androidx.compose.runtime.mutableStateOf
 import androidx.compose.runtime.neverEqualPolicy
+import androidx.compose.runtime.produceState
 import androidx.compose.runtime.remember
 import androidx.compose.runtime.rememberCoroutineScope
 import androidx.compose.runtime.saveable.rememberSaveable
@@ -424,10 +425,8 @@ abstract class HomeActivity : AppActivity() {
                                                 Toast.makeText(this@HomeActivity, R.string.settings_tcp_mode, Toast.LENGTH_SHORT).show()
                                             }
                                         } else {
-                                            val port = EnvironmentUtils.getLiveAdbTcpPort().takeIf { it > 0 }
-                                                ?: EnvironmentUtils.getAdbTcpPort().takeIf { it > 0 }
-                                                ?: ShizukuSettings.getLastAdbPort().takeIf { it > 0 }
-                                            if (port != null && port > 0) {
+                                            val port = EnvironmentUtils.getActiveAdbPort().takeIf { it > 0 }
+                                            if (port != null) {
                                                 withContext(Dispatchers.Main) {
                                                     moe.shizuku.manager.service.WatchdogManager.clearUserStopRequest(this@HomeActivity)
                                                     startActivity(
@@ -437,6 +436,10 @@ abstract class HomeActivity : AppActivity() {
                                                             putExtra(StarterActivity.EXTRA_PORT, port)
                                                         }
                                                     )
+                                                }
+                                            } else {
+                                                withContext(Dispatchers.Main) {
+                                                    Toast.makeText(this@HomeActivity, R.string.dialog_wireless_adb_not_enabled, Toast.LENGTH_SHORT).show()
                                                 }
                                             }
                                         }
@@ -699,22 +702,22 @@ abstract class HomeActivity : AppActivity() {
             return
         }
 
-        val livePort = EnvironmentUtils.getLiveAdbTcpPort().takeIf { it > 0 }
-            ?: EnvironmentUtils.getAdbTcpPort().takeIf { it > 0 && EnvironmentUtils.isAdbPortLive(it) }
-            ?: if (EnvironmentUtils.isAdbPortLive(AdbStarter.TCP_MODE_PORT)) AdbStarter.TCP_MODE_PORT else null
-
-        if (livePort != null) {
-            startActivity(
-                Intent(this, StarterActivity::class.java).apply {
-                    putExtra(StarterActivity.EXTRA_IS_ROOT, false)
-                    putExtra(StarterActivity.EXTRA_HOST, "127.0.0.1")
-                    putExtra(StarterActivity.EXTRA_PORT, livePort)
+        lifecycleScope.launch(Dispatchers.IO) {
+            val livePort = EnvironmentUtils.getActiveAdbPort().takeIf { it > 0 }
+            withContext(Dispatchers.Main) {
+                if (livePort != null) {
+                    startActivity(
+                        Intent(this@HomeActivity, StarterActivity::class.java).apply {
+                            putExtra(StarterActivity.EXTRA_IS_ROOT, false)
+                            putExtra(StarterActivity.EXTRA_HOST, "127.0.0.1")
+                            putExtra(StarterActivity.EXTRA_PORT, livePort)
+                        }
+                    )
+                } else {
+                    onWadbNotEnabled()
                 }
-            )
-            return
+            }
         }
-
-        onWadbNotEnabled()
     }
 
     private fun pairWirelessAdb(onShowPairDialog: () -> Unit) {
@@ -786,154 +789,6 @@ abstract class HomeActivity : AppActivity() {
         )
     }
 
-    private fun bindTcp5555() {
-        moe.shizuku.manager.service.WatchdogManager.clearUserStopRequest(this@HomeActivity)
-        lifecycleScope.launch(Dispatchers.IO) {
-            var success = false
-            var failureReason = getString(R.string.settings_tcp_5555_bind_failed_generic)
-
-            fun recordBindFailure(route: String, reason: String, throwable: Throwable? = null) {
-                val message = "$route: $reason"
-                failureReason = message
-                android.util.Log.d("Shevery", "Failed to bind TCP 5555 via $message", throwable)
-            }
-
-            // 0. Prefer the actual ADB protocol path (adb tcpip 5555).
-            // Running setprop/stop/start through the Shevery shell process is not equivalent to
-            // adb tcpip and can fail with exit code 1 even when the service is active.
-            if (EnvironmentUtils.isAdbPortLive(AdbStarter.TCP_MODE_PORT)) {
-                success = true
-            } else {
-                val activePort = EnvironmentUtils.getLiveAdbTcpPort()
-                    .takeIf { it > 0 && it != AdbStarter.TCP_MODE_PORT }
-                    ?: EnvironmentUtils.getAdbTcpPort().takeIf { it > 0 && it != AdbStarter.TCP_MODE_PORT }
-
-                if (activePort != null) {
-                    try {
-                        AdbStarter.switchToTcpMode(currentPort = activePort)
-                        success = waitForAdbTcpPort(AdbStarter.TCP_MODE_PORT)
-                        if (!success) {
-                            recordBindFailure("ADB", "tcpip command finished but port 5555 did not become live")
-                        }
-                    } catch (e: Exception) {
-                        recordBindFailure("ADB", e.message ?: e.javaClass.simpleName, e)
-                    }
-                } else {
-                    recordBindFailure("ADB", "no active local ADB port was found")
-                }
-            }
-
-            // 1. Try via Dhizuku if enabled
-            if (ModuleSettings.isDhizukuEnabled()) {
-                try {
-                    val initResult = com.rosan.dhizuku.api.Dhizuku.init(applicationContext)
-                    if (initResult && com.rosan.dhizuku.api.Dhizuku.isPermissionGranted()) {
-                        val userServiceArgs = com.rosan.dhizuku.api.DhizukuUserServiceArgs(
-                            android.content.ComponentName(applicationContext, moe.shizuku.manager.dhizuku.DhizukuService::class.java)
-                        )
-                        var connection: android.content.ServiceConnection? = null
-                        val serviceResult = withTimeoutOrNull(5000) {
-                            suspendCancellableCoroutine<android.os.IBinder?> { cont ->
-                                val conn = object : android.content.ServiceConnection {
-                                    override fun onServiceConnected(name: android.content.ComponentName?, service: android.os.IBinder?) {
-                                        if (cont.isActive) cont.resumeWith(Result.success(service))
-                                    }
-                                    override fun onServiceDisconnected(name: android.content.ComponentName?) {}
-                                }
-                                connection = conn
-                                val bound = com.rosan.dhizuku.api.Dhizuku.bindUserService(userServiceArgs, conn)
-                                if (!bound && cont.isActive) {
-                                    cont.resumeWith(Result.success(null))
-                                }
-                            }
-                        }
-                        if (serviceResult != null) {
-                            val dhizukuService = moe.shizuku.manager.dhizuku.IDhizukuService.Stub.asInterface(serviceResult)
-                            success = dhizukuService.bindAdbTcp(AdbStarter.TCP_MODE_PORT) && waitForAdbTcpPort(AdbStarter.TCP_MODE_PORT)
-                            if (!success) {
-                                recordBindFailure("Dhizuku", "command finished but port 5555 did not become live")
-                            }
-                            connection?.let {
-                                try { com.rosan.dhizuku.api.Dhizuku.unbindUserService(it) } catch (_: Exception) {}
-                            }
-                        } else {
-                            recordBindFailure("Dhizuku", "service binding failed or timed out")
-                        }
-                    } else if (!initResult) {
-                        recordBindFailure("Dhizuku", "initialization failed")
-                    } else {
-                        recordBindFailure("Dhizuku", "permission is not granted")
-                    }
-                } catch (e: Exception) {
-                    recordBindFailure("Dhizuku", e.message ?: e.javaClass.simpleName, e)
-                }
-            }
-
-            // 2. Try via Root if not success
-            if (!success && EnvironmentUtils.isRooted()) {
-                try {
-                    val result = com.topjohnwu.superuser.Shell.cmd(ADB_TCP_BIND_COMMAND).exec()
-                    success = result.isSuccess && waitForAdbTcpPort(AdbStarter.TCP_MODE_PORT)
-                    if (!success) {
-                        recordBindFailure(
-                            "root",
-                            "command exit code ${result.code}, port 5555 live: ${EnvironmentUtils.isAdbPortLive(AdbStarter.TCP_MODE_PORT)}"
-                        )
-                    }
-                } catch (e: Exception) {
-                    recordBindFailure("root", e.message ?: e.javaClass.simpleName, e)
-                }
-            } else if (!success) {
-                recordBindFailure("root", "root shell is unavailable")
-            }
-
-            // 3. Try via Shizuku shell if running
-            if (!success && Shizuku.pingBinder()) {
-                try {
-                    val binder = Shizuku.getBinder()
-                    if (binder != null) {
-                        val service = moe.shizuku.server.IShizukuService.Stub.asInterface(binder)
-                        val process = service.newProcess(arrayOf("sh", "-c", ADB_TCP_BIND_COMMAND), null, null)
-                        val exitCode = process.waitFor()
-                        success = exitCode == 0 && waitForAdbTcpPort(AdbStarter.TCP_MODE_PORT)
-                        if (!success) {
-                            recordBindFailure(
-                                "Shevery",
-                                "command exit code $exitCode, port 5555 live: ${EnvironmentUtils.isAdbPortLive(AdbStarter.TCP_MODE_PORT)}"
-                            )
-                        }
-                    } else {
-                        recordBindFailure("Shevery", "binder was null")
-                    }
-                } catch (e: Exception) {
-                    recordBindFailure("Shevery", e.message ?: e.javaClass.simpleName, e)
-                }
-            } else if (!success) {
-                recordBindFailure("Shevery", "binder is not active")
-            }
-
-            withContext(Dispatchers.Main) {
-                if (success) {
-                    Toast.makeText(this@HomeActivity, R.string.settings_tcp_5555_bind_success, Toast.LENGTH_SHORT).show()
-                    startActivity(
-                        Intent(this@HomeActivity, StarterActivity::class.java).apply {
-                            putExtra(StarterActivity.EXTRA_IS_ROOT, false)
-                            putExtra(StarterActivity.EXTRA_HOST, "127.0.0.1")
-                            putExtra(StarterActivity.EXTRA_PORT, AdbStarter.TCP_MODE_PORT)
-                        }
-                    )
-                } else {
-                    Toast.makeText(
-                        this@HomeActivity,
-                        getString(R.string.settings_tcp_5555_bind_failed, failureReason),
-                        Toast.LENGTH_LONG
-                    ).show()
-                }
-            }
-        }
-    }
-
-
     private fun isPermissionDefined(permission: String): Boolean {
         return try {
             packageManager.getPermissionInfo(permission, 0)
@@ -943,16 +798,7 @@ abstract class HomeActivity : AppActivity() {
         }
     }
 
-    private suspend fun waitForAdbTcpPort(port: Int): Boolean {
-        repeat(10) {
-            if (EnvironmentUtils.isAdbPortLive(port)) return true
-            delay(500)
-        }
-        return false
-    }
-
     companion object {
-        private const val ADB_TCP_BIND_COMMAND = "setprop service.adb.tcp.port 5555; setprop ctl.restart adbd || (stop adbd; start adbd)"
         private const val SDK_ANDROID_13 = 33
         private const val SDK_ANDROID_17 = 37
         private const val PERMISSION_ACCESS_LOCAL_NETWORK = "android.permission.ACCESS_LOCAL_NETWORK"
@@ -1014,10 +860,19 @@ private fun HomeScreen(
     val grantedCount = grantedResource?.data ?: 0
     val running = serverState == ShizukuStateMachine.State.RUNNING || status.isRunning
     val adbPermission = status.permission
-    val canUseWirelessAdb = Build.VERSION.SDK_INT >= Build.VERSION_CODES.R
-        || EnvironmentUtils.isAdbPortLive(AdbStarter.TCP_MODE_PORT)
-        || EnvironmentUtils.getLiveAdbTcpPort() > 0
-        || ShizukuSettings.isTcpMode()
+    val canUseWirelessAdb by produceState(
+        initialValue = Build.VERSION.SDK_INT >= Build.VERSION_CODES.R || ShizukuSettings.isTcpMode(),
+        key1 = status.isRunning
+    ) {
+        if (Build.VERSION.SDK_INT >= Build.VERSION_CODES.R || ShizukuSettings.isTcpMode()) {
+            value = true
+        } else {
+            value = withContext(Dispatchers.IO) {
+                EnvironmentUtils.isAdbPortLive(AdbStarter.TCP_MODE_PORT) ||
+                    EnvironmentUtils.getLiveAdbTcpPort() > 0
+            }
+        }
+    }
     val diagnostics = remember(status, grantedCount, localNetworkPermissionState) {
         buildDiagnostics(context, status, grantedCount, localNetworkPermissionState)
     }

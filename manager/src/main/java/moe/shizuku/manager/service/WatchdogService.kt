@@ -16,6 +16,7 @@ import kotlinx.coroutines.*
 import moe.shizuku.manager.MainActivity
 import moe.shizuku.manager.R
 import moe.shizuku.manager.ktx.logd
+import moe.shizuku.manager.utils.ShizukuStateMachine
 
 class WatchdogService : Service() {
 
@@ -89,7 +90,7 @@ class WatchdogService : Service() {
                     logd("Watchdog: Binder check threw exception: ${e.message}")
                 }
 
-                if (!healthy && !WatchdogManager.isExpectingDeathActive() && !WatchdogManager.isUserStopRequested() && WatchdogManager.shouldRunService()) {
+                if (!healthy && !WatchdogManager.isExpectingDeathActive() && !WatchdogManager.isUserStopRequested() && WatchdogManager.shouldRunService() && ShizukuStateMachine.get() != ShizukuStateMachine.State.STARTING) {
 
                     // While the keyguard is up, Android tears down plain-TCP adb and kills
                     // the server. Restarting behind the lockscreen just re-kicks the same doomed

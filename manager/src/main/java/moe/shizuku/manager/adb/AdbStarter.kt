@@ -9,8 +9,7 @@ import kotlinx.coroutines.delay
 import moe.shizuku.manager.ShizukuSettings
 import moe.shizuku.manager.starter.Starter
 import moe.shizuku.manager.utils.EnvironmentUtils
-import java.io.EOFException
-import java.net.SocketException
+import java.io.IOException
 
 object AdbStarter {
 
@@ -27,6 +26,7 @@ object AdbStarter {
         val key = AdbKey(PreferenceAdbKeyStore(ShizukuSettings.getPreferences()), "shizuku")
         val tcpMode = ShizukuSettings.isTcpMode()
         val targetPort = if (tcpMode) TCP_MODE_PORT else port
+        var startedSuccessfully = false
 
         try {
             val isTargetAlreadyLive = EnvironmentUtils.isAdbPortLive(targetPort)
@@ -41,11 +41,12 @@ object AdbStarter {
                 ShizukuSettings.setLastAdbPort(targetPort)
                 client.shellCommand(Starter.internalCommand, listener)
             }
+            startedSuccessfully = true
         } finally {
             // Only touch wireless debugging when this starter put the device
-            // in TCP mode; unconditional disable would kill USB-started
-            // sessions and override the user's system setting.
-            if (tcpMode) {
+            // in TCP mode and successfully launched the service; unconditional
+            // disable would break automatic retry and recovery on failure.
+            if (tcpMode && startedSuccessfully) {
                 disableWirelessDebugging(context)
             }
         }
@@ -66,10 +67,8 @@ object AdbStarter {
             client.connect()
             try {
                 client.command("tcpip:$targetPort")
-            } catch (e: EOFException) {
-                // Expected: adbd restarts when switching from wireless debugging to TCP mode.
-            } catch (e: SocketException) {
-                // Expected: adbd restarts when switching from wireless debugging to TCP mode.
+            } catch (e: IOException) {
+                // Expected: adbd restarts (dropping TCP/TLS socket) when switching to TCP mode.
             }
         }
     }

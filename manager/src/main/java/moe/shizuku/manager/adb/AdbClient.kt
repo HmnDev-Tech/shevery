@@ -19,6 +19,7 @@ import rikka.core.util.BuildUtils
 import java.io.Closeable
 import java.io.DataInputStream
 import java.io.DataOutputStream
+import java.net.InetSocketAddress
 import java.net.Socket
 import java.nio.ByteBuffer
 import java.nio.ByteOrder
@@ -42,8 +43,10 @@ class AdbClient(private val host: String, private val port: Int, private val key
     private val outputStream get() = if (useTls) tlsOutputStream else plainOutputStream
 
     fun connect() {
-        socket = Socket(host, port)
+        socket = Socket()
         socket.tcpNoDelay = true
+        socket.soTimeout = 15_000
+        socket.connect(InetSocketAddress(host, port), 5_000)
         plainInputStream = DataInputStream(socket.getInputStream())
         plainOutputStream = DataOutputStream(socket.getOutputStream())
 
@@ -58,6 +61,7 @@ class AdbClient(private val host: String, private val port: Int, private val key
 
             val sslContext = key.sslContext
             tlsSocket = sslContext.socketFactory.createSocket(socket, host, port, true) as SSLSocket
+            tlsSocket.soTimeout = 15_000
             tlsSocket.startHandshake()
             Log.d(TAG, "Handshake succeeded.")
 
