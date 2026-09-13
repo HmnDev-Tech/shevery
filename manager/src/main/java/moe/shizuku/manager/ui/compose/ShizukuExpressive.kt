@@ -449,7 +449,10 @@ fun ShizukuLazyScaffold(
                     isRefreshing = isRefreshing,
                     modifier = Modifier
                         .align(Alignment.TopCenter)
-                        .padding(top = 8.dp)
+                        // The expressive Scaffold lays content out edge-to-edge from the window
+                        // top, so without the top bar padding the indicator used to hover over
+                        // the toolbar/status bar. Keep it centered below the app bar (tab line).
+                        .padding(top = innerPadding.calculateTopPadding() + 12.dp)
                 )
             }
         } else {
