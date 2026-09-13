@@ -354,7 +354,6 @@
     <string name="comput_ask_gemini"><![CDATA[اسأل Gemini]]></string>
     <string name="comput_executing"><![CDATA[جاري التنفيذ: %1$s ...]]></string>
     <string name="comput_command_no_output"><![CDATA[اكتمل الأمر بدون مخرجات.]]></string>
-    <string name="comput_timed_out"><![CDATA[[E] انتهت مهلة الأمر بعد 120 ثانية.]]></string>
     <string name="comput_exit_code"><![CDATA[[E] خرج الأمر بالرمز %1$d.]]></string>
     <string name="comput_running_macro"><![CDATA[جاري تشغيل الماكرو: %1$s]]></string>
     <string name="comput_executing_cmd"><![CDATA[> جاري تنفيذ الأمر: %1$s]]></string>

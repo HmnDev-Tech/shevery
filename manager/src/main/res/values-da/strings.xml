@@ -439,7 +439,6 @@ h er blevet kopieret til udklipsholderen.]]></string>
 Original: %1$s
 Udfører...]]></string>
     <string name="comput_command_no_output"><![CDATA[Kommandoen blev udført uden output.]]></string>
-    <string name="comput_timed_out"><![CDATA[[E] Kommandoen udløb efter 120 sekunder.]]></string>
     <string name="comput_exit_code"><![CDATA[[E] Kommandoen afsluttedes med koden %1$d.]]></string>
     <string name="comput_running_macro"><![CDATA[Kører makro: %1$s]]></string>
     <string name="comput_executing_cmd"><![CDATA[> Udfører kommando: %1$s]]></string>

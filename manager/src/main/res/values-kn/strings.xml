@@ -403,7 +403,6 @@ has been copied to clipboard.]]></string>
 Original: %1$s
 Executing...]]></string>
     <string name="comput_command_no_output"><![CDATA[ಯಾವುದೇ ಔಟ್ ಪುಟ್ ಇಲ್ಲದೆ ಆದೇಶ ಪೂರ್ಣಗೊಂಡಿದೆ.]]></string>
-    <string name="comput_timed_out"><![CDATA[[E] ಆದೇಶವು 120 ಸೆಕೆಂಡುಗಳ ನಂತರ ಸಮಯ ಮುಗಿಯಿತು.]]></string>
     <string name="comput_exit_code"><![CDATA[[E] ಆದೇಶವು %1$d ಕೋಡ್ ನೊಂದಿಗೆ ನಿರ್ಗಮಿಸಿದೆ.]]></string>
     <string name="comput_running_macro"><![CDATA[ಮ್ಯಾಕ್ರೊ ಚಾಲನೆಯಲ್ಲಿದೆ: %1$s]]></string>
     <string name="comput_executing_cmd"><![CDATA[> ಕಾರ್ಯಗತಗೊಳಿಸುವ ಆದೇಶ: %1$s]]></string>

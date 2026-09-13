@@ -374,7 +374,6 @@ Shevery-ді қайта іске қосу қажет болуы мүмкін.]]>
 Түпнұсқа: %1$s
 Орындалуда...]]></string>
     <string name="comput_command_no_output"><![CDATA[Команда шығыссыз аяқталды.]]></string>
-    <string name="comput_timed_out"><![CDATA[[E] Команда 120 секундтан кейін уақыты өтті.]]></string>
     <string name="comput_exit_code"><![CDATA[[E] Команда %1$d кодымен аяқталды.]]></string>
     <string name="comput_running_macro"><![CDATA[Макрос орындалуда: %1$s]]></string>
     <string name="comput_executing_cmd"><![CDATA[> Команда орындалуда: %1$s]]></string>

@@ -429,7 +429,6 @@ kopiran je u međuspremnik.]]></string>
 Original: %1$s
 Izvršavanje...]]></string>
     <string name="comput_command_no_output"><![CDATA[Zapovijed je dovršena bez izlaza.]]></string>
-    <string name="comput_timed_out"><![CDATA[[E] Zapovijed je istekao nakon 120 sekundi.]]></string>
     <string name="comput_exit_code"><![CDATA[[E] Komanda je završila kodom %1$d.]]></string>
     <string name="comput_running_macro"><![CDATA[Pokretanje makra: %1$s]]></string>
     <string name="comput_executing_cmd"><![CDATA[Izvršavanje naredbe: %1$s]]></string>

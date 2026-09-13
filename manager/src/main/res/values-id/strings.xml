@@ -421,7 +421,6 @@
 Asli: %1$s
 Sedang dijalankan...]]></string>
     <string name="comput_command_no_output"><![CDATA[Perintah telah selesai dijalankan tanpa menghasilkan keluaran apa pun.]]></string>
-    <string name="comput_timed_out"><![CDATA[[E] Perintah kedaluwarsa setelah 120 detik.]]></string>
     <string name="comput_exit_code"><![CDATA[[E] Perintah telah berakhir dengan kode %1$d.]]></string>
     <string name="comput_running_macro"><![CDATA[Menjalankan makro: %1$s]]></string>
     <string name="comput_executing_cmd"><![CDATA[> Menjalankan perintah: %1$s]]></string>

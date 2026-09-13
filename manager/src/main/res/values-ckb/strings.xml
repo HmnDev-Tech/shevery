@@ -403,7 +403,6 @@ has been copied to clipboard.]]></string>
 Original: %1$s
 Executing...]]></string>
     <string name="comput_command_no_output"><![CDATA[فەرمان تەواوبوو بەبێ دەرچون.]]></string>
-    <string name="comput_timed_out"><![CDATA[فەرمانەکە دوای 120 چرکە تەواو بوو]]></string>
     <string name="comput_exit_code"><![CDATA[[E] فەرمان دەرچوو بە کۆدی ٪1$d.]]></string>
     <string name="comput_running_macro"><![CDATA[ماکرۆی رادراو: ٪1$s]]></string>
     <string name="comput_executing_cmd"><![CDATA[> جێبەجێکردنی فەرمان: ٪1$s]]></string>

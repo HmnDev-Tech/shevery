@@ -439,7 +439,6 @@ on kopeeritud lõikelauale.]]></string>
 Algne: %1$s
 Käivitatakse...]]></string>
     <string name="comput_command_no_output"><![CDATA[Käsk täideti ilma väljundita.]]></string>
-    <string name="comput_timed_out"><![CDATA[[E] Käsu täitmise aeg lõppes 120 sekundi pärast.]]></string>
     <string name="comput_exit_code"><![CDATA[[E] Käsk lõpetati koodiga %1$d.]]></string>
     <string name="comput_running_macro"><![CDATA[Makro käivitamine: %1$s]]></string>
     <string name="comput_executing_cmd"><![CDATA[> Käsu täitmine: %1$s]]></string>

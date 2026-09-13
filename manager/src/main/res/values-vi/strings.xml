@@ -441,7 +441,6 @@ Chức năng xuất dữ liệu sử dụng SAF (Storage Access Framework). Có 
 Nguồn: %1$s
 Đang thực thi...]]></string>
     <string name="comput_command_no_output"><![CDATA[Lệnh đã hoàn tất mà không có kết quả hiển thị.]]></string>
-    <string name="comput_timed_out"><![CDATA[[E] Lệnh đã hết thời gian chờ sau 120 giây.]]></string>
     <string name="comput_exit_code"><![CDATA[[E] Lệnh đã kết thúc với mã %1$d.]]></string>
     <string name="comput_running_macro"><![CDATA[Đang chạy macro: %1$s]]></string>
     <string name="comput_executing_cmd"><![CDATA[> Đang thực thi lệnh: %1$s]]></string>

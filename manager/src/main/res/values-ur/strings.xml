@@ -427,7 +427,6 @@
 اصل: %1$s
 عملدرآمد...]]></string>
     <string name="comput_command_no_output"><![CDATA[کمانڈ بغیر کسی آؤٹ پٹ کے مکمل ہو گیا۔]]></string>
-    <string name="comput_timed_out"><![CDATA[[E] کمانڈ 120 سیکنڈ کے بعد ٹائم آؤٹ ہو گیا۔]]></string>
     <string name="comput_exit_code"><![CDATA[[E] کمانڈ کوڈ %1$d کے ساتھ ختم ہوا۔]]></string>
     <string name="comput_running_macro"><![CDATA[میکرو چل رہا ہے: %1$s]]></string>
     <string name="comput_executing_cmd"><![CDATA[کمانڈ چلانے: %1$s]]></string>

@@ -439,7 +439,6 @@ Eksportēšanas funkcija izmanto SAF (Storage Access Framework). Ir ziņots, ka 
 Oriģināls: %1$s
 Izpilde...]]></string>
     <string name="comput_command_no_output"><![CDATA[Komanda izpildīta bez izvades.]]></string>
-    <string name="comput_timed_out"><![CDATA[[E] Komandas izpildes laiks beidzās pēc 120 sekundēm.]]></string>
     <string name="comput_exit_code"><![CDATA[[E] Komanda tika pārtraukta ar kodu %1$d.]]></string>
     <string name="comput_running_macro"><![CDATA[Makro izpilde: %1$s]]></string>
     <string name="comput_executing_cmd"><![CDATA[> Komandas izpilde: %1$s]]></string>

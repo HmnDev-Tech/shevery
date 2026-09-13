@@ -365,7 +365,6 @@ copiado al portapapeles.]]></string>
 Original: %1$s
 Ejecutando...]]></string>
     <string name="comput_command_no_output"><![CDATA[Sin salida.]]></string>
-    <string name="comput_timed_out"><![CDATA[[E] Tiempo agotado tras 120 segundos.]]></string>
     <string name="comput_exit_code"><![CDATA[[E] Finalizó con código %1$d.]]></string>
     <string name="comput_running_macro"><![CDATA[Ejecutando macro: %1$s]]></string>
     <string name="comput_executing_cmd"><![CDATA[> Ejecutando comando: %1$s]]></string>

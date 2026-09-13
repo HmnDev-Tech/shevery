@@ -429,7 +429,6 @@
 মূল: %1$s
 চালনা হচ্ছে...]]></string>
     <string name="comput_command_no_output"><![CDATA[কমান্ডটি কোনো আউটপুট ছাড়াই সম্পন্ন হয়েছে।]]></string>
-    <string name="comput_timed_out"><![CDATA[[E] কমান্ডটি 120 সেকেন্ডের পর সময়সীমা অতিক্রম করে বন্ধ হয়ে গেছে।]]></string>
     <string name="comput_exit_code"><![CDATA[[E] কমান্ড কোড %1$d দিয়ে প্রস্থান করেছে।]]></string>
     <string name="comput_running_macro"><![CDATA[ম্যাক্রো চলছে: %1$s]]></string>
     <string name="comput_executing_cmd"><![CDATA[কমান্ড কার্যকর করা: %1$s]]></string>

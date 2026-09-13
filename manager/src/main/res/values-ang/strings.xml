@@ -405,7 +405,6 @@ Wi-Fi is required for the first restart because Shevery must connect to the curr
 Original: %1$s
 Executing...]]></string>
     <string name="comput_command_no_output"><![CDATA[Command completed with no output.]]></string>
-    <string name="comput_timed_out"><![CDATA[[E] Command timed out after 120 seconds.]]></string>
     <string name="comput_exit_code"><![CDATA[[E] Command exited with code %1$d.]]></string>
     <string name="comput_running_macro"><![CDATA[Running macro: %1$s]]></string>
     <string name="comput_executing_cmd"><![CDATA[> Executing command: %1$s]]></string>

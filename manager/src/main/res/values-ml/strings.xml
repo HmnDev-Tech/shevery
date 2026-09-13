@@ -425,7 +425,6 @@
 യഥാർത്ഥം: %1$s
 നിർവ്വഹിക്കുന്നു...]]></string>
     <string name="comput_command_no_output"><![CDATA[കമാൻഡ് യാതൊരു ഔട്ട്പുട്ടുമില്ലാതെ പൂർത്തിയായി.]]></string>
-    <string name="comput_timed_out"><![CDATA[[E] കമാൻഡ് 120 സെക്കൻഡിനു ശേഷം സമയപരിധി കഴിഞ്ഞു.]]></string>
     <string name="comput_exit_code"><![CDATA[[E] കമാൻഡ് കോഡ് %1$d-മായി അവസാനിച്ചു.]]></string>
     <string name="comput_running_macro"><![CDATA[മാക്രോ പ്രവർത്തിക്കുന്നു: %1$s]]></string>
     <string name="comput_executing_cmd"><![CDATA[കമാൻഡ് നടപ്പിലാക്കുന്നു: %1$s]]></string>

@@ -367,7 +367,6 @@ has been copied to clipboard.]]></string>
     <string name="comput_ask_gemini"><![CDATA[שאל את Gemini]]></string>
     <string name="comput_executing"><![CDATA[מפעיל: %1$s ...]]></string>
     <string name="comput_command_no_output"><![CDATA[הפקודה הושלמה ללא פלט.]]></string>
-    <string name="comput_timed_out"><![CDATA[[E] הפקודה פג תוקפה לאחר 120 שניות.]]></string>
     <string name="comput_exit_code"><![CDATA[[E] הפקודה יצאה עם קוד %1$d.]]></string>
     <string name="comput_running_macro"><![CDATA[מריץ מאקרו: %1$s]]></string>
     <string name="comput_executing_cmd"><![CDATA[> מריץ פקודה: %1$s]]></string>

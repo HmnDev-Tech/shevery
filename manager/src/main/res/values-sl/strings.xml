@@ -442,7 +442,6 @@ je bil kopiran v odložišče.]]></string>
 Izvirnik: %1$s
 Izvajanje...]]></string>
     <string name="comput_command_no_output"><![CDATA[Ukaz je bil izveden brez izpisa.]]></string>
-    <string name="comput_timed_out"><![CDATA[[E] Iztekla se je časovna omejitev ukaza po 120 sekundah.]]></string>
     <string name="comput_exit_code"><![CDATA[[E] Ukaz se je zaključil s kodo %1$d.]]></string>
     <string name="comput_running_macro"><![CDATA[Izvajanje makra: %1$s]]></string>
     <string name="comput_executing_cmd"><![CDATA[> Izvajanje ukaza: %1$s]]></string>

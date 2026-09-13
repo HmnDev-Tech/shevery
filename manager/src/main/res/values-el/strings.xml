@@ -439,7 +439,6 @@
 Πρωτότυπο: %1$s
 Εκτέλεση...]]></string>
     <string name="comput_command_no_output"><![CDATA[Η εντολή ολοκληρώθηκε χωρίς έξοδο.]]></string>
-    <string name="comput_timed_out"><![CDATA[[E] Η εντολή έληξε μετά από 120 δευτερόλεπτα.]]></string>
     <string name="comput_exit_code"><![CDATA[[E] Η εντολή τερματίστηκε με κωδικό %1$d.]]></string>
     <string name="comput_running_macro"><![CDATA[Εκτέλεση μακροεντολής: %1$s]]></string>
     <string name="comput_executing_cmd"><![CDATA[> Εκτέλεση εντολής: %1$s]]></string>

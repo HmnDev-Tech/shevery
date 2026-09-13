@@ -355,7 +355,6 @@
     <string name="comput_ask_gemini"><![CDATA[Gemini에게 물어보기]]></string>
     <string name="comput_executing"><![CDATA[실행 중: %1$s ...]]></string>
     <string name="comput_command_no_output"><![CDATA[명령이 출력 없이 완료되었습니다.]]></string>
-    <string name="comput_timed_out"><![CDATA[[E] 명령이 120초 후 시간 초과되었습니다.]]></string>
     <string name="comput_exit_code"><![CDATA[[E] 명령이 코드 %1$d로 종료되었습니다.]]></string>
     <string name="comput_running_macro"><![CDATA[매크로 실행 중: %1$s]]></string>
     <string name="comput_executing_cmd"><![CDATA[> 명령 실행 중: %1$s]]></string>

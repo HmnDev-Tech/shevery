@@ -441,7 +441,6 @@ har kopierats till urklipp.]]></string>
 Original: %1$s
 Körs...]]></string>
     <string name="comput_command_no_output"><![CDATA[Kommandot har slutförts utan utdata.]]></string>
-    <string name="comput_timed_out"><![CDATA[[E] Kommandot tidsgränsade efter 120 sekunder.]]></string>
     <string name="comput_exit_code"><![CDATA[[E] Kommandot avslutades med koden %1$d.]]></string>
     <string name="comput_running_macro"><![CDATA[Kör makro: %1$s]]></string>
     <string name="comput_executing_cmd"><![CDATA[> Kör kommandot: %1$s]]></string>

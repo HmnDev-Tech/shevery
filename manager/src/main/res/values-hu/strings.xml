@@ -436,7 +436,6 @@ Az export funkció SAF-et használ (Storage Access Framework). A jelentések sze
 Eredeti: %1$s
 Végrehajtás...]]></string>
     <string name="comput_command_no_output"><![CDATA[A parancs végrehajtása kimenet nélkül befejeződött.]]></string>
-    <string name="comput_timed_out"><![CDATA[[E] A parancs 120 másodperc után időtúllépés miatt megszakadt.]]></string>
     <string name="comput_exit_code"><![CDATA[[E] A parancs %1$d kóddal fejeződött be.]]></string>
     <string name="comput_running_macro"><![CDATA[Makró futtatása: %1$s]]></string>
     <string name="comput_executing_cmd"><![CDATA[> Parancs végrehajtása: %1$s]]></string>

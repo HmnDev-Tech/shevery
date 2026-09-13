@@ -422,7 +422,6 @@
 Orijinal: %1$s
 İcra olunur...]]></string>
     <string name="comput_command_no_output"><![CDATA[Əmr heç bir çıxış olmadan tamamlandı.]]></string>
-    <string name="comput_timed_out"><![CDATA[[E] Komanda 120 saniyə sonra vaxtı bitdi.]]></string>
     <string name="comput_exit_code"><![CDATA[[E] əmri %1$d kodu ilə başa çatdı.]]></string>
     <string name="comput_running_macro"><![CDATA[Makronun işlənməsi: %1$s]]></string>
     <string name="comput_executing_cmd"><![CDATA[Əmri icra edir: %1$s]]></string>

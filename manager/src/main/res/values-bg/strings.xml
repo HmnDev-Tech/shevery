@@ -439,7 +439,6 @@
 Оригинал: %1$s
 Изпълнява се...]]></string>
     <string name="comput_command_no_output"><![CDATA[Командата приключи без изходни данни.]]></string>
-    <string name="comput_timed_out"><![CDATA[[E] Изтече времето за изпълнение на командата след 120 секунди.]]></string>
     <string name="comput_exit_code"><![CDATA[[E] Командата приключи с код %1$d.]]></string>
     <string name="comput_running_macro"><![CDATA[Изпълнение на макрос: %1$s]]></string>
     <string name="comput_executing_cmd"><![CDATA[> Изпълнява се командата: %1$s]]></string>

@@ -428,7 +428,6 @@
 Արտասանություն՝ %1$s
 Կատարվում է...]]></string>
     <string name="comput_command_no_output"><![CDATA[Հրամանը ավարտվեց առանց ելքի։]]></string>
-    <string name="comput_timed_out"><![CDATA[[E] հրամանը սպառեց 120 վայրկյանից հետո։]]></string>
     <string name="comput_exit_code"><![CDATA[[E] հրամանը դուրս եկավ %1$d կոդով։]]></string>
     <string name="comput_running_macro"><![CDATA[Մակրոյի գործարկում: %1$s]]></string>
     <string name="comput_executing_cmd"><![CDATA[Պատվերն իրականացվում է՝ %1$s]]></string>

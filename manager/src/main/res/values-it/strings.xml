@@ -421,7 +421,6 @@
 Originale: %1$s
 Esecuzione in corso...]]></string>
     <string name="comput_command_no_output"><![CDATA[Il comando è stato eseguito senza generare alcun output.]]></string>
-    <string name="comput_timed_out"><![CDATA[[E] Il comando ha superato il limite di tempo dopo 120 secondi.]]></string>
     <string name="comput_exit_code"><![CDATA[[E] Il comando è terminato con il codice %1$d.]]></string>
     <string name="comput_running_macro"><![CDATA[Esecuzione macro: %1$s]]></string>
     <string name="comput_executing_cmd"><![CDATA[> Esecuzione del comando: %1$s]]></string>

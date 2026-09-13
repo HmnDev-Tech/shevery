@@ -355,7 +355,6 @@
     <string name="comput_ask_gemini"><![CDATA[Perguntar ao Gemini]]></string>
     <string name="comput_executing"><![CDATA[Executando: %1$s ...]]></string>
     <string name="comput_command_no_output"><![CDATA[Comando concluído sem saída.]]></string>
-    <string name="comput_timed_out"><![CDATA[[E] Tempo limite do comando esgotado após 120 segundos.]]></string>
     <string name="comput_exit_code"><![CDATA[[E] Comando encerrado com código %1$d.]]></string>
     <string name="comput_running_macro"><![CDATA[Executando macro: %1$s]]></string>
     <string name="comput_executing_cmd"><![CDATA[> Executando comando: %1$s]]></string>
