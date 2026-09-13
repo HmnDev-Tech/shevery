@@ -133,6 +133,7 @@ import androidx.compose.ui.text.withStyle
 import androidx.compose.ui.unit.dp
 import androidx.compose.ui.unit.sp
 import kotlinx.coroutines.Dispatchers
+import kotlinx.coroutines.isActive
 import kotlinx.coroutines.launch
 import kotlinx.coroutines.withContext
 import androidx.compose.ui.semantics.semantics
@@ -356,6 +357,8 @@ fun ComputScreen(
                     null
                 )
 
+                val scopeContext = coroutineContext
+
                 val destroy: () -> Unit = { runCatching { remote.destroy() } }
                 val stdoutPfd = remote.getInputStream()
                 val stderrPfd = remote.getErrorStream()
@@ -377,7 +380,7 @@ fun ComputScreen(
 
                 val finished = run {
                     var done = false
-                    while (!cancelRequested.get()) {
+                    while (!cancelRequested.get() && scopeContext.isActive) {
                         if (remote.waitForTimeout(1L, java.util.concurrent.TimeUnit.SECONDS.name)) {
                             done = true
                             break
