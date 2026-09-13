@@ -25,7 +25,6 @@ import androidx.compose.foundation.text.KeyboardOptions
 import androidx.compose.foundation.text.selection.SelectionContainer
 import androidx.compose.foundation.verticalScroll
 import androidx.compose.material.icons.Icons
-import androidx.compose.material.icons.automirrored.rounded.Send
 import androidx.compose.material.icons.rounded.AutoAwesome
 import androidx.compose.material.icons.rounded.ContentCopy
 import androidx.compose.material.icons.rounded.ErrorOutline
@@ -246,16 +245,6 @@ fun CommandiumSheet(
                 shape = RoundedCornerShape(20.dp),
                 label = { Text(stringResource(R.string.comput_commandium_label)) },
                 placeholder = { Text(stringResource(R.string.comput_commandium_placeholder)) },
-                trailingIcon = {
-                    IconButton(
-                        onClick = { requestCommandium() }
-                    ) {
-                        Icon(
-                            imageVector = Icons.AutoMirrored.Rounded.Send,
-                            contentDescription = stringResource(R.string.comput_command_send)
-                        )
-                    }
-                },
                 keyboardOptions = KeyboardOptions(
                     imeAction = ImeAction.Send
                 ),
