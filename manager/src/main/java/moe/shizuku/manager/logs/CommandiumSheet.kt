@@ -11,6 +11,7 @@ import androidx.compose.foundation.layout.Column
 import androidx.compose.foundation.layout.FlowRow
 import androidx.compose.foundation.layout.Row
 import androidx.compose.foundation.layout.Spacer
+import androidx.compose.foundation.gestures.animateScrollTo
 import androidx.compose.foundation.layout.fillMaxWidth
 import androidx.compose.foundation.layout.height
 import androidx.compose.foundation.layout.imePadding
@@ -43,6 +44,7 @@ import androidx.compose.material3.Surface
 import androidx.compose.material3.Text
 import androidx.compose.material3.TextButton
 import androidx.compose.runtime.Composable
+import androidx.compose.runtime.LaunchedEffect
 import androidx.compose.runtime.getValue
 import androidx.compose.runtime.mutableStateOf
 import androidx.compose.runtime.remember
@@ -125,10 +127,11 @@ fun CommandiumSheet(
             }
         },
         text = {
+            val scrollState = rememberScrollState()
             Column(
             modifier = Modifier
                 .fillMaxWidth()
-                .verticalScroll(rememberScrollState())
+                .verticalScroll(scrollState)
                 .imePadding(),
             verticalArrangement = Arrangement.spacedBy(14.dp)
         ) {
@@ -276,6 +279,35 @@ fun CommandiumSheet(
                     LoadingIndicator(Modifier.size(18.dp), MaterialTheme.colorScheme.onPrimary)
                 } else {
                     Text(stringResource(R.string.comput_ask_commandium), fontWeight = FontWeight.Bold)
+                }
+            }
+
+            // Persistent status node: TalkBack only announces live-region CONTENT
+            // CHANGES reliably, so the node must stay composed and change its text
+            // rather than being added/removed per state. Idle = empty (no announce).
+            val statusText = when {
+                isGenerating -> stringResource(R.string.comput_commandium_generating)
+                result == null -> ""
+                result.getOrNull() != null -> stringResource(R.string.comput_commandium_ready)
+                else -> stringResource(R.string.comput_commandium_failed)
+            }
+            val statusColor = when {
+                isGenerating -> MaterialTheme.colorScheme.primary
+                result == null -> MaterialTheme.colorScheme.onSurfaceVariant
+                result.getOrNull() != null -> MaterialTheme.colorScheme.primary
+                else -> MaterialTheme.colorScheme.error
+            }
+            Text(
+                text = statusText,
+                modifier = Modifier
+                    .fillMaxWidth()
+                    .semantics { liveRegion = LiveRegionMode.Polite },
+                style = MaterialTheme.typography.labelMedium,
+                color = statusColor
+            )
+            LaunchedEffect(result) {
+                if (result != null) {
+                    scrollState.animateScrollTo(scrollState.maxValue)
                 }
             }
             }

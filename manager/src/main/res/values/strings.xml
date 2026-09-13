@@ -583,6 +583,9 @@ Wi-Fi is required for the first restart because Shevery must connect to the curr
     <string name="comput_commandium">Commandium</string>
     <string name="comput_commandium_assistant">Commandium AI Assistant</string>
     <string name="comput_commandium_description">Generate shell commands using natural language. AI will output a raw, copyable command.</string>
+    <string name="comput_commandium_generating">Generating command...</string>
+    <string name="comput_commandium_ready">Command generated</string>
+    <string name="comput_commandium_failed">Generation failed</string>
     <string name="comput_commandium_label">What command do you need?</string>
     <string name="comput_commandium_placeholder">e.g. Find all files larger than 10MB in /sdcard</string>
     <string name="comput_ask_commandium">Ask Commandium</string>
