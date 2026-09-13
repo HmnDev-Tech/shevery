@@ -82,10 +82,16 @@ class SheveryUpdateChecker private constructor() {
                 )
 
                 val releases = json.decodeFromString<List<GitHubRelease>>(body)
+                // GitHub orders /releases by created_at, not published_at, so a
+                // release drafted early but published late (e.g. r37: drafted
+                // Aug 21, published Sep 13) lands below older stables and is
+                // skipped by firstOrNull. Pick the newest by published_at instead.
                 val targetRelease = when (channel) {
-                    ModuleSettings.AppUpdateChannel.STABLE -> releases.firstOrNull { !it.prerelease && !it.draft }
-                    ModuleSettings.AppUpdateChannel.BETA_PRE_RELEASE -> releases.firstOrNull { !it.draft }
-                } ?: releases.firstOrNull { !it.draft }
+                    ModuleSettings.AppUpdateChannel.STABLE -> releases.filter { !it.prerelease && !it.draft }
+                        .maxByOrNull { it.publishedAt ?: "" }
+                    ModuleSettings.AppUpdateChannel.BETA_PRE_RELEASE -> releases.filter { !it.draft }
+                        .maxByOrNull { it.publishedAt ?: "" }
+                } ?: releases.filter { !it.draft }.maxByOrNull { it.publishedAt ?: "" }
 
                 if (targetRelease == null) {
                     return@withContext SheveryAppUpdateResult(
