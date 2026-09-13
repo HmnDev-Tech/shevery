@@ -367,7 +367,6 @@
     <string name="comput_ask_gemini"><![CDATA[از Gemini بپرسید]]></string>
     <string name="comput_executing"><![CDATA[در حال اجرا: %1$s ...]]></string>
     <string name="comput_command_no_output"><![CDATA[دستور بدون خروجی تکمیل شد.]]></string>
-    <string name="comput_timed_out"><![CDATA[[E] دستور پس از ۱۲۰ ثانیه پایان وقت یافت.]]></string>
     <string name="comput_exit_code"><![CDATA[[E] دستور با کد %1$d خارج شد.]]></string>
     <string name="comput_running_macro"><![CDATA[در حال اجرای ماکرو: %1$s]]></string>
     <string name="comput_executing_cmd"><![CDATA[> در حال اجرای دستور: %1$s]]></string>

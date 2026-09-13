@@ -441,7 +441,6 @@ De exportfunctie maakt gebruik van SAF (Storage Access Framework). Er is gemeld 
 Origineel: %1$s
 Wordt uitgevoerd...]]></string>
     <string name="comput_command_no_output"><![CDATA[Het commando is uitgevoerd zonder uitvoer.]]></string>
-    <string name="comput_timed_out"><![CDATA[[E] De opdracht is na 120 seconden verlopen.]]></string>
     <string name="comput_exit_code"><![CDATA[[E] Het commando is beëindigd met code %1$d.]]></string>
     <string name="comput_running_macro"><![CDATA[Macro wordt uitgevoerd: %1$s]]></string>
     <string name="comput_executing_cmd"><![CDATA[> Commando wordt uitgevoerd: %1$s]]></string>

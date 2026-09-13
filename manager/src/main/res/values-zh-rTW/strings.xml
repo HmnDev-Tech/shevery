@@ -379,7 +379,6 @@
 原指令：%1$s
 正在執行...]]></string>
     <string name="comput_command_no_output"><![CDATA[指令執行完成，無輸出。]]></string>
-    <string name="comput_timed_out"><![CDATA[[E] 指令在 120 秒後逾時。]]></string>
     <string name="comput_exit_code"><![CDATA[[E] 指令以結束碼 %1$d 結束。]]></string>
     <string name="comput_running_macro"><![CDATA[正在執行巨集：%1$s]]></string>
     <string name="comput_executing_cmd"><![CDATA[> 正在執行指令：%1$s]]></string>

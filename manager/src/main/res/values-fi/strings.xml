@@ -439,7 +439,6 @@ on kopioitu leikepöydälle.]]></string>
 Alkuperäinen: %1$s
 Suoritetaan...]]></string>
     <string name="comput_command_no_output"><![CDATA[Komento suoritettiin ilman tulostetta.]]></string>
-    <string name="comput_timed_out"><![CDATA[[E] Komennon aikakatkaisu 120 sekunnin kuluttua.]]></string>
     <string name="comput_exit_code"><![CDATA[[E] Komento päättyi koodilla %1$d.]]></string>
     <string name="comput_running_macro"><![CDATA[Suoritetaan makro: %1$s]]></string>
     <string name="comput_executing_cmd"><![CDATA[> Komennon suorittaminen: %1$s]]></string>

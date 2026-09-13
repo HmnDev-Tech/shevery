@@ -403,7 +403,6 @@ has been copied to clipboard.]]></string>
 Original: %1$s
 Executing...]]></string>
     <string name="comput_command_no_output"><![CDATA[بۇيرۇق تاماملاندى، چىقىرىش يوق بولدى.]]></string>
-    <string name="comput_timed_out"><![CDATA[[E] بۇيرۇق 120 سېكۇنتتىن كېيىن ئاخىرلاشتى.]]></string>
     <string name="comput_exit_code"><![CDATA[[E] بۇيرۇق ٪1$d كودى بىلەن چېكىندى.]]></string>
     <string name="comput_running_macro"><![CDATA[ئىجرا قىلىنىۋاتقان ماكرو: ٪1$s]]></string>
     <string name="comput_executing_cmd"><![CDATA[> ئىجرا قىلىنىۋاتقان بۇيرۇق: ٪1$s]]></string>

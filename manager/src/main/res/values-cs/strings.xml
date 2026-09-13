@@ -420,7 +420,6 @@
 Původní: %1$s
 Spouštím...]]></string>
     <string name="comput_command_no_output"><![CDATA[Příkaz byl dokončen bez výstupu.]]></string>
-    <string name="comput_timed_out"><![CDATA[[E] Časový limit příkazu vypršel po 120 sekundách.]]></string>
     <string name="comput_exit_code"><![CDATA[[E] Příkaz byl ukončen s kódem %1$d.]]></string>
     <string name="comput_running_macro"><![CDATA[Spuštění makra: %1$s]]></string>
     <string name="comput_executing_cmd"><![CDATA[> Spouštění příkazu: %1$s]]></string>

@@ -429,7 +429,6 @@ Selepas proses penjodohan bermula, anda akan dapat memasukkan kod penjodohan.]]>
 Asli: %1$s
 Dalam pelaksanaan...]]></string>
     <string name="comput_command_no_output"><![CDATA[Perintah selesai tanpa sebarang keluaran.]]></string>
-    <string name="comput_timed_out"><![CDATA[[E] Perintah tamat masa selepas 120 saat.]]></string>
     <string name="comput_exit_code"><![CDATA[Perintah [E] keluar dengan kod %1$d.]]></string>
     <string name="comput_running_macro"><![CDATA[Menjalankan makro: %1$s]]></string>
     <string name="comput_executing_cmd"><![CDATA[Melaksanakan arahan: %1$s]]></string>

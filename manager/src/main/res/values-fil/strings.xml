@@ -421,7 +421,6 @@
 Orihinal: %1$s
 Isinasagawa...]]></string>
     <string name="comput_command_no_output"><![CDATA[Natapos ang utos nang walang output.]]></string>
-    <string name="comput_timed_out"><![CDATA[Nag-expire ang utos makalipas ang 120 segundo.]]></string>
     <string name="comput_exit_code"><![CDATA[Lumabas ang utos na may kodigo %1$d.]]></string>
     <string name="comput_running_macro"><![CDATA[Pagpapatakbo ng macro: %1$s]]></string>
     <string name="comput_executing_cmd"><![CDATA[Ipinapatupad ang utos: %1$s]]></string>

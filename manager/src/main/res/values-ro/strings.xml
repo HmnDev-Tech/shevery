@@ -441,7 +441,6 @@ a fost copiat în clipboard.]]></string>
 Original: %1$s
 Se execută...]]></string>
     <string name="comput_command_no_output"><![CDATA[Comanda s-a executat fără a genera nicio ieșire.]]></string>
-    <string name="comput_timed_out"><![CDATA[[E] Comanda a depășit timpul de așteptare după 120 de secunde.]]></string>
     <string name="comput_exit_code"><![CDATA[[E] Comanda s-a încheiat cu codul %1$d.]]></string>
     <string name="comput_running_macro"><![CDATA[Executare macro: %1$s]]></string>
     <string name="comput_executing_cmd"><![CDATA[> Se execută comanda: %1$s]]></string>

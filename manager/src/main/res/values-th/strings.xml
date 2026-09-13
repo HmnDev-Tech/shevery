@@ -441,7 +441,6 @@
 ต้นฉบับ: %1$s
 กำลังดำเนินการ...]]></string>
     <string name="comput_command_no_output"><![CDATA[คำสั่งเสร็จสิ้นแล้ว โดยไม่มีผลลัพธ์]]></string>
-    <string name="comput_timed_out"><![CDATA[[E] คำสั่งหมดเวลาหลังจาก 120 วินาที]]></string>
     <string name="comput_exit_code"><![CDATA[[E] คำสั่งได้สิ้นสุดลงด้วยรหัส %1$d.]]></string>
     <string name="comput_running_macro"><![CDATA[กำลังเรียกใช้มาโคร: %1$s]]></string>
     <string name="comput_executing_cmd"><![CDATA[> กำลังดำเนินการคำสั่ง: %1$s]]></string>

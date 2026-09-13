@@ -425,7 +425,6 @@
 原命令：%1$s
 正在执行...]]></string>
     <string name="comput_command_no_output"><![CDATA[命令执行完成，无输出。]]></string>
-    <string name="comput_timed_out"><![CDATA[[E] 命令在 120 秒后超时。]]></string>
     <string name="comput_exit_code"><![CDATA[[E] 命令以退出码 %1$d 结束。]]></string>
     <string name="comput_running_macro"><![CDATA[正在运行宏：%1$s]]></string>
     <string name="comput_executing_cmd"><![CDATA[> 正在执行命令：%1$s]]></string>

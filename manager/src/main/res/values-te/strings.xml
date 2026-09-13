@@ -427,7 +427,6 @@
 అసలు: %1$s
 నిర్వాహిస్తోంది...]]></string>
     <string name="comput_command_no_output"><![CDATA[కమాండ్ ఎటువంటి అవుట్‌పుట్ లేకుండా పూర్తయింది.]]></string>
-    <string name="comput_timed_out"><![CDATA[[E] కమాండ్ 120 సెకన్ల తర్వాత టైమ్ అవుట్ అయింది.]]></string>
     <string name="comput_exit_code"><![CDATA[[E] కమాండ్ కోడ్ %1$d తో నిష్క్రమించింది.]]></string>
     <string name="comput_running_macro"><![CDATA[మ్యాక్రోను అమలు చేస్తోంది: %1$s]]></string>
     <string name="comput_executing_cmd"><![CDATA[ఆదేశాన్ని అమలు చేస్తోంది: %1$s]]></string>

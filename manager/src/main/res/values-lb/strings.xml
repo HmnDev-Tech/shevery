@@ -429,7 +429,6 @@ ass op d\'Zouschneidplack kopéiert ginn.]]></string>
 Original: %1$s
 Ausféierung...]]></string>
     <string name="comput_command_no_output"><![CDATA[Kommando ofgeschloss ouni Ausgab.]]></string>
-    <string name="comput_timed_out"><![CDATA[[E] Kommando no 120 Sekonnen ofgelaf.]]></string>
     <string name="comput_exit_code"><![CDATA[[E] Kommando huet mam Code %1$d ofgeschloss.]]></string>
     <string name="comput_running_macro"><![CDATA[Ausféieren vum Makro: %1$s]]></string>
     <string name="comput_executing_cmd"><![CDATA[Kommando ausféieren: %1$s]]></string>

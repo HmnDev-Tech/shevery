@@ -554,7 +554,6 @@ Wi-Fi is required for the first restart because Shevery must connect to the curr
     <string name="comput_executing">Executing: %1$s ...</string>
     <string name="comput_adb_translate">ADB Command Translation Mode Active\nOriginal: %1$s\nExecuting...</string>
     <string name="comput_command_no_output">Command completed with no output.</string>
-    <string name="comput_timed_out">[E] Command timed out after 120 seconds.</string>
     <string name="comput_exit_code">[E] Command exited with code %1$d.</string>
     <string name="comput_running_macro">Running macro: %1$s</string>
     <string name="comput_executing_cmd">> Executing command: %1$s</string>

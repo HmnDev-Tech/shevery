@@ -374,7 +374,6 @@ Android 11未満ではパソコン接続が必要です。]]></string>
 オリジナル: %1$s
 実行中...]]></string>
     <string name="comput_command_no_output"><![CDATA[出力なしで終了しました。]]></string>
-    <string name="comput_timed_out"><![CDATA[[E] 120秒後にコマンドがタイムアウトしました。]]></string>
     <string name="comput_exit_code"><![CDATA[[E] コード %1$d で終了しました。]]></string>
     <string name="comput_running_macro"><![CDATA[マクロを実行中: %1$s]]></string>
     <string name="comput_executing_cmd"><![CDATA[> コマンド実行中: %1$s]]></string>

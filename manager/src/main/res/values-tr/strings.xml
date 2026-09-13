@@ -355,7 +355,6 @@
     <string name="comput_ask_gemini"><![CDATA[Gemini\'ye Sor]]></string>
     <string name="comput_executing"><![CDATA[Çalıştırılıyor: %1$s ...]]></string>
     <string name="comput_command_no_output"><![CDATA[Komut çıktısız tamamlandı.]]></string>
-    <string name="comput_timed_out"><![CDATA[[E] Komut 120 saniye sonra zaman aşımına uğradı.]]></string>
     <string name="comput_exit_code"><![CDATA[[E] Komut %1$d koduyla çıktı.]]></string>
     <string name="comput_running_macro"><![CDATA[Makro çalıştırılıyor: %1$s]]></string>
     <string name="comput_executing_cmd"><![CDATA[> Komut çalıştırılıyor: %1$s]]></string>

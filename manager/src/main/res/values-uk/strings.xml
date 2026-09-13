@@ -374,7 +374,6 @@
 Оригінал: %1$s
 Виконується...]]></string>
     <string name="comput_command_no_output"><![CDATA[Команду виконано без виводу.]]></string>
-    <string name="comput_timed_out"><![CDATA[[E] Час очікування команди вичерпано (120с).]]></string>
     <string name="comput_exit_code"><![CDATA[[E] Команда завершилася з кодом %1$d.]]></string>
     <string name="comput_running_macro"><![CDATA[Виконується макрос: %1$s]]></string>
     <string name="comput_executing_cmd"><![CDATA[> Виконується команда: %1$s]]></string>

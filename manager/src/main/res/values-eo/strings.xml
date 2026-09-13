@@ -425,7 +425,6 @@ kopiita al la tondujo.]]></string>
 Originalo: %1$s
 Ekzekutante...]]></string>
     <string name="comput_command_no_output"><![CDATA[Komando plenumita sen eligo.]]></string>
-    <string name="comput_timed_out"><![CDATA[[E] Komando eksvalidiĝis post 120 sekundoj.]]></string>
     <string name="comput_exit_code"><![CDATA[[E] Komando eliris kun kodo %1$d.]]></string>
     <string name="comput_running_macro"><![CDATA[Ruli makron: %1$s]]></string>
     <string name="comput_executing_cmd"><![CDATA[Efektivigante komandon: %1$s]]></string>

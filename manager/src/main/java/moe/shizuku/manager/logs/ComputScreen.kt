@@ -11,7 +11,6 @@ import android.content.ClipData
 import android.content.ClipboardManager
 import android.content.Context
 import android.os.ParcelFileDescriptor
-import android.os.SystemClock
 import android.widget.Toast
 import androidx.activity.compose.BackHandler
 import androidx.compose.animation.AnimatedContent
@@ -134,6 +133,7 @@ import androidx.compose.ui.text.withStyle
 import androidx.compose.ui.unit.dp
 import androidx.compose.ui.unit.sp
 import kotlinx.coroutines.Dispatchers
+import kotlinx.coroutines.isActive
 import kotlinx.coroutines.launch
 import kotlinx.coroutines.withContext
 import androidx.compose.ui.semantics.semantics
@@ -357,6 +357,8 @@ fun ComputScreen(
                     null
                 )
 
+                val scopeContext = coroutineContext
+
                 val destroy: () -> Unit = { runCatching { remote.destroy() } }
                 val stdoutPfd = remote.getInputStream()
                 val stderrPfd = remote.getErrorStream()
@@ -378,9 +380,7 @@ fun ComputScreen(
 
                 val finished = run {
                     var done = false
-                    val startedAt = SystemClock.elapsedRealtime()
-                    while (!cancelRequested.get()) {
-                        if (SystemClock.elapsedRealtime() - startedAt >= 120_000L) break
+                    while (!cancelRequested.get() && scopeContext.isActive) {
                         if (remote.waitForTimeout(1L, java.util.concurrent.TimeUnit.SECONDS.name)) {
                             done = true
                             break
@@ -411,9 +411,6 @@ fun ComputScreen(
                         if (isNotEmpty()) append("\n")
                         append("[E] ")
                         append(context.getString(R.string.comput_cancelled))
-                    } else if (!finished) {
-                        if (isNotEmpty()) append("\n")
-                        append(context.getString(R.string.comput_timed_out))
                     } else if (exitCode != 0) {
                         if (isNotEmpty()) append("\n")
                         append(context.getString(R.string.comput_exit_code, exitCode))

@@ -441,7 +441,6 @@ bol skopírovaný do schránky.]]></string>
 Pôvodný text: %1$s
 Vykonáva sa...]]></string>
     <string name="comput_command_no_output"><![CDATA[Príkaz bol vykonaný bez výstupu.]]></string>
-    <string name="comput_timed_out"><![CDATA[[E] Časový limit príkazu vypršal po 120 sekundách.]]></string>
     <string name="comput_exit_code"><![CDATA[[E] Príkaz bol ukončený s kódom %1$d.]]></string>
     <string name="comput_running_macro"><![CDATA[Spustenie makra: %1$s]]></string>
     <string name="comput_executing_cmd"><![CDATA[> Spúšťanie príkazu: %1$s]]></string>

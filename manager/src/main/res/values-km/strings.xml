@@ -403,7 +403,6 @@ has been copied to clipboard.]]></string>
 Original: %1$s
 Executing...]]></string>
     <string name="comput_command_no_output"><![CDATA[បញ្ជាបានបញ្ចប់ដោយគ្មានលទ្ធផល។]]></string>
-    <string name="comput_timed_out"><![CDATA[[E] ពាក្យបញ្ជាបានផុតកំណត់បន្ទាប់ពី 120 វិនាទី។]]></string>
     <string name="comput_exit_code"><![CDATA[[E] ពាក្យបញ្ជាចេញជាមួយកូដ %1$d។]]></string>
     <string name="comput_running_macro"><![CDATA[ម៉ាក្រូរត់៖ %1$s]]></string>
     <string name="comput_executing_cmd"><![CDATA[> កំពុងអនុវត្តពាក្យបញ្ជា៖ %1$s]]></string>

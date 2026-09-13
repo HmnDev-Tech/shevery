@@ -374,7 +374,6 @@ a été copié dans le presse-papiers.]]></string>
 Original : %1$s
 Exécution...]]></string>
     <string name="comput_command_no_output"><![CDATA[La commande s\'est terminée sans sortie.]]></string>
-    <string name="comput_timed_out"><![CDATA[[E] La commande a expiré après 120 secondes.]]></string>
     <string name="comput_exit_code"><![CDATA[[E] La commande s\'est terminée avec le code %1$d.]]></string>
     <string name="comput_running_macro"><![CDATA[Exécution de la macro : %1$s]]></string>
     <string name="comput_executing_cmd"><![CDATA[> Exécution de la commande : %1$s]]></string>

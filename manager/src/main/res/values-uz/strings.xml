@@ -361,7 +361,6 @@
     <string name="comput_ask_gemini"><![CDATA[Gemini dan so\'rash]]></string>
     <string name="comput_executing"><![CDATA[Bajarilmoqda: %1$s ...]]></string>
     <string name="comput_command_no_output"><![CDATA[Buyruq natijasiz yakunlandi.]]></string>
-    <string name="comput_timed_out"><![CDATA[[E] Buyruq vaqti 120 soniyadan o\'tdi.]]></string>
     <string name="comput_exit_code"><![CDATA[[E] Buyruq kod %1$d bilan yakunlandi.]]></string>
     <string name="comput_running_macro"><![CDATA[Makros bajarilmoqda: %1$s]]></string>
     <string name="comput_executing_cmd"><![CDATA[> Buyruq bajarilmoqda: %1$s]]></string>

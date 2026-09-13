@@ -436,7 +436,6 @@
 அசல்: %1$s
 செயல்படுத்துகிறது...]]></string>
     <string name="comput_command_no_output"><![CDATA[கட்டளை எந்த வெளியீடும் இன்றி நிறைவு செய்யப்பட்டது.]]></string>
-    <string name="comput_timed_out"><![CDATA[[E] கட்டளை 120 வினாடிகளுக்குப் பிறகு காலாவதியானது.]]></string>
     <string name="comput_exit_code"><![CDATA[[E] கட்டளை %1$d குறியீட்டுடன் வெளியேறியது.]]></string>
     <string name="comput_running_macro"><![CDATA[மேக்ரோ இயங்குகிறது: %1$s]]></string>
     <string name="comput_executing_cmd"><![CDATA[கட்டளையைச் செயல்படுத்துதல்: %1$s]]></string>

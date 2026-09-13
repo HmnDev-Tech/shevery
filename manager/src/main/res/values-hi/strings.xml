@@ -435,7 +435,6 @@
 मूल: %1$s
 अमल किया जा रहा है...]]></string>
     <string name="comput_command_no_output"><![CDATA[कमांड बिना किसी आउटपुट के पूरा हो गया।]]></string>
-    <string name="comput_timed_out"><![CDATA[[E] कमांड 120 सेकंड के बाद समय-सीमा समाप्त हो गई।]]></string>
     <string name="comput_exit_code"><![CDATA[[E] कमांड कोड %1$d के साथ समाप्त हुआ।]]></string>
     <string name="comput_running_macro"><![CDATA[मैक्रो चल रहा है: %1$s]]></string>
     <string name="comput_executing_cmd"><![CDATA[कमांड निष्पादित कर रहा है: %1$s]]></string>

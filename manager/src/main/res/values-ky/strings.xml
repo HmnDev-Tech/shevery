@@ -363,7 +363,6 @@
     <string name="comput_ask_gemini"><![CDATA[Gemini\'ден суроо]]></string>
     <string name="comput_executing"><![CDATA[Аткарылууда: %1$s ...]]></string>
     <string name="comput_command_no_output"><![CDATA[Команда натыйжасыз аяктады.]]></string>
-    <string name="comput_timed_out"><![CDATA[[E] Команда 120 секунддан ашык убакыт алды.]]></string>
     <string name="comput_exit_code"><![CDATA[[E] Команда код %1$d менен аяктады.]]></string>
     <string name="comput_running_macro"><![CDATA[Макрос аткарылууда: %1$s]]></string>
     <string name="comput_executing_cmd"><![CDATA[> Команда аткарылууда: %1$s]]></string>

@@ -403,7 +403,6 @@ has been copied to clipboard.]]></string>
 Original: %1$s
 Executing...]]></string>
     <string name="comput_command_no_output"><![CDATA[အထွက်မရှိသော အမိန့်ဖြင့် ပြီးသွားသည်။]]></string>
-    <string name="comput_timed_out"><![CDATA[[E] စက္ကန့် 120 အကြာတွင် Command ကုန်ဆုံးသွားသည်။]]></string>
     <string name="comput_exit_code"><![CDATA[[E] ကုဒ် %1$d ဖြင့် Command မှ ထွက်ခဲ့သည်။]]></string>
     <string name="comput_running_macro"><![CDATA[မက်ခရိုလုပ်ဆောင်နေသည်- %1$s]]></string>
     <string name="comput_executing_cmd"><![CDATA[> အမိန့်ကို အကောင်အထည်ဖော်နေသည်- %1$s]]></string>

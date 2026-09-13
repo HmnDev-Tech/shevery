@@ -425,7 +425,6 @@
 Original: %1$s
 S\'està executant...]]></string>
     <string name="comput_command_no_output"><![CDATA[El comandament s\'ha completat sense cap sortida.]]></string>
-    <string name="comput_timed_out"><![CDATA[[E] L\'ordre ha expirat després de 120 segons.]]></string>
     <string name="comput_exit_code"><![CDATA[[E] El comandament s\'ha sortit amb el codi %1$d.]]></string>
     <string name="comput_running_macro"><![CDATA[Executant macro: %1$s]]></string>
     <string name="comput_executing_cmd"><![CDATA[Executant el comandament: %1$s]]></string>

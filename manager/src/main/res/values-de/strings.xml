@@ -421,7 +421,6 @@
 Original: %1$s
 Wird ausgeführt...]]></string>
     <string name="comput_command_no_output"><![CDATA[Der Befehl wurde ohne Ausgabe ausgeführt.]]></string>
-    <string name="comput_timed_out"><![CDATA[[E] Zeitüberschreitung beim Befehl nach 120 Sekunden.]]></string>
     <string name="comput_exit_code"><![CDATA[[E] Der Befehl wurde mit dem Code %1$d beendet.]]></string>
     <string name="comput_running_macro"><![CDATA[Makro ausführen: %1$s]]></string>
     <string name="comput_executing_cmd"><![CDATA[> Befehl wird ausgeführt: %1$s]]></string>

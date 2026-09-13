@@ -441,7 +441,6 @@ zostało skopiowane do schowka.]]></string>
 Oryginał: %1$s
 Wykonywanie...]]></string>
     <string name="comput_command_no_output"><![CDATA[Polecenie zostało wykonane bez wyświetlenia wyników.]]></string>
-    <string name="comput_timed_out"><![CDATA[[E] Przekroczono limit czasu polecenia – 120 sekund.]]></string>
     <string name="comput_exit_code"><![CDATA[[E] Polecenie zakończyło się kodem %1$d.]]></string>
     <string name="comput_running_macro"><![CDATA[Uruchamianie makra: %1$s]]></string>
     <string name="comput_executing_cmd"><![CDATA[> Wykonywanie polecenia: %1$s]]></string>

@@ -403,7 +403,6 @@ has been copied to clipboard.]]></string>
 Original: %1$s
 Executing...]]></string>
     <string name="comput_command_no_output"><![CDATA[କୌଣସି ଆଉଟପୁଟ୍ ବିନା କମାଣ୍ଡ ସମ୍ପୂର୍ଣ୍ଣ ହୋଇଛି।]]></string>
-    <string name="comput_timed_out"><![CDATA[[E] କମାଣ୍ଡ 120 ସେକେଣ୍ଡ ପରେ ସମୟ ସମାପ୍ତ ହୋଇଛି।]]></string>
     <string name="comput_exit_code"><![CDATA[[E] କମାଣ୍ଡ %1$d କୋଡ୍ ସହ ପ୍ରସ୍ଥାନ ହୋଇଛି।]]></string>
     <string name="comput_running_macro"><![CDATA[ମାକ୍ରୋ ଚାଲୁଛି: %1$s]]></string>
     <string name="comput_executing_cmd"><![CDATA[> କମାଣ୍ଡ ନିଷ୍ପାଦନ କରୁଛି: %1$s]]></string>
