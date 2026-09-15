@@ -24,6 +24,7 @@ class BootCompleteReceiver : BroadcastReceiver() {
 
     companion object {
         private const val KEYGUARD_WAIT_TIMEOUT_MS = 120_000L
+        private const val SDK_ANDROID_17 = 37
     }
 
     override fun onReceive(context: Context, intent: Intent) {
@@ -70,9 +71,13 @@ class BootCompleteReceiver : BroadcastReceiver() {
                     )
                     return
                 }
-                // On API 36+ (Android 16+), local network access requires ACCESS_LOCAL_NETWORK
+                // On API 37+ (Android 17+), local network access requires ACCESS_LOCAL_NETWORK.
+                // Android 16 (API 36) temporarily uses NEARBY_WIFI_DEVICES as the local-network
+                // gate and local network access stays open by default, so requiring
+                // ACCESS_LOCAL_NETWORK there would fail on a permission the app never requests
+                // below Android 17 (see HomeActivity.buildLocalNetworkPermissionState).
                 val ACCESS_LOCAL_NETWORK_PERMISSION = "android.permission.ACCESS_LOCAL_NETWORK"
-                if (Build.VERSION.SDK_INT >= 36
+                if (Build.VERSION.SDK_INT >= SDK_ANDROID_17
                     && context.checkSelfPermission(ACCESS_LOCAL_NETWORK_PERMISSION)
                             != PackageManager.PERMISSION_GRANTED) {
                     moe.shizuku.manager.service.StartupNotificationManager.showFailed(
