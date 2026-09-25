@@ -582,4 +582,51 @@
     <string name="settings_section_extras_summary"><![CDATA[Специальные возможности, диагностика и эксперименты]]></string>
     <string name="settings_classic_nav"><![CDATA[Классическая панель навигации]]></string>
     <string name="settings_classic_nav_summary"><![CDATA[Использовать фиксированную нижнюю панель вместо плавающей капсулы]]></string>
+
+    <!-- Device Owner & Security -->
+    <string name="device_admin_description"><![CDATA[Позволяет Shevery управлять настройками устройства, автоматизировать ADB и делегировать администрирование.]]></string>
+    <string name="settings_device_owner_title"><![CDATA[Владелец устройства]]></string>
+    <string name="settings_device_owner_summary"><![CDATA[Права Device Owner, делегирование и системные привилегии]]></string>
+    <string name="device_owner_active"><![CDATA[Shevery является владельцем устройства]]></string>
+    <string name="device_owner_inactive"><![CDATA[Режим Device Owner не настроен]]></string>
+    <string name="device_owner_active_desc"><![CDATA[Shevery имеет права владельца устройства. Доступно прямое управление ADB, делегирование полномочий приложениям и автозапуск без ПК.]]></string>
+    <string name="device_owner_inactive_desc"><![CDATA[Для назначения владельца устройства удалите все аккаунты с телефона и выполните команду через ADB:]]></string>
+    <string name="device_owner_delegation_title"><![CDATA[Делегирование приложениям]]></string>
+    <string name="device_owner_delegation_summary"><![CDATA[Делегирование областей администрирования другим приложениям]]></string>
+    <string name="device_owner_delegation_empty"><![CDATA[Других установленных приложений для делегирования не найдено]]></string>
+    <string name="device_owner_transfer_title"><![CDATA[Передача прав владельца]]></string>
+    <string name="device_owner_transfer_summary"><![CDATA[Передать права Device Owner другому установленному приложению]]></string>
+    <string name="device_owner_transfer_dialog_title"><![CDATA[Передать права Device Owner?]]></string>
+    <string name="device_owner_transfer_dialog_message"><![CDATA[Права владельца устройства будут навсегда переданы выбранному приложению. Shevery перестанет быть Device Owner.]]></string>
+    <string name="device_owner_transfer_button"><![CDATA[Передать]]></string>
+    <string name="device_owner_transfer_success"><![CDATA[Права успешно переданы]]></string>
+    <string name="device_owner_transfer_failed"><![CDATA[Не удалось передать права]]></string>
+    <string name="device_owner_features_title"><![CDATA[Функции Device Owner]]></string>
+    <string name="device_owner_enable_adb"><![CDATA[Включить ADB через DPM]]></string>
+    <string name="device_owner_enable_adb_summary"><![CDATA[Активировать отладку по USB и Wi-Fi напрямую через Device Policy Manager]]></string>
+
+    <!-- Security -->
+    <string name="settings_security_title"><![CDATA[Безопасность]]></string>
+    <string name="settings_security_summary"><![CDATA[Биометрическая защита и подтверждение действий]]></string>
+    <string name="security_require_auth_title"><![CDATA[Требовать аутентификацию]]></string>
+    <string name="security_require_auth_summary"><![CDATA[Защита действий в Shevery по отпечатку пальца, лицу или коду блокировки]]></string>
+    <string name="security_timeout_title"><![CDATA[Тайм-аут сессии]]></string>
+    <string name="security_timeout_immediately"><![CDATA[Немедленно]]></string>
+    <string name="security_timeout_1min"><![CDATA[1 минута]]></string>
+    <string name="security_timeout_5min"><![CDATA[5 минут]]></string>
+    <string name="security_protected_actions_title"><![CDATA[Защищаемые действия]]></string>
+    <string name="security_action_app_open"><![CDATA[Вход в приложение]]></string>
+    <string name="security_action_permissions"><![CDATA[Управление разрешениями приложений]]></string>
+    <string name="security_action_server"><![CDATA[Запуск и остановка сервера]]></string>
+    <string name="security_action_device_owner"><![CDATA[Настройки и передача Device Owner]]></string>
+    <string name="security_action_stubs"><![CDATA[Установка и удаление стабов]]></string>
+    <string name="security_auth_prompt_title"><![CDATA[Подтвердите личность для управления Shevery]]></string>
+    <string name="security_auth_prompt_app_open"><![CDATA[Разблокировка Shevery]]></string>
+    <string name="security_auth_prompt_permissions"><![CDATA[Управление разрешениями приложений]]></string>
+    <string name="security_auth_prompt_server"><![CDATA[Управление сервером Shevery]]></string>
+    <string name="security_auth_prompt_device_owner"><![CDATA[Доступ к настройкам Device Owner]]></string>
+    <string name="security_auth_prompt_stubs"><![CDATA[Управление стабами совместимости]]></string>
+    <string name="security_locked_title"><![CDATA[Shevery заблокирован]]></string>
+    <string name="security_locked_desc"><![CDATA[Для доступа к приложению требуется подтверждение личности]]></string>
+    <string name="security_unlock_button"><![CDATA[Разблокировать]]></string>
 </resources>

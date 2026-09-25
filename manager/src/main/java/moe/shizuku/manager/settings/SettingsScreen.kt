@@ -120,6 +120,16 @@ private enum class SettingsSection(
         R.string.settings_section_appearance_summary,
         R.drawable.ic_outline_dark_mode_24
     ),
+    SECURITY(
+        R.string.settings_security_title,
+        R.string.settings_security_summary,
+        R.drawable.ic_security_24dp
+    ),
+    DEVICE_OWNER(
+        R.string.settings_device_owner_title,
+        R.string.settings_device_owner_summary,
+        R.drawable.ic_device_owner_24dp
+    ),
     MODULES(
         R.string.modules_settings_title,
         R.string.settings_section_modules_summary,
@@ -544,30 +554,45 @@ fun SettingsScreen(
                                 wifiReassert = ModuleSettings.isWifiReassertEnabled()
                             },
                             onCompatStubChange = { enabled ->
-                                scope.launch {
-                                    val result = if (enabled) {
-                                        StubManager.install(context)
-                                    } else {
-                                        StubManager.uninstall(context)
-                                    }
-                                    compatStub = StubManager.isInstalled(context)
-                                    if (result.ok) {
-                                        ModuleSettings.setCompatibilityStubEnabled(enabled)
-                                        val message = if (enabled) {
-                                            context.getString(R.string.settings_compat_stub_installed, result.channel)
+                                val performToggle = {
+                                    scope.launch {
+                                        val result = if (enabled) {
+                                            StubManager.install(context)
                                         } else {
-                                            context.getString(R.string.settings_compat_stub_uninstalled)
+                                            StubManager.uninstall(context)
                                         }
-                                        Toast.makeText(context, message, Toast.LENGTH_SHORT).show()
-                                    } else {
-                                        val action = if (enabled) "install" else "uninstall"
-                                        val message = if (result.error == "no channel available") {
-                                            context.getString(R.string.settings_compat_stub_none)
+                                        compatStub = StubManager.isInstalled(context)
+                                        if (result.ok) {
+                                            ModuleSettings.setCompatibilityStubEnabled(enabled)
+                                            val message = if (enabled) {
+                                                context.getString(R.string.settings_compat_stub_installed, result.channel)
+                                            } else {
+                                                context.getString(R.string.settings_compat_stub_uninstalled)
+                                            }
+                                            Toast.makeText(context, message, Toast.LENGTH_SHORT).show()
                                         } else {
-                                            context.getString(R.string.settings_compat_stub_failed, action, result.channel, result.error ?: "unknown")
+                                            val action = if (enabled) "install" else "uninstall"
+                                            val message = if (result.error == "no channel available") {
+                                                context.getString(R.string.settings_compat_stub_none)
+                                            } else {
+                                                context.getString(R.string.settings_compat_stub_failed, action, result.channel, result.error ?: "unknown")
+                                            }
+                                            Toast.makeText(context, message, Toast.LENGTH_LONG).show()
                                         }
-                                        Toast.makeText(context, message, Toast.LENGTH_LONG).show()
                                     }
+                                }
+                                val fa = context as? androidx.fragment.app.FragmentActivity
+                                if (fa != null) {
+                                    moe.shizuku.manager.security.AuthManager.executeWithAuth(
+                                        activity = fa,
+                                        action = moe.shizuku.manager.security.SecuritySettings.ProtectedAction.STUB_MANAGEMENT,
+                                        title = context.getString(R.string.security_auth_prompt_title),
+                                        subtitle = context.getString(R.string.security_auth_prompt_stubs)
+                                    ) {
+                                        performToggle()
+                                    }
+                                } else {
+                                    performToggle()
                                 }
                             },
                             onAutoDisableUsbDebuggingChange = { enabled ->
@@ -608,6 +633,16 @@ fun SettingsScreen(
                                 classicNav = enabled
                             }
                         )
+                        SettingsSection.SECURITY -> {
+                            item {
+                                SecuritySettingsContent()
+                            }
+                        }
+                        SettingsSection.DEVICE_OWNER -> {
+                            item {
+                                DeviceOwnerContent()
+                            }
+                        }
                         SettingsSection.MODULES -> modulesSectionContent(
                             moduleAccessMode = moduleAccessMode,
                             moduleBackground = moduleBackground,
@@ -723,7 +758,30 @@ fun SettingsScreen(
                                     icon = section.iconRes,
                                     title = stringResource(section.titleRes),
                                     summary = stringResource(section.summaryRes),
-                                    onClick = { nav = SettingsNav.Section(section) },
+                                    onClick = {
+                                        val fragActivity = context as? androidx.fragment.app.FragmentActivity
+                                        if (fragActivity != null && section == SettingsSection.DEVICE_OWNER) {
+                                            moe.shizuku.manager.security.AuthManager.executeWithAuth(
+                                                activity = fragActivity,
+                                                action = moe.shizuku.manager.security.SecuritySettings.ProtectedAction.DEVICE_OWNER,
+                                                title = context.getString(R.string.security_auth_prompt_title),
+                                                subtitle = context.getString(R.string.security_auth_prompt_device_owner)
+                                            ) {
+                                                nav = SettingsNav.Section(section)
+                                            }
+                                        } else if (fragActivity != null && section == SettingsSection.SECURITY && moe.shizuku.manager.security.SecuritySettings.isAuthEnabled) {
+                                            moe.shizuku.manager.security.AuthManager.executeWithAuth(
+                                                activity = fragActivity,
+                                                action = moe.shizuku.manager.security.SecuritySettings.ProtectedAction.APP_OPEN,
+                                                title = context.getString(R.string.security_auth_prompt_title),
+                                                subtitle = context.getString(R.string.settings_security_title)
+                                            ) {
+                                                nav = SettingsNav.Section(section)
+                                            }
+                                        } else {
+                                            nav = SettingsNav.Section(section)
+                                        }
+                                    },
                                     trailing = {
                                         Icon(
                                             imageVector = Icons.Rounded.ChevronRight,

@@ -19,6 +19,8 @@ Upstream project reference: <https://github.com/RikkaApps/Shizuku>
 ## Fork additions
 
 - Jetpack Compose manager UI with Material 3 Expressive components, motion, switches, and rounded icon treatment.
+- **Device Owner Management & Integration**: Full Device Owner management (app delegation scopes, ownership transfer, DPM-assisted ADB) inspired by and compatible with Dhizuku.
+- **Biometric Security & Protection**: Master switch to require biometric or device PIN/pattern/password authentication with configurable timeouts and granular action protection.
 - **Dhizuku Experimental Support**: Dedicated Device-Owner bridging system available inside Laboratory features.
 - **Better shell/adb based "Comput"** feature with Gemini Explaination, Macros and Commandium AI Command create.
 - Android 16/17 target work with current SDK/build tooling in this fork.
@@ -140,6 +142,7 @@ All code files in this project are licensed under Apache 2.0
 ## Credits
 
 * [kerneldroid](https://github.com/kerneldroid) - for parts of App UI, Catalog Modules System and Android 17 support.
+* [iamr0s/Dhizuku](https://github.com/iamr0s/Dhizuku) - for Dhizuku Device Owner architecture and API concepts integrated into Shevery.
 * [RikkaApps/Shizuku](https://github.com/rikkaapps/Shizuku) - for Shizuku API and main sources.
 * [Landon Moran](https://github.com/LandonMoran) - for Dhizuku, TCP and etc. fixes.
 * [DP-Hridayan](https://github.com/DP-Hridayan/aShellYou) - for parts of "Comput" UI.

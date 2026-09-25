@@ -763,7 +763,53 @@ Wi-Fi is required for the first restart because Shevery must connect to the curr
     <string name="automation_action_start">Start server</string>
     <string name="automation_action_stop">Stop server</string>
     <string name="automation_action_restart">Restart server</string>
-    <string name="automation_action_toggle">Toggle server</string>
     <string name="automation_plugin_method_title">Tasker / Locale Plugin</string>
     <string name="automation_plugin_method_summary">Integrated action &amp; state condition plugin in Tasker and MacroDroid</string>
+
+    <!-- Device Owner & Security -->
+    <string name="device_admin_description">Allows Shevery to manage device settings, automate ADB, and delegate app administration.</string>
+    <string name="settings_device_owner_title">Device Owner</string>
+    <string name="settings_device_owner_summary">Device ownership, app delegation and system privileges</string>
+    <string name="device_owner_active">Device Owner is active</string>
+    <string name="device_owner_inactive">Device Owner is not configured</string>
+    <string name="device_owner_active_desc">Shevery has device owner privileges. It can manage ADB, delegate scopes to apps, and auto-start without a PC.</string>
+    <string name="device_owner_inactive_desc">To enable Device Owner, remove all accounts from your device, then run this command via ADB:</string>
+    <string name="device_owner_delegation_title">App Delegation</string>
+    <string name="device_owner_delegation_summary">Delegate device administration scopes to other apps</string>
+    <string name="device_owner_delegation_empty">No other installed apps found to delegate to</string>
+    <string name="device_owner_transfer_title">Transfer Ownership</string>
+    <string name="device_owner_transfer_summary">Transfer Device Owner privileges to another installed app</string>
+    <string name="device_owner_transfer_dialog_title">Transfer Device Ownership?</string>
+    <string name="device_owner_transfer_dialog_message">This will permanently transfer Device Owner rights from Shevery to the selected application. Shevery will no longer be Device Owner.</string>
+    <string name="device_owner_transfer_button">Transfer</string>
+    <string name="device_owner_transfer_success">Ownership successfully transferred</string>
+    <string name="device_owner_transfer_failed">Failed to transfer ownership</string>
+    <string name="device_owner_features_title">Device Owner Features</string>
+    <string name="device_owner_enable_adb">Enable ADB via DPM</string>
+    <string name="device_owner_enable_adb_summary">Turn on USB and Wireless Debugging directly via Device Policy Manager</string>
+
+    <!-- Security -->
+    <string name="settings_security_title">Security</string>
+    <string name="settings_security_summary">Biometric authentication and protected actions</string>
+    <string name="security_require_auth_title">Require authentication</string>
+    <string name="security_require_auth_summary">Protect Shevery actions with fingerprint, face unlock or device lock</string>
+    <string name="security_timeout_title">Session timeout</string>
+    <string name="security_timeout_immediately">Immediately</string>
+    <string name="security_timeout_1min">1 minute</string>
+    <string name="security_timeout_5min">5 minutes</string>
+    <string name="security_protected_actions_title">Protected Actions</string>
+    <string name="security_action_app_open">Unlock on app launch</string>
+    <string name="security_action_permissions">Managing app permissions</string>
+    <string name="security_action_server">Starting and stopping server</string>
+    <string name="security_action_device_owner">Device Owner settings &amp; transfer</string>
+    <string name="security_action_stubs">Installing or removing stubs</string>
+    <string name="security_auth_prompt_title">Authenticate to manage Shevery</string>
+    <string name="security_auth_prompt_app_open">Unlock Shevery</string>
+    <string name="security_auth_prompt_permissions">Manage application permissions</string>
+    <string name="security_auth_prompt_server">Control Shevery server</string>
+    <string name="security_auth_prompt_device_owner">Access Device Owner settings</string>
+    <string name="security_auth_prompt_stubs">Manage compatibility stubs</string>
+    <string name="security_locked_title">Shevery is locked</string>
+    <string name="security_locked_desc">Authentication is required to use Shevery</string>
+    <string name="security_unlock_button">Unlock</string>
 </resources>

@@ -19,6 +19,7 @@ import androidx.activity.compose.setContent
 import androidx.activity.result.contract.ActivityResultContracts
 import androidx.annotation.DrawableRes
 import androidx.annotation.StringRes
+import androidx.compose.foundation.background
 import androidx.compose.foundation.clickable
 import androidx.compose.foundation.layout.Arrangement
 import androidx.compose.foundation.layout.Box
@@ -73,6 +74,8 @@ import androidx.compose.runtime.collectAsState
 import androidx.compose.runtime.getValue
 import androidx.compose.runtime.livedata.observeAsState
 import androidx.compose.runtime.mutableIntStateOf
+import moe.shizuku.manager.security.AuthManager
+import moe.shizuku.manager.security.SecuritySettings
 import androidx.compose.runtime.mutableStateOf
 import androidx.compose.runtime.neverEqualPolicy
 import androidx.compose.runtime.produceState
@@ -150,6 +153,7 @@ abstract class HomeActivity : AppActivity() {
     private val homeModel by viewModels { HomeViewModel() }
     private val appsModel by appsViewModel()
     private val permissionRefreshTick = mutableIntStateOf(0)
+    private val isAppUnlocked = mutableStateOf(true)
 
     private var pendingLocalNetworkAction: (() -> Unit)? = null
 
@@ -198,6 +202,8 @@ abstract class HomeActivity : AppActivity() {
                 }
             }
         }
+
+        isAppUnlocked.value = !SecuritySettings.isActionProtected(SecuritySettings.ProtectedAction.APP_OPEN) || AuthManager.isSessionValid()
 
         setContent {
             val serviceResource by homeModel.serviceStatus.observeAsState()
@@ -280,9 +286,42 @@ abstract class HomeActivity : AppActivity() {
                 }
             }
 
+            val unlocked by isAppUnlocked
+
+            LaunchedEffect(unlocked) {
+                if (!unlocked) {
+                    AuthManager.authenticate(
+                        activity = this@HomeActivity,
+                        title = getString(R.string.security_auth_prompt_title),
+                        subtitle = getString(R.string.security_auth_prompt_app_open),
+                        onResult = { authenticated ->
+                            if (authenticated) {
+                                isAppUnlocked.value = true
+                            }
+                        }
+                    )
+                }
+            }
+
             ShizukuExpressiveTheme {
-                Box(Modifier.fillMaxSize()) {
-                Scaffold(
+                if (!unlocked) {
+                    LockedScreen(
+                        onUnlock = {
+                            AuthManager.authenticate(
+                                activity = this@HomeActivity,
+                                title = getString(R.string.security_auth_prompt_title),
+                                subtitle = getString(R.string.security_auth_prompt_app_open),
+                                onResult = { authenticated ->
+                                    if (authenticated) {
+                                        isAppUnlocked.value = true
+                                    }
+                                }
+                            )
+                        }
+                    )
+                } else {
+                    Box(Modifier.fillMaxSize()) {
+                    Scaffold(
                     contentWindowInsets = WindowInsets(0.dp)
                 ) { innerPadding ->
                     Box(modifier = Modifier.padding(innerPadding).fillMaxSize()) {
@@ -306,23 +345,55 @@ abstract class HomeActivity : AppActivity() {
                                         appsModel.load()
                                     },
                                     onStop = {
-                                        if (!Shizuku.pingBinder()) {
-                                            checkServerStatus()
-                                            moe.shizuku.manager.service.SheveryNotificationManager.updateNotification(this@HomeActivity)
-                                            Toast.makeText(this@HomeActivity, R.string.service_already_stopped, Toast.LENGTH_SHORT).show()
-                                        } else {
-                                            showStopDialog = true
+                                        AuthManager.executeWithAuth(
+                                            activity = this@HomeActivity,
+                                            action = SecuritySettings.ProtectedAction.SERVER_TOGGLE,
+                                            title = getString(R.string.security_auth_prompt_title),
+                                            subtitle = getString(R.string.security_auth_prompt_server)
+                                        ) {
+                                            if (!Shizuku.pingBinder()) {
+                                                checkServerStatus()
+                                                moe.shizuku.manager.service.SheveryNotificationManager.updateNotification(this@HomeActivity)
+                                                Toast.makeText(this@HomeActivity, R.string.service_already_stopped, Toast.LENGTH_SHORT).show()
+                                            } else {
+                                                showStopDialog = true
+                                            }
                                         }
                                     },
-                                    onManageApps = { manageAppsLauncher.launch(Intent(this@HomeActivity, ApplicationManagementActivity::class.java)) },
+                                    onManageApps = {
+                                        AuthManager.executeWithAuth(
+                                            activity = this@HomeActivity,
+                                            action = SecuritySettings.ProtectedAction.PERMISSIONS,
+                                            title = getString(R.string.security_auth_prompt_title),
+                                            subtitle = getString(R.string.security_auth_prompt_permissions)
+                                        ) {
+                                            manageAppsLauncher.launch(Intent(this@HomeActivity, ApplicationManagementActivity::class.java))
+                                        }
+                                    },
                                     onTerminal = { startActivity(Intent(this@HomeActivity, ShellTutorialActivity::class.java)) },
-                                    onStartRoot = ::startRoot,
+                                    onStartRoot = {
+                                        AuthManager.executeWithAuth(
+                                            activity = this@HomeActivity,
+                                            action = SecuritySettings.ProtectedAction.SERVER_TOGGLE,
+                                            title = getString(R.string.security_auth_prompt_title),
+                                            subtitle = getString(R.string.security_auth_prompt_server)
+                                        ) {
+                                            startRoot()
+                                        }
+                                    },
                                     onStartWirelessAdb = {
-                                        runWithLocalNetworkAccess {
-                                            startWirelessAdb(
-                                                onShowDiscoveryDialog = { showAdbDiscoveryDialog = true },
-                                                onWadbNotEnabled = { showWadbNotEnabledDialog = true }
-                                            )
+                                        AuthManager.executeWithAuth(
+                                            activity = this@HomeActivity,
+                                            action = SecuritySettings.ProtectedAction.SERVER_TOGGLE,
+                                            title = getString(R.string.security_auth_prompt_title),
+                                            subtitle = getString(R.string.security_auth_prompt_server)
+                                        ) {
+                                            runWithLocalNetworkAccess {
+                                                startWirelessAdb(
+                                                    onShowDiscoveryDialog = { showAdbDiscoveryDialog = true },
+                                                    onWadbNotEnabled = { showWadbNotEnabledDialog = true }
+                                                )
+                                            }
                                         }
                                     },
                                     onPairWirelessAdb = {
@@ -340,7 +411,16 @@ abstract class HomeActivity : AppActivity() {
                                     onRequestLocalNetworkPermission = {
                                         requestLocalNetworkPermission { permissionRefreshTick.intValue++ }
                                     },
-                                    onStartDhizuku = { startDhizukuMode() },
+                                    onStartDhizuku = {
+                                        AuthManager.executeWithAuth(
+                                            activity = this@HomeActivity,
+                                            action = SecuritySettings.ProtectedAction.SERVER_TOGGLE,
+                                            title = getString(R.string.security_auth_prompt_title),
+                                            subtitle = getString(R.string.security_auth_prompt_server)
+                                        ) {
+                                            startDhizukuMode()
+                                        }
+                                    },
                                     dhizukuEnabled = ModuleSettings.isDhizukuEnabled(),
                                     listState = homeListState
                                 )
@@ -662,6 +742,7 @@ abstract class HomeActivity : AppActivity() {
                     }
                 }
                 }
+                }
             }
         }
 
@@ -671,6 +752,9 @@ abstract class HomeActivity : AppActivity() {
 
     override fun onResume() {
         super.onResume()
+        if (SecuritySettings.isActionProtected(SecuritySettings.ProtectedAction.APP_OPEN) && !AuthManager.isSessionValid()) {
+            isAppUnlocked.value = false
+        }
         if (ModuleSettings.isAutoRefreshOnResume()) {
             checkServerStatus()
         }
@@ -1679,4 +1763,47 @@ private fun DialogTitleText(text: String) {
         style = MaterialTheme.typography.headlineSmall,
         fontWeight = FontWeight.Bold
     )
+}
+
+@Composable
+private fun LockedScreen(onUnlock: () -> Unit) {
+    Box(
+        modifier = Modifier
+            .fillMaxSize()
+            .background(MaterialTheme.colorScheme.background),
+        contentAlignment = Alignment.Center
+    ) {
+        Column(
+            horizontalAlignment = Alignment.CenterHorizontally,
+            modifier = Modifier.padding(32.dp)
+        ) {
+            Icon(
+                painter = androidx.compose.ui.res.painterResource(R.drawable.ic_security_24dp),
+                contentDescription = null,
+                modifier = Modifier.size(64.dp),
+                tint = MaterialTheme.colorScheme.primary
+            )
+            Spacer(modifier = Modifier.height(16.dp))
+            Text(
+                text = stringResource(R.string.security_locked_title),
+                style = MaterialTheme.typography.headlineSmall,
+                fontWeight = FontWeight.Bold,
+                color = MaterialTheme.colorScheme.onBackground
+            )
+            Spacer(modifier = Modifier.height(8.dp))
+            Text(
+                text = stringResource(R.string.security_locked_desc),
+                style = MaterialTheme.typography.bodyMedium,
+                color = MaterialTheme.colorScheme.onSurfaceVariant,
+                textAlign = androidx.compose.ui.text.style.TextAlign.Center
+            )
+            Spacer(modifier = Modifier.height(24.dp))
+            Button(
+                onClick = onUnlock,
+                shape = RoundedCornerShape(16.dp)
+            ) {
+                Text(stringResource(R.string.security_unlock_button))
+            }
+        }
+    }
 }

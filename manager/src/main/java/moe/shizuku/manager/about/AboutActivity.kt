@@ -357,6 +357,11 @@ class AboutActivity : AppActivity() {
             "Rikka",
             "Original Shizuku project — the foundation Shevery is built on",
             "https://github.com/RikkaApps"
+        ),
+        Contributor(
+            "iamr0s",
+            "Dhizuku project — Device Owner architecture, API sharing and management integrated into Shevery",
+            "https://github.com/iamr0s"
         )
     )
 
