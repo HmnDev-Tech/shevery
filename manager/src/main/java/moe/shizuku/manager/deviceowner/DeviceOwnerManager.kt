@@ -1,12 +1,13 @@
 package moe.shizuku.manager.deviceowner
 
+import android.app.admin.DeviceAdminReceiver
 import android.app.admin.DevicePolicyManager
 import android.content.ComponentName
 import android.content.Context
 import android.content.pm.ApplicationInfo
 import android.content.pm.PackageManager
 import android.os.Build
-import android.os.Bundle
+import android.os.PersistableBundle
 import android.provider.Settings
 import android.util.Log
 import moe.shizuku.manager.receiver.SheveryDeviceAdminReceiver
@@ -163,7 +164,7 @@ object DeviceOwnerManager {
         return try {
             val dpm = getDpm(context)
             val admin = getAdminComponent(context)
-            dpm.transferOwnership(admin, targetComponent, Bundle())
+            dpm.transferOwnership(admin, targetComponent, PersistableBundle())
             LOGGER.i("Transferred Device Ownership to ${targetComponent.flattenToString()}")
             true
         } catch (e: Exception) {

@@ -22,6 +22,7 @@
     <string name="home_adb_button_view_help">Read help</string>
     <string name="home_adb_button_view_command">View command</string>
     <string name="home_adb_dialog_view_command_notice">There are some other considerations, please confirm that you have read the help first.</string>
+    <string name="home_adb_dialog_view_command_message"><![CDATA[<font face="monospace">%1$s</font><br/><br/>* There are some other considerations, please confirm that you have read the help first.]]></string>
     <string name="home_adb_dialog_view_command_copy_button">Copy</string>
     <string name="home_adb_dialog_view_command_button_send">Send</string>
 
@@ -763,6 +764,7 @@ Wi-Fi is required for the first restart because Shevery must connect to the curr
     <string name="automation_action_start">Start server</string>
     <string name="automation_action_stop">Stop server</string>
     <string name="automation_action_restart">Restart server</string>
+    <string name="automation_action_toggle">Toggle server</string>
     <string name="automation_plugin_method_title">Tasker / Locale Plugin</string>
     <string name="automation_plugin_method_summary">Integrated action &amp; state condition plugin in Tasker and MacroDroid</string>
 
