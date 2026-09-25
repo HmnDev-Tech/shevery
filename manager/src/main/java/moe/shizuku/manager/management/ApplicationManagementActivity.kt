@@ -42,6 +42,13 @@ import androidx.compose.material3.Surface
 import androidx.compose.material3.Text
 import androidx.compose.material3.TextField
 import androidx.compose.material3.TextFieldDefaults
+import androidx.compose.material3.Card
+import androidx.compose.material3.CardDefaults
+import androidx.compose.material3.Switch
+import androidx.compose.foundation.layout.Spacer
+import androidx.compose.foundation.layout.height
+import androidx.compose.foundation.layout.width
+import moe.shizuku.manager.ShizukuSettings
 import androidx.compose.runtime.Composable
 import androidx.compose.runtime.getValue
 import androidx.compose.runtime.livedata.observeAsState
@@ -128,6 +135,7 @@ class ApplicationManagementActivity : AppActivity() {
 
             var searchQuery by rememberSaveable { mutableStateOf("") }
             var selectedFilter by rememberSaveable { mutableStateOf(AppFilter.ALL) }
+            var whitelistMode by remember { mutableStateOf(ShizukuSettings.isShizukuWhitelistEnabled()) }
 
             val appEntries = remember(packages, tick) {
                 packages.mapNotNull { pkg ->
@@ -251,6 +259,43 @@ class ApplicationManagementActivity : AppActivity() {
                                     modifier = Modifier.fillMaxWidth(),
                                     verticalArrangement = Arrangement.spacedBy(10.dp)
                                 ) {
+                                    Card(
+                                        shape = RoundedCornerShape(18.dp),
+                                        colors = CardDefaults.cardColors(
+                                            containerColor = MaterialTheme.colorScheme.surfaceContainerHigh
+                                        ),
+                                        modifier = Modifier.fillMaxWidth()
+                                    ) {
+                                        Row(
+                                            modifier = Modifier
+                                                .fillMaxWidth()
+                                                .padding(horizontal = 16.dp, vertical = 14.dp),
+                                            verticalAlignment = Alignment.CenterVertically
+                                        ) {
+                                            Column(modifier = Modifier.weight(1f)) {
+                                                Text(
+                                                    text = stringResource(R.string.whitelist_mode_title),
+                                                    style = MaterialTheme.typography.titleMedium,
+                                                    fontWeight = FontWeight.SemiBold
+                                                )
+                                                Spacer(modifier = Modifier.height(2.dp))
+                                                Text(
+                                                    text = stringResource(R.string.shizuku_whitelist_summary),
+                                                    style = MaterialTheme.typography.bodySmall,
+                                                    color = MaterialTheme.colorScheme.onSurfaceVariant
+                                                )
+                                            }
+                                            Spacer(modifier = Modifier.width(12.dp))
+                                            Switch(
+                                                checked = whitelistMode,
+                                                onCheckedChange = { checked ->
+                                                    whitelistMode = checked
+                                                    ShizukuSettings.setShizukuWhitelistEnabled(checked)
+                                                }
+                                            )
+                                        }
+                                    }
+
                                     TextField(
                                         value = searchQuery,
                                         onValueChange = { searchQuery = it },

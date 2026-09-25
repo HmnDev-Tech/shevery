@@ -45,10 +45,21 @@ fun DeviceOwnerDelegationScreen(
     var apps by remember { mutableStateOf<List<DeviceOwnerManager.DelegatedAppInfo>>(emptyList()) }
     var searchQuery by remember { mutableStateOf("") }
     var configuringApp by remember { mutableStateOf<DeviceOwnerManager.DelegatedAppInfo?>(null) }
+    var dhizukuOnly by remember { mutableStateOf(true) }
+    var whitelistMode by remember { mutableStateOf(DeviceOwnerManager.isDeviceOwnerWhitelistEnabled()) }
 
-    LaunchedEffect(Unit) {
+    val navBarState = moe.shizuku.manager.ui.compose.LocalFloatingNavBarVisible.current
+    DisposableEffect(Unit) {
+        navBarState.value = false
+        onDispose {
+            navBarState.value = true
+        }
+    }
+
+    LaunchedEffect(dhizukuOnly) {
+        loading = true
         val loaded = withContext(Dispatchers.IO) {
-            DeviceOwnerManager.getDelegationApps(context)
+            DeviceOwnerManager.getDelegationApps(context, dhizukuOnly = dhizukuOnly)
         }
         apps = loaded
         loading = false
@@ -105,8 +116,48 @@ fun DeviceOwnerDelegationScreen(
                     .padding(horizontal = 16.dp),
                 verticalArrangement = Arrangement.spacedBy(10.dp)
             ) {
+                // Strict Whitelist Card
                 item {
                     Spacer(modifier = Modifier.height(4.dp))
+                    Card(
+                        shape = RoundedCornerShape(18.dp),
+                        colors = CardDefaults.cardColors(
+                            containerColor = MaterialTheme.colorScheme.surfaceContainerLow
+                        ),
+                        modifier = Modifier.fillMaxWidth()
+                    ) {
+                        Row(
+                            modifier = Modifier
+                                .fillMaxWidth()
+                                .padding(horizontal = 16.dp, vertical = 14.dp),
+                            verticalAlignment = Alignment.CenterVertically
+                        ) {
+                            Column(modifier = Modifier.weight(1f)) {
+                                Text(
+                                    text = stringResource(R.string.whitelist_mode_title),
+                                    style = MaterialTheme.typography.titleMedium,
+                                    fontWeight = FontWeight.SemiBold
+                                )
+                                Spacer(modifier = Modifier.height(2.dp))
+                                Text(
+                                    text = stringResource(R.string.device_owner_whitelist_summary),
+                                    style = MaterialTheme.typography.bodySmall,
+                                    color = MaterialTheme.colorScheme.onSurfaceVariant
+                                )
+                            }
+                            Spacer(modifier = Modifier.width(12.dp))
+                            Switch(
+                                checked = whitelistMode,
+                                onCheckedChange = { checked ->
+                                    whitelistMode = checked
+                                    DeviceOwnerManager.setDeviceOwnerWhitelistEnabled(checked)
+                                }
+                            )
+                        }
+                    }
+                }
+
+                item {
                     OutlinedTextField(
                         value = searchQuery,
                         onValueChange = { searchQuery = it },
@@ -129,7 +180,25 @@ fun DeviceOwnerDelegationScreen(
                             focusedContainerColor = MaterialTheme.colorScheme.surfaceContainerLow
                         )
                     )
-                    Spacer(modifier = Modifier.height(4.dp))
+                }
+
+                // Filter chips
+                item {
+                    Row(
+                        modifier = Modifier.fillMaxWidth(),
+                        horizontalArrangement = Arrangement.spacedBy(8.dp)
+                    ) {
+                        FilterChip(
+                            selected = dhizukuOnly,
+                            onClick = { dhizukuOnly = true },
+                            label = { Text(stringResource(R.string.device_owner_delegation_filter_dhizuku)) }
+                        )
+                        FilterChip(
+                            selected = !dhizukuOnly,
+                            onClick = { dhizukuOnly = false },
+                            label = { Text(stringResource(R.string.device_owner_delegation_all_apps)) }
+                        )
+                    }
                 }
 
                 if (filteredApps.isEmpty()) {
@@ -143,17 +212,26 @@ fun DeviceOwnerDelegationScreen(
                                 .fillMaxWidth()
                                 .padding(vertical = 16.dp)
                         ) {
-                            Box(
+                            Column(
                                 modifier = Modifier
                                     .fillMaxWidth()
                                     .padding(24.dp),
-                                contentAlignment = Alignment.Center
+                                horizontalAlignment = Alignment.CenterHorizontally
                             ) {
                                 Text(
-                                    text = stringResource(R.string.device_owner_delegation_empty),
+                                    text = if (dhizukuOnly)
+                                        stringResource(R.string.device_owner_delegation_no_dhizuku_apps)
+                                    else
+                                        stringResource(R.string.device_owner_delegation_empty),
                                     style = MaterialTheme.typography.bodyMedium,
                                     color = MaterialTheme.colorScheme.onSurfaceVariant
                                 )
+                                if (dhizukuOnly) {
+                                    Spacer(modifier = Modifier.height(12.dp))
+                                    OutlinedButton(onClick = { dhizukuOnly = false }) {
+                                        Text(stringResource(R.string.device_owner_delegation_all_apps))
+                                    }
+                                }
                             }
                         }
                     }
@@ -295,7 +373,7 @@ fun DeviceOwnerDelegationScreen(
                 }
 
                 item {
-                    Spacer(modifier = Modifier.height(16.dp))
+                    Spacer(modifier = Modifier.height(32.dp).navigationBarsPadding())
                 }
             }
         }

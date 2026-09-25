@@ -660,4 +660,22 @@
     <string name="device_owner_delegation_updated"><![CDATA[Полномочия обновлены]]></string>
     <string name="device_owner_delegation_revoked"><![CDATA[Полномочия отозваны]]></string>
     <string name="device_owner_delegation_dialog_desc"><![CDATA[Выберите полномочия для делегирования этому приложению:]]></string>
+    <string name="device_owner_delegation_dhizuku_supported"><![CDATA[С поддержкой Dhizuku API]]></string>
+    <string name="device_owner_delegation_all_apps"><![CDATA[Все установленные приложения]]></string>
+    <string name="device_owner_delegation_filter_dhizuku"><![CDATA[Только Dhizuku-приложения]]></string>
+    <string name="device_owner_delegation_no_dhizuku_apps"><![CDATA[Приложений с поддержкой Dhizuku API не найдено]]></string>
+
+    <string name="whitelist_mode_title"><![CDATA[Белый список]]></string>
+    <string name="shizuku_whitelist_summary"><![CDATA[Блокировать всплывающие запросы и отклонять приложения, если они не включены в этом списке]]></string>
+    <string name="device_owner_whitelist_summary"><![CDATA[Блокировать всплывающие запросы и отклонять приложения, если они не разрешены здесь]]></string>
+
+    <string name="device_owner_danger_zone_title"><![CDATA[Опасная зона]]></string>
+    <string name="device_owner_deactivate_title"><![CDATA[Деактивировать владельца устройства]]></string>
+    <string name="device_owner_deactivate_summary"><![CDATA[Отозвать права владельца устройства у Shevery]]></string>
+    <string name="device_owner_deactivate_dialog_title"><![CDATA[Деактивировать владельца устройства?]]></string>
+    <string name="device_owner_deactivate_dialog_message"><![CDATA[Вы уверены, что хотите деактивировать владельца устройства? Все делегированные полномочия и политики будут отозваны. Для повторной активации потребуется выполнить команду через ADB.]]></string>
+    <string name="device_owner_deactivate_button"><![CDATA[Деактивировать]]></string>
+    <string name="device_owner_deactivate_countdown"><![CDATA[Деактивировать (%1$d с)]]></string>
+    <string name="device_owner_deactivate_success"><![CDATA[Права владельца устройства успешно отозваны]]></string>
+    <string name="device_owner_deactivate_failed"><![CDATA[Не удалось отозвать права владельца устройства]]></string>
 </resources>

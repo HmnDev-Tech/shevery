@@ -48,7 +48,14 @@ fun DeviceOwnerTransferScreen(
     var eligibleApps by remember { mutableStateOf<List<DeviceOwnerManager.AdminAppInfo>>(emptyList()) }
     var selectedApp by remember { mutableStateOf<DeviceOwnerManager.AdminAppInfo?>(null) }
     var showConfirmDialog by remember { mutableStateOf(false) }
-    var showNotActiveDialog by remember { mutableStateOf(false) }
+
+    val navBarState = moe.shizuku.manager.ui.compose.LocalFloatingNavBarVisible.current
+    DisposableEffect(Unit) {
+        navBarState.value = false
+        onDispose {
+            navBarState.value = true
+        }
+    }
 
     LaunchedEffect(Unit) {
         val apps = withContext(Dispatchers.IO) {
@@ -95,10 +102,7 @@ fun DeviceOwnerTransferScreen(
                 ) {
                     Button(
                         onClick = {
-                            val app = selectedApp ?: return@Button
-                            if (!app.isActiveAdmin) {
-                                showNotActiveDialog = true
-                            } else {
+                            if (selectedApp != null) {
                                 showConfirmDialog = true
                             }
                         },
@@ -276,26 +280,6 @@ fun DeviceOwnerTransferScreen(
                                         style = MaterialTheme.typography.bodySmall,
                                         color = MaterialTheme.colorScheme.onSurfaceVariant
                                     )
-                                    Spacer(modifier = Modifier.height(2.dp))
-                                    Row(verticalAlignment = Alignment.CenterVertically) {
-                                        Box(
-                                            modifier = Modifier
-                                                .size(8.dp)
-                                                .background(
-                                                    color = if (app.isActiveAdmin) Color(0xFF4CAF50) else Color(0xFFFFA000),
-                                                    shape = CircleShape
-                                                )
-                                        )
-                                        Spacer(modifier = Modifier.width(6.dp))
-                                        Text(
-                                            text = if (app.isActiveAdmin)
-                                                stringResource(R.string.device_owner_transfer_status_active)
-                                            else
-                                                stringResource(R.string.device_owner_transfer_status_inactive),
-                                            style = MaterialTheme.typography.labelSmall,
-                                            color = if (app.isActiveAdmin) Color(0xFF2E7D32) else Color(0xFFE65100)
-                                        )
-                                    }
                                 }
 
                                 RadioButton(
@@ -314,60 +298,6 @@ fun DeviceOwnerTransferScreen(
         }
     }
 
-    if (showNotActiveDialog && selectedApp != null) {
-        val app = selectedApp!!
-        AlertDialog(
-            onDismissRequest = { showNotActiveDialog = false },
-            icon = {
-                Icon(
-                    imageVector = Icons.Outlined.Warning,
-                    contentDescription = null,
-                    tint = MaterialTheme.colorScheme.error
-                )
-            },
-            title = {
-                Text(stringResource(R.string.device_owner_transfer_dialog_title))
-            },
-            text = {
-                Column {
-                    Text(stringResource(R.string.device_owner_transfer_target_not_active))
-                    Spacer(modifier = Modifier.height(8.dp))
-                    Text(
-                        text = "${app.label} (${app.packageName})",
-                        fontWeight = FontWeight.Bold,
-                        style = MaterialTheme.typography.bodyMedium
-                    )
-                }
-            },
-            confirmButton = {
-                Button(
-                    onClick = {
-                        showNotActiveDialog = false
-                        try {
-                            context.startActivity(Intent("android.settings.MANAGE_DEVICE_ADMINS").apply {
-                                addFlags(Intent.FLAG_ACTIVITY_NEW_TASK)
-                            })
-                        } catch (_: Exception) {
-                            try {
-                                context.startActivity(Intent(Settings.ACTION_SECURITY_SETTINGS).apply {
-                                    addFlags(Intent.FLAG_ACTIVITY_NEW_TASK)
-                                })
-                            } catch (_: Exception) {
-                                Toast.makeText(context, R.string.device_owner_transfer_dialog_hint, Toast.LENGTH_LONG).show()
-                            }
-                        }
-                    }
-                ) {
-                    Text(stringResource(R.string.device_owner_transfer_open_settings))
-                }
-            },
-            dismissButton = {
-                TextButton(onClick = { showNotActiveDialog = false }) {
-                    Text(stringResource(android.R.string.cancel))
-                }
-            }
-        )
-    }
 
     if (showConfirmDialog && selectedApp != null) {
         val app = selectedApp!!

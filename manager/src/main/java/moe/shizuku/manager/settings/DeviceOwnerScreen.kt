@@ -9,8 +9,14 @@ import androidx.compose.ui.platform.LocalContext
 import androidx.compose.ui.res.stringResource
 import androidx.compose.ui.text.font.FontWeight
 import androidx.compose.ui.unit.dp
+import androidx.compose.material.icons.Icons
+import androidx.compose.material.icons.outlined.Warning
+import androidx.fragment.app.FragmentActivity
+import kotlinx.coroutines.delay
 import moe.shizuku.manager.R
 import moe.shizuku.manager.deviceowner.DeviceOwnerManager
+import moe.shizuku.manager.security.AuthManager
+import moe.shizuku.manager.security.SecuritySettings
 import moe.shizuku.manager.ui.compose.MonospaceLog
 import moe.shizuku.manager.ui.compose.SettingsGroup
 import moe.shizuku.manager.ui.compose.SettingsRow
@@ -22,8 +28,10 @@ fun DeviceOwnerContent(
     onOpenDelegation: () -> Unit = {}
 ) {
     val context = LocalContext.current
+    val activity = context as? FragmentActivity
     var isOwner by remember { mutableStateOf(DeviceOwnerManager.isDeviceOwner(context)) }
     val adbCommand = remember(context) { DeviceOwnerManager.getAdbCommand(context) }
+    var showDeactivateDialog by remember { mutableStateOf(false) }
 
     Column(modifier = Modifier.fillMaxWidth()) {
         // Status Card
@@ -82,6 +90,89 @@ fun DeviceOwnerContent(
                     onClick = onOpenTransfer
                 )
             }
+
+            SettingsGroup(title = stringResource(R.string.device_owner_danger_zone_title)) {
+                SettingsRow(
+                    icon = R.drawable.ic_delete_24,
+                    title = stringResource(R.string.device_owner_deactivate_title),
+                    summary = stringResource(R.string.device_owner_deactivate_summary),
+                    onClick = { showDeactivateDialog = true }
+                )
+            }
         }
+    }
+
+    if (showDeactivateDialog) {
+        var countdown by remember { mutableIntStateOf(5) }
+        LaunchedEffect(Unit) {
+            while (countdown > 0) {
+                delay(1000)
+                countdown--
+            }
+        }
+
+        AlertDialog(
+            onDismissRequest = { showDeactivateDialog = false },
+            icon = {
+                Icon(
+                    imageVector = Icons.Outlined.Warning,
+                    contentDescription = null,
+                    tint = MaterialTheme.colorScheme.error
+                )
+            },
+            title = {
+                Text(stringResource(R.string.device_owner_deactivate_dialog_title))
+            },
+            text = {
+                Text(
+                    text = stringResource(R.string.device_owner_deactivate_dialog_message),
+                    style = MaterialTheme.typography.bodyMedium,
+                    color = MaterialTheme.colorScheme.onSurfaceVariant
+                )
+            },
+            confirmButton = {
+                Button(
+                    onClick = {
+                        showDeactivateDialog = false
+                        fun performDeactivation() {
+                            val ok = DeviceOwnerManager.clearDeviceOwner(context)
+                            if (ok) {
+                                isOwner = false
+                                Toast.makeText(context, R.string.device_owner_deactivate_success, Toast.LENGTH_LONG).show()
+                            } else {
+                                Toast.makeText(context, R.string.device_owner_deactivate_failed, Toast.LENGTH_LONG).show()
+                            }
+                        }
+
+                        if (activity != null) {
+                            AuthManager.executeWithAuth(
+                                activity = activity,
+                                action = SecuritySettings.ProtectedAction.DEVICE_OWNER,
+                                onSuccess = { performDeactivation() }
+                            )
+                        } else {
+                            performDeactivation()
+                        }
+                    },
+                    enabled = countdown == 0,
+                    colors = ButtonDefaults.buttonColors(
+                        containerColor = MaterialTheme.colorScheme.error,
+                        contentColor = MaterialTheme.colorScheme.onError
+                    )
+                ) {
+                    Text(
+                        if (countdown > 0)
+                            stringResource(R.string.device_owner_deactivate_countdown, countdown)
+                        else
+                            stringResource(R.string.device_owner_deactivate_button)
+                    )
+                }
+            },
+            dismissButton = {
+                TextButton(onClick = { showDeactivateDialog = false }) {
+                    Text(stringResource(android.R.string.cancel))
+                }
+            }
+        )
     }
 }

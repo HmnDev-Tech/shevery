@@ -24,6 +24,7 @@ import com.rosan.dhizuku.shared.DhizukuVariables
 import kotlinx.coroutines.delay
 import moe.shizuku.manager.Helps
 import moe.shizuku.manager.R
+import moe.shizuku.manager.ShizukuSettings
 import moe.shizuku.manager.app.AppActivity
 import moe.shizuku.manager.deviceowner.DeviceOwnerManager
 import moe.shizuku.manager.dhizuku.DhizukuAuthManager
@@ -197,6 +198,34 @@ class RequestPermissionActivity : AppActivity() {
 
         val isDhizuku = dhizukuListener != null
         val isDeviceOwner = DeviceOwnerManager.isDeviceOwner(this)
+
+        if (isDhizuku) {
+            if (DeviceOwnerManager.isDeviceOwnerWhitelistEnabled()) {
+                val isGranted = DhizukuAuthManager.isGranted(this, uid)
+                if (!isGranted) {
+                    LOGGER.i("Strict whitelist mode: denying Dhizuku request from UID $uid")
+                    try {
+                        dhizukuListener?.onRequestPermission(PackageManager.PERMISSION_DENIED)
+                    } catch (_: Throwable) {}
+                    finish()
+                    return
+                }
+            }
+        } else {
+            if (ShizukuSettings.isShizukuWhitelistEnabled()) {
+                val isGranted = try {
+                    AuthorizationManager.granted(ai.packageName, uid)
+                } catch (_: Throwable) {
+                    false
+                }
+                if (!isGranted) {
+                    LOGGER.i("Strict whitelist mode: denying Shizuku request from ${ai.packageName} (UID $uid)")
+                    setShizukuResult(uid, pid, requestCode, allowed = false, onetime = true)
+                    finish()
+                    return
+                }
+            }
+        }
 
         if (isDhizuku || isDeviceOwner) {
             initUi(uid, pid, requestCode, ai, dhizukuListener)

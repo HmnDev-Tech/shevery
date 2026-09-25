@@ -45,6 +45,7 @@ import androidx.compose.material3.RadioButton
 import androidx.compose.material3.Text
 import androidx.compose.material3.TextButton
 import androidx.compose.runtime.Composable
+import androidx.compose.runtime.DisposableEffect
 import androidx.compose.runtime.LaunchedEffect
 import androidx.compose.runtime.getValue
 import androidx.compose.runtime.mutableIntStateOf
@@ -52,6 +53,7 @@ import androidx.compose.runtime.mutableStateOf
 import androidx.compose.runtime.remember
 import androidx.compose.runtime.setValue
 import androidx.compose.runtime.rememberCoroutineScope
+import moe.shizuku.manager.ui.compose.LocalFloatingNavBarVisible
 import androidx.compose.ui.Modifier
 import androidx.compose.ui.platform.LocalContext
 import androidx.compose.ui.platform.LocalLifecycleOwner
@@ -179,7 +181,8 @@ private sealed interface SettingsNav {
 
 @Composable
 fun SettingsScreen(
-    listState: LazyListState = rememberLazyListState()
+    listState: LazyListState = rememberLazyListState(),
+    onSubpageChange: (Boolean) -> Unit = {}
 ) {
     val context = LocalContext.current
     val activity = context as? Activity
@@ -299,6 +302,19 @@ fun SettingsScreen(
     var showRevokeDialog by remember { mutableStateOf(false) }
     var recreateTick by remember { mutableIntStateOf(0) }
     var nav by remember { mutableStateOf<SettingsNav>(SettingsNav.Hub) }
+    val navBarState = LocalFloatingNavBarVisible.current
+
+    LaunchedEffect(nav, showAiManager) {
+        val isSubpage = nav !is SettingsNav.Hub || showAiManager
+        navBarState.value = !isSubpage
+        onSubpageChange(isSubpage)
+    }
+
+    DisposableEffect(Unit) {
+        onDispose {
+            navBarState.value = true
+        }
+    }
 
     // AI Provider manager replaces the whole Settings screen while open:
     // composing it after the Scaffold stacked a second TopAppBar over this

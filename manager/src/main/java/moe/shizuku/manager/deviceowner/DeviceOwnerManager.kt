@@ -157,6 +157,60 @@ object DeviceOwnerManager {
         }
     }
 
+    fun isStubPackage(context: Context, packageName: String): Boolean {
+        if (packageName == "moe.shizuku.privileged.api") return true
+        if (packageName == "com.rosan.dhizuku") {
+            return try {
+                val pi = context.packageManager.getPackageInfo(packageName, 0)
+                pi.versionCode >= 1000000000
+            } catch (_: Exception) {
+                false
+            }
+        }
+        return false
+    }
+
+    fun ensureAdminActive(context: Context, targetComponent: ComponentName): Boolean {
+        val dpm = getDpm(context)
+        if (dpm.isAdminActive(targetComponent)) return true
+
+        try {
+            val method = DevicePolicyManager::class.java.getMethod(
+                "setActiveAdmin",
+                ComponentName::class.java,
+                Boolean::class.javaPrimitiveType
+            )
+            method.isAccessible = true
+            method.invoke(dpm, targetComponent, true)
+            if (dpm.isAdminActive(targetComponent)) {
+                LOGGER.i("Successfully activated admin for ${targetComponent.flattenToString()} via setActiveAdmin(2 args)")
+                return true
+            }
+        } catch (e: Throwable) {
+            LOGGER.w("setActiveAdmin(2 args) failed: ${e.message}")
+        }
+
+        try {
+            val method = DevicePolicyManager::class.java.getMethod(
+                "setActiveAdmin",
+                ComponentName::class.java,
+                Boolean::class.javaPrimitiveType,
+                Int::class.javaPrimitiveType
+            )
+            method.isAccessible = true
+            val userId = android.os.Process.myUserHandle().hashCode()
+            method.invoke(dpm, targetComponent, true, userId)
+            if (dpm.isAdminActive(targetComponent)) {
+                LOGGER.i("Successfully activated admin for ${targetComponent.flattenToString()} via setActiveAdmin(3 args)")
+                return true
+            }
+        } catch (e: Throwable) {
+            LOGGER.w("setActiveAdmin(3 args) failed: ${e.message}")
+        }
+
+        return dpm.isAdminActive(targetComponent)
+    }
+
     fun transferOwnership(context: Context, targetComponent: ComponentName): Boolean {
         if (Build.VERSION.SDK_INT < Build.VERSION_CODES.P) {
             return false
@@ -164,6 +218,7 @@ object DeviceOwnerManager {
         return try {
             val dpm = getDpm(context)
             val admin = getAdminComponent(context)
+            ensureAdminActive(context, targetComponent)
             dpm.transferOwnership(admin, targetComponent, PersistableBundle())
             LOGGER.i("Transferred Device Ownership to ${targetComponent.flattenToString()}")
             true
@@ -172,6 +227,33 @@ object DeviceOwnerManager {
             LOGGER.e(e, "transferOwnership")
             false
         }
+    }
+
+    fun clearDeviceOwner(context: Context): Boolean {
+        return try {
+            val dpm = getDpm(context)
+            val admin = getAdminComponent(context)
+            dpm.clearDeviceOwnerApp(context.packageName)
+            try {
+                dpm.removeActiveAdmin(admin)
+            } catch (e: Throwable) {
+                LOGGER.w("removeActiveAdmin after clearDeviceOwner failed: ${e.message}")
+            }
+            LOGGER.i("Cleared Device Owner for ${context.packageName}")
+            true
+        } catch (e: Exception) {
+            Log.e(TAG, "Failed to clear device owner", e)
+            LOGGER.e(e, "clearDeviceOwner")
+            false
+        }
+    }
+
+    fun isDeviceOwnerWhitelistEnabled(): Boolean {
+        return moe.shizuku.manager.ShizukuSettings.isDeviceOwnerWhitelistEnabled()
+    }
+
+    fun setDeviceOwnerWhitelistEnabled(enabled: Boolean) {
+        moe.shizuku.manager.ShizukuSettings.setDeviceOwnerWhitelistEnabled(enabled)
     }
 
     data class AdminAppInfo(
@@ -199,7 +281,7 @@ object DeviceOwnerManager {
         val ownPackage = context.packageName
         return adminReceivers
             .mapNotNull { it.activityInfo?.applicationInfo }
-            .filter { it.packageName != ownPackage }
+            .filter { it.packageName != ownPackage && !isStubPackage(context, it.packageName) }
             .distinctBy { it.packageName }
     }
 
@@ -213,13 +295,14 @@ object DeviceOwnerManager {
         val ownPackage = context.packageName
         return receivers.mapNotNull { ri ->
             val ai = ri.activityInfo ?: return@mapNotNull null
-            if (ai.packageName == ownPackage) return@mapNotNull null
+            val appInfo = ai.applicationInfo ?: return@mapNotNull null
+            if (ai.packageName == ownPackage || isStubPackage(context, ai.packageName)) return@mapNotNull null
             try {
                 val adminInfo = android.app.admin.DeviceAdminInfo(context, ri)
                 val cn = adminInfo.component
                 val isActive = dpm.isAdminActive(cn)
-                val label = adminInfo.loadLabel(pm)?.toString() ?: ai.packageName
-                val icon = adminInfo.loadIcon(pm) ?: ai.loadIcon(pm)
+                val label = adminInfo.loadLabel(pm)?.toString() ?: appInfo.loadLabel(pm).toString()
+                val icon = adminInfo.loadIcon(pm) ?: appInfo.loadIcon(pm)
                 AdminAppInfo(
                     componentName = cn,
                     packageName = ai.packageName,
@@ -230,8 +313,8 @@ object DeviceOwnerManager {
             } catch (_: Exception) {
                 val cn = ComponentName(ai.packageName, ai.name)
                 val isActive = dpm.isAdminActive(cn)
-                val label = ai.loadLabel(pm)?.toString() ?: ai.packageName
-                val icon = ai.loadIcon(pm)
+                val label = appInfo.loadLabel(pm).toString()
+                val icon = appInfo.loadIcon(pm)
                 AdminAppInfo(
                     componentName = cn,
                     packageName = ai.packageName,
@@ -243,7 +326,7 @@ object DeviceOwnerManager {
         }.distinctBy { it.componentName }
     }
 
-    fun getDelegationApps(context: Context): List<DelegatedAppInfo> {
+    fun getDelegationApps(context: Context, dhizukuOnly: Boolean = true): List<DelegatedAppInfo> {
         val pm = context.packageManager
         val ownPackage = context.packageName
 
@@ -253,10 +336,29 @@ object DeviceOwnerManager {
         )
         val adminPkgs = adminReceivers.mapNotNull { it.activityInfo?.packageName }.toSet()
 
-        val installedApps = pm.getInstalledApplications(0)
-            .filter { it.packageName != ownPackage }
+        val dhizukuPermission = "com.rosan.dhizuku.permission.API"
+        val dhizukuPermissionV2 = "com.rosan.dhizuku.permission.API_V2"
 
-        return installedApps.map { app ->
+        val packages = pm.getInstalledPackages(PackageManager.GET_PERMISSIONS)
+            .filter { it.packageName != ownPackage && !isStubPackage(context, it.packageName) }
+
+        val filteredPackages = if (dhizukuOnly) {
+            packages.filter { pi ->
+                val requested = pi.requestedPermissions ?: emptyArray()
+                val requestsDhizuku = requested.contains(dhizukuPermission) || requested.contains(dhizukuPermissionV2)
+                val hasScopes = getDelegatedScopes(context, pi.packageName).isNotEmpty()
+                val isGranted = moe.shizuku.manager.dhizuku.DhizukuAuthManager.isGranted(
+                    context,
+                    pi.applicationInfo?.uid ?: -1
+                )
+                requestsDhizuku || hasScopes || isGranted
+            }
+        } else {
+            packages
+        }
+
+        return filteredPackages.mapNotNull { pi ->
+            val app = pi.applicationInfo ?: return@mapNotNull null
             val scopes = getDelegatedScopes(context, app.packageName)
             val isAdmin = adminPkgs.contains(app.packageName)
             val label = app.loadLabel(pm).toString()

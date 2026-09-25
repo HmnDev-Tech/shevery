@@ -845,4 +845,22 @@ Wi-Fi is required for the first restart because Shevery must connect to the curr
     <string name="device_owner_delegation_updated">Delegation updated</string>
     <string name="device_owner_delegation_revoked">Delegation revoked</string>
     <string name="device_owner_delegation_dialog_desc">Select scopes to delegate to this application:</string>
+    <string name="device_owner_delegation_dhizuku_supported">Supporting Dhizuku API</string>
+    <string name="device_owner_delegation_all_apps">All installed apps</string>
+    <string name="device_owner_delegation_filter_dhizuku">Dhizuku apps only</string>
+    <string name="device_owner_delegation_no_dhizuku_apps">No apps using Dhizuku API found</string>
+
+    <string name="whitelist_mode_title">Whitelist Mode</string>
+    <string name="shizuku_whitelist_summary">Block permission popups and deny apps unless toggled in this list</string>
+    <string name="device_owner_whitelist_summary">Block permission popups and deny apps unless granted here</string>
+
+    <string name="device_owner_danger_zone_title">Danger Zone</string>
+    <string name="device_owner_deactivate_title">Deactivate Device Owner</string>
+    <string name="device_owner_deactivate_summary">Remove Device Owner privileges from Shevery</string>
+    <string name="device_owner_deactivate_dialog_title">Deactivate Device Owner?</string>
+    <string name="device_owner_deactivate_dialog_message">Are you sure you want to deactivate Device Owner? All delegated permissions and policies will be revoked. To restore Device Owner, you will need to re-run the ADB command.</string>
+    <string name="device_owner_deactivate_button">Deactivate</string>
+    <string name="device_owner_deactivate_countdown">Deactivate (%1$ds)</string>
+    <string name="device_owner_deactivate_success">Device Owner deactivated</string>
+    <string name="device_owner_deactivate_failed">Failed to deactivate Device Owner</string>
 </resources>
