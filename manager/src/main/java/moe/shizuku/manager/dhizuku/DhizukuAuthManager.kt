@@ -44,13 +44,6 @@ object DhizukuAuthManager {
             if (moe.shizuku.manager.deviceowner.DeviceOwnerManager.getDelegatedScopes(context, pkg).isNotEmpty()) {
                 return true
             }
-            if (try {
-                moe.shizuku.manager.authorization.AuthorizationManager.granted(pkg, uid)
-            } catch (_: Throwable) {
-                false
-            }) {
-                return true
-            }
         }
         return false
     }

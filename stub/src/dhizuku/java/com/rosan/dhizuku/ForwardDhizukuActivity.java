@@ -26,12 +26,16 @@ public class ForwardDhizukuActivity extends Activity {
             if (getIntent().getExtras() != null) {
                 forward.putExtras(getIntent().getExtras());
             }
-            forward.addFlags(Intent.FLAG_ACTIVITY_FORWARD_RESULT);
+            if (getCallingActivity() != null) {
+                forward.addFlags(Intent.FLAG_ACTIVITY_FORWARD_RESULT);
+            }
             startActivity(forward);
+            overridePendingTransition(0, 0);
         } catch (Throwable t) {
             t.printStackTrace();
         }
 
         finish();
+        overridePendingTransition(0, 0);
     }
 }
