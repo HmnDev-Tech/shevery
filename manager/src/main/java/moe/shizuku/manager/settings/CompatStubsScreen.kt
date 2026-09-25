@@ -25,7 +25,7 @@ import kotlinx.coroutines.launch
 import moe.shizuku.manager.R
 import moe.shizuku.manager.compat.StubManager
 import moe.shizuku.manager.security.AuthManager
-import moe.shizuku.manager.security.ProtectedAction
+import moe.shizuku.manager.security.SecuritySettings
 import moe.shizuku.manager.ui.compose.ShizukuExpressiveTheme
 import moe.shizuku.manager.ui.compose.ShizukuLazyScaffold
 
@@ -51,48 +51,58 @@ fun CompatStubsScreen(
     }
 
     fun handleStubAction(type: StubManager.StubType, isCurrentlyInstalled: Boolean) {
-        AuthManager.executeWithAuth(
-            context = context,
-            action = ProtectedAction.STUB_MANAGEMENT,
-            onSuccess = {
-                scope.launch {
-                    busyStub = type
-                    val result = if (isCurrentlyInstalled) {
-                        StubManager.uninstall(context, type)
-                    } else {
-                        StubManager.install(context, type)
-                    }
-                    if (result.ok) {
-                        val messageRes = if (isCurrentlyInstalled) {
-                            R.string.stub_uninstalled_success
-                        } else {
-                            R.string.stub_installed_success
-                        }
-                        val stubTitle = context.getString(type.titleRes)
-                        val text = if (isCurrentlyInstalled) {
-                            context.getString(messageRes, stubTitle)
-                        } else {
-                            context.getString(messageRes, stubTitle, result.channel)
-                        }
-                        Toast.makeText(context, text, Toast.LENGTH_SHORT).show()
-                    } else {
-                        val action = if (isCurrentlyInstalled) "uninstall" else "install"
-                        Toast.makeText(
-                            context,
-                            context.getString(
-                                R.string.settings_compat_stub_failed,
-                                action,
-                                result.channel,
-                                result.error ?: "failed"
-                            ),
-                            Toast.LENGTH_LONG
-                        ).show()
-                    }
-                    refreshState()
-                    busyStub = null
+        val performAction = {
+            scope.launch {
+                busyStub = type
+                val result = if (isCurrentlyInstalled) {
+                    StubManager.uninstall(context, type)
+                } else {
+                    StubManager.install(context, type)
                 }
+                if (result.ok) {
+                    val messageRes = if (isCurrentlyInstalled) {
+                        R.string.stub_uninstalled_success
+                    } else {
+                        R.string.stub_installed_success
+                    }
+                    val stubTitle = context.getString(type.titleRes)
+                    val text = if (isCurrentlyInstalled) {
+                        context.getString(messageRes, stubTitle)
+                    } else {
+                        context.getString(messageRes, stubTitle, result.channel)
+                    }
+                    Toast.makeText(context, text, Toast.LENGTH_SHORT).show()
+                } else {
+                    val action = if (isCurrentlyInstalled) "uninstall" else "install"
+                    Toast.makeText(
+                        context,
+                        context.getString(
+                            R.string.settings_compat_stub_failed,
+                            action,
+                            result.channel,
+                            result.error ?: "failed"
+                        ),
+                        Toast.LENGTH_LONG
+                    ).show()
+                }
+                refreshState()
+                busyStub = null
             }
-        )
+        }
+
+        val fa = context as? androidx.fragment.app.FragmentActivity
+        if (fa != null) {
+            AuthManager.executeWithAuth(
+                activity = fa,
+                action = SecuritySettings.ProtectedAction.STUB_MANAGEMENT,
+                title = context.getString(R.string.security_auth_prompt_title),
+                subtitle = context.getString(R.string.security_auth_prompt_stubs)
+            ) {
+                performAction()
+            }
+        } else {
+            performAction()
+        }
     }
 
     ShizukuExpressiveTheme {
