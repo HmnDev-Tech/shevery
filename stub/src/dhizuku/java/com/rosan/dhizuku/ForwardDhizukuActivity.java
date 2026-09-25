@@ -1,39 +1,35 @@
 package com.rosan.dhizuku;
 
 import android.app.Activity;
+import android.content.ComponentName;
 import android.content.Intent;
-import android.content.pm.PackageManager;
 import android.os.Bundle;
-import android.os.IBinder;
 
 public class ForwardDhizukuActivity extends Activity {
 
-    public static final String PARAM_CLIENT_REQUEST_PERMISSION_BINDER = "request_permission_binder";
+    public static final String SHEVERY_PACKAGE = "com.hamondev.shevery";
+    public static final String SHEVERY_REQUEST_ACTIVITY = "moe.shizuku.manager.authorization.RequestPermissionActivity";
 
     @Override
     protected void onCreate(Bundle savedInstanceState) {
         super.onCreate(savedInstanceState);
 
         try {
-            Intent original = getIntent();
-            Bundle extras = original.getExtras();
-            if (extras != null) {
-                IBinder binder = extras.getBinder(PARAM_CLIENT_REQUEST_PERMISSION_BINDER);
-                if (binder != null) {
-                    android.os.Parcel data = android.os.Parcel.obtain();
-                    android.os.Parcel reply = android.os.Parcel.obtain();
-                    try {
-                        data.writeInterfaceToken("com.rosan.dhizuku.api.IDhizukuRequestPermissionListener");
-                        data.writeInt(PackageManager.PERMISSION_GRANTED);
-                        binder.transact(android.os.IBinder.FIRST_CALL_TRANSACTION, data, reply, 0);
-                        reply.readException();
-                    } finally {
-                        data.recycle();
-                        reply.recycle();
-                    }
-                }
+            Intent forward = new Intent();
+            forward.setComponent(new ComponentName(SHEVERY_PACKAGE, SHEVERY_REQUEST_ACTIVITY));
+            String action = getIntent().getAction();
+            if (action != null) {
+                forward.setAction(action);
+            } else {
+                forward.setAction("com.rosan.dhizuku.action.REQUEST_DHIZUKU_PERMISSION");
             }
-        } catch (Throwable ignored) {
+            if (getIntent().getExtras() != null) {
+                forward.putExtras(getIntent().getExtras());
+            }
+            forward.addFlags(Intent.FLAG_ACTIVITY_FORWARD_RESULT);
+            startActivity(forward);
+        } catch (Throwable t) {
+            t.printStackTrace();
         }
 
         finish();

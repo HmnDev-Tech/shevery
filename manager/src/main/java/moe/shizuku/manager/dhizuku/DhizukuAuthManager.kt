@@ -39,12 +39,17 @@ object DhizukuAuthManager {
         val persistent = prefs.getStringSet(KEY_GRANTED_UIDS, emptySet()) ?: emptySet()
         if (persistent.contains(uid.toString())) return true
 
-        val pkg = context.packageManager.getPackagesForUid(uid)?.firstOrNull()
-        if (pkg != null) {
-            return try {
+        val pkgs = context.packageManager.getPackagesForUid(uid) ?: return false
+        for (pkg in pkgs) {
+            if (moe.shizuku.manager.deviceowner.DeviceOwnerManager.getDelegatedScopes(context, pkg).isNotEmpty()) {
+                return true
+            }
+            if (try {
                 moe.shizuku.manager.authorization.AuthorizationManager.granted(pkg, uid)
             } catch (_: Throwable) {
                 false
+            }) {
+                return true
             }
         }
         return false

@@ -13,13 +13,13 @@
         android:icon="@android:drawable/ic_secure"
         android:allowBackup="false"
         android:hasCode="true"
-        android:theme="@android:style/Theme.NoDisplay">
+        android:theme="@android:style/Theme.Translucent.NoTitleBar">
 
         <activity
             android:name="com.rosan.dhizuku.ForwardDhizukuActivity"
             android:exported="true"
             android:excludeFromRecents="true"
-            android:theme="@android:style/Theme.NoDisplay">
+            android:theme="@android:style/Theme.Translucent.NoTitleBar">
             <intent-filter>
                 <action android:name="com.rosan.dhizuku.action.request.permission" />
                 <action android:name="com.rosan.dhizuku.action.REQUEST_DHIZUKU_PERMISSION" />

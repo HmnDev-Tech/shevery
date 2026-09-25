@@ -335,6 +335,11 @@ fun DeviceOwnerDelegationScreen(
                                                 newScopes
                                             )
                                             if (ok) {
+                                                if (checked) {
+                                                    moe.shizuku.manager.dhizuku.DhizukuAuthManager.grant(context, app.uid, onetime = false)
+                                                } else {
+                                                    moe.shizuku.manager.dhizuku.DhizukuAuthManager.revoke(context, app.uid)
+                                                }
                                                 apps = apps.map {
                                                     if (it.packageName == app.packageName) it.copy(scopes = newScopes)
                                                     else it
@@ -391,6 +396,11 @@ fun DeviceOwnerDelegationScreen(
                         updatedScopes
                     )
                     if (ok) {
+                        if (updatedScopes.isNotEmpty()) {
+                            moe.shizuku.manager.dhizuku.DhizukuAuthManager.grant(context, app.uid, onetime = false)
+                        } else {
+                            moe.shizuku.manager.dhizuku.DhizukuAuthManager.revoke(context, app.uid)
+                        }
                         apps = apps.map {
                             if (it.packageName == app.packageName) it.copy(scopes = updatedScopes)
                             else it

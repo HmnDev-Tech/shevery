@@ -154,6 +154,13 @@ class RequestPermissionActivity : AppActivity() {
             }
         }
 
+        if (uid == -1) {
+            val cp = callingPackage
+            if (cp != null) {
+                uid = runCatching { packageManager.getPackageUid(cp, 0) }.getOrDefault(-1)
+            }
+        }
+
         var dhizukuListener: IDhizukuRequestPermissionListener? = null
         for (b in bundles) {
             val binder = b.getBinder(DhizukuVariables.PARAM_CLIENT_REQUEST_PERMISSION_BINDER)
@@ -196,8 +203,17 @@ class RequestPermissionActivity : AppActivity() {
             return
         }
 
-        val isDhizuku = dhizukuListener != null
+        val isDhizuku = dhizukuListener != null || intent.action?.contains("dhizuku", ignoreCase = true) == true
         val isDeviceOwner = DeviceOwnerManager.isDeviceOwner(this)
+
+        if (isDhizuku && DhizukuAuthManager.isGranted(this, uid)) {
+            LOGGER.i("UID $uid already granted Dhizuku permission, confirming immediately")
+            try {
+                dhizukuListener?.onRequestPermission(PackageManager.PERMISSION_GRANTED)
+            } catch (_: Throwable) {}
+            finish()
+            return
+        }
 
         if (isDhizuku) {
             if (DeviceOwnerManager.isDeviceOwnerWhitelistEnabled()) {
@@ -280,10 +296,10 @@ class RequestPermissionActivity : AppActivity() {
                 var secondsRemaining by remember { mutableIntStateOf(20) }
 
                 fun denyPermission() {
-                    dhizukuListener?.let {
+                    if (isDhizuku) {
                         DhizukuAuthManager.revoke(this@RequestPermissionActivity, uid)
                         try {
-                            it.onRequestPermission(PackageManager.PERMISSION_DENIED)
+                            dhizukuListener?.onRequestPermission(PackageManager.PERMISSION_DENIED)
                         } catch (_: Throwable) {}
                     }
                     setShizukuResult(uid, pid, requestCode, allowed = false, onetime = true)
@@ -300,10 +316,10 @@ class RequestPermissionActivity : AppActivity() {
 
                 fun confirmPermission(onetime: Boolean) {
                     fun proceed() {
-                        dhizukuListener?.let {
+                        if (isDhizuku) {
                             DhizukuAuthManager.grant(this@RequestPermissionActivity, uid, onetime = onetime)
                             try {
-                                it.onRequestPermission(PackageManager.PERMISSION_GRANTED)
+                                dhizukuListener?.onRequestPermission(PackageManager.PERMISSION_GRANTED)
                             } catch (_: Throwable) {}
                         }
                         setShizukuResult(uid, pid, requestCode, allowed = true, onetime = onetime)
