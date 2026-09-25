@@ -269,7 +269,8 @@ object DeviceOwnerManager {
         val label: String,
         val icon: android.graphics.drawable.Drawable?,
         val scopes: List<String>,
-        val isDeviceAdmin: Boolean
+        val isDeviceAdmin: Boolean,
+        val uid: Int = -1
     )
 
     fun getEligibleAdminApps(context: Context): List<ApplicationInfo> {
@@ -368,7 +369,8 @@ object DeviceOwnerManager {
                 label = label,
                 icon = icon,
                 scopes = scopes,
-                isDeviceAdmin = isAdmin
+                isDeviceAdmin = isAdmin,
+                uid = app.uid
             )
         }.sortedWith(
             compareByDescending<DelegatedAppInfo> { it.scopes.isNotEmpty() }
