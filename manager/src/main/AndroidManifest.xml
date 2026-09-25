@@ -263,6 +263,7 @@
                 <action android:name="android.app.action.DEVICE_OWNER_CHANGED" />
                 <action android:name="android.app.action.PROFILE_OWNER_CHANGED" />
                 <action android:name="android.app.action.PROFILE_PROVISIONING_COMPLETE" />
+                <action android:name="android.app.action.TRANSFER_OWNERSHIP_COMPLETE" />
             </intent-filter>
         </receiver>
 

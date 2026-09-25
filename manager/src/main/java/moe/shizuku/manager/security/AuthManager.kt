@@ -1,6 +1,9 @@
 package moe.shizuku.manager.security
 
+import android.app.Activity
+import android.app.Application
 import android.content.Context
+import android.os.Bundle
 import android.os.SystemClock
 import androidx.biometric.BiometricManager
 import androidx.biometric.BiometricManager.Authenticators.BIOMETRIC_STRONG
@@ -9,12 +12,21 @@ import androidx.biometric.BiometricPrompt
 import androidx.core.content.ContextCompat
 import androidx.fragment.app.FragmentActivity
 
-object AuthManager {
+object AuthManager : Application.ActivityLifecycleCallbacks {
 
     private const val AUTH_TYPES = BIOMETRIC_STRONG or DEVICE_CREDENTIAL
 
     @Volatile
     private var lastAuthenticatedTimestamp: Long = 0L
+
+    @Volatile
+    private var startedActivityCount: Int = 0
+
+    @Volatile
+    private var backgroundTimestamp: Long = 0L
+
+    @Volatile
+    private var isChangingConfig: Boolean = false
 
     fun canAuthenticate(context: Context): Boolean {
         val biometricManager = BiometricManager.from(context)
@@ -24,19 +36,57 @@ object AuthManager {
 
     fun isSessionValid(): Boolean {
         if (!SecuritySettings.isAuthEnabled) return true
-        val timeout = SecuritySettings.timeoutSeconds
-        if (timeout <= 0) return false
-        val elapsed = (SystemClock.elapsedRealtime() - lastAuthenticatedTimestamp) / 1000
-        return elapsed < timeout
+        if (lastAuthenticatedTimestamp == 0L) return false
+
+        // If the app is currently in background or returned from background, verify timeout
+        if (startedActivityCount == 0 && backgroundTimestamp > 0L) {
+            val timeoutSec = SecuritySettings.timeoutSeconds
+            if (timeoutSec <= 0) return false
+            val elapsed = (SystemClock.elapsedRealtime() - backgroundTimestamp) / 1000
+            if (elapsed >= timeoutSec) return false
+        }
+        return true
     }
 
     fun markAuthenticated() {
         lastAuthenticatedTimestamp = SystemClock.elapsedRealtime()
+        backgroundTimestamp = 0L
     }
 
     fun invalidateSession() {
         lastAuthenticatedTimestamp = 0L
+        backgroundTimestamp = 0L
     }
+
+    override fun onActivityStarted(activity: Activity) {
+        if (startedActivityCount == 0 && !isChangingConfig) {
+            // App returning from background
+            if (backgroundTimestamp > 0L) {
+                val timeoutSec = SecuritySettings.timeoutSeconds
+                val elapsedSec = (SystemClock.elapsedRealtime() - backgroundTimestamp) / 1000
+                if (timeoutSec <= 0 || elapsedSec >= timeoutSec) {
+                    invalidateSession()
+                }
+            }
+        }
+        startedActivityCount++
+        isChangingConfig = false
+    }
+
+    override fun onActivityStopped(activity: Activity) {
+        isChangingConfig = activity.isChangingConfigurations
+        startedActivityCount--
+        if (startedActivityCount <= 0 && !isChangingConfig) {
+            startedActivityCount = 0
+            backgroundTimestamp = SystemClock.elapsedRealtime()
+        }
+    }
+
+    override fun onActivityCreated(activity: Activity, savedInstanceState: Bundle?) {}
+    override fun onActivityResumed(activity: Activity) {}
+    override fun onActivityPaused(activity: Activity) {}
+    override fun onActivitySaveInstanceState(activity: Activity, outState: Bundle) {}
+    override fun onActivityDestroyed(activity: Activity) {}
 
     fun executeWithAuth(
         activity: FragmentActivity,

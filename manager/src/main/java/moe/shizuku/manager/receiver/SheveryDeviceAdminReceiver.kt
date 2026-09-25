@@ -4,6 +4,7 @@ import android.app.admin.DeviceAdminReceiver
 import android.content.ComponentName
 import android.content.Context
 import android.content.Intent
+import android.os.PersistableBundle
 import android.util.Log
 import moe.shizuku.manager.utils.Logger.LOGGER
 
@@ -33,5 +34,11 @@ class SheveryDeviceAdminReceiver : DeviceAdminReceiver() {
         super.onProfileProvisioningComplete(context, intent)
         Log.i(TAG, "Device provisioning complete")
         LOGGER.i("Device provisioning complete")
+    }
+
+    override fun onTransferOwnershipComplete(context: Context, bundle: PersistableBundle?) {
+        super.onTransferOwnershipComplete(context, bundle)
+        Log.i(TAG, "Device Owner ownership transfer complete")
+        LOGGER.i("Device Owner ownership transfer complete")
     }
 }
