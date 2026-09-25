@@ -273,7 +273,7 @@ fun DeviceOwnerDelegationScreen(
                                             AuthManager.executeWithAuth(
                                                 activity = activity,
                                                 action = SecuritySettings.ProtectedAction.DEVICE_OWNER,
-                                                onAuthSuccess = { applyQuickToggle() }
+                                                onSuccess = { applyQuickToggle() }
                                             )
                                         } else {
                                             applyQuickToggle()
@@ -330,7 +330,7 @@ fun DeviceOwnerDelegationScreen(
                     AuthManager.executeWithAuth(
                         activity = activity,
                         action = SecuritySettings.ProtectedAction.DEVICE_OWNER,
-                        onAuthSuccess = { applyGranular() }
+                        onSuccess = { applyGranular() }
                     )
                 } else {
                     applyGranular()

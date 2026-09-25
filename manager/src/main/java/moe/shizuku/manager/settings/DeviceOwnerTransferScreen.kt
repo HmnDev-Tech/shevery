@@ -426,7 +426,7 @@ fun DeviceOwnerTransferScreen(
                             AuthManager.executeWithAuth(
                                 activity = activity,
                                 action = SecuritySettings.ProtectedAction.DEVICE_OWNER,
-                                onAuthSuccess = {
+                                onSuccess = {
                                     executeTransfer()
                                 }
                             )

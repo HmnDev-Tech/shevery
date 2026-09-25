@@ -91,6 +91,28 @@ object AuthManager : Application.ActivityLifecycleCallbacks {
     fun executeWithAuth(
         activity: FragmentActivity,
         action: SecuritySettings.ProtectedAction,
+        onSuccess: () -> Unit
+    ) {
+        val title = activity.getString(moe.shizuku.manager.R.string.security_auth_prompt_title)
+        val subtitle = when (action) {
+            SecuritySettings.ProtectedAction.DEVICE_OWNER -> activity.getString(moe.shizuku.manager.R.string.security_action_device_owner)
+            SecuritySettings.ProtectedAction.PERMISSIONS -> activity.getString(moe.shizuku.manager.R.string.security_action_permissions)
+            SecuritySettings.ProtectedAction.SERVER_TOGGLE -> activity.getString(moe.shizuku.manager.R.string.security_action_server)
+            SecuritySettings.ProtectedAction.STUB_MANAGEMENT -> activity.getString(moe.shizuku.manager.R.string.security_action_stubs)
+            SecuritySettings.ProtectedAction.APP_OPEN -> null
+        }
+        executeWithAuth(
+            activity = activity,
+            action = action,
+            title = title,
+            subtitle = subtitle,
+            onSuccess = onSuccess
+        )
+    }
+
+    fun executeWithAuth(
+        activity: FragmentActivity,
+        action: SecuritySettings.ProtectedAction,
         title: String,
         subtitle: String? = null,
         onSuccess: () -> Unit
