@@ -5,18 +5,52 @@
         <package android:name="com.hamondev.shevery" />
     </queries>
 
+    <permission-group
+        android:name="moe.shizuku.manager.permission-group.API"
+        android:description="@string/permission_group_description"
+        android:icon="@android:drawable/ic_secure"
+        android:label="@string/permission_group_label" />
+
+    <permission
+        android:name="moe.shizuku.manager.permission.API_V23"
+        android:description="@string/permission_description"
+        android:icon="@android:drawable/ic_secure"
+        android:label="@string/permission_label"
+        android:permissionGroup="moe.shizuku.manager.permission-group.API"
+        android:protectionLevel="dangerous" />
+
     <application
         android:label="@string/app_name"
         android:icon="@android:drawable/ic_secure"
         android:allowBackup="false"
-        android:theme="@android:style/Theme.DeviceDefault.Dialog.Alert">
+        android:hasCode="true"
+        android:theme="@android:style/Theme.NoDisplay">
+
+        <activity
+            android:name=".ForwardActivity"
+            android:exported="true"
+            android:excludeFromRecents="true"
+            android:theme="@android:style/Theme.NoDisplay">
+            <intent-filter>
+                <action android:name="moe.shizuku.manager.intent.action.REQUEST_PERMISSION" />
+                <action android:name="moe.shizuku.privileged.api.intent.action.REQUEST_PERMISSION" />
+                <action android:name="moe.shizuku.manager.intent.action.REQUEST_AUTHORIZATION" />
+                <action android:name="moe.shizuku.privileged.api.intent.action.REQUEST_AUTHORIZATION" />
+
+                <category android:name="android.intent.category.DEFAULT" />
+            </intent-filter>
+        </activity>
+
         <receiver
             android:name=".ForwardReceiver"
             android:exported="true">
             <intent-filter android:priority="1000">
                 <action android:name="rikka.shizuku.intent.action.REQUEST_BINDER" />
+                <action android:name="moe.shizuku.privileged.api.intent.action.REQUEST_BINDER" />
+                <action android:name="moe.shizuku.manager.intent.action.REQUEST_BINDER" />
             </intent-filter>
         </receiver>
+
     </application>
 
 </manifest>

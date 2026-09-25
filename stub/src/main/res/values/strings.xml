@@ -1,4 +1,8 @@
 <?xml version="1.0" encoding="utf-8"?>
 <resources>
     <string name="app_name">Shevery</string>
+    <string name="permission_group_label" translatable="false">Shevery</string>
+    <string name="permission_group_description" translatable="false">@string/permission_label</string>
+    <string name="permission_label">access Shevery</string>
+    <string name="permission_description">Allow the app to use Shevery.</string>
 </resources>

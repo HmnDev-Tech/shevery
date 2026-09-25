@@ -163,6 +163,7 @@
             <intent-filter>
                 <action android:name="${applicationId}.intent.action.REQUEST_PERMISSION" />
                 <action android:name="moe.shizuku.privileged.api.intent.action.REQUEST_PERMISSION" />
+                <action android:name="moe.shizuku.manager.intent.action.REQUEST_PERMISSION" />
 
                 <category android:name="android.intent.category.DEFAULT" />
             </intent-filter>
@@ -188,6 +189,7 @@
             <intent-filter>
                 <action android:name="${applicationId}.intent.action.REQUEST_AUTHORIZATION" />
                 <action android:name="moe.shizuku.privileged.api.intent.action.REQUEST_AUTHORIZATION" />
+                <action android:name="moe.shizuku.manager.intent.action.REQUEST_AUTHORIZATION" />
 
                 <category android:name="android.intent.category.DEFAULT" />
             </intent-filter>
