@@ -4,10 +4,12 @@ import android.content.Context
 import android.content.pm.PackageManager
 import android.os.ParcelFileDescriptor
 import android.os.SystemClock
+import androidx.annotation.StringRes
 import com.topjohnwu.superuser.Shell
 import kotlinx.coroutines.Dispatchers
 import kotlinx.coroutines.delay
 import kotlinx.coroutines.withContext
+import moe.shizuku.manager.R
 import moe.shizuku.manager.ShizukuSettings
 import moe.shizuku.manager.adb.AdbClient
 import moe.shizuku.manager.adb.AdbKey
@@ -20,10 +22,35 @@ import java.io.File
 
 object StubManager {
 
-    const val STUB_PACKAGE = "moe.shizuku.privileged.api"
+    enum class StubType(
+        val id: String,
+        val packageName: String,
+        val assetName: String,
+        val remoteTmpPath: String,
+        @StringRes val titleRes: Int,
+        @StringRes val summaryRes: Int
+    ) {
+        SHIZUKU(
+            id = "shizuku",
+            packageName = "moe.shizuku.privileged.api",
+            assetName = "shevery-stub.apk",
+            remoteTmpPath = "/data/local/tmp/shevery-stub.apk",
+            titleRes = R.string.stub_shizuku_title,
+            summaryRes = R.string.stub_shizuku_summary
+        ),
+        DHIZUKU(
+            id = "dhizuku",
+            packageName = "com.rosan.dhizuku",
+            assetName = "shevery-dhizuku-stub.apk",
+            remoteTmpPath = "/data/local/tmp/shevery-dhizuku-stub.apk",
+            titleRes = R.string.stub_dhizuku_title,
+            summaryRes = R.string.stub_dhizuku_summary
+        )
+    }
 
-    private const val ASSET_PATH = "shevery-stub.apk"
-    private const val REMOTE_TMP_PATH = "/data/local/tmp/shevery-stub.apk"
+    const val STUB_PACKAGE = "moe.shizuku.privileged.api"
+    const val DHIZUKU_STUB_PACKAGE = "com.rosan.dhizuku"
+
     private const val CHANNEL_SERVER = "Shevery"
     private const val CHANNEL_ROOT = "root"
     private const val CHANNEL_ADB = "ADB"
@@ -32,27 +59,36 @@ object StubManager {
         val failed: Boolean get() = !ok
     }
 
-    fun isInstalled(context: Context): Boolean {
+    fun isInstalled(context: Context, type: StubType = StubType.SHIZUKU): Boolean {
         return try {
-            context.packageManager.getPackageInfo(STUB_PACKAGE, 0)
+            context.packageManager.getPackageInfo(type.packageName, 0)
             true
         } catch (_: PackageManager.NameNotFoundException) {
             false
         }
     }
 
-    suspend fun install(context: Context): Result {
+    fun getInstalledVersion(context: Context, type: StubType): String? {
+        return try {
+            val pi = context.packageManager.getPackageInfo(type.packageName, 0)
+            pi.versionName ?: pi.versionCode.toString()
+        } catch (_: PackageManager.NameNotFoundException) {
+            null
+        }
+    }
+
+    suspend fun install(context: Context, type: StubType = StubType.SHIZUKU): Result {
         return withContext(Dispatchers.IO) {
-            val privateApk = extractTo(context.filesDir, context)
+            val privateApk = extractTo(context.filesDir, context, type.assetName)
             if (privateApk == null) {
-                return@withContext Result(false, "none", "failed to extract stub apk")
+                return@withContext Result(false, "none", "failed to extract ${type.assetName}")
             }
             val apkBytes = privateApk.readBytes()
 
             val scripts = arrayOf(
                 ShellScript(
                     CHANNEL_SERVER,
-                    "cat > $REMOTE_TMP_PATH && pm install -r -d -t $REMOTE_TMP_PATH && rm -f $REMOTE_TMP_PATH"
+                    "cat > ${type.remoteTmpPath} && pm install -r -d -t ${type.remoteTmpPath} && rm -f ${type.remoteTmpPath}"
                 ) { output -> output.write(apkBytes) },
                 ShellScript(
                     CHANNEL_ROOT,
@@ -60,7 +96,7 @@ object StubManager {
                 ),
                 ShellScript(
                     CHANNEL_ADB,
-                    "cp -f '${externalApkPath(context)}' $REMOTE_TMP_PATH && pm install -r -d -t $REMOTE_TMP_PATH && rm -f $REMOTE_TMP_PATH"
+                    "cp -f '${externalApkPath(context, type.assetName)}' ${type.remoteTmpPath} && pm install -r -d -t ${type.remoteTmpPath} && rm -f ${type.remoteTmpPath}"
                 )
             )
 
@@ -72,7 +108,7 @@ object StubManager {
                     CHANNEL_ADB -> runViaAdb(script)
                     else -> Result(false, script.channel, "unknown channel")
                 }
-                if (result.ok && pollInstalled(context, wantInstalled = true)) {
+                if (result.ok && pollInstalled(context, type, wantInstalled = true)) {
                     return@withContext Result(true, result.channel)
                 }
                 if (!result.ok) {
@@ -83,13 +119,13 @@ object StubManager {
         }
     }
 
-    suspend fun uninstall(context: Context): Result {
+    suspend fun uninstall(context: Context, type: StubType = StubType.SHIZUKU): Result {
         return withContext(Dispatchers.IO) {
-            if (!isInstalled(context)) {
+            if (!isInstalled(context, type)) {
                 return@withContext Result(true, "none")
             }
 
-            val script = "pm uninstall $STUB_PACKAGE"
+            val script = "pm uninstall ${type.packageName}"
 
             var lastFailure: Result? = null
             val channels = sequenceOf(CHANNEL_SERVER, CHANNEL_ROOT, CHANNEL_ADB)
@@ -99,7 +135,7 @@ object StubManager {
                     CHANNEL_ROOT -> runViaRoot(ShellScript(channel, script))
                     else -> runViaAdb(ShellScript(channel, script))
                 }
-                if (result.ok && pollInstalled(context, wantInstalled = false)) {
+                if (result.ok && pollInstalled(context, type, wantInstalled = false)) {
                     return@withContext Result(true, result.channel)
                 }
                 lastFailure = result
@@ -114,25 +150,25 @@ object StubManager {
         val stdin: ((java.io.OutputStream) -> Unit)? = null
     )
 
-    private fun extractTo(dir: File, context: Context): File? {
+    private fun extractTo(dir: File, context: Context, assetName: String): File? {
         return try {
-            val file = File(dir, ASSET_PATH)
-            context.assets.open(ASSET_PATH).use { input ->
+            val file = File(dir, assetName)
+            context.assets.open(assetName).use { input ->
                 file.outputStream().use { output -> input.copyTo(output) }
             }
             file
         } catch (e: Throwable) {
-            logd("Failed to extract stub apk: ${e.message}")
+            logd("Failed to extract $assetName: ${e.message}")
             null
         }
     }
 
-    private fun externalApkPath(context: Context): String {
+    private fun externalApkPath(context: Context, assetName: String): String {
         val externalDir = context.getExternalFilesDir(null)
             ?: throw IllegalStateException("external storage unavailable")
-        val file = File(externalDir, ASSET_PATH)
+        val file = File(externalDir, assetName)
         if (!file.exists()) {
-            context.assets.open(ASSET_PATH).use { input ->
+            context.assets.open(assetName).use { input ->
                 file.outputStream().use { output -> input.copyTo(output) }
             }
         }
@@ -213,12 +249,12 @@ object StubManager {
         return Result(false, CHANNEL_ADB, "all ADB ports failed")
     }
 
-    private suspend fun pollInstalled(context: Context, wantInstalled: Boolean, timeoutMs: Long = 5_000L): Boolean {
+    private suspend fun pollInstalled(context: Context, type: StubType, wantInstalled: Boolean, timeoutMs: Long = 5_000L): Boolean {
         val deadline = SystemClock.elapsedRealtime() + timeoutMs
         while (SystemClock.elapsedRealtime() < deadline) {
-            if (isInstalled(context) == wantInstalled) return true
+            if (isInstalled(context, type) == wantInstalled) return true
             delay(200L)
         }
-        return isInstalled(context) == wantInstalled
+        return isInstalled(context, type) == wantInstalled
     }
 }

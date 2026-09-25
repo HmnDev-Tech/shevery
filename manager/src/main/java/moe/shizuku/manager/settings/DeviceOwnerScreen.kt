@@ -271,6 +271,12 @@ fun DeviceOwnerContent() {
             text = {
                 Column {
                     Text(stringResource(R.string.device_owner_transfer_dialog_message))
+                    Spacer(modifier = Modifier.height(8.dp))
+                    Text(
+                        text = stringResource(R.string.device_owner_transfer_dialog_hint),
+                        style = MaterialTheme.typography.bodySmall,
+                        color = MaterialTheme.colorScheme.onSurfaceVariant
+                    )
                     Spacer(modifier = Modifier.height(12.dp))
                     Text(
                         text = "Target: $appLabel (${targetApp.packageName})",
@@ -291,12 +297,17 @@ fun DeviceOwnerContent() {
                         val receiverName = receivers.firstOrNull()?.activityInfo?.name
                         if (receiverName != null) {
                             val cn = ComponentName(targetApp.packageName, receiverName)
-                            val ok = DeviceOwnerManager.transferOwnership(context, cn)
-                            if (ok) {
-                                isOwner = false
-                                Toast.makeText(context, R.string.device_owner_transfer_success, Toast.LENGTH_LONG).show()
+                            val dpm = DeviceOwnerManager.getDpm(context)
+                            if (!dpm.isAdminActive(cn)) {
+                                Toast.makeText(context, R.string.device_owner_transfer_target_not_active, Toast.LENGTH_LONG).show()
                             } else {
-                                Toast.makeText(context, R.string.device_owner_transfer_failed, Toast.LENGTH_LONG).show()
+                                val ok = DeviceOwnerManager.transferOwnership(context, cn)
+                                if (ok) {
+                                    isOwner = false
+                                    Toast.makeText(context, R.string.device_owner_transfer_success, Toast.LENGTH_LONG).show()
+                                } else {
+                                    Toast.makeText(context, R.string.device_owner_transfer_failed, Toast.LENGTH_LONG).show()
+                                }
                             }
                         } else {
                             Toast.makeText(context, "No DeviceAdminReceiver found in target app", Toast.LENGTH_SHORT).show()

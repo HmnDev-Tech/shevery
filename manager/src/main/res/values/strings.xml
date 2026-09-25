@@ -815,4 +815,21 @@ Wi-Fi is required for the first restart because Shevery must connect to the curr
     <string name="security_locked_title">Shevery is locked</string>
     <string name="security_locked_desc">Authentication is required to use Shevery</string>
     <string name="security_unlock_button">Unlock</string>
+
+    <!-- Compatibility Stubs subpage -->
+    <string name="settings_compat_stubs_title">Compatibility Stubs</string>
+    <string name="settings_compat_stubs_summary">Manage Shizuku and Dhizuku bridge stubs for legacy applications</string>
+    <string name="compat_stubs_header_info">Compatibility stubs are lightweight bridge packages that emulate official services. They forward permissions, requests, and APIs to Shevery so third-party apps work without modification.</string>
+    <string name="stub_shizuku_title">Shizuku Compatibility Stub</string>
+    <string name="stub_shizuku_summary">Declares moe.shizuku.privileged.api package and Shizuku permissions, forwarding authorization and binder requests to Shevery.</string>
+    <string name="stub_dhizuku_title">Dhizuku Compatibility Stub</string>
+    <string name="stub_dhizuku_summary">Declares com.rosan.dhizuku package and Dhizuku API permission, providing compatibility for applications hardcoded to Dhizuku.</string>
+    <string name="stub_status_installed">Installed</string>
+    <string name="stub_status_not_installed">Not Installed</string>
+    <string name="stub_action_install">Install</string>
+    <string name="stub_action_uninstall">Uninstall</string>
+    <string name="stub_installed_success">%1$s installed successfully via %2$s</string>
+    <string name="stub_uninstalled_success">%1$s removed successfully</string>
+    <string name="device_owner_transfer_target_not_active">Target app is not active as a Device Admin. Please activate it first in Android Settings -> Security -> Device admin apps.</string>
+    <string name="device_owner_transfer_dialog_hint">Target application must first be enabled under Android Settings → Security → Device admin apps.</string>
 </resources>

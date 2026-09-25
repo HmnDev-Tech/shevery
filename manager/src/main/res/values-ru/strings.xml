@@ -630,4 +630,21 @@
     <string name="security_locked_title"><![CDATA[Shevery заблокирован]]></string>
     <string name="security_locked_desc"><![CDATA[Для доступа к приложению требуется подтверждение личности]]></string>
     <string name="security_unlock_button"><![CDATA[Разблокировать]]></string>
+
+    <!-- Compatibility Stubs subpage -->
+    <string name="settings_compat_stubs_title"><![CDATA[Стабы совместимости]]></string>
+    <string name="settings_compat_stubs_summary"><![CDATA[Управление стабами Shizuku и Dhizuku для совместимости с внешними приложениями]]></string>
+    <string name="compat_stubs_header_info"><![CDATA[Стабы совместимости — это легковесные пакеты-мосты, эмулирующие официальные службы. Они перенаправляют разрешения, запросы и API в Shevery, чтобы сторонние приложения работали без модификаций.]]></string>
+    <string name="stub_shizuku_title"><![CDATA[Стаб совместимости Shizuku]]></string>
+    <string name="stub_shizuku_summary"><![CDATA[Предоставляет пакет moe.shizuku.privileged.api, разрешения Shizuku и перенаправляет запросы binder и авторизации в Shevery.]]></string>
+    <string name="stub_dhizuku_title"><![CDATA[Стаб совместимости Dhizuku]]></string>
+    <string name="stub_dhizuku_summary"><![CDATA[Предоставляет пакет com.rosan.dhizuku и разрешение Dhizuku API для приложений с жестко заданной привязкой к Dhizuku.]]></string>
+    <string name="stub_status_installed"><![CDATA[Установлен]]></string>
+    <string name="stub_status_not_installed"><![CDATA[Не установлен]]></string>
+    <string name="stub_action_install"><![CDATA[Установить]]></string>
+    <string name="stub_action_uninstall"><![CDATA[Удалить]]></string>
+    <string name="stub_installed_success"><![CDATA[%1$s успешно установлен через %2$s]]></string>
+    <string name="stub_uninstalled_success"><![CDATA[%1$s успешно удалён]]></string>
+    <string name="device_owner_transfer_target_not_active"><![CDATA[Целевое приложение не активно как администратор устройства. Сначала включите его в Настройки -> Безопасность -> Администраторы устройства.]]></string>
+    <string name="device_owner_transfer_dialog_hint"><![CDATA[Целевое приложение должно быть предварительно активировано в Настройки → Безопасность → Администраторы устройства.]]></string>
 </resources>

@@ -171,6 +171,7 @@ private sealed interface SettingsNav {
     data object Hub : SettingsNav
     data class Section(val section: SettingsSection) : SettingsNav
     data object UpdateSettings : SettingsNav
+    data object CompatStubs : SettingsNav
 }
 
 
@@ -229,9 +230,6 @@ fun SettingsScreen(
     var showDhizukuDialog by remember { mutableStateOf(false) }
     var wifiReassert by remember {
         mutableStateOf(ModuleSettings.isWifiReassertEnabled())
-    }
-    var compatStub by remember {
-        mutableStateOf(StubManager.isInstalled(context))
     }
     var autoDisableUsbDebugging by remember {
         mutableStateOf(ShizukuSettings.getAutoDisableUsbDebugging())
@@ -443,6 +441,8 @@ fun SettingsScreen(
                 initialState is SettingsNav.Hub -> true
                 targetState is SettingsNav.UpdateSettings -> true
                 initialState is SettingsNav.UpdateSettings -> false
+                targetState is SettingsNav.CompatStubs -> true
+                initialState is SettingsNav.CompatStubs -> false
                 else -> true
             }
             if (forward) {
@@ -470,6 +470,12 @@ fun SettingsScreen(
                     onNavigateUp = { nav = SettingsNav.Section(SettingsSection.UPDATES) }
                 )
             }
+            SettingsNav.CompatStubs -> {
+                BackHandler { nav = SettingsNav.Section(SettingsSection.APPLICATION) }
+                CompatStubsScreen(
+                    onNavigateUp = { nav = SettingsNav.Section(SettingsSection.APPLICATION) }
+                )
+            }
             is SettingsNav.Section -> {
                 BackHandler { nav = SettingsNav.Hub }
                 val sectionListState = remember(current.section) { LazyListState() }
@@ -489,8 +495,8 @@ fun SettingsScreen(
                             dhizukuEnabled = dhizukuEnabled,
                             notifyDeath = notifyDeath,
                             wifiReassert = wifiReassert,
-                            compatStub = compatStub,
                             autoDisableUsbDebugging = autoDisableUsbDebugging,
+                            onOpenCompatStubs = { nav = SettingsNav.CompatStubs },
                             onStartOnBootChange = { enabled ->
                                 ShizukuSettings.setStartOnBoot(enabled)
                                 startOnBoot = ShizukuSettings.getStartOnBoot()
@@ -552,48 +558,6 @@ fun SettingsScreen(
                             onWifiReassertChange = { enabled ->
                                 ModuleSettings.setWifiReassertEnabled(enabled)
                                 wifiReassert = ModuleSettings.isWifiReassertEnabled()
-                            },
-                            onCompatStubChange = { enabled ->
-                                val performToggle = {
-                                    scope.launch {
-                                        val result = if (enabled) {
-                                            StubManager.install(context)
-                                        } else {
-                                            StubManager.uninstall(context)
-                                        }
-                                        compatStub = StubManager.isInstalled(context)
-                                        if (result.ok) {
-                                            ModuleSettings.setCompatibilityStubEnabled(enabled)
-                                            val message = if (enabled) {
-                                                context.getString(R.string.settings_compat_stub_installed, result.channel)
-                                            } else {
-                                                context.getString(R.string.settings_compat_stub_uninstalled)
-                                            }
-                                            Toast.makeText(context, message, Toast.LENGTH_SHORT).show()
-                                        } else {
-                                            val action = if (enabled) "install" else "uninstall"
-                                            val message = if (result.error == "no channel available") {
-                                                context.getString(R.string.settings_compat_stub_none)
-                                            } else {
-                                                context.getString(R.string.settings_compat_stub_failed, action, result.channel, result.error ?: "unknown")
-                                            }
-                                            Toast.makeText(context, message, Toast.LENGTH_LONG).show()
-                                        }
-                                    }
-                                }
-                                val fa = context as? androidx.fragment.app.FragmentActivity
-                                if (fa != null) {
-                                    moe.shizuku.manager.security.AuthManager.executeWithAuth(
-                                        activity = fa,
-                                        action = moe.shizuku.manager.security.SecuritySettings.ProtectedAction.STUB_MANAGEMENT,
-                                        title = context.getString(R.string.security_auth_prompt_title),
-                                        subtitle = context.getString(R.string.security_auth_prompt_stubs)
-                                    ) {
-                                        performToggle()
-                                    }
-                                } else {
-                                    performToggle()
-                                }
                             },
                             onAutoDisableUsbDebuggingChange = { enabled ->
                                 ShizukuSettings.setAutoDisableUsbDebugging(enabled)
@@ -1068,15 +1032,14 @@ private fun LazyListScope.applicationSectionContent(
     dhizukuEnabled: Boolean,
     notifyDeath: Boolean,
     wifiReassert: Boolean,
-    compatStub: Boolean,
     autoDisableUsbDebugging: Boolean,
+    onOpenCompatStubs: () -> Unit,
     onStartOnBootChange: (Boolean) -> Unit,
     onAdbStartOnBootChange: (Boolean) -> Unit,
     onWatchdogChange: (Boolean) -> Unit,
     onDhizukuToggle: (Boolean) -> Unit,
     onNotifyDeathChange: (Boolean) -> Unit,
     onWifiReassertChange: (Boolean) -> Unit,
-    onCompatStubChange: (Boolean) -> Unit,
     onAutoDisableUsbDebuggingChange: (Boolean) -> Unit,
     onTcpModeChange: (Boolean) -> Unit
 ) {
@@ -1138,12 +1101,11 @@ private fun LazyListScope.applicationSectionContent(
                 onCheckedChange = onWifiReassertChange
             )
             GroupDivider()
-            SwitchSettingsRow(
-                icon = R.drawable.ic_server_restart,
-                title = stringResource(R.string.settings_compat_stub),
-                summary = stringResource(R.string.settings_compat_stub_summary),
-                checked = compatStub,
-                onCheckedChange = onCompatStubChange
+            SettingsRow(
+                icon = R.drawable.ic_system_icon,
+                title = stringResource(R.string.settings_compat_stubs_title),
+                summary = stringResource(R.string.settings_compat_stubs_summary),
+                onClick = onOpenCompatStubs
             )
             SwitchSettingsRow(
                 icon = R.drawable.ic_adb_24dp,
