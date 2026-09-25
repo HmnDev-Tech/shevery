@@ -19,10 +19,14 @@ import androidx.compose.ui.res.stringResource
 import androidx.compose.ui.text.font.FontWeight
 import androidx.compose.ui.unit.dp
 import androidx.core.graphics.drawable.toBitmap
+import com.rosan.dhizuku.aidl.IDhizukuRequestPermissionListener
+import com.rosan.dhizuku.shared.DhizukuVariables
 import kotlinx.coroutines.delay
 import moe.shizuku.manager.Helps
 import moe.shizuku.manager.R
 import moe.shizuku.manager.app.AppActivity
+import moe.shizuku.manager.deviceowner.DeviceOwnerManager
+import moe.shizuku.manager.dhizuku.DhizukuAuthManager
 import moe.shizuku.manager.security.AuthManager
 import moe.shizuku.manager.security.SecuritySettings
 import moe.shizuku.manager.ui.compose.ShizukuExpressiveTheme
@@ -36,19 +40,28 @@ import rikka.shizuku.server.ktx.workerHandler
 
 class RequestPermissionActivity : AppActivity() {
 
-    private fun setResult(requestUid: Int, requestPid: Int, requestCode: Int, allowed: Boolean, onetime: Boolean) {
+    private fun setShizukuResult(requestUid: Int, requestPid: Int, requestCode: Int, allowed: Boolean, onetime: Boolean) {
+        if (requestPid == -1 || requestCode == -1) return
         val data = Bundle()
         data.putBoolean(REQUEST_PERMISSION_REPLY_ALLOWED, allowed)
         data.putBoolean(REQUEST_PERMISSION_REPLY_IS_ONETIME, onetime)
         try {
             Shizuku.dispatchPermissionConfirmationResult(requestUid, requestPid, requestCode, data)
         } catch (e: Throwable) {
-            LOGGER.e("dispatchPermissionConfirmationResult")
+            LOGGER.e("dispatchPermissionConfirmationResult failed", e)
         }
     }
 
     private fun checkSelfPermission(): Boolean {
-        val permission = Shizuku.checkRemotePermission("android.permission.GRANT_RUNTIME_PERMISSIONS") == PackageManager.PERMISSION_GRANTED
+        if (DeviceOwnerManager.isDeviceOwner(this)) {
+            return true
+        }
+
+        val permission = try {
+            Shizuku.checkRemotePermission("android.permission.GRANT_RUNTIME_PERMISSIONS") == PackageManager.PERMISSION_GRANTED
+        } catch (_: Throwable) {
+            false
+        }
         if (permission) return true
 
         setContent {
@@ -125,17 +138,70 @@ class RequestPermissionActivity : AppActivity() {
     override fun onCreate(savedInstanceState: Bundle?) {
         super.onCreate(savedInstanceState)
 
-        val uid = intent.getIntExtra("uid", -1)
+        val bundles = listOfNotNull(
+            intent.extras,
+            intent.getBundleExtra("bundle")
+        )
+
+        var uid = intent.getIntExtra("uid", -1)
+        if (uid == -1) {
+            for (b in bundles) {
+                if (b.containsKey(DhizukuVariables.PARAM_CLIENT_UID)) {
+                    uid = b.getInt(DhizukuVariables.PARAM_CLIENT_UID, -1)
+                    if (uid != -1) break
+                }
+            }
+        }
+
+        var dhizukuListener: IDhizukuRequestPermissionListener? = null
+        for (b in bundles) {
+            val binder = b.getBinder(DhizukuVariables.PARAM_CLIENT_REQUEST_PERMISSION_BINDER)
+            if (binder != null) {
+                dhizukuListener = kotlin.runCatching {
+                    IDhizukuRequestPermissionListener.Stub.asInterface(binder)
+                }.getOrNull()
+                if (dhizukuListener != null) break
+            }
+        }
+
         val pid = intent.getIntExtra("pid", -1)
         val requestCode = intent.getIntExtra("requestCode", -1)
-        val ai = intent.getParcelableExtra<ApplicationInfo>("applicationInfo")
-        if (uid == -1 || pid == -1 || ai == null) {
+
+        if (uid == -1) {
+            LOGGER.w("RequestPermissionActivity: No valid UID passed in intent, finishing")
             finish()
             return
         }
 
-        if (Shizuku.pingBinder()) {
-            initUi(uid, pid, requestCode, ai)
+        @Suppress("DEPRECATION")
+        var ai: ApplicationInfo? = intent.getParcelableExtra("applicationInfo")
+        if (ai == null) {
+            val pkg = packageManager.getPackagesForUid(uid)?.firstOrNull()
+            if (pkg != null) {
+                ai = kotlin.runCatching {
+                    packageManager.getApplicationInfo(pkg, 0)
+                }.getOrNull()
+            }
+        }
+
+        if (ai == null) {
+            LOGGER.w("RequestPermissionActivity: Cannot resolve ApplicationInfo for UID $uid, finishing")
+            dhizukuListener?.let {
+                try {
+                    it.onRequestPermission(PackageManager.PERMISSION_DENIED)
+                } catch (_: Throwable) {}
+            }
+            finish()
+            return
+        }
+
+        val isDhizuku = dhizukuListener != null
+        val isDeviceOwner = DeviceOwnerManager.isDeviceOwner(this)
+
+        if (isDhizuku || isDeviceOwner) {
+            initUi(uid, pid, requestCode, ai, dhizukuListener)
+        } else if (Shizuku.pingBinder()) {
+            initUi(uid, pid, requestCode, ai, dhizukuListener)
         } else {
             val listener = object : Shizuku.OnBinderReceivedListener {
                 override fun onBinderReceived() {
@@ -144,7 +210,7 @@ class RequestPermissionActivity : AppActivity() {
                     window?.decorView?.removeCallbacks(timeoutRunnable)
                     runOnUiThread {
                         if (!isFinishing && !isDestroyed) {
-                            initUi(uid, pid, requestCode, ai)
+                            initUi(uid, pid, requestCode, ai, dhizukuListener)
                         }
                     }
                 }
@@ -155,9 +221,16 @@ class RequestPermissionActivity : AppActivity() {
         }
     }
 
-    private fun initUi(uid: Int, pid: Int, requestCode: Int, ai: ApplicationInfo) {
-        if (!checkSelfPermission()) {
-            setResult(uid, pid, requestCode, allowed = false, onetime = true)
+    private fun initUi(
+        uid: Int,
+        pid: Int,
+        requestCode: Int,
+        ai: ApplicationInfo,
+        dhizukuListener: IDhizukuRequestPermissionListener?
+    ) {
+        val isDhizuku = dhizukuListener != null
+        if (!isDhizuku && !checkSelfPermission()) {
+            setShizukuResult(uid, pid, requestCode, allowed = false, onetime = true)
             return
         }
 
@@ -177,16 +250,37 @@ class RequestPermissionActivity : AppActivity() {
             ShizukuExpressiveTheme {
                 var secondsRemaining by remember { mutableIntStateOf(20) }
 
+                fun denyPermission() {
+                    dhizukuListener?.let {
+                        DhizukuAuthManager.revoke(this@RequestPermissionActivity, uid)
+                        try {
+                            it.onRequestPermission(PackageManager.PERMISSION_DENIED)
+                        } catch (_: Throwable) {}
+                    }
+                    setShizukuResult(uid, pid, requestCode, allowed = false, onetime = true)
+                    finish()
+                }
+
                 LaunchedEffect(Unit) {
                     while (secondsRemaining > 0) {
                         delay(1000L)
                         secondsRemaining--
                     }
-                    setResult(uid, pid, requestCode, allowed = false, onetime = true)
-                    finish()
+                    denyPermission()
                 }
 
                 fun confirmPermission(onetime: Boolean) {
+                    fun proceed() {
+                        dhizukuListener?.let {
+                            DhizukuAuthManager.grant(this@RequestPermissionActivity, uid, onetime = onetime)
+                            try {
+                                it.onRequestPermission(PackageManager.PERMISSION_GRANTED)
+                            } catch (_: Throwable) {}
+                        }
+                        setShizukuResult(uid, pid, requestCode, allowed = true, onetime = onetime)
+                        finish()
+                    }
+
                     if (SecuritySettings.isActionProtected(SecuritySettings.ProtectedAction.PERMISSIONS)) {
                         AuthManager.authenticate(
                             activity = this@RequestPermissionActivity,
@@ -194,21 +288,18 @@ class RequestPermissionActivity : AppActivity() {
                             subtitle = getString(R.string.security_action_permissions),
                             onResult = { authenticated ->
                                 if (authenticated) {
-                                    setResult(uid, pid, requestCode, allowed = true, onetime = onetime)
-                                    finish()
+                                    proceed()
                                 }
                             }
                         )
                     } else {
-                        setResult(uid, pid, requestCode, allowed = true, onetime = onetime)
-                        finish()
+                        proceed()
                     }
                 }
 
                 AlertDialog(
                     onDismissRequest = {
-                        setResult(uid, pid, requestCode, allowed = false, onetime = true)
-                        finish()
+                        denyPermission()
                     },
                     icon = {
                         Row(
@@ -277,7 +368,7 @@ class RequestPermissionActivity : AppActivity() {
                                     modifier = Modifier
                                         .fillMaxSize()
                                         .padding(6.dp)
-                                )
+                                    )
                             }
                         }
                     },
@@ -321,8 +412,7 @@ class RequestPermissionActivity : AppActivity() {
                             }
                             OutlinedButton(
                                 onClick = {
-                                    setResult(uid, pid, requestCode, allowed = false, onetime = true)
-                                    finish()
+                                    denyPermission()
                                 },
                                 modifier = Modifier.fillMaxWidth()
                             ) {

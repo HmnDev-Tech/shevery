@@ -172,6 +172,8 @@ private sealed interface SettingsNav {
     data class Section(val section: SettingsSection) : SettingsNav
     data object UpdateSettings : SettingsNav
     data object CompatStubs : SettingsNav
+    data object DeviceOwnerTransfer : SettingsNav
+    data object DeviceOwnerDelegation : SettingsNav
 }
 
 
@@ -443,6 +445,10 @@ fun SettingsScreen(
                 initialState is SettingsNav.UpdateSettings -> false
                 targetState is SettingsNav.CompatStubs -> true
                 initialState is SettingsNav.CompatStubs -> false
+                targetState is SettingsNav.DeviceOwnerTransfer -> true
+                initialState is SettingsNav.DeviceOwnerTransfer -> false
+                targetState is SettingsNav.DeviceOwnerDelegation -> true
+                initialState is SettingsNav.DeviceOwnerDelegation -> false
                 else -> true
             }
             if (forward) {
@@ -474,6 +480,18 @@ fun SettingsScreen(
                 BackHandler { nav = SettingsNav.Section(SettingsSection.APPLICATION) }
                 CompatStubsScreen(
                     onNavigateUp = { nav = SettingsNav.Section(SettingsSection.APPLICATION) }
+                )
+            }
+            SettingsNav.DeviceOwnerTransfer -> {
+                BackHandler { nav = SettingsNav.Section(SettingsSection.DEVICE_OWNER) }
+                DeviceOwnerTransferScreen(
+                    onNavigateUp = { nav = SettingsNav.Section(SettingsSection.DEVICE_OWNER) }
+                )
+            }
+            SettingsNav.DeviceOwnerDelegation -> {
+                BackHandler { nav = SettingsNav.Section(SettingsSection.DEVICE_OWNER) }
+                DeviceOwnerDelegationScreen(
+                    onNavigateUp = { nav = SettingsNav.Section(SettingsSection.DEVICE_OWNER) }
                 )
             }
             is SettingsNav.Section -> {
@@ -604,7 +622,10 @@ fun SettingsScreen(
                         }
                         SettingsSection.DEVICE_OWNER -> {
                             item {
-                                DeviceOwnerContent()
+                                DeviceOwnerContent(
+                                    onOpenTransfer = { nav = SettingsNav.DeviceOwnerTransfer },
+                                    onOpenDelegation = { nav = SettingsNav.DeviceOwnerDelegation }
+                                )
                             }
                         }
                         SettingsSection.MODULES -> modulesSectionContent(

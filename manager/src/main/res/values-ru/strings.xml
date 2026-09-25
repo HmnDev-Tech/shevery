@@ -647,4 +647,17 @@
     <string name="stub_uninstalled_success"><![CDATA[%1$s успешно удалён]]></string>
     <string name="device_owner_transfer_target_not_active"><![CDATA[Целевое приложение не активно как администратор устройства. Сначала включите его в Настройки -> Безопасность -> Администраторы устройства.]]></string>
     <string name="device_owner_transfer_dialog_hint"><![CDATA[Целевое приложение должно быть предварительно активировано в Настройки → Безопасность → Администраторы устройства.]]></string>
+    <string name="device_owner_transfer_select_target"><![CDATA[Выберите целевое приложение]]></string>
+    <string name="device_owner_transfer_no_admin_apps"><![CDATA[Подходящих приложений-администраторов не найдено]]></string>
+    <string name="device_owner_transfer_status_active"><![CDATA[Активен как администратор]]></string>
+    <string name="device_owner_transfer_status_inactive"><![CDATA[Не активен (нужно включить в настройках)]]></string>
+    <string name="device_owner_transfer_open_settings"><![CDATA[Открыть настройки]]></string>
+    <string name="device_owner_transfer_search_hint"><![CDATA[Поиск приложений…]]></string>
+    <string name="device_owner_delegation_scopes_count"><![CDATA[полномочий активно]]></string>
+    <string name="device_owner_delegation_none"><![CDATA[Не делегировано]]></string>
+    <string name="device_owner_delegation_configure"><![CDATA[Настроить]]></string>
+    <string name="device_owner_delegation_save"><![CDATA[Сохранить]]></string>
+    <string name="device_owner_delegation_updated"><![CDATA[Полномочия обновлены]]></string>
+    <string name="device_owner_delegation_revoked"><![CDATA[Полномочия отозваны]]></string>
+    <string name="device_owner_delegation_dialog_desc"><![CDATA[Выберите полномочия для делегирования этому приложению:]]></string>
 </resources>

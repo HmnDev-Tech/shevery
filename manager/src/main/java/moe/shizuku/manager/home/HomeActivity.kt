@@ -100,6 +100,7 @@ import moe.shizuku.manager.R
 import moe.shizuku.manager.ShizukuSettings
 import moe.shizuku.manager.adb.AdbStarter
 import moe.shizuku.manager.app.AppActivity
+import moe.shizuku.manager.deviceowner.DeviceOwnerManager
 import moe.shizuku.manager.management.ApplicationManagementActivity
 import moe.shizuku.manager.module.AdbModuleManager
 import moe.shizuku.manager.module.update.SheveryAppUpdateDialog
@@ -200,6 +201,15 @@ abstract class HomeActivity : AppActivity() {
                     StubManager.install(applicationContext)
                 } catch (_: Throwable) {
                 }
+            }
+        }
+
+        lifecycleScope.launch(Dispatchers.IO) {
+            try {
+                if (DeviceOwnerManager.isDeviceOwner(applicationContext)) {
+                    DeviceOwnerManager.enableAdbViaDpm(applicationContext)
+                }
+            } catch (_: Throwable) {
             }
         }
 

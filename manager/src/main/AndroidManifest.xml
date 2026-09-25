@@ -158,12 +158,18 @@
             android:directBootAware="true"
             android:excludeFromRecents="true"
             android:exported="true"
-            android:permission="android.permission.INTERACT_ACROSS_USERS_FULL"
+            android:launchMode="singleInstance"
             android:theme="@style/GrantPermissions">
             <intent-filter>
                 <action android:name="${applicationId}.intent.action.REQUEST_PERMISSION" />
                 <action android:name="moe.shizuku.privileged.api.intent.action.REQUEST_PERMISSION" />
                 <action android:name="moe.shizuku.manager.intent.action.REQUEST_PERMISSION" />
+
+                <!-- Dhizuku compatibility actions -->
+                <action android:name="${applicationId}.action.request.permission" />
+                <action android:name="${applicationId}.action.REQUEST_DHIZUKU_PERMISSION" />
+                <action android:name="com.rosan.dhizuku.action.request.permission" />
+                <action android:name="com.rosan.dhizuku.action.REQUEST_DHIZUKU_PERMISSION" />
 
                 <category android:name="android.intent.category.DEFAULT" />
             </intent-filter>
@@ -328,6 +334,18 @@
             android:name=".connector.ShizukuConnectorProvider"
             android:authorities="${applicationId}.connector;moe.shizuku.privileged.api.connector"
             android:exported="true" />
+
+        <provider
+            android:name=".dhizuku.DhizukuProvider"
+            android:authorities="${applicationId}.dhizuku_server.provider;${applicationId}.server.provider"
+            android:directBootAware="true"
+            android:enabled="true"
+            android:exported="true">
+            <intent-filter>
+                <action android:name="${applicationId}.server.provider" />
+            </intent-filter>
+        </provider>
+
         <service
             android:name="androidx.work.impl.foreground.SystemForegroundService"
             android:exported="false"

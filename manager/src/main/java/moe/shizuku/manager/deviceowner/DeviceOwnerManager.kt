@@ -174,6 +174,22 @@ object DeviceOwnerManager {
         }
     }
 
+    data class AdminAppInfo(
+        val componentName: ComponentName,
+        val packageName: String,
+        val label: String,
+        val icon: android.graphics.drawable.Drawable?,
+        val isActiveAdmin: Boolean
+    )
+
+    data class DelegatedAppInfo(
+        val packageName: String,
+        val label: String,
+        val icon: android.graphics.drawable.Drawable?,
+        val scopes: List<String>,
+        val isDeviceAdmin: Boolean
+    )
+
     fun getEligibleAdminApps(context: Context): List<ApplicationInfo> {
         val pm = context.packageManager
         val adminReceivers = pm.queryBroadcastReceivers(
@@ -185,5 +201,77 @@ object DeviceOwnerManager {
             .mapNotNull { it.activityInfo?.applicationInfo }
             .filter { it.packageName != ownPackage }
             .distinctBy { it.packageName }
+    }
+
+    fun getEligibleAdminAppsDetailed(context: Context): List<AdminAppInfo> {
+        val pm = context.packageManager
+        val dpm = getDpm(context)
+        val receivers = pm.queryBroadcastReceivers(
+            android.content.Intent(DeviceAdminReceiver.ACTION_DEVICE_ADMIN_ENABLED),
+            PackageManager.GET_META_DATA
+        )
+        val ownPackage = context.packageName
+        return receivers.mapNotNull { ri ->
+            val ai = ri.activityInfo ?: return@mapNotNull null
+            if (ai.packageName == ownPackage) return@mapNotNull null
+            try {
+                val adminInfo = android.app.admin.DeviceAdminInfo(context, ri)
+                val cn = adminInfo.component
+                val isActive = dpm.isAdminActive(cn)
+                val label = adminInfo.loadLabel(pm)?.toString() ?: ai.packageName
+                val icon = adminInfo.loadIcon(pm) ?: ai.loadIcon(pm)
+                AdminAppInfo(
+                    componentName = cn,
+                    packageName = ai.packageName,
+                    label = label,
+                    icon = icon,
+                    isActiveAdmin = isActive
+                )
+            } catch (_: Exception) {
+                val cn = ComponentName(ai.packageName, ai.name)
+                val isActive = dpm.isAdminActive(cn)
+                val label = ai.loadLabel(pm)?.toString() ?: ai.packageName
+                val icon = ai.loadIcon(pm)
+                AdminAppInfo(
+                    componentName = cn,
+                    packageName = ai.packageName,
+                    label = label,
+                    icon = icon,
+                    isActiveAdmin = isActive
+                )
+            }
+        }.distinctBy { it.componentName }
+    }
+
+    fun getDelegationApps(context: Context): List<DelegatedAppInfo> {
+        val pm = context.packageManager
+        val ownPackage = context.packageName
+
+        val adminReceivers = pm.queryBroadcastReceivers(
+            android.content.Intent(DeviceAdminReceiver.ACTION_DEVICE_ADMIN_ENABLED),
+            0
+        )
+        val adminPkgs = adminReceivers.mapNotNull { it.activityInfo?.packageName }.toSet()
+
+        val installedApps = pm.getInstalledApplications(0)
+            .filter { it.packageName != ownPackage }
+
+        return installedApps.map { app ->
+            val scopes = getDelegatedScopes(context, app.packageName)
+            val isAdmin = adminPkgs.contains(app.packageName)
+            val label = app.loadLabel(pm).toString()
+            val icon = try { app.loadIcon(pm) } catch (_: Throwable) { null }
+            DelegatedAppInfo(
+                packageName = app.packageName,
+                label = label,
+                icon = icon,
+                scopes = scopes,
+                isDeviceAdmin = isAdmin
+            )
+        }.sortedWith(
+            compareByDescending<DelegatedAppInfo> { it.scopes.isNotEmpty() }
+                .thenByDescending { it.isDeviceAdmin }
+                .thenBy { it.label.lowercase() }
+        )
     }
 }

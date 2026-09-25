@@ -832,4 +832,17 @@ Wi-Fi is required for the first restart because Shevery must connect to the curr
     <string name="stub_uninstalled_success">%1$s removed successfully</string>
     <string name="device_owner_transfer_target_not_active">Target app is not active as a Device Admin. Please activate it first in Android Settings -> Security -> Device admin apps.</string>
     <string name="device_owner_transfer_dialog_hint">Target application must first be enabled under Android Settings → Security → Device admin apps.</string>
+    <string name="device_owner_transfer_select_target">Select target admin app</string>
+    <string name="device_owner_transfer_no_admin_apps">No eligible device admin apps found</string>
+    <string name="device_owner_transfer_status_active">Active as device admin</string>
+    <string name="device_owner_transfer_status_inactive">Inactive (must enable in Settings)</string>
+    <string name="device_owner_transfer_open_settings">Open Settings</string>
+    <string name="device_owner_transfer_search_hint">Search apps…</string>
+    <string name="device_owner_delegation_scopes_count">scopes active</string>
+    <string name="device_owner_delegation_none">No scopes</string>
+    <string name="device_owner_delegation_configure">Configure</string>
+    <string name="device_owner_delegation_save">Save</string>
+    <string name="device_owner_delegation_updated">Delegation updated</string>
+    <string name="device_owner_delegation_revoked">Delegation revoked</string>
+    <string name="device_owner_delegation_dialog_desc">Select scopes to delegate to this application:</string>
 </resources>

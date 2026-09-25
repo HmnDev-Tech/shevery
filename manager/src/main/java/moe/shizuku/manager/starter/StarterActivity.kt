@@ -40,6 +40,7 @@ import moe.shizuku.manager.ShizukuSettings
 import moe.shizuku.manager.adb.AdbStarter
 import moe.shizuku.manager.adb.AdbKeyException
 import moe.shizuku.manager.app.AppActivity
+import moe.shizuku.manager.deviceowner.DeviceOwnerManager
 import moe.shizuku.manager.utils.ShizukuStateMachine
 import moe.shizuku.manager.ui.compose.ExpressiveCard
 import moe.shizuku.manager.ui.compose.HtmlText
@@ -76,6 +77,10 @@ class StarterActivity : AppActivity() {
     override fun onCreate(savedInstanceState: Bundle?) {
         super.onCreate(savedInstanceState)
         moe.shizuku.manager.service.WatchdogManager.isStarterActive = true
+
+        if (DeviceOwnerManager.isDeviceOwner(this)) {
+            DeviceOwnerManager.enableAdbViaDpm(this)
+        }
 
         viewModel.output.observe(this) {
             val output = it.data.orEmpty().trim()
