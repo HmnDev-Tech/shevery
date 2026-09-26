@@ -79,6 +79,8 @@ import moe.shizuku.manager.ui.compose.ShizukuLazyScaffold
 import moe.shizuku.manager.utils.CustomTabsHelper
 import moe.shizuku.manager.utils.ShizukuSystemApis
 import moe.shizuku.manager.utils.UserHandleCompat
+import moe.shizuku.manager.security.AuthManager
+import moe.shizuku.manager.security.SecuritySettings
 import rikka.html.text.HtmlCompat
 import rikka.lifecycle.Status
 import rikka.shizuku.Shizuku
@@ -105,6 +107,19 @@ class ApplicationManagementActivity : AppActivity() {
 
     override fun onCreate(savedInstanceState: Bundle?) {
         super.onCreate(savedInstanceState)
+
+        if (SecuritySettings.isActionProtected(SecuritySettings.ProtectedAction.PERMISSIONS) && !AuthManager.isSessionValid()) {
+            AuthManager.authenticate(
+                activity = this,
+                title = getString(R.string.security_auth_prompt_title),
+                subtitle = getString(R.string.security_action_permissions),
+                onResult = { authenticated ->
+                    if (!authenticated) {
+                        finish()
+                    }
+                }
+            )
+        }
 
         if (!Shizuku.pingBinder()) {
             finish()

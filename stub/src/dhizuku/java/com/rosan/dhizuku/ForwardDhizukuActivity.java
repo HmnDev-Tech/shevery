@@ -3,6 +3,8 @@ package com.rosan.dhizuku;
 import android.app.Activity;
 import android.content.ComponentName;
 import android.content.Intent;
+import android.net.Uri;
+import android.os.Build;
 import android.os.Bundle;
 
 public class ForwardDhizukuActivity extends Activity {
@@ -26,6 +28,43 @@ public class ForwardDhizukuActivity extends Activity {
             if (getIntent().getExtras() != null) {
                 forward.putExtras(getIntent().getExtras());
             }
+
+            String callingPackage = getCallingPackage();
+            int uid = -1;
+            if (Build.VERSION.SDK_INT >= 34) {
+                try {
+                    uid = getLaunchedFromUid();
+                } catch (Throwable ignored) {}
+            }
+            if (callingPackage == null && Build.VERSION.SDK_INT >= 34) {
+                try {
+                    callingPackage = getLaunchedFromPackage();
+                } catch (Throwable ignored) {}
+            }
+            if (callingPackage == null) {
+                try {
+                    Uri referrer = getReferrer();
+                    if (referrer != null && "android-app".equals(referrer.getScheme())) {
+                        callingPackage = referrer.getAuthority();
+                    }
+                } catch (Throwable ignored) {}
+            }
+            if (uid == -1 && callingPackage != null) {
+                try {
+                    uid = getPackageManager().getPackageUid(callingPackage, 0);
+                } catch (Throwable ignored) {}
+            }
+
+            if (callingPackage != null) {
+                forward.putExtra("callingPackage", callingPackage);
+                forward.putExtra("packageName", callingPackage);
+                forward.putExtra("client_package_name", callingPackage);
+            }
+            if (uid != -1) {
+                forward.putExtra("uid", uid);
+                forward.putExtra("client_uid", uid);
+            }
+
             if (getCallingActivity() != null) {
                 forward.addFlags(Intent.FLAG_ACTIVITY_FORWARD_RESULT);
             }

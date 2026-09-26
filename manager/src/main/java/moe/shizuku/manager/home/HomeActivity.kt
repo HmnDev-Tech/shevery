@@ -68,7 +68,9 @@ import androidx.compose.material3.TextButton
 import androidx.compose.material3.TopAppBar
 import androidx.compose.material3.TopAppBarDefaults
 import androidx.compose.runtime.Composable
+import androidx.compose.runtime.CompositionLocalProvider
 import androidx.compose.runtime.DisposableEffect
+import moe.shizuku.manager.ui.compose.LocalFloatingNavBarVisible
 import androidx.compose.runtime.LaunchedEffect
 import androidx.compose.runtime.collectAsState
 import androidx.compose.runtime.getValue
@@ -313,27 +315,38 @@ abstract class HomeActivity : AppActivity() {
                 }
             }
 
+            val floatingNavBarVisible = remember { mutableStateOf(true) }
+
+            LaunchedEffect(selectedTab) {
+                if (selectedTab != 3) {
+                    floatingNavBarVisible.value = true
+                }
+            }
+
             ShizukuExpressiveTheme {
-                if (!unlocked) {
-                    LockedScreen(
-                        onUnlock = {
-                            AuthManager.authenticate(
-                                activity = this@HomeActivity,
-                                title = getString(R.string.security_auth_prompt_title),
-                                subtitle = getString(R.string.security_auth_prompt_app_open),
-                                onResult = { authenticated ->
-                                    if (authenticated) {
-                                        isAppUnlocked.value = true
+                CompositionLocalProvider(
+                    LocalFloatingNavBarVisible provides floatingNavBarVisible
+                ) {
+                    if (!unlocked) {
+                        LockedScreen(
+                            onUnlock = {
+                                AuthManager.authenticate(
+                                    activity = this@HomeActivity,
+                                    title = getString(R.string.security_auth_prompt_title),
+                                    subtitle = getString(R.string.security_auth_prompt_app_open),
+                                    onResult = { authenticated ->
+                                        if (authenticated) {
+                                            isAppUnlocked.value = true
+                                        }
                                     }
-                                }
-                            )
-                        }
-                    )
-                } else {
-                    Box(Modifier.fillMaxSize()) {
-                    Scaffold(
-                    contentWindowInsets = WindowInsets(0.dp)
-                ) { innerPadding ->
+                                )
+                            }
+                        )
+                    } else {
+                        Box(Modifier.fillMaxSize()) {
+                        Scaffold(
+                        contentWindowInsets = WindowInsets(0.dp)
+                    ) { innerPadding ->
                     Box(modifier = Modifier.padding(innerPadding).fillMaxSize()) {
                         androidx.compose.animation.AnimatedContent(
                             targetState = selectedTab,
@@ -431,7 +444,7 @@ abstract class HomeActivity : AppActivity() {
                                             startDhizukuMode()
                                         }
                                     },
-                                    dhizukuEnabled = ModuleSettings.isDhizukuEnabled(),
+                                    dhizukuEnabled = ModuleSettings.isDhizukuEnabled() && !DeviceOwnerManager.isDeviceOwner(this@HomeActivity),
                                     listState = homeListState
                                 )
                                 1 -> moe.shizuku.manager.module.ModulesScreen(onOpenWebUi = {
@@ -444,7 +457,12 @@ abstract class HomeActivity : AppActivity() {
                                     modulesState = cachedModules
                                 )
                                 2 -> moe.shizuku.manager.logs.ComputScreen(listState = computListState)
-                                3 -> moe.shizuku.manager.settings.SettingsScreen(listState = settingsListState)
+                                3 -> moe.shizuku.manager.settings.SettingsScreen(
+                                    listState = settingsListState,
+                                    onSubpageChange = { isSubpage ->
+                                        floatingNavBarVisible.value = !isSubpage
+                                    }
+                                )
                             }
                         }
                     }
@@ -751,10 +769,10 @@ abstract class HomeActivity : AppActivity() {
                         )
                     }
                 }
-                }
-                }
             }
         }
+        }
+    }
 
         Shizuku.addBinderReceivedListenerSticky(binderReceivedListener)
         Shizuku.addBinderDeadListener(binderDeadListener)

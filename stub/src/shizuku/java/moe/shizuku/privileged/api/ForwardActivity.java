@@ -2,6 +2,8 @@ package moe.shizuku.privileged.api;
 
 import android.app.Activity;
 import android.content.Intent;
+import android.net.Uri;
+import android.os.Build;
 import android.os.Bundle;
 
 public class ForwardActivity extends Activity {
@@ -29,6 +31,43 @@ public class ForwardActivity extends Activity {
             if (original.getExtras() != null) {
                 forward.putExtras(original.getExtras());
             }
+
+            String callingPackage = getCallingPackage();
+            int uid = -1;
+            if (Build.VERSION.SDK_INT >= 34) {
+                try {
+                    uid = getLaunchedFromUid();
+                } catch (Throwable ignored) {}
+            }
+            if (callingPackage == null && Build.VERSION.SDK_INT >= 34) {
+                try {
+                    callingPackage = getLaunchedFromPackage();
+                } catch (Throwable ignored) {}
+            }
+            if (callingPackage == null) {
+                try {
+                    Uri referrer = getReferrer();
+                    if (referrer != null && "android-app".equals(referrer.getScheme())) {
+                        callingPackage = referrer.getAuthority();
+                    }
+                } catch (Throwable ignored) {}
+            }
+            if (uid == -1 && callingPackage != null) {
+                try {
+                    uid = getPackageManager().getPackageUid(callingPackage, 0);
+                } catch (Throwable ignored) {}
+            }
+
+            if (callingPackage != null) {
+                forward.putExtra("callingPackage", callingPackage);
+                forward.putExtra("packageName", callingPackage);
+                forward.putExtra("client_package_name", callingPackage);
+            }
+            if (uid != -1) {
+                forward.putExtra("uid", uid);
+                forward.putExtra("client_uid", uid);
+            }
+
             forward.setFlags(Intent.FLAG_ACTIVITY_FORWARD_RESULT);
             startActivity(forward);
         } catch (Throwable ignored) {

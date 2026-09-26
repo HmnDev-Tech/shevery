@@ -69,6 +69,7 @@ import moe.shizuku.manager.app.ThemeHelper
 import moe.shizuku.manager.app.ThemeHelper.KEY_BLACK_NIGHT_THEME
 import moe.shizuku.manager.app.ThemeHelper.KEY_USE_SYSTEM_COLOR
 import moe.shizuku.manager.ktx.setComponentEnabled
+import moe.shizuku.manager.deviceowner.DeviceOwnerManager
 import moe.shizuku.manager.accessibility.AccessibilityManagerActivity
 import moe.shizuku.manager.compat.StubManager
 import moe.shizuku.manager.module.ModuleSettings
@@ -1113,14 +1114,16 @@ private fun LazyListScope.applicationSectionContent(
                 checked = watchdog,
                 onCheckedChange = onWatchdogChange
             )
-            GroupDivider()
-            SwitchSettingsRow(
-                icon = R.drawable.ic_outline_info_24,
-                title = stringResource(R.string.dhizuku_mode_title),
-                summary = stringResource(R.string.dhizuku_mode_summary),
-                checked = dhizukuEnabled,
-                onCheckedChange = onDhizukuToggle
-            )
+            if (!DeviceOwnerManager.isDeviceOwner(LocalContext.current)) {
+                GroupDivider()
+                SwitchSettingsRow(
+                    icon = R.drawable.ic_outline_info_24,
+                    title = stringResource(R.string.dhizuku_mode_title),
+                    summary = stringResource(R.string.dhizuku_mode_summary),
+                    checked = dhizukuEnabled,
+                    onCheckedChange = onDhizukuToggle
+                )
+            }
             GroupDivider()
             SwitchSettingsRow(
                 icon = R.drawable.ic_outline_notifications_active_24,

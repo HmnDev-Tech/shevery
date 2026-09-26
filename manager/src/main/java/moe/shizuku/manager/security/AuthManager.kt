@@ -38,14 +38,11 @@ object AuthManager : Application.ActivityLifecycleCallbacks {
         if (!SecuritySettings.isAuthEnabled) return true
         if (lastAuthenticatedTimestamp == 0L) return false
 
-        // If the app is currently in background or returned from background, verify timeout
-        if (startedActivityCount == 0 && backgroundTimestamp > 0L) {
-            val timeoutSec = SecuritySettings.timeoutSeconds
-            if (timeoutSec <= 0) return false
-            val elapsed = (SystemClock.elapsedRealtime() - backgroundTimestamp) / 1000
-            if (elapsed >= timeoutSec) return false
-        }
-        return true
+        val timeoutSec = SecuritySettings.timeoutSeconds
+        if (timeoutSec <= 0) return false
+
+        val elapsed = (SystemClock.elapsedRealtime() - lastAuthenticatedTimestamp) / 1000
+        return elapsed < timeoutSec
     }
 
     fun markAuthenticated() {

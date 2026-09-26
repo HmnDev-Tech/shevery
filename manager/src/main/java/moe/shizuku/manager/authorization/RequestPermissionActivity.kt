@@ -189,6 +189,9 @@ class RequestPermissionActivity : AppActivity() {
 
         var uid = intent.getIntExtra("uid", -1)
         if (uid == -1) {
+            uid = intent.getIntExtra("client_uid", -1)
+        }
+        if (uid == -1) {
             for (b in bundles) {
                 if (b.containsKey(DhizukuVariables.PARAM_CLIENT_UID)) {
                     uid = b.getInt(DhizukuVariables.PARAM_CLIENT_UID, -1)
@@ -197,11 +200,29 @@ class RequestPermissionActivity : AppActivity() {
             }
         }
 
-        if (uid == -1) {
-            val cp = callingPackage
-            if (cp != null) {
-                uid = runCatching { packageManager.getPackageUid(cp, 0) }.getOrDefault(-1)
+        var callingPkg = intent.getStringExtra("packageName")
+            ?: intent.getStringExtra("callingPackage")
+            ?: intent.getStringExtra("client_package_name")
+            ?: callingPackage
+
+        if (android.os.Build.VERSION.SDK_INT >= 34) {
+            if (uid == -1) {
+                uid = runCatching { launchedFromUid }.getOrDefault(-1)
             }
+            if (callingPkg.isNullOrEmpty()) {
+                callingPkg = runCatching { launchedFromPackage }.getOrNull()
+            }
+        }
+
+        if (callingPkg.isNullOrEmpty()) {
+            callingPkg = runCatching {
+                val ref = referrer
+                if (ref != null && ref.scheme == "android-app") ref.authority else null
+            }.getOrNull()
+        }
+
+        if (uid == -1 && !callingPkg.isNullOrEmpty()) {
+            uid = runCatching { packageManager.getPackageUid(callingPkg, 0) }.getOrDefault(-1)
         }
 
         var dhizukuListener: IDhizukuRequestPermissionListener? = null
@@ -226,6 +247,11 @@ class RequestPermissionActivity : AppActivity() {
 
         @Suppress("DEPRECATION")
         var ai: ApplicationInfo? = intent.getParcelableExtra("applicationInfo")
+        if (ai == null && !callingPkg.isNullOrEmpty()) {
+            ai = kotlin.runCatching {
+                packageManager.getApplicationInfo(callingPkg, 0)
+            }.getOrNull()
+        }
         if (ai == null) {
             val pkg = packageManager.getPackagesForUid(uid)?.firstOrNull()
             if (pkg != null) {
@@ -236,14 +262,11 @@ class RequestPermissionActivity : AppActivity() {
         }
 
         if (ai == null) {
-            LOGGER.w("RequestPermissionActivity: Cannot resolve ApplicationInfo for UID $uid, finishing")
-            dhizukuListener?.let {
-                try {
-                    it.onRequestPermission(PackageManager.PERMISSION_DENIED)
-                } catch (_: Throwable) {}
+            ai = ApplicationInfo().apply {
+                packageName = callingPkg ?: (packageManager.getPackagesForUid(uid)?.firstOrNull() ?: "uid_$uid")
+                this.uid = uid
+                name = packageName
             }
-            finish()
-            return
         }
 
         val isDhizuku = dhizukuListener != null || intent.action?.contains("dhizuku", ignoreCase = true) == true
@@ -327,9 +350,9 @@ class RequestPermissionActivity : AppActivity() {
 
         val pm = packageManager
         val label = try {
-            ai.loadLabel(pm)
+            ai.loadLabel(pm).takeIf { !it.isNullOrBlank() } ?: (ai.packageName ?: "UID $uid")
         } catch (_: Exception) {
-            ai.packageName
+            ai.packageName ?: "UID $uid"
         }
         val appBitmap = try {
             ai.loadIcon(pm).toBitmap(width = 120, height = 120).asImageBitmap()
