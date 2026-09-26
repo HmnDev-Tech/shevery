@@ -32,6 +32,15 @@ class PluginReceiver : BroadcastReceiver() {
             return
         }
 
+        if (isDirectAction(intent.action)) {
+            val expectedToken = getAuthToken(context)
+            if (expectedToken.isNotEmpty() && intent.getStringExtra(PluginContract.EXTRA_AUTH) != expectedToken) {
+                Log.w(TAG, "Rejected intent ${intent.action}: invalid or missing auth token")
+                resultCode = Activity.RESULT_CANCELED
+                return
+            }
+        }
+
         when (intent.action) {
             PluginContract.ACTION_FIRE_SETTING -> handleFire(context, intent)
             PluginContract.ACTION_QUERY_CONDITION -> handleQuery(intent)
@@ -40,6 +49,26 @@ class PluginReceiver : BroadcastReceiver() {
             PluginContract.ACTION_DIRECT_RESTART -> handleDirect(context, Command.RESTART)
             PluginContract.ACTION_DIRECT_TOGGLE -> handleDirect(context, Command.TOGGLE)
         }
+    }
+
+    private fun isDirectAction(action: String?): Boolean = when (action) {
+        PluginContract.ACTION_DIRECT_START,
+        PluginContract.ACTION_DIRECT_STOP,
+        PluginContract.ACTION_DIRECT_RESTART,
+        PluginContract.ACTION_DIRECT_TOGGLE -> true
+        else -> false
+    }
+
+    private fun getAuthToken(context: Context): String {
+        return runCatching {
+            val storageContext = if (Build.VERSION.SDK_INT >= Build.VERSION_CODES.N) {
+                context.createDeviceProtectedStorageContext()
+            } else {
+                context
+            }
+            storageContext.getSharedPreferences("settings", Context.MODE_PRIVATE)
+                .getString(PluginContract.KEY_AUTH_TOKEN, "") ?: ""
+        }.getOrDefault("")
     }
 
     private fun isConnectorEnabled(context: Context): Boolean {

@@ -582,4 +582,28 @@ Klaar voor opdrachten.]]></string>
     <string name="settings_section_extras_summary"><![CDATA[Accessibility, diagnostics, and experiments]]></string>
     <string name="settings_classic_nav"><![CDATA[Classic navigation bar]]></string>
     <string name="settings_classic_nav_summary"><![CDATA[Use a fixed bottom bar instead of the floating pill]]></string>
+
+    <!-- Home - Automation -->
+    <string name="home_automation_title">Bedien Shevery met automatisatie-apps</string>
+    <string name="home_automation_description">Apps zoals Tasker en MacroDroid kunnen intents verzenden om Shevery automatisch te starten, stoppen, herstarten of om te schakelen.</string>
+    <string name="home_automation_button_view_intents">Intents bekijken</string>
+    <string name="home_automation_bottom_sheet_intents">Automatisatie-intents</string>
+    <string name="home_automation_bottom_sheet_description">Configureer intents in Tasker of MacroDroid, of voer de opdracht rechtstreeks uit vanuit Termux / ADB. Tik om te kopiëren.</string>
+    <string name="home_automation_connectors_disabled_warning">Connectors zijn momenteel uitgeschakeld. Schakel ze in via Instellingen → Automatisering om binnenkomende broadcast-intents toe te staan.</string>
+    <string name="home_automation_device_restriction">Om het start-intent te gebruiken op oudere Android-versies zonder root, moet u eerst ADB over TCP inschakelen door %1$s uit te voeren vanaf een pc.</string>
+    <string name="home_automation_label_action">Actie</string>
+    <string name="home_automation_label_package">Pakket</string>
+    <string name="home_automation_label_target">Doel</string>
+    <string name="home_automation_label_extras">Extra\'s (Authenticatie-token)</string>
+    <string name="home_automation_label_shell">Shell / Termux-opdracht</string>
+    <string name="home_automation_regenerate_token">Token opnieuw genereren</string>
+    <string name="home_automation_regenerate_token_confirm">Weet u zeker dat u het token opnieuw wilt genereren? Geconfigureerde intents moeten worden bijgewerkt met het nieuwe token.</string>
+    <string name="automation_security_group_title">Authenticatie &amp; Beveiliging</string>
+    <string name="automation_security_description">Rechtstreekse broadcast-intents vereisen dit geheime authenticatietoken doorgegeven als de \'auth\'-extra (-e auth &lt;token&gt;). Dit beschermt Shevery tegen ongeautoriseerde apps.</string>
+    <string name="automation_regenerate_token_summary">Genereer een nieuw geheim token en maak het huidige ongeldig</string>
+    <string name="automation_target_component_label">Ontvangercomponent</string>
+    <string name="home_automation_connectors_disabled_status">Connectors uitgeschakeld (Intents inactief)</string>
+    <string name="home_automation_connectors_active">Connectors actief</string>
+    <string name="home_automation_connectors_active_desc">Inkomende broadcast-intents worden geaccepteerd.</string>
+    <string name="home_automation_open_settings">Automatisatie-instellingen openen</string>
 </resources>

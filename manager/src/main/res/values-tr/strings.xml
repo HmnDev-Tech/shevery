@@ -587,4 +587,28 @@ Komutlara hazır.]]></string>
     <string name="settings_section_extras_summary"><![CDATA[Erişilebilirlik, tanılama ve deneysel özellikler]]></string>
     <string name="settings_classic_nav"><![CDATA[Klasik gezinme çubuğu]]></string>
     <string name="settings_classic_nav_summary"><![CDATA[Kayan kapsül yerine sabit alt çubuğu kullan]]></string>
+
+    <!-- Home - Automation -->
+    <string name="home_automation_title">Shevery\'i otomasyon uygulamalarıyla kontrol edin</string>
+    <string name="home_automation_description">Tasker ve MacroDroid gibi uygulamalar, Shevery\'i otomatik olarak başlatmak, durdurmak, yeniden başlatmak veya değiştirmek için intent gönderebilir.</string>
+    <string name="home_automation_button_view_intents">Intent\'leri görüntüle</string>
+    <string name="home_automation_bottom_sheet_intents">Otomasyon Intent\'leri</string>
+    <string name="home_automation_bottom_sheet_description">Intent\'leri Tasker veya MacroDroid\'de yapılandırın veya komutu doğrudan Termux / ADB\'den çalıştırın. Kopyalamak için dokunun.</string>
+    <string name="home_automation_connectors_disabled_warning">Bağlayıcılar şu anda devre dışı. Gelen yayın intent\'lerine izin vermek için Ayarlar → Otomasyon bölümünden etkinleştirin.</string>
+    <string name="home_automation_device_restriction">Root olmadan eski Android sürümlerinde başlatma intent\'ini kullanmak için önce bir PC\'den %1$s çalıştırarak TCP üzerinden ADB\'yi etkinleştirmeniz gerekir.</string>
+    <string name="home_automation_label_action">Eylem</string>
+    <string name="home_automation_label_package">Paket</string>
+    <string name="home_automation_label_target">Hedef</string>
+    <string name="home_automation_label_extras">Ekstralar (Kimlik Doğrulama Belirteci)</string>
+    <string name="home_automation_label_shell">Shell / Termux komutu</string>
+    <string name="home_automation_regenerate_token">Belirteci yeniden oluştur</string>
+    <string name="home_automation_regenerate_token_confirm">Belirteci yeniden oluşturmak istediğinizden emin misiniz? Yapılandırılmış tüm intent\'lerin yeni belirteçle güncellenmesi gerekecektir.</string>
+    <string name="automation_security_group_title">Kimlik Doğrulama ve Güvenlik</string>
+    <string name="automation_security_description">Doğrudan yayın intent\'leri, \'auth\' ekstrası (-e auth &lt;token&gt;) olarak iletilen bu gizli kimlik doğrulama belirtecini gerektirir. Bu, Shevery\'i yetkisiz uygulamalardan korur.</string>
+    <string name="automation_regenerate_token_summary">Yeni bir gizli belirteç oluşturun ve mevcut olanı geçersiz kılın</string>
+    <string name="automation_target_component_label">Alıcı Bileşeni</string>
+    <string name="home_automation_connectors_disabled_status">Bağlayıcılar Devre Dışı (Intent\'ler Etkin Değil)</string>
+    <string name="home_automation_connectors_active">Bağlayıcılar Etkin</string>
+    <string name="home_automation_connectors_active_desc">Gelen yayın intent\'leri kabul edilecektir.</string>
+    <string name="home_automation_open_settings">Otomasyon Ayarlarını Aç</string>
 </resources>

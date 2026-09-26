@@ -1,0 +1,16 @@
+<?xml version="1.0" encoding="utf-8"?>
+<resources>
+    <string name="tasker_plugin_name">Shevery Tasker</string>
+    <string name="tasker_command_start">بدء الخادم</string>
+    <string name="tasker_command_stop">إيقاف الخادم</string>
+    <string name="tasker_command_restart">إعادة تشغيل الخادم</string>
+    <string name="tasker_command_toggle">تبديل حالة الخادم</string>
+    <string name="tasker_blurb_start">Shevery: بدء الخادم</string>
+    <string name="tasker_blurb_stop">Shevery: إيقاف الخادم</string>
+    <string name="tasker_blurb_restart">Shevery: إعادة تشغيل الخادم</string>
+    <string name="tasker_blurb_toggle">Shevery: تبديل حالة الخادم</string>
+    <string name="tasker_condition_running">الخادم قيد التشغيل</string>
+    <string name="tasker_blurb_condition">Shevery: الخادم قيد التشغيل</string>
+    <string name="tasker_save">حفظ</string>
+    <string name="tasker_cancel">إلغاء</string>
+</resources>

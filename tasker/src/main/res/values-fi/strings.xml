@@ -1,0 +1,16 @@
+<?xml version="1.0" encoding="utf-8"?>
+<resources>
+    <string name="tasker_plugin_name">Shevery Tasker</string>
+    <string name="tasker_command_start">Käynnistä palvelin</string>
+    <string name="tasker_command_stop">Pysäytä palvelin</string>
+    <string name="tasker_command_restart">Käynnistä palvelin uudelleen</string>
+    <string name="tasker_command_toggle">Vaihda palvelimen tilaa</string>
+    <string name="tasker_blurb_start">Shevery: käynnistä palvelin</string>
+    <string name="tasker_blurb_stop">Shevery: pysäytä palvelin</string>
+    <string name="tasker_blurb_restart">Shevery: käynnistä palvelin uudelleen</string>
+    <string name="tasker_blurb_toggle">Shevery: vaihda palvelimen tilaa</string>
+    <string name="tasker_condition_running">Palvelin on käynnissä</string>
+    <string name="tasker_blurb_condition">Shevery: palvelin on käynnissä</string>
+    <string name="tasker_save">Tallenna</string>
+    <string name="tasker_cancel">Peruuta</string>
+</resources>

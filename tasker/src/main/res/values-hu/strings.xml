@@ -1,0 +1,16 @@
+<?xml version="1.0" encoding="utf-8"?>
+<resources>
+    <string name="tasker_plugin_name">Shevery Tasker</string>
+    <string name="tasker_command_start">Szerver indítása</string>
+    <string name="tasker_command_stop">Szerver leállítása</string>
+    <string name="tasker_command_restart">Szerver újraindítása</string>
+    <string name="tasker_command_toggle">Szerver átváltása</string>
+    <string name="tasker_blurb_start">Shevery: szerver indítása</string>
+    <string name="tasker_blurb_stop">Shevery: szerver leállítása</string>
+    <string name="tasker_blurb_restart">Shevery: szerver újraindítása</string>
+    <string name="tasker_blurb_toggle">Shevery: szerver átváltása</string>
+    <string name="tasker_condition_running">A szerver fut</string>
+    <string name="tasker_blurb_condition">Shevery: a szerver fut</string>
+    <string name="tasker_save">Mentés</string>
+    <string name="tasker_cancel">Mégse</string>
+</resources>

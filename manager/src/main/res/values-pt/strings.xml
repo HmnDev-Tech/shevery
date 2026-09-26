@@ -582,4 +582,28 @@ Pronto para receber comandos.]]></string>
     <string name="settings_section_extras_summary"><![CDATA[Acessibilidade, diagnósticos e experimentos]]></string>
     <string name="settings_classic_nav"><![CDATA[Barra de navegação clássica]]></string>
     <string name="settings_classic_nav_summary"><![CDATA[Usar barra inferior fixa em vez da pílula flutuante]]></string>
+
+    <!-- Home - Automation -->
+    <string name="home_automation_title">Controle o Shevery com apps de automação</string>
+    <string name="home_automation_description">Aplicativos como Tasker e MacroDroid podem enviar intents para iniciar, parar, reiniciar ou alternar o Shevery automaticamente.</string>
+    <string name="home_automation_button_view_intents">Ver intents</string>
+    <string name="home_automation_bottom_sheet_intents">Intents de automação</string>
+    <string name="home_automation_bottom_sheet_description">Configure os intents no Tasker ou MacroDroid, ou execute o comando diretamente do Termux / ADB. Toque em qualquer campo para copiar.</string>
+    <string name="home_automation_connectors_disabled_warning">Os conectores estão desativados. Ative-os em Configurações → Automação para permitir intents de transmissão.</string>
+    <string name="home_automation_device_restriction">Para usar o intent de início em versões antigas do Android sem root, ative o ADB via TCP executando %1$s no computador.</string>
+    <string name="home_automation_label_action">Ação</string>
+    <string name="home_automation_label_package">Pacote</string>
+    <string name="home_automation_label_target">Destino</string>
+    <string name="home_automation_label_extras">Extras (Token de autenticação)</string>
+    <string name="home_automation_label_shell">Comando Shell / Termux</string>
+    <string name="home_automation_regenerate_token">Regenerar token</string>
+    <string name="home_automation_regenerate_token_confirm">Tem certeza de que deseja regenerar o token? Quaisquer intents configurados precisarão ser atualizados com o novo token.</string>
+    <string name="automation_security_group_title">Autenticação e segurança</string>
+    <string name="automation_security_description">Intents de transmissão direta exigem este token secreto passado como extra \'auth\' (-e auth &lt;token&gt;). Isso protege o Shevery contra apps não autorizados.</string>
+    <string name="automation_regenerate_token_summary">Gera um novo token secreto e invalida o existente</string>
+    <string name="automation_target_component_label">Componente receptor</string>
+    <string name="home_automation_connectors_disabled_status">Conectores desativados (Intents inativos)</string>
+    <string name="home_automation_connectors_active">Conectores ativos</string>
+    <string name="home_automation_connectors_active_desc">Intents de transmissão serão aceitos.</string>
+    <string name="home_automation_open_settings">Abrir configurações de automação</string>
 </resources>

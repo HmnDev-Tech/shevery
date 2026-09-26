@@ -582,4 +582,28 @@ Sẵn sàng nhận lệnh.]]></string>
     <string name="settings_section_extras_summary"><![CDATA[Accessibility, diagnostics, and experiments]]></string>
     <string name="settings_classic_nav"><![CDATA[Classic navigation bar]]></string>
     <string name="settings_classic_nav_summary"><![CDATA[Use a fixed bottom bar instead of the floating pill]]></string>
+
+    <!-- Home - Automation -->
+    <string name="home_automation_title">Điều khiển Shevery bằng ứng dụng tự động hóa</string>
+    <string name="home_automation_description">Các ứng dụng như Tasker và MacroDroid có thể gửi intent để tự động khởi động, dừng, khởi động lại hoặc chuyển đổi Shevery.</string>
+    <string name="home_automation_button_view_intents">Xem intent</string>
+    <string name="home_automation_bottom_sheet_intents">Intent tự động hóa</string>
+    <string name="home_automation_bottom_sheet_description">Định cấu hình intent trong Tasker hoặc MacroDroid, hoặc chạy lệnh trực tiếp từ Termux / ADB. Nhấn để sao chép.</string>
+    <string name="home_automation_connectors_disabled_warning">Các trình kết nối hiện đang bị tắt. Bật trong Cài đặt → Tự động hóa để cho phép các intent phát sóng đến.</string>
+    <string name="home_automation_device_restriction">Để sử dụng intent bắt đầu trên các phiên bản Android cũ hơn không có root, trước tiên bạn cần bật ADB qua TCP bằng cách chạy %1$s từ PC.</string>
+    <string name="home_automation_label_action">Hành động</string>
+    <string name="home_automation_label_package">Gói</string>
+    <string name="home_automation_label_target">Mục tiêu</string>
+    <string name="home_automation_label_extras">Bổ sung (Mã xác thực)</string>
+    <string name="home_automation_label_shell">Lệnh Shell / Termux</string>
+    <string name="home_automation_regenerate_token">Tạo lại mã xác thực</string>
+    <string name="home_automation_regenerate_token_confirm">Bạn có chắc chắn muốn tạo lại mã xác thực không? Mọi intent đã định cấu hình sẽ cần được cập nhật mã mới.</string>
+    <string name="automation_security_group_title">Xác thực &amp; Bảo mật</string>
+    <string name="automation_security_description">Các intent phát sóng trực tiếp yêu cầu mã xác thực bí mật này được chuyển qua tham số \'auth\' (-e auth &lt;token&gt;). Điều này bảo vệ Shevery khỏi các ứng dụng trái phép.</string>
+    <string name="automation_regenerate_token_summary">Tạo một mã bí mật mới và vô hiệu hóa mã hiện tại</string>
+    <string name="automation_target_component_label">Thành phần nhận</string>
+    <string name="home_automation_connectors_disabled_status">Đầu nối bị tắt (Intent không hoạt động)</string>
+    <string name="home_automation_connectors_active">Đầu nối đang hoạt động</string>
+    <string name="home_automation_connectors_active_desc">Các intent phát sóng đến sẽ được chấp nhận.</string>
+    <string name="home_automation_open_settings">Mở cài đặt tự động hóa</string>
 </resources>

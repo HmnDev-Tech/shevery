@@ -1,0 +1,16 @@
+<?xml version="1.0" encoding="utf-8"?>
+<resources>
+    <string name="tasker_plugin_name">Shevery Tasker</string>
+    <string name="tasker_command_start">Iniciar servidor</string>
+    <string name="tasker_command_stop">Parar servidor</string>
+    <string name="tasker_command_restart">Reiniciar servidor</string>
+    <string name="tasker_command_toggle">Alternar servidor</string>
+    <string name="tasker_blurb_start">Shevery: iniciar servidor</string>
+    <string name="tasker_blurb_stop">Shevery: parar servidor</string>
+    <string name="tasker_blurb_restart">Shevery: reiniciar servidor</string>
+    <string name="tasker_blurb_toggle">Shevery: alternar servidor</string>
+    <string name="tasker_condition_running">O servidor está em execução</string>
+    <string name="tasker_blurb_condition">Shevery: o servidor está em execução</string>
+    <string name="tasker_save">Salvar</string>
+    <string name="tasker_cancel">Cancelar</string>
+</resources>

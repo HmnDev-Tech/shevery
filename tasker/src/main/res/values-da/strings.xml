@@ -1,0 +1,16 @@
+<?xml version="1.0" encoding="utf-8"?>
+<resources>
+    <string name="tasker_plugin_name">Shevery Tasker</string>
+    <string name="tasker_command_start">Start server</string>
+    <string name="tasker_command_stop">Stop server</string>
+    <string name="tasker_command_restart">Genstart server</string>
+    <string name="tasker_command_toggle">Skift server</string>
+    <string name="tasker_blurb_start">Shevery: start server</string>
+    <string name="tasker_blurb_stop">Shevery: stop server</string>
+    <string name="tasker_blurb_restart">Shevery: genstart server</string>
+    <string name="tasker_blurb_toggle">Shevery: skift server</string>
+    <string name="tasker_condition_running">Serveren kører</string>
+    <string name="tasker_blurb_condition">Shevery: serveren kører</string>
+    <string name="tasker_save">Gem</string>
+    <string name="tasker_cancel">Annuller</string>
+</resources>

@@ -582,4 +582,28 @@
     <string name="settings_section_extras_summary"><![CDATA[Accessibility, diagnostics, and experiments]]></string>
     <string name="settings_classic_nav"><![CDATA[Classic navigation bar]]></string>
     <string name="settings_classic_nav_summary"><![CDATA[Use a fixed bottom bar instead of the floating pill]]></string>
+
+    <!-- Home - Automation -->
+    <string name="home_automation_title">التحكم في Shevery عبر تطبيقات الأتمتة</string>
+    <string name="home_automation_description">يمكن لتطبيقات مثل Tasker و MacroDroid إرسال مقاصد (Intents) لبدء Shevery أو إيقافه أو إعادة تشغيله تلقائياً.</string>
+    <string name="home_automation_button_view_intents">عرض المقاصد</string>
+    <string name="home_automation_bottom_sheet_intents">مقاصد الأتمتة</string>
+    <string name="home_automation_bottom_sheet_description">قم بتهيئة المقاصد في Tasker أو MacroDroid، أو قم بتشغيل الأمر مباشرة من Termux / ADB. انقر للنسخ.</string>
+    <string name="home_automation_connectors_disabled_warning">الموصلات معطلة حالياً. قم بتمكينها في الإعدادات ← الأتمتة للسماح بالمقاصد الواردة.</string>
+    <string name="home_automation_device_restriction">لاستخدام قصد البدء على إصدارات أندرويد القديمة بدون روت، يلزم أولاً تمكين ADB عبر TCP بتشغيل %1$s من جهاز كمبيوتر.</string>
+    <string name="home_automation_label_action">الإجراء</string>
+    <string name="home_automation_label_package">الحزمة</string>
+    <string name="home_automation_label_target">الهدف</string>
+    <string name="home_automation_label_extras">الإضافات (رمز المصادقة)</string>
+    <string name="home_automation_label_shell">أمر Shell / Termux</string>
+    <string name="home_automation_regenerate_token">إعادة إنشاء الرمز</string>
+    <string name="home_automation_regenerate_token_confirm">هل أنت متأكد من رغبتك في إعادة إنشاء الرمز؟ سيلزم تحديث أي مقاصد مسبقة في Tasker أو MacroDroid بالرمز الجديد.</string>
+    <string name="automation_security_group_title">المصادقة والأمان</string>
+    <string name="automation_security_description">تتطلب مقاصد البث المباشر تمرير رمز المصادقة السري هذا كإضافة \'auth\' (-e auth &lt;token&gt;). هذا يحمي Shevery من التطبيقات غير المصرح لها.</string>
+    <string name="automation_regenerate_token_summary">إنشاء رمز سري جديد وإبطال الرمز الحالي</string>
+    <string name="automation_target_component_label">مكون المستقبل</string>
+    <string name="home_automation_connectors_disabled_status">الموصلات معطلة (المقاصد غير نشطة)</string>
+    <string name="home_automation_connectors_active">الموصلات نشطة</string>
+    <string name="home_automation_connectors_active_desc">سيتم قبول مقاصد البث الواردة.</string>
+    <string name="home_automation_open_settings">فتح إعدادات الأتمتة</string>
 </resources>

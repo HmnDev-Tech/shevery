@@ -583,4 +583,28 @@ bylo zkopírováno do schránky.]]></string>
     <string name="settings_section_extras_summary"><![CDATA[Accessibility, diagnostics, and experiments]]></string>
     <string name="settings_classic_nav"><![CDATA[Classic navigation bar]]></string>
     <string name="settings_classic_nav_summary"><![CDATA[Use a fixed bottom bar instead of the floating pill]]></string>
+
+    <!-- Home - Automation -->
+    <string name="home_automation_title">Ovládejte Shevery pomocí automatizačních aplikací</string>
+    <string name="home_automation_description">Aplikace jako Tasker a MacroDroid mohou posílat intenty k automatickému spuštění, zastavení, restartování nebo přepnutí Shevery.</string>
+    <string name="home_automation_button_view_intents">Zobrazit intenty</string>
+    <string name="home_automation_bottom_sheet_intents">Automatizační intenty</string>
+    <string name="home_automation_bottom_sheet_description">Nakonfigurujte intenty v aplikaci Tasker nebo MacroDroid, nebo spusťte příkaz přímo z Termuxu / ADB. Klepnutím zkopírujte.</string>
+    <string name="home_automation_connectors_disabled_warning">Konektory jsou v současné době zakázány. Povolte je v Nastavení → Automatizace, abyste povolili příchozí vysílané intenty.</string>
+    <string name="home_automation_device_restriction">Chcete-li použít spouštěcí intent na starších verzích Androidu bez rootu, musíte nejprve povolit ADB přes TCP spuštěním %1$s z počítače.</string>
+    <string name="home_automation_label_action">Akce</string>
+    <string name="home_automation_label_package">Balíček</string>
+    <string name="home_automation_label_target">Cíl</string>
+    <string name="home_automation_label_extras">Extra (Ověřovací token)</string>
+    <string name="home_automation_label_shell">Příkaz Shell / Termux</string>
+    <string name="home_automation_regenerate_token">Znovu vygenerovat token</string>
+    <string name="home_automation_regenerate_token_confirm">Opravdu chcete znovu vygenerovat token? Všechny nakonfigurované intenty bude nutné aktualizovat novým tokenem.</string>
+    <string name="automation_security_group_title">Ověřování a zabezpečení</string>
+    <string name="automation_security_description">Přímé vysílané intenty vyžadují předání tohoto tajného ověřovacího tokenu jako extra \'auth\' (-e auth &lt;token&gt;). To chrání Shevery před neoprávněnými aplikacemi.</string>
+    <string name="automation_regenerate_token_summary">Vygenerovat nový tajný token a zneplatnit stávající</string>
+    <string name="automation_target_component_label">Komponenta přijímače</string>
+    <string name="home_automation_connectors_disabled_status">Konektory zakázány (Intenty neaktivní)</string>
+    <string name="home_automation_connectors_active">Konektory aktivní</string>
+    <string name="home_automation_connectors_active_desc">Příchozí vysílané intenty budou přijímány.</string>
+    <string name="home_automation_open_settings">Otevřít nastavení automatizace</string>
 </resources>

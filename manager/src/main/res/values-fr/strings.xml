@@ -582,4 +582,28 @@ Prêt pour les commandes.]]></string>
     <string name="settings_section_extras_summary"><![CDATA[Accessibilité, diagnostics et fonctionnalités expérimentales]]></string>
     <string name="settings_classic_nav"><![CDATA[Barre de navigation classique]]></string>
     <string name="settings_classic_nav_summary"><![CDATA[Utiliser une barre inférieure fixe au lieu de la pilule flottante]]></string>
+
+    <!-- Home - Automation -->
+    <string name="home_automation_title">Contrôler Shevery avec des applications d\'automatisation</string>
+    <string name="home_automation_description">Des applications comme Tasker et MacroDroid peuvent envoyer des intents pour démarrer, arrêter, redémarrer ou basculer Shevery automatiquement.</string>
+    <string name="home_automation_button_view_intents">Voir les intents</string>
+    <string name="home_automation_bottom_sheet_intents">Intents d\'automatisation</string>
+    <string name="home_automation_bottom_sheet_description">Configurez les intents dans Tasker ou MacroDroid, ou exécutez la commande directement depuis Termux / ADB. Touchez pour copier.</string>
+    <string name="home_automation_connectors_disabled_warning">Les connecteurs sont actuellement désactivés. Activez-les dans Paramètres → Automatisation pour autoriser les intents de diffusion entrants.</string>
+    <string name="home_automation_device_restriction">Pour utiliser l\'intent de démarrage sur d\'anciennes versions d\'Android sans root, activez d\'abord ADB sur TCP en exécutant %1$s depuis un PC.</string>
+    <string name="home_automation_label_action">Action</string>
+    <string name="home_automation_label_package">Paquet</string>
+    <string name="home_automation_label_target">Cible</string>
+    <string name="home_automation_label_extras">Extras (Jeton d\'authentification)</string>
+    <string name="home_automation_label_shell">Commande Shell / Termux</string>
+    <string name="home_automation_regenerate_token">Régénérer le jeton</string>
+    <string name="home_automation_regenerate_token_confirm">Voulez-vous vraiment régénérer le jeton ? Tous les intents configurés devront être mis à jour avec le nouveau jeton.</string>
+    <string name="automation_security_group_title">Authentification et sécurité</string>
+    <string name="automation_security_description">Les intents de diffusion directe nécessitent ce jeton d\'authentification secret transmis en tant qu\'extra \'auth\' (-e auth &lt;token&gt;). Cela protège Shevery des applications non autorisées.</string>
+    <string name="automation_regenerate_token_summary">Générer un nouveau jeton secret et invalider l\'existant</string>
+    <string name="automation_target_component_label">Composant récepteur</string>
+    <string name="home_automation_connectors_disabled_status">Connecteurs désactivés (Intents inactifs)</string>
+    <string name="home_automation_connectors_active">Connecteurs actifs</string>
+    <string name="home_automation_connectors_active_desc">Les intents de diffusion entrants seront acceptés.</string>
+    <string name="home_automation_open_settings">Ouvrir les paramètres d\'automatisation</string>
 </resources>

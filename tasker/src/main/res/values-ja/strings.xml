@@ -1,0 +1,16 @@
+<?xml version="1.0" encoding="utf-8"?>
+<resources>
+    <string name="tasker_plugin_name">Shevery Tasker</string>
+    <string name="tasker_command_start">サーバーを起動</string>
+    <string name="tasker_command_stop">サーバーを停止</string>
+    <string name="tasker_command_restart">サーバーを再起動</string>
+    <string name="tasker_command_toggle">サーバーを切り替え</string>
+    <string name="tasker_blurb_start">Shevery: サーバーを起動</string>
+    <string name="tasker_blurb_stop">Shevery: サーバーを停止</string>
+    <string name="tasker_blurb_restart">Shevery: サーバーを再起動</string>
+    <string name="tasker_blurb_toggle">Shevery: サーバーを切り替え</string>
+    <string name="tasker_condition_running">サーバーが実行中</string>
+    <string name="tasker_blurb_condition">Shevery: サーバーが実行中</string>
+    <string name="tasker_save">保存</string>
+    <string name="tasker_cancel">キャンセル</string>
+</resources>

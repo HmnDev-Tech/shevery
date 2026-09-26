@@ -582,4 +582,28 @@
     <string name="settings_section_extras_summary"><![CDATA[접근성, 진단 및 실험 기능]]></string>
     <string name="settings_classic_nav"><![CDATA[클래식 내비게이션 바]]></string>
     <string name="settings_classic_nav_summary"><![CDATA[플로팅 알약 대신 고정 하단 바 사용]]></string>
+
+    <!-- Home - Automation -->
+    <string name="home_automation_title">자동화 앱으로 Shevery 제어</string>
+    <string name="home_automation_description">Tasker 및 MacroDroid와 같은 앱에서 인텐트를 보내 Shevery를 자동으로 시작, 중지, 재시작 또는 토글할 수 있습니다.</string>
+    <string name="home_automation_button_view_intents">인텐트 보기</string>
+    <string name="home_automation_bottom_sheet_intents">자동화 인텐트</string>
+    <string name="home_automation_bottom_sheet_description">Tasker 또는 MacroDroid에서 인텐트를 구성하거나 Termux / ADB에서 직접 명령을 실행하세요. 탭하여 복사할 수 있습니다.</string>
+    <string name="home_automation_connectors_disabled_warning">커넥터가 현재 비활성화되어 있습니다. 브로드캐스트 인텐트를 허용하려면 설정 → 자동화에서 활성화하세요.</string>
+    <string name="home_automation_device_restriction">루트 권한이 없는 구형 Android 버전에서 시작 인텐트를 사용하려면 먼저 PC에서 %1$s 명령을 실행하여 TCP over ADB를 활성화해야 합니다.</string>
+    <string name="home_automation_label_action">동작</string>
+    <string name="home_automation_label_package">패키지</string>
+    <string name="home_automation_label_target">대상 컴포넌트</string>
+    <string name="home_automation_label_extras">Extras (인증 토큰)</string>
+    <string name="home_automation_label_shell">Shell / Termux 명령</string>
+    <string name="home_automation_regenerate_token">토큰 재생성</string>
+    <string name="home_automation_regenerate_token_confirm">토큰을 재생성하시겠습니까? 구성된 기존 Tasker 또는 MacroDroid 인텐트를 새 토큰으로 업데이트해야 합니다.</string>
+    <string name="automation_security_group_title">인증 및 보안</string>
+    <string name="automation_security_description">직접 브로드캐스트 인텐트에는 \'auth\' 엑스트라(-e auth &lt;token&gt;)로 전달되는 이 비밀 인증 토큰이 필요합니다. 이를 통해 권한이 없는 앱으로부터 Shevery를 보호합니다.</string>
+    <string name="automation_regenerate_token_summary">새 비밀 토큰을 생성하고 기존 토큰을 무효화합니다</string>
+    <string name="automation_target_component_label">수신자 컴포넌트</string>
+    <string name="home_automation_connectors_disabled_status">커넥터 비활성화됨 (인텐트 비활성)</string>
+    <string name="home_automation_connectors_active">커넥터 활성화됨</string>
+    <string name="home_automation_connectors_active_desc">수신 브로드캐스트 인텐트가 정상적으로 수락됩니다.</string>
+    <string name="home_automation_open_settings">자동화 설정 열기</string>
 </resources>

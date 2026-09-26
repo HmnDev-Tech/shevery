@@ -587,4 +587,28 @@
     <string name="settings_section_extras_summary"><![CDATA[無障礙、診斷與實驗性功能]]></string>
     <string name="settings_classic_nav"><![CDATA[傳統底欄導航]]></string>
     <string name="settings_classic_nav_summary"><![CDATA[使用傳統固定底欄替代懸浮膠囊]]></string>
+
+    <!-- Home - Automation -->
+    <string name="home_automation_title">使用自動化應用程式控制 Shevery</string>
+    <string name="home_automation_description">Tasker 和 MacroDroid 等應用程式可發送 Intent 自動啟動、停止、重新啟動或切換 Shevery。</string>
+    <string name="home_automation_button_view_intents">查看 Intent</string>
+    <string name="home_automation_bottom_sheet_intents">自動化 Intent</string>
+    <string name="home_automation_bottom_sheet_description">在 Tasker 或 MacroDroid 中設定 Intent，或直接從 Termux / ADB 執行命令。輕觸任意欄位即可複製。</string>
+    <string name="home_automation_connectors_disabled_warning">連接器目前已停用。請在「設定 → 自動化」中啟用以允許接收廣播 Intent。</string>
+    <string name="home_automation_device_restriction">在較舊的 Android 版本且無 Root 權限下使用啟動 Intent，需要先在電腦上執行 %1$s 開啟 TCP 偵錯。</string>
+    <string name="home_automation_label_action">動作</string>
+    <string name="home_automation_label_package">套件名稱</string>
+    <string name="home_automation_label_target">目標元件</string>
+    <string name="home_automation_label_extras">附加參數 (驗證權杖)</string>
+    <string name="home_automation_label_shell">Shell / Termux 命令</string>
+    <string name="home_automation_regenerate_token">重新產生權杖</string>
+    <string name="home_automation_regenerate_token_confirm">確定要重新產生權杖嗎？所有已設定的 Tasker 或 MacroDroid Intent 都需要更新為新權杖。</string>
+    <string name="automation_security_group_title">驗證與安全性</string>
+    <string name="automation_security_description">直接廣播 Intent 需要透過 \'auth\' 參數 (-e auth &lt;token&gt;) 傳遞此秘密驗證權杖，以防止未經授權的應用程式控制 Shevery。</string>
+    <string name="automation_regenerate_token_summary">產生新的秘密權杖並使現有權杖失效</string>
+    <string name="automation_target_component_label">接收器元件</string>
+    <string name="home_automation_connectors_disabled_status">連接器已停用 (Intent 未啟用)</string>
+    <string name="home_automation_connectors_active">連接器已啟用</string>
+    <string name="home_automation_connectors_active_desc">將正常接收傳入的廣播 Intent。</string>
+    <string name="home_automation_open_settings">開啟自動化設定</string>
 </resources>

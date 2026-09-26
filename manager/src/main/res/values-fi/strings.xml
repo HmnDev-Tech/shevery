@@ -582,4 +582,28 @@ Valmis ottamaan komentoja vastaan.]]></string>
     <string name="settings_section_extras_summary"><![CDATA[Accessibility, diagnostics, and experiments]]></string>
     <string name="settings_classic_nav"><![CDATA[Classic navigation bar]]></string>
     <string name="settings_classic_nav_summary"><![CDATA[Use a fixed bottom bar instead of the floating pill]]></string>
+
+    <!-- Home - Automation -->
+    <string name="home_automation_title">Ohjaa Sheveryä automaatiosovelluksilla</string>
+    <string name="home_automation_description">Taskerin ja MacroDroidin kaltaiset sovellukset voivat lähettää intenttejä Sheveryn käynnistämiseksi, pysäyttämiseksi, uudelleenkäynnistämiseksi tai vaihtamiseksi automaattisesti.</string>
+    <string name="home_automation_button_view_intents">Näytä intentit</string>
+    <string name="home_automation_bottom_sheet_intents">Automaatio-intentit</string>
+    <string name="home_automation_bottom_sheet_description">Määritä intentit Taskerissa tai MacroDroidissa tai suorita komento suoraan Termuxista / ADB:stä. Kopioi napauttamalla.</string>
+    <string name="home_automation_connectors_disabled_warning">Liittimet ovat tällä hetkellä poissa käytöstä. Ota ne käyttöön kohdassa Asetukset → Automaatio salliaksesi saapuvat broadcast-intentit.</string>
+    <string name="home_automation_device_restriction">Jos haluat käyttää käynnistysintentiä vanhemmissa Android-versioissa ilman rootia, ota ensin käyttöön ADB over TCP suorittamalla %1$s tietokoneelta.</string>
+    <string name="home_automation_label_action">Toiminto</string>
+    <string name="home_automation_label_package">Paketti</string>
+    <string name="home_automation_label_target">Kohde</string>
+    <string name="home_automation_label_extras">Lisäosat (Todennustunniste)</string>
+    <string name="home_automation_label_shell">Shell- / Termux-komento</string>
+    <string name="home_automation_regenerate_token">Luo tunniste uudelleen</string>
+    <string name="home_automation_regenerate_token_confirm">Haluatko varmasti luoda tunnisteen uudelleen? Kaikki määritetyt intentit on päivitettävä uudella tunnisteella.</string>
+    <string name="automation_security_group_title">Todennus ja turvallisuus</string>
+    <string name="automation_security_description">Suorat broadcast-intentit edellyttävät tämän salaisen todennustunnisteen välittämistä \'auth\'-lisäosana (-e auth &lt;token&gt;). Tämä suojaa Sheveryä luvattomilta sovelluksilta.</string>
+    <string name="automation_regenerate_token_summary">Luo uusi salainen tunniste ja mitätöi nykyinen</string>
+    <string name="automation_target_component_label">Vastaanotinkomponentti</string>
+    <string name="home_automation_connectors_disabled_status">Liittimet poistettu käytöstä (Intentit ei-aktiivisia)</string>
+    <string name="home_automation_connectors_active">Liittimet aktiivisia</string>
+    <string name="home_automation_connectors_active_desc">Saapuvat broadcast-intentit hyväksytään.</string>
+    <string name="home_automation_open_settings">Avaa automaatioasetukset</string>
 </resources>

@@ -577,4 +577,28 @@
     <string name="settings_section_extras_summary"><![CDATA[Accessibility, diagnostics, and experiments]]></string>
     <string name="settings_classic_nav"><![CDATA[Classic navigation bar]]></string>
     <string name="settings_classic_nav_summary"><![CDATA[Use a fixed bottom bar instead of the floating pill]]></string>
+
+    <!-- Home - Automation -->
+    <string name="home_automation_title">स्वचालन ऐप्स के साथ Shevery को नियंत्रित करें</string>
+    <string name="home_automation_description">Tasker और MacroDroid जैसे ऐप्स Shevery को स्वचालित रूप से शुरू, बंद, पुनरारंभ या टॉगल करने के लिए इंटेंट भेज सकते हैं।</string>
+    <string name="home_automation_button_view_intents">इंटेंट देखें</string>
+    <string name="home_automation_bottom_sheet_intents">स्वचालन इंटेंट</string>
+    <string name="home_automation_bottom_sheet_description">Tasker या MacroDroid में इंटेंट कॉन्फ़िगर करें, या Termux / ADB से सीधे कमांड चलाएं। कॉपी करने के लिए टैप करें।</string>
+    <string name="home_automation_connectors_disabled_warning">कनेक्टर्स वर्तमान में अक्षम हैं। आने वाले ब्रॉडकास्ट इंटेंट की अनुमति देने के लिए सेटिंग्स → स्वचालन में उन्हें सक्षम करें।</string>
+    <string name="home_automation_device_restriction">रूट के बिना पुराने Android संस्करणों पर स्टार्ट इंटेंट का उपयोग करने के लिए, आपको पहले पीसी से %1$s चलाकर TCP पर ADB सक्षम करना होगा।</string>
+    <string name="home_automation_label_action">क्रिया</string>
+    <string name="home_automation_label_package">पैकेज</string>
+    <string name="home_automation_label_target">लक्ष्य</string>
+    <string name="home_automation_label_extras">अतिरिक्त (प्रमाणीकरण टोकन)</string>
+    <string name="home_automation_label_shell">Shell / Termux कमांड</string>
+    <string name="home_automation_regenerate_token">टोकन पुन: उत्पन्न करें</string>
+    <string name="home_automation_regenerate_token_confirm">क्या आप वाकई टोकन को फिर से जनरेट करना चाहते हैं? कॉन्फ़िगर किए गए किसी भी टास्क या मैक्रो इंटेंट को नए टोकन के साथ अपडेट करना होगा।</string>
+    <string name="automation_security_group_title">प्रमाणीकरण और सुरक्षा</string>
+    <string name="automation_security_description">सीधे प्रसारण इंटेंट के लिए इस गुप्त प्रमाणीकरण टोकन को \'auth\' अतिरिक्त (-e auth &lt;token&gt;) के रूप में पास करना आवश्यक है। यह Shevery को अनधिकृत ऐप्स से बचाता है।</string>
+    <string name="automation_regenerate_token_summary">एक नया गुप्त टोकन जनरेट करें और मौजूदा को अमान्य करें</string>
+    <string name="automation_target_component_label">रिसीवर घटक</string>
+    <string name="home_automation_connectors_disabled_status">कनेक्टर्स अक्षम हैं (इंटेंट निष्क्रिय)</string>
+    <string name="home_automation_connectors_active">कनेक्टर्स सक्रिय हैं</string>
+    <string name="home_automation_connectors_active_desc">आने वाले ब्रॉडकास्ट इंटेंट स्वीकार किए जाएंगे।</string>
+    <string name="home_automation_open_settings">स्वचालन सेटिंग्स खोलें</string>
 </resources>

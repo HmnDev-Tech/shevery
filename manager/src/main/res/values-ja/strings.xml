@@ -582,4 +582,28 @@ Android 11未満ではパソコン接続が必要です。]]></string>
     <string name="settings_section_extras_summary"><![CDATA[ユーザー補助、診断、実験的機能]]></string>
     <string name="settings_classic_nav"><![CDATA[クラシック ナビゲーションバー]]></string>
     <string name="settings_classic_nav_summary"><![CDATA[フローティングピルの代わりに固定ボトムバーを使用]]></string>
+
+    <!-- Home - Automation -->
+    <string name="home_automation_title">自動化アプリで Shevery を制御</string>
+    <string name="home_automation_description">Tasker や MacroDroid などのアプリからインテントを送信して、Shevery を自動的に起動、停止、再起動、または切り替えることができます。</string>
+    <string name="home_automation_button_view_intents">インテントを表示</string>
+    <string name="home_automation_bottom_sheet_intents">自動化インテント</string>
+    <string name="home_automation_bottom_sheet_description">Tasker や MacroDroid でインテントを設定するか、Termux / ADB からコマンドを直接実行します。タップしてコピーできます。</string>
+    <string name="home_automation_connectors_disabled_warning">コネクタは現在無効です。ブロードキャスト インテントを許可するには、設定 → 自動化 で有効にしてください。</string>
+    <string name="home_automation_device_restriction">ルート権限のない古い Android バージョンで開始インテントを使用するには、まず PC から %1$s を実行して ADB over TCP を有効にする必要があります。</string>
+    <string name="home_automation_label_action">アクション</string>
+    <string name="home_automation_label_package">パッケージ名</string>
+    <string name="home_automation_label_target">ターゲット コンポーネント</string>
+    <string name="home_automation_label_extras">Extras (認証トークン)</string>
+    <string name="home_automation_label_shell">Shell / Termux コマンド</string>
+    <string name="home_automation_regenerate_token">トークンを再生成</string>
+    <string name="home_automation_regenerate_token_confirm">トークンを再生成してもよろしいですか？設定済みの Tasker や MacroDroid のインテントを新しいトークンで更新する必要があります。</string>
+    <string name="automation_security_group_title">認証とセキュリティ</string>
+    <string name="automation_security_description">直接ブロードキャスト インテントには、\'auth\' エクストラ (-e auth &lt;token&gt;) としてこの秘密の認証トークンが必要です。これにより不正なアプリから Shevery を保護します。</string>
+    <string name="automation_regenerate_token_summary">新しい秘密トークンを生成し、既存のトークンを無効化します</string>
+    <string name="automation_target_component_label">レシーバー コンポーネント</string>
+    <string name="home_automation_connectors_disabled_status">コネクタが無効です (インテント停止中)</string>
+    <string name="home_automation_connectors_active">コネクタが有効です</string>
+    <string name="home_automation_connectors_active_desc">受信ブロードキャスト インテントを受け入れます。</string>
+    <string name="home_automation_open_settings">自動化設定を開く</string>
 </resources>

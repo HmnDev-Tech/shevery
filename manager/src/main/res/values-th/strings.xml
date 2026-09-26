@@ -582,4 +582,28 @@
     <string name="settings_section_extras_summary"><![CDATA[Accessibility, diagnostics, and experiments]]></string>
     <string name="settings_classic_nav"><![CDATA[Classic navigation bar]]></string>
     <string name="settings_classic_nav_summary"><![CDATA[Use a fixed bottom bar instead of the floating pill]]></string>
+
+    <!-- Home - Automation -->
+    <string name="home_automation_title">ควบคุม Shevery ด้วยแอปอัตโนมัติ</string>
+    <string name="home_automation_description">แอปอย่าง Tasker และ MacroDroid สามารถส่ง Intent เพื่อเริ่ม หยุด รีสตาร์ท หรือสลับ Shevery โดยอัตโนมัติ</string>
+    <string name="home_automation_button_view_intents">ดู Intent</string>
+    <string name="home_automation_bottom_sheet_intents">Intent อัตโนมัติ</string>
+    <string name="home_automation_bottom_sheet_description">กำหนดค่า Intent ใน Tasker หรือ MacroDroid หรือเรียกใช้คำสั่งโดยตรงจาก Termux / ADB แตะเพื่อคัดลอก</string>
+    <string name="home_automation_connectors_disabled_warning">ตัวเชื่อมต่อถูกปิดใช้งานอยู่ในขณะนี้ เปิดใช้งานในการตั้งค่า → ระบบอัตโนมัติ เพื่ออนุญาต Intent การแพร่ภาพขาเข้า</string>
+    <string name="home_automation_device_restriction">หากต้องการใช้ Intent เริ่มต้นบน Android เวอร์ชันเก่าโดยไม่มีรูท คุณต้องเปิดใช้งาน ADB over TCP ก่อนโดยเรียกใช้ %1$s จากพีซี</string>
+    <string name="home_automation_label_action">การดำเนินการ</string>
+    <string name="home_automation_label_package">แพ็กเกจ</string>
+    <string name="home_automation_label_target">เป้าหมาย</string>
+    <string name="home_automation_label_extras">ส่วนเพิ่มเติม (โทเค็นการตรวจสอบสิทธิ์)</string>
+    <string name="home_automation_label_shell">คำสั่ง Shell / Termux</string>
+    <string name="home_automation_regenerate_token">สร้างโทเค็นใหม่</string>
+    <string name="home_automation_regenerate_token_confirm">แน่ใจหรือไม่ว่าต้องการสร้างโทเค็นใหม่ Intent ที่กำหนดค่าไว้จะต้องอัปเดตด้วยโทเค็นใหม่</string>
+    <string name="automation_security_group_title">การตรวจสอบสิทธิ์และความปลอดภัย</string>
+    <string name="automation_security_description">Intent การแพร่ภาพโดยตรงต้องใช้โทเค็นลับนี้ส่งเป็นส่วนเสริม \'auth\' (-e auth &lt;token&gt;) ซึ่งจะช่วยปกป้อง Shevery จากแอปที่ไม่ได้รับอนุญาต</string>
+    <string name="automation_regenerate_token_summary">สร้างโทเค็นลับใหม่และยกเลิกโทเค็นเดิม</string>
+    <string name="automation_target_component_label">คอมโพเนนต์ตัวรับ</string>
+    <string name="home_automation_connectors_disabled_status">ตัวเชื่อมต่อถูกปิดใช้งาน (Intent ไม่ทำงาน)</string>
+    <string name="home_automation_connectors_active">ตัวเชื่อมต่อเปิดใช้งานอยู่</string>
+    <string name="home_automation_connectors_active_desc">จะยอมรับ Intent การแพร่ภาพขาเข้า</string>
+    <string name="home_automation_open_settings">เปิดการตั้งค่าระบบอัตโนมัติ</string>
 </resources>

@@ -396,4 +396,27 @@ Wi-Fi 是首次重启所必需的，因为 Shevery 必须在将 ADB 切换到 55
     <string name="settings_tcp_5555_bind_success">已成功将 ADB 绑定到 TCP 端口 5555</string>
     <string name="settings_tcp_5555_bind_failed">将 ADB 绑定到端口 5555 失败：%1$s</string>
     <string name="settings_tcp_5555_bind_failed_generic">需要 root、Dhizuku 或活跃的 Shevery。</string>
+<!-- Home - Automation -->
+    <string name="home_automation_title">使用自动化应用控制 Shevery</string>
+    <string name="home_automation_description">Tasker 和 MacroDroid 等应用可以发送 Intent 自动启动、停止、重启或切换 Shevery。</string>
+    <string name="home_automation_button_view_intents">查看 Intent</string>
+    <string name="home_automation_bottom_sheet_intents">自动化 Intent</string>
+    <string name="home_automation_bottom_sheet_description">在 Tasker 或 MacroDroid 中配置 Intent，或直接从 Termux / ADB 运行命令。点击任意字段以复制。</string>
+    <string name="home_automation_connectors_disabled_warning">连接器当前已禁用。请在“设置 → 自动化”中启用以允许接收广播 Intent。</string>
+    <string name="home_automation_device_restriction">在较旧的 Android 版本且无 Root 权限下使用启动 Intent，需要先在电脑上运行 %1$s 开启 TCP 调试。</string>
+    <string name="home_automation_label_action">操作</string>
+    <string name="home_automation_label_package">包名</string>
+    <string name="home_automation_label_target">目标组件</string>
+    <string name="home_automation_label_extras">附加参数 (认证令牌)</string>
+    <string name="home_automation_label_shell">Shell / Termux 命令</string>
+    <string name="home_automation_regenerate_token">重新生成令牌</string>
+    <string name="home_automation_regenerate_token_confirm">确定要重新生成令牌吗？所有已配置的 Tasker 或 MacroDroid Intent 都需要更新为新令牌。</string>
+    <string name="automation_security_group_title">身份验证与安全</string>
+    <string name="automation_security_description">直接广播 Intent 需要通过 \'auth\' 参数 (-e auth &lt;token&gt;) 传递此私密认证令牌，以防止未经授权的应用控制 Shevery。</string>
+    <string name="automation_regenerate_token_summary">生成新的私密令牌并使现有令牌失效</string>
+    <string name="automation_target_component_label">接收器组件</string>
+    <string name="home_automation_connectors_disabled_status">连接器已禁用 (Intent 未生效)</string>
+    <string name="home_automation_connectors_active">连接器已激活</string>
+    <string name="home_automation_connectors_active_desc">将正常接收传入的广播 Intent。</string>
+    <string name="home_automation_open_settings">打开自动化设置</string>
 </resources>
