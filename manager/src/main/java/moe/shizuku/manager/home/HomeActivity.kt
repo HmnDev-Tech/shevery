@@ -771,8 +771,9 @@ abstract class HomeActivity : AppActivity() {
                 }
             }
         }
-        }
     }
+}
+}
 
         Shizuku.addBinderReceivedListenerSticky(binderReceivedListener)
         Shizuku.addBinderDeadListener(binderDeadListener)
