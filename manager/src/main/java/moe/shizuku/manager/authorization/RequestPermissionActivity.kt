@@ -374,6 +374,12 @@ class RequestPermissionActivity : AppActivity() {
             null
         }
 
+        val sheveryBitmap = try {
+            packageManager.getApplicationIcon(packageName).toBitmap(width = 120, height = 120).asImageBitmap()
+        } catch (_: Exception) {
+            null
+        }
+
         setContent {
             ShizukuExpressiveTheme {
                 var secondsRemaining by remember { mutableIntStateOf(20) }
@@ -503,13 +509,24 @@ class RequestPermissionActivity : AppActivity() {
                                 tonalElevation = 2.dp,
                                 modifier = Modifier.size(54.dp)
                             ) {
-                                Image(
-                                    painter = painterResource(R.mipmap.ic_launcher),
-                                    contentDescription = stringResource(R.string.app_name),
-                                    modifier = Modifier
-                                        .fillMaxSize()
-                                        .padding(6.dp)
-                                )
+                                if (sheveryBitmap != null) {
+                                    Image(
+                                        bitmap = sheveryBitmap,
+                                        contentDescription = stringResource(R.string.app_name),
+                                        modifier = Modifier
+                                            .fillMaxSize()
+                                            .padding(6.dp)
+                                    )
+                                } else {
+                                    Icon(
+                                        painter = painterResource(R.drawable.ic_system_icon),
+                                        contentDescription = stringResource(R.string.app_name),
+                                        modifier = Modifier
+                                            .fillMaxSize()
+                                            .padding(12.dp),
+                                        tint = MaterialTheme.colorScheme.primary
+                                    )
+                                }
                             }
                         }
                     },

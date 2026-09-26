@@ -90,6 +90,8 @@ fun DeviceOwnerContent(
                     onClick = onOpenTransfer
                 )
             }
+            
+            Spacer(modifier = Modifier.height(16.dp))
 
             SettingsGroup(title = stringResource(R.string.device_owner_danger_zone_title)) {
                 SettingsRow(
