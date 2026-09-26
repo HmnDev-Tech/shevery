@@ -19,6 +19,7 @@ import androidx.activity.compose.setContent
 import androidx.activity.result.contract.ActivityResultContracts
 import androidx.annotation.DrawableRes
 import androidx.annotation.StringRes
+import androidx.compose.foundation.background
 import androidx.compose.foundation.clickable
 import androidx.compose.foundation.layout.Arrangement
 import androidx.compose.foundation.layout.Box
@@ -49,6 +50,7 @@ import androidx.compose.material.icons.rounded.Terminal
 import androidx.compose.material.icons.rounded.Wifi
 import androidx.compose.material3.AlertDialog
 import androidx.compose.material3.Button
+import androidx.compose.material3.ButtonDefaults
 import androidx.compose.material3.Checkbox
 import androidx.compose.material3.pulltorefresh.PullToRefreshBox
 import androidx.compose.material3.pulltorefresh.PullToRefreshDefaults
@@ -62,6 +64,13 @@ import androidx.compose.material3.MaterialTheme
 import androidx.compose.material3.OutlinedButton
 import androidx.compose.material3.Scaffold
 import androidx.compose.material3.Surface
+import androidx.compose.material3.FilterChip
+import androidx.compose.material3.IconButton
+import androidx.compose.material3.ModalBottomSheet
+import androidx.compose.material3.rememberModalBottomSheetState
+import androidx.compose.foundation.horizontalScroll
+import androidx.compose.foundation.rememberScrollState
+import androidx.compose.foundation.verticalScroll
 import androidx.compose.material3.Text
 import androidx.compose.material3.TextButton
 import androidx.compose.material3.TopAppBar
@@ -71,6 +80,8 @@ import androidx.compose.runtime.DisposableEffect
 import androidx.compose.runtime.LaunchedEffect
 import androidx.compose.runtime.collectAsState
 import androidx.compose.runtime.getValue
+import com.hamondev.shevery.tasker.Command
+import com.hamondev.shevery.tasker.PluginContract
 import androidx.compose.runtime.livedata.observeAsState
 import androidx.compose.runtime.mutableIntStateOf
 import androidx.compose.runtime.mutableStateOf
@@ -95,6 +106,7 @@ import moe.shizuku.manager.BuildConfig
 import moe.shizuku.manager.Helps
 import moe.shizuku.manager.R
 import moe.shizuku.manager.ShizukuSettings
+import moe.shizuku.manager.settings.SettingsSection
 import moe.shizuku.manager.adb.AdbStarter
 import moe.shizuku.manager.app.AppActivity
 import moe.shizuku.manager.management.ApplicationManagementActivity
@@ -247,6 +259,7 @@ abstract class HomeActivity : AppActivity() {
             }
 
             var selectedTab by remember { mutableIntStateOf(0) }
+            var settingsTargetSection by remember { mutableStateOf<SettingsSection?>(null) }
 
             // Hoisted above the AnimatedContent tab switch: tab screens leave
             // composition on change, so state kept here survives; saveable
@@ -342,6 +355,10 @@ abstract class HomeActivity : AppActivity() {
                                     },
                                     onStartDhizuku = { startDhizukuMode() },
                                     dhizukuEnabled = ModuleSettings.isDhizukuEnabled(),
+                                    onOpenAutomationSettings = {
+                                        settingsTargetSection = SettingsSection.AUTOMATION
+                                        selectedTab = 3
+                                    },
                                     listState = homeListState
                                 )
                                 1 -> moe.shizuku.manager.module.ModulesScreen(onOpenWebUi = {
@@ -354,7 +371,11 @@ abstract class HomeActivity : AppActivity() {
                                     modulesState = cachedModules
                                 )
                                 2 -> moe.shizuku.manager.logs.ComputScreen(listState = computListState)
-                                3 -> moe.shizuku.manager.settings.SettingsScreen(listState = settingsListState)
+                                3 -> moe.shizuku.manager.settings.SettingsScreen(
+                                    listState = settingsListState,
+                                    targetSection = settingsTargetSection,
+                                    onTargetSectionConsumed = { settingsTargetSection = null }
+                                )
                             }
                         }
                     }
@@ -862,6 +883,7 @@ private fun HomeScreen(
     onRequestLocalNetworkPermission: () -> Unit,
     onStartDhizuku: () -> Unit,
     dhizukuEnabled: Boolean,
+    onOpenAutomationSettings: () -> Unit = {},
     listState: LazyListState = rememberLazyListState()
 ) {
     val context = LocalContext.current
@@ -890,6 +912,7 @@ private fun HomeScreen(
     }
     val scope = rememberCoroutineScope()
     var isRefreshing by remember { mutableStateOf(false) }
+    var showAutomationSheet by remember { mutableStateOf(false) }
     val pullToRefreshState = rememberPullToRefreshState()
 
     Scaffold(
@@ -1072,6 +1095,12 @@ private fun HomeScreen(
             }
 
             item {
+                AutomationCard(
+                    onViewIntents = { showAutomationSheet = true }
+                )
+            }
+
+            item {
                 DiagnosticsCard(
                     diagnostics = diagnostics,
                     onCopyDiagnostics = onCopyDiagnostics
@@ -1086,6 +1115,16 @@ private fun HomeScreen(
             .align(Alignment.TopCenter)
             .padding(top = 8.dp)
     )
+
+    if (showAutomationSheet) {
+        AutomationBottomSheet(
+            onDismiss = { showAutomationSheet = false },
+            onOpenAutomationSettings = {
+                showAutomationSheet = false
+                onOpenAutomationSettings()
+            }
+        )
+    }
 }
 }
 }
@@ -1424,6 +1463,334 @@ private fun DiagnosticsCard(
                 )
             )
         )
+    }
+}
+
+@Composable
+private fun AutomationCard(
+    onViewIntents: () -> Unit
+) {
+    HomeCard(
+        icon = R.drawable.ic_outline_play_arrow_24,
+        title = stringResource(R.string.home_automation_title),
+        body = stringResource(R.string.home_automation_description)
+    ) {
+        HomeButtons(
+            listOf(
+                HomeButtonSpec(
+                    label = R.string.home_automation_button_view_intents,
+                    icon = R.drawable.ic_code_24dp,
+                    primary = true,
+                    onClick = onViewIntents
+                )
+            )
+        )
+    }
+}
+
+@Composable
+private fun AutomationBottomSheet(
+    onDismiss: () -> Unit,
+    onOpenAutomationSettings: () -> Unit
+) {
+    val context = LocalContext.current
+    var selectedCommand by remember { mutableStateOf(Command.START) }
+    var authToken by remember { mutableStateOf(ShizukuSettings.getAuthToken()) }
+    var showRegenerateDialog by remember { mutableStateOf(false) }
+
+    val action = when (selectedCommand) {
+        Command.START -> PluginContract.ACTION_DIRECT_START
+        Command.STOP -> PluginContract.ACTION_DIRECT_STOP
+        Command.RESTART -> PluginContract.ACTION_DIRECT_RESTART
+        Command.TOGGLE -> PluginContract.ACTION_DIRECT_TOGGLE
+    }
+
+    val shellCommand = "am broadcast -a $action -p ${context.packageName} -e auth $authToken"
+    val isConnectorEnabled = ModuleSettings.isConnectorEnabled()
+
+    fun copy(text: String) {
+        ClipboardUtils.put(context, text)
+        Toast.makeText(context, R.string.automation_copied_to_clipboard, Toast.LENGTH_SHORT).show()
+    }
+
+    ModalBottomSheet(
+        onDismissRequest = onDismiss,
+        sheetState = rememberModalBottomSheetState(skipPartiallyExpanded = true)
+    ) {
+        Column(
+            modifier = Modifier
+                .fillMaxWidth()
+                .padding(horizontal = 20.dp)
+                .padding(bottom = 32.dp)
+                .verticalScroll(rememberScrollState()),
+            verticalArrangement = Arrangement.spacedBy(14.dp)
+        ) {
+            Text(
+                text = stringResource(R.string.home_automation_bottom_sheet_intents),
+                style = MaterialTheme.typography.titleLarge
+            )
+            Text(
+                text = stringResource(R.string.home_automation_bottom_sheet_description),
+                style = MaterialTheme.typography.bodyMedium,
+                color = MaterialTheme.colorScheme.onSurfaceVariant
+            )
+
+            if (!isConnectorEnabled) {
+                Surface(
+                    shape = RoundedCornerShape(16.dp),
+                    color = MaterialTheme.colorScheme.errorContainer
+                ) {
+                    Column(
+                        modifier = Modifier
+                            .fillMaxWidth()
+                            .padding(14.dp),
+                        verticalArrangement = Arrangement.spacedBy(10.dp)
+                    ) {
+                        Row(
+                            verticalAlignment = Alignment.CenterVertically,
+                            horizontalArrangement = Arrangement.spacedBy(8.dp)
+                        ) {
+                            Box(
+                                modifier = Modifier
+                                    .size(10.dp)
+                                    .background(MaterialTheme.colorScheme.error, CircleShape)
+                            )
+                            Text(
+                                text = stringResource(R.string.home_automation_connectors_disabled_status),
+                                style = MaterialTheme.typography.titleSmall,
+                                fontWeight = FontWeight.Bold,
+                                color = MaterialTheme.colorScheme.onErrorContainer
+                            )
+                        }
+                        Text(
+                            text = stringResource(R.string.home_automation_connectors_disabled_warning),
+                            style = MaterialTheme.typography.bodySmall,
+                            color = MaterialTheme.colorScheme.onErrorContainer
+                        )
+                        Button(
+                            onClick = onOpenAutomationSettings,
+                            colors = ButtonDefaults.buttonColors(
+                                containerColor = MaterialTheme.colorScheme.error,
+                                contentColor = MaterialTheme.colorScheme.onError
+                            ),
+                            shape = RoundedCornerShape(10.dp),
+                            modifier = Modifier.fillMaxWidth()
+                        ) {
+                            ShizukuIcon(
+                                icon = R.drawable.ic_settings_outline_24dp,
+                                contentDescription = null,
+                                modifier = Modifier.size(18.dp),
+                                tint = MaterialTheme.colorScheme.onError
+                            )
+                            Spacer(modifier = Modifier.width(8.dp))
+                            Text(stringResource(R.string.home_automation_open_settings))
+                        }
+                    }
+                }
+            } else {
+                Surface(
+                    shape = RoundedCornerShape(16.dp),
+                    color = MaterialTheme.colorScheme.secondaryContainer.copy(alpha = 0.5f)
+                ) {
+                    Row(
+                        modifier = Modifier
+                            .fillMaxWidth()
+                            .padding(14.dp),
+                        verticalAlignment = Alignment.CenterVertically,
+                        horizontalArrangement = Arrangement.spacedBy(10.dp)
+                    ) {
+                        Box(
+                            modifier = Modifier
+                                .size(10.dp)
+                                .background(MaterialTheme.colorScheme.primary, CircleShape)
+                        )
+                        Column(verticalArrangement = Arrangement.spacedBy(2.dp)) {
+                            Text(
+                                text = stringResource(R.string.home_automation_connectors_active),
+                                style = MaterialTheme.typography.titleSmall,
+                                fontWeight = FontWeight.SemiBold,
+                                color = MaterialTheme.colorScheme.onSecondaryContainer
+                            )
+                            Text(
+                                text = stringResource(R.string.home_automation_connectors_active_desc),
+                                style = MaterialTheme.typography.bodySmall,
+                                color = MaterialTheme.colorScheme.onSecondaryContainer.copy(alpha = 0.8f)
+                            )
+                        }
+                    }
+                }
+            }
+
+            if (Build.VERSION.SDK_INT < Build.VERSION_CODES.R && !EnvironmentUtils.isTelevision() && !EnvironmentUtils.isRooted()) {
+                Surface(
+                    shape = RoundedCornerShape(14.dp),
+                    color = MaterialTheme.colorScheme.tertiaryContainer
+                ) {
+                    Text(
+                        text = stringResource(R.string.home_automation_device_restriction, "adb tcpip 5555"),
+                        style = MaterialTheme.typography.bodySmall,
+                        color = MaterialTheme.colorScheme.onTertiaryContainer,
+                        modifier = Modifier.padding(12.dp)
+                    )
+                }
+            }
+
+            Row(
+                modifier = Modifier
+                    .fillMaxWidth()
+                    .horizontalScroll(rememberScrollState()),
+                horizontalArrangement = Arrangement.spacedBy(8.dp)
+            ) {
+                listOf(
+                    Command.START to stringResource(R.string.automation_action_start),
+                    Command.STOP to stringResource(R.string.automation_action_stop),
+                    Command.RESTART to stringResource(R.string.automation_action_restart),
+                    Command.TOGGLE to stringResource(R.string.automation_action_toggle)
+                ).forEach { (cmd, label) ->
+                    FilterChip(
+                        selected = selectedCommand == cmd,
+                        onClick = { selectedCommand = cmd },
+                        label = { Text(label) }
+                    )
+                }
+            }
+
+            AutomationFieldRow(
+                label = stringResource(R.string.home_automation_label_action),
+                value = action,
+                onCopy = { copy(action) }
+            )
+
+            AutomationFieldRow(
+                label = stringResource(R.string.home_automation_label_package),
+                value = context.packageName,
+                onCopy = { copy(context.packageName) }
+            )
+
+            AutomationFieldRow(
+                label = stringResource(R.string.home_automation_label_target),
+                value = "${context.packageName}/${PluginContract.MANAGER_PACKAGE}.tasker.PluginReceiver",
+                onCopy = { copy("${context.packageName}/com.hamondev.shevery.tasker.PluginReceiver") }
+            )
+
+            AutomationFieldRow(
+                label = stringResource(R.string.home_automation_label_extras),
+                value = "auth: $authToken",
+                onCopy = { copy(authToken) },
+                trailing = {
+                    Row(verticalAlignment = Alignment.CenterVertically) {
+                        IconButton(onClick = { showRegenerateDialog = true }) {
+                            ShizukuIcon(
+                                icon = R.drawable.ic_server_restart,
+                                contentDescription = stringResource(R.string.home_automation_regenerate_token),
+                                tint = MaterialTheme.colorScheme.onSurfaceVariant
+                            )
+                        }
+                        IconButton(onClick = { copy(authToken) }) {
+                            ShizukuIcon(
+                                icon = R.drawable.ic_content_copy_24,
+                                contentDescription = stringResource(R.string.automation_copied_to_clipboard),
+                                tint = MaterialTheme.colorScheme.onSurfaceVariant
+                            )
+                        }
+                    }
+                }
+            )
+
+            AutomationFieldRow(
+                label = stringResource(R.string.home_automation_label_shell),
+                value = shellCommand,
+                onCopy = { copy(shellCommand) }
+            )
+
+            FilledTonalButton(
+                onClick = onOpenAutomationSettings,
+                modifier = Modifier.fillMaxWidth(),
+                shape = RoundedCornerShape(14.dp)
+            ) {
+                ShizukuIcon(
+                    icon = R.drawable.ic_settings_outline_24dp,
+                    contentDescription = null,
+                    modifier = Modifier.size(18.dp)
+                )
+                Spacer(modifier = Modifier.width(8.dp))
+                Text(stringResource(R.string.home_automation_open_settings))
+            }
+        }
+    }
+
+    if (showRegenerateDialog) {
+        AlertDialog(
+            onDismissRequest = { showRegenerateDialog = false },
+            title = { Text(stringResource(R.string.home_automation_regenerate_token)) },
+            text = { Text(stringResource(R.string.home_automation_regenerate_token_confirm)) },
+            confirmButton = {
+                TextButton(
+                    onClick = {
+                        val newToken = ShizukuSettings.generateAuthToken()
+                        authToken = newToken
+                        showRegenerateDialog = false
+                    }
+                ) {
+                    Text(stringResource(android.R.string.ok))
+                }
+            },
+            dismissButton = {
+                TextButton(onClick = { showRegenerateDialog = false }) {
+                    Text(stringResource(android.R.string.cancel))
+                }
+            }
+        )
+    }
+}
+
+@Composable
+private fun AutomationFieldRow(
+    label: String,
+    value: String,
+    onCopy: () -> Unit,
+    trailing: (@Composable () -> Unit)? = null
+) {
+    Surface(
+        modifier = Modifier
+            .fillMaxWidth()
+            .clickable(onClick = onCopy),
+        shape = RoundedCornerShape(16.dp),
+        color = MaterialTheme.colorScheme.surfaceContainerHigh
+    ) {
+        Row(
+            modifier = Modifier
+                .fillMaxWidth()
+                .padding(horizontal = 16.dp, vertical = 12.dp),
+            verticalAlignment = Alignment.CenterVertically,
+            horizontalArrangement = Arrangement.SpaceBetween
+        ) {
+            Column(modifier = Modifier.weight(1f)) {
+                Text(
+                    text = label,
+                    style = MaterialTheme.typography.labelMedium,
+                    color = MaterialTheme.colorScheme.primary
+                )
+                Spacer(Modifier.height(2.dp))
+                Text(
+                    text = value,
+                    style = MaterialTheme.typography.bodyMedium,
+                    color = MaterialTheme.colorScheme.onSurface,
+                    fontFamily = androidx.compose.ui.text.font.FontFamily.Monospace
+                )
+            }
+            if (trailing != null) {
+                trailing()
+            } else {
+                IconButton(onClick = onCopy) {
+                    ShizukuIcon(
+                        icon = R.drawable.ic_content_copy_24,
+                        contentDescription = stringResource(R.string.automation_copied_to_clipboard),
+                        tint = MaterialTheme.colorScheme.onSurfaceVariant
+                    )
+                }
+            }
+        }
     }
 }
 

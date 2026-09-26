@@ -582,4 +582,28 @@ Fungsi ekspor ini menggunakan SAF (Storage Access Framework). Dilaporkan bahwa M
     <string name="settings_section_extras_summary"><![CDATA[Accessibility, diagnostics, and experiments]]></string>
     <string name="settings_classic_nav"><![CDATA[Classic navigation bar]]></string>
     <string name="settings_classic_nav_summary"><![CDATA[Use a fixed bottom bar instead of the floating pill]]></string>
+
+    <!-- Home - Automation -->
+    <string name="home_automation_title">Kontrol Shevery dengan aplikasi otomasi</string>
+    <string name="home_automation_description">Aplikasi seperti Tasker dan MacroDroid dapat mengirim intent untuk memulai, menghentikan, memulai ulang, atau beralih Shevery secara otomatis.</string>
+    <string name="home_automation_button_view_intents">Lihat intent</string>
+    <string name="home_automation_bottom_sheet_intents">Intent Otomasi</string>
+    <string name="home_automation_bottom_sheet_description">Konfigurasikan intent di Tasker atau MacroDroid, atau jalankan perintah langsung dari Termux / ADB. Ketuk untuk menyalin.</string>
+    <string name="home_automation_connectors_disabled_warning">Konektor saat ini dinonaktifkan. Aktifkan di Pengaturan → Otomasi untuk mengizinkan intent siaran masuk.</string>
+    <string name="home_automation_device_restriction">Untuk menggunakan intent mulai pada versi Android lama tanpa root, aktifkan ADB melalui TCP terlebih dahulu dengan menjalankan %1$s dari PC.</string>
+    <string name="home_automation_label_action">Tindakan</string>
+    <string name="home_automation_label_package">Paket</string>
+    <string name="home_automation_label_target">Target</string>
+    <string name="home_automation_label_extras">Ekstra (Token Autentikasi)</string>
+    <string name="home_automation_label_shell">Perintah Shell / Termux</string>
+    <string name="home_automation_regenerate_token">Buat ulang token</string>
+    <string name="home_automation_regenerate_token_confirm">Yakin ingin membuat ulang token? Semua intent yang telah dikonfigurasi harus diperbarui dengan token baru.</string>
+    <string name="automation_security_group_title">Autentikasi &amp; Keamanan</string>
+    <string name="automation_security_description">Intent siaran langsung memerlukan token autentikasi rahasia ini yang diteruskan sebagai ekstra \'auth\' (-e auth &lt;token&gt;). Ini melindungi Shevery dari aplikasi yang tidak sah.</string>
+    <string name="automation_regenerate_token_summary">Hasilkan token rahasia baru dan batalkan token yang lama</string>
+    <string name="automation_target_component_label">Komponen Penerima</string>
+    <string name="home_automation_connectors_disabled_status">Konektor Dinonaktifkan (Intent Tidak Aktif)</string>
+    <string name="home_automation_connectors_active">Konektor Aktif</string>
+    <string name="home_automation_connectors_active_desc">Intent siaran masuk akan diterima.</string>
+    <string name="home_automation_open_settings">Buka Pengaturan Otomasi</string>
 </resources>

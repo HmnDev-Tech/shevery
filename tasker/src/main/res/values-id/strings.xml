@@ -1,0 +1,16 @@
+<?xml version="1.0" encoding="utf-8"?>
+<resources>
+    <string name="tasker_plugin_name">Shevery Tasker</string>
+    <string name="tasker_command_start">Mulai server</string>
+    <string name="tasker_command_stop">Hentikan server</string>
+    <string name="tasker_command_restart">Mulai ulang server</string>
+    <string name="tasker_command_toggle">Alihkan server</string>
+    <string name="tasker_blurb_start">Shevery: mulai server</string>
+    <string name="tasker_blurb_stop">Shevery: hentikan server</string>
+    <string name="tasker_blurb_restart">Shevery: mulai ulang server</string>
+    <string name="tasker_blurb_toggle">Shevery: alihkan server</string>
+    <string name="tasker_condition_running">Server sedang berjalan</string>
+    <string name="tasker_blurb_condition">Shevery: server sedang berjalan</string>
+    <string name="tasker_save">Simpan</string>
+    <string name="tasker_cancel">Batal</string>
+</resources>

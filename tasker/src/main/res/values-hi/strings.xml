@@ -1,0 +1,16 @@
+<?xml version="1.0" encoding="utf-8"?>
+<resources>
+    <string name="tasker_plugin_name">Shevery Tasker</string>
+    <string name="tasker_command_start">सर्वर शुरू करें</string>
+    <string name="tasker_command_stop">सर्वर बंद करें</string>
+    <string name="tasker_command_restart">सर्वर पुनरारंभ करें</string>
+    <string name="tasker_command_toggle">सर्वर टॉगल करें</string>
+    <string name="tasker_blurb_start">Shevery: सर्वर शुरू करें</string>
+    <string name="tasker_blurb_stop">Shevery: सर्वर बंद करें</string>
+    <string name="tasker_blurb_restart">Shevery: सर्वर पुनरारंभ करें</string>
+    <string name="tasker_blurb_toggle">Shevery: सर्वर टॉगल करें</string>
+    <string name="tasker_condition_running">सर्वर चल रहा है</string>
+    <string name="tasker_blurb_condition">Shevery: सर्वर चल रहा है</string>
+    <string name="tasker_save">सहेजें</string>
+    <string name="tasker_cancel">रद्द करें</string>
+</resources>

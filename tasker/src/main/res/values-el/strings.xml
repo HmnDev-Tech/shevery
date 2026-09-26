@@ -1,0 +1,16 @@
+<?xml version="1.0" encoding="utf-8"?>
+<resources>
+    <string name="tasker_plugin_name">Shevery Tasker</string>
+    <string name="tasker_command_start">Εκκίνηση διακομιστή</string>
+    <string name="tasker_command_stop">Διακοπή διακομιστή</string>
+    <string name="tasker_command_restart">Επανεκκίνηση διακομιστή</string>
+    <string name="tasker_command_toggle">Εναλλαγή διακομιστή</string>
+    <string name="tasker_blurb_start">Shevery: εκκίνηση διακομιστή</string>
+    <string name="tasker_blurb_stop">Shevery: διακοπή διακομιστή</string>
+    <string name="tasker_blurb_restart">Shevery: επανεκκίνηση διακομιστή</string>
+    <string name="tasker_blurb_toggle">Shevery: εναλλαγή διακομιστή</string>
+    <string name="tasker_condition_running">Ο διακομιστής εκτελείται</string>
+    <string name="tasker_blurb_condition">Shevery: ο διακομιστής εκτελείται</string>
+    <string name="tasker_save">Αποθήκευση</string>
+    <string name="tasker_cancel">Ακύρωση</string>
+</resources>

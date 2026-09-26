@@ -1,0 +1,16 @@
+<?xml version="1.0" encoding="utf-8"?>
+<resources>
+    <string name="tasker_plugin_name">Shevery Tasker</string>
+    <string name="tasker_command_start">Sunucuyu başlat</string>
+    <string name="tasker_command_stop">Sunucuyu durdur</string>
+    <string name="tasker_command_restart">Sunucuyu yeniden başlat</string>
+    <string name="tasker_command_toggle">Sunucuyu değiştir</string>
+    <string name="tasker_blurb_start">Shevery: sunucuyu başlat</string>
+    <string name="tasker_blurb_stop">Shevery: sunucuyu durdur</string>
+    <string name="tasker_blurb_restart">Shevery: sunucuyu yeniden başlat</string>
+    <string name="tasker_blurb_toggle">Shevery: sunucuyu değiştir</string>
+    <string name="tasker_condition_running">Sunucu çalışıyor</string>
+    <string name="tasker_blurb_condition">Shevery: sunucu çalışıyor</string>
+    <string name="tasker_save">Kaydet</string>
+    <string name="tasker_cancel">İptal</string>
+</resources>

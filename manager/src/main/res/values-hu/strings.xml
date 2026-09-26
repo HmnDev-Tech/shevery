@@ -583,4 +583,28 @@ Készen áll a parancsok fogadására.]]></string>
     <string name="settings_section_extras_summary"><![CDATA[Accessibility, diagnostics, and experiments]]></string>
     <string name="settings_classic_nav"><![CDATA[Classic navigation bar]]></string>
     <string name="settings_classic_nav_summary"><![CDATA[Use a fixed bottom bar instead of the floating pill]]></string>
+
+    <!-- Home - Automation -->
+    <string name="home_automation_title">Shevery vezérlése automatizálási alkalmazásokkal</string>
+    <string name="home_automation_description">Az olyan alkalmazások, mint a Tasker és a MacroDroid, intenteket küldhetnek a Shevery automatikus indításához, leállításához, újraindításához vagy átváltásához.</string>
+    <string name="home_automation_button_view_intents">Intentek megtekintése</string>
+    <string name="home_automation_bottom_sheet_intents">Automatizálási intentek</string>
+    <string name="home_automation_bottom_sheet_description">Konfigurálja az intenteket a Taskerben vagy a MacroDroidban, vagy futtassa a parancsot közvetlenül a Termux / ADB környezetből. Érintse meg a másoláshoz.</string>
+    <string name="home_automation_connectors_disabled_warning">A csatlakozók jelenleg le vannak tiltva. Engedélyezze őket a Beállítások → Automatizálás menüben a bejövő broadcast intentek fogadásához.</string>
+    <string name="home_automation_device_restriction">Az indítási intent régebbi, root nélküli Android verziókon való használatához először engedélyeznie kell az ADB over TCP protokollt a %1$s parancs számítógépről történő futtatásával.</string>
+    <string name="home_automation_label_action">Művelet</string>
+    <string name="home_automation_label_package">Csomag</string>
+    <string name="home_automation_label_target">Cél</string>
+    <string name="home_automation_label_extras">Extrák (Hitelesítési token)</string>
+    <string name="home_automation_label_shell">Shell / Termux parancs</string>
+    <string name="home_automation_regenerate_token">Token újragenerálása</string>
+    <string name="home_automation_regenerate_token_confirm">Biztosan újragenerálja a tokent? A beállított Tasker vagy MacroDroid intenteket frissíteni kell az új tokennel.</string>
+    <string name="automation_security_group_title">Hitelesítés és biztonság</string>
+    <string name="automation_security_description">A közvetlen broadcast intentek megkövetelik ennek a titkos hitelesítési tokennek a megadását \'auth\' extraként (-e auth &lt;token&gt;). Ez megvédi a Sheveryt az illetéktelen alkalmazásoktól.</string>
+    <string name="automation_regenerate_token_summary">Új titkos token generálása és a meglévő érvénytelenítése</string>
+    <string name="automation_target_component_label">Vevő komponens</string>
+    <string name="home_automation_connectors_disabled_status">Csatlakozók letiltva (Intentek inaktívak)</string>
+    <string name="home_automation_connectors_active">Csatlakozók aktívak</string>
+    <string name="home_automation_connectors_active_desc">A bejövő broadcast intentek fogadásra kerülnek.</string>
+    <string name="home_automation_open_settings">Automatizálási beállítások megnyitása</string>
 </resources>

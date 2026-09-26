@@ -1,0 +1,16 @@
+<?xml version="1.0" encoding="utf-8"?>
+<resources>
+    <string name="tasker_plugin_name">Shevery Tasker</string>
+    <string name="tasker_command_start">Запустити сервер</string>
+    <string name="tasker_command_stop">Зупинити сервер</string>
+    <string name="tasker_command_restart">Перезапустити сервер</string>
+    <string name="tasker_command_toggle">Перемкнути сервер</string>
+    <string name="tasker_blurb_start">Shevery: запустити сервер</string>
+    <string name="tasker_blurb_stop">Shevery: зупинити сервер</string>
+    <string name="tasker_blurb_restart">Shevery: перезапустити сервер</string>
+    <string name="tasker_blurb_toggle">Shevery: перемкнути сервер</string>
+    <string name="tasker_condition_running">Сервер запущено</string>
+    <string name="tasker_blurb_condition">Shevery: сервер запущено</string>
+    <string name="tasker_save">Зберегти</string>
+    <string name="tasker_cancel">Скасувати</string>
+</resources>

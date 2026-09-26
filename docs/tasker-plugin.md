@@ -53,7 +53,7 @@ For tools like **MacroDroid**, **Automate**, or **Termux**, you can send standar
 2. Set **Action**: `com.hamondev.shevery.action.START_SERVER` (or `STOP_SERVER`, `RESTART_SERVER`, `TOGGLE_SERVER`).
 3. Set **Package**: `com.hamondev.shevery`.
 4. Set **Target**: `Broadcast`.
-5. Leave Extra fields empty. Save and test the macro!
+5. Under **Extra 1**, set Parameter: `auth` and Value to your secret auth token (find and copy it via the Home screen **View intents** sheet). Save and test the macro!
 
 ---
 
@@ -63,16 +63,16 @@ You can also trigger server actions directly from ADB or Termux:
 
 ```bash
 # Start server
-am broadcast -a com.hamondev.shevery.action.START_SERVER -p com.hamondev.shevery
+am broadcast -a com.hamondev.shevery.action.START_SERVER -p com.hamondev.shevery -e auth <token>
 
 # Stop server
-am broadcast -a com.hamondev.shevery.action.STOP_SERVER -p com.hamondev.shevery
+am broadcast -a com.hamondev.shevery.action.STOP_SERVER -p com.hamondev.shevery -e auth <token>
 
 # Restart server
-am broadcast -a com.hamondev.shevery.action.RESTART_SERVER -p com.hamondev.shevery
+am broadcast -a com.hamondev.shevery.action.RESTART_SERVER -p com.hamondev.shevery -e auth <token>
 
 # Toggle server
-am broadcast -a com.hamondev.shevery.action.TOGGLE_SERVER -p com.hamondev.shevery
+am broadcast -a com.hamondev.shevery.action.TOGGLE_SERVER -p com.hamondev.shevery -e auth <token>
 ```
 
 ---

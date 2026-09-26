@@ -169,4 +169,20 @@ public class ShizukuSettings {
         getPreferences().edit().putBoolean(USE_CLASSIC_NAV, enabled).apply();
     }
 
+    public static final String AUTH_TOKEN = "auth_token";
+
+    public static String getAuthToken() {
+        String token = getPreferences().getString(AUTH_TOKEN, null);
+        if (token == null || token.isEmpty()) {
+            token = generateAuthToken();
+        }
+        return token;
+    }
+
+    public static String generateAuthToken() {
+        String token = java.util.UUID.randomUUID().toString().replace("-", "").substring(0, 24);
+        getPreferences().edit().putString(AUTH_TOKEN, token).apply();
+        return token;
+    }
+
 }

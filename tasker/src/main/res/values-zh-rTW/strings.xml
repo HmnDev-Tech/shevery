@@ -1,0 +1,16 @@
+<?xml version="1.0" encoding="utf-8"?>
+<resources>
+    <string name="tasker_plugin_name">Shevery Tasker</string>
+    <string name="tasker_command_start">啟動伺服器</string>
+    <string name="tasker_command_stop">停止伺服器</string>
+    <string name="tasker_command_restart">重新啟動伺服器</string>
+    <string name="tasker_command_toggle">切換伺服器</string>
+    <string name="tasker_blurb_start">Shevery：啟動伺服器</string>
+    <string name="tasker_blurb_stop">Shevery：停止伺服器</string>
+    <string name="tasker_blurb_restart">Shevery：重新啟動伺服器</string>
+    <string name="tasker_blurb_toggle">Shevery：切換伺服器</string>
+    <string name="tasker_condition_running">伺服器正在運行</string>
+    <string name="tasker_blurb_condition">Shevery：伺服器正在運行</string>
+    <string name="tasker_save">儲存</string>
+    <string name="tasker_cancel">取消</string>
+</resources>

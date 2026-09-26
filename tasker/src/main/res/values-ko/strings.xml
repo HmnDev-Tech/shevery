@@ -1,0 +1,16 @@
+<?xml version="1.0" encoding="utf-8"?>
+<resources>
+    <string name="tasker_plugin_name">Shevery Tasker</string>
+    <string name="tasker_command_start">서버 시작</string>
+    <string name="tasker_command_stop">서버 중지</string>
+    <string name="tasker_command_restart">서버 재시작</string>
+    <string name="tasker_command_toggle">서버 토글</string>
+    <string name="tasker_blurb_start">Shevery: 서버 시작</string>
+    <string name="tasker_blurb_stop">Shevery: 서버 중지</string>
+    <string name="tasker_blurb_restart">Shevery: 서버 재시작</string>
+    <string name="tasker_blurb_toggle">Shevery: 서버 토글</string>
+    <string name="tasker_condition_running">서버 실행 중</string>
+    <string name="tasker_blurb_condition">Shevery: 서버 실행 중</string>
+    <string name="tasker_save">저장</string>
+    <string name="tasker_cancel">취소</string>
+</resources>

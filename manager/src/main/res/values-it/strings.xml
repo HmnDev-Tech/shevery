@@ -587,4 +587,28 @@ La funzione di esportazione utilizza SAF (Storage Access Framework). È stato se
     <string name="settings_section_extras_summary"><![CDATA[Accessibilità, diagnostica ed esperimenti]]></string>
     <string name="settings_classic_nav"><![CDATA[Barra di navigazione classica]]></string>
     <string name="settings_classic_nav_summary"><![CDATA[Usa una barra inferiore fissa invece della pillola mobile]]></string>
+
+    <!-- Home - Automation -->
+    <string name="home_automation_title">Controlla Shevery con le app di automazione</string>
+    <string name="home_automation_description">App come Tasker e MacroDroid possono inviare intent per avviare, arrestare, riavviare o alternare Shevery automaticamente.</string>
+    <string name="home_automation_button_view_intents">Visualizza intent</string>
+    <string name="home_automation_bottom_sheet_intents">Intent di automazione</string>
+    <string name="home_automation_bottom_sheet_description">Configura gli intent in Tasker o MacroDroid, oppure esegui il comando direttamente da Termux / ADB. Tocca per copiare.</string>
+    <string name="home_automation_connectors_disabled_warning">I connettori sono attualmente disabilitati. Abilitali in Impostazioni → Automazione per consentire gli intent di broadcast in entrata.</string>
+    <string name="home_automation_device_restriction">Per utilizzare l\'intent di avvio su versioni precedenti di Android senza root, devi prima abilitare ADB su TCP eseguendo %1$s da un PC.</string>
+    <string name="home_automation_label_action">Azione</string>
+    <string name="home_automation_label_package">Pacchetto</string>
+    <string name="home_automation_label_target">Destinazione</string>
+    <string name="home_automation_label_extras">Extra (Token di autenticazione)</string>
+    <string name="home_automation_label_shell">Comando Shell / Termux</string>
+    <string name="home_automation_regenerate_token">Rigenera token</string>
+    <string name="home_automation_regenerate_token_confirm">Sei sicuro di voler rigenerare il token? Tutti gli intent configurati dovranno essere aggiornati con il nuovo token.</string>
+    <string name="automation_security_group_title">Autenticazione e sicurezza</string>
+    <string name="automation_security_description">Gli intent di broadcast diretto richiedono questo token di autenticazione segreto passato come extra \'auth\' (-e auth &lt;token&gt;). Questo protegge Shevery da app non autorizzate.</string>
+    <string name="automation_regenerate_token_summary">Genera un nuovo token segreto e invalida quello esistente</string>
+    <string name="automation_target_component_label">Componente ricevitore</string>
+    <string name="home_automation_connectors_disabled_status">Connettori disabilitati (Intent inattivi)</string>
+    <string name="home_automation_connectors_active">Connettori attivi</string>
+    <string name="home_automation_connectors_active_desc">Gli intent di broadcast in arrivo saranno accettati.</string>
+    <string name="home_automation_open_settings">Apri impostazioni di automazione</string>
 </resources>

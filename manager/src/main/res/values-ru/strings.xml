@@ -582,4 +582,28 @@
     <string name="settings_section_extras_summary"><![CDATA[Специальные возможности, диагностика и эксперименты]]></string>
     <string name="settings_classic_nav"><![CDATA[Классическая панель навигации]]></string>
     <string name="settings_classic_nav_summary"><![CDATA[Использовать фиксированную нижнюю панель вместо плавающей капсулы]]></string>
+
+    <!-- Home - Automation -->
+    <string name="home_automation_title">Управление Shevery через автоматизацию</string>
+    <string name="home_automation_description">Приложения вроде Tasker и MacroDroid могут отправлять интенты для автоматического запуска, остановки, перезапуска или переключения Shevery.</string>
+    <string name="home_automation_button_view_intents">Просмотр интентов</string>
+    <string name="home_automation_bottom_sheet_intents">Интенты автоматизации</string>
+    <string name="home_automation_bottom_sheet_description">Настройте интенты в Tasker или MacroDroid либо выполните команду напрямую из Termux / ADB. Нажмите для копирования.</string>
+    <string name="home_automation_connectors_disabled_warning">Коннекторы отключены. Включите их в меню «Настройки → Автоматизация», чтобы разрешить входящие broadcast-интенты.</string>
+    <string name="home_automation_device_restriction">Чтобы использовать интент запуска на старых версиях Android без root, сначала включите ADB по TCP, выполнив %1$s с ПК.</string>
+    <string name="home_automation_label_action">Действие</string>
+    <string name="home_automation_label_package">Пакет</string>
+    <string name="home_automation_label_target">Целевой компонент</string>
+    <string name="home_automation_label_extras">Extras (Токен авторизации)</string>
+    <string name="home_automation_label_shell">Команда Shell / Termux</string>
+    <string name="home_automation_regenerate_token">Перегенерировать токен</string>
+    <string name="home_automation_regenerate_token_confirm">Вы уверены, что хотите перегенерировать токен? Все настроенные интенты в Tasker или MacroDroid потребуется обновить.</string>
+    <string name="automation_security_group_title">Аутентификация и безопасность</string>
+    <string name="automation_security_description">Прямые broadcast-интенты требуют передачи секретного токена через параметр \'auth\' (-e auth &lt;token&gt;). Это защищает Shevery от несанкционированных приложений.</string>
+    <string name="automation_regenerate_token_summary">Сгенерировать новый секретный токен и аннулировать текущий</string>
+    <string name="automation_target_component_label">Компонент приемника</string>
+    <string name="home_automation_connectors_disabled_status">Коннекторы отключены (интенты неактивны)</string>
+    <string name="home_automation_connectors_active">Коннекторы активны</string>
+    <string name="home_automation_connectors_active_desc">Входящие broadcast-интенты будут приниматься.</string>
+    <string name="home_automation_open_settings">Открыть настройки автоматизации</string>
 </resources>

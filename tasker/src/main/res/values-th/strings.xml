@@ -1,0 +1,16 @@
+<?xml version="1.0" encoding="utf-8"?>
+<resources>
+    <string name="tasker_plugin_name">Shevery Tasker</string>
+    <string name="tasker_command_start">เริ่มเซิร์ฟเวอร์</string>
+    <string name="tasker_command_stop">หยุดเซิร์ฟเวอร์</string>
+    <string name="tasker_command_restart">รีสตาร์ทเซิร์ฟเวอร์</string>
+    <string name="tasker_command_toggle">สลับเซิร์ฟเวอร์</string>
+    <string name="tasker_blurb_start">Shevery: เริ่มเซิร์ฟเวอร์</string>
+    <string name="tasker_blurb_stop">Shevery: หยุดเซิร์ฟเวอร์</string>
+    <string name="tasker_blurb_restart">Shevery: รีสตาร์ทเซิร์ฟเวอร์</string>
+    <string name="tasker_blurb_toggle">Shevery: สลับเซิร์ฟเวอร์</string>
+    <string name="tasker_condition_running">เซิร์ฟเวอร์กำลังทำงาน</string>
+    <string name="tasker_blurb_condition">Shevery: เซิร์ฟเวอร์กำลังทำงาน</string>
+    <string name="tasker_save">บันทึก</string>
+    <string name="tasker_cancel">ยกเลิก</string>
+</resources>

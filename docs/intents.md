@@ -42,10 +42,12 @@ Receiver: `com.hamondev.shevery.tasker.PluginReceiver` (`exported=true`).
 
 Example shell usage:
 ```bash
-adb shell am broadcast -a com.hamondev.shevery.action.START_SERVER -p com.hamondev.shevery
+adb shell am broadcast -a com.hamondev.shevery.action.START_SERVER -p com.hamondev.shevery -e auth <token>
 ```
 
-> **Requirement**: Third-party automation broadcasts and the Tasker plugin require **Shevery Connectors** to be enabled in **Settings → Automation** (`shizuku_connector_enabled`). If disabled, broadcast actions are rejected with `RESULT_CANCELED`.
+> **Requirement**: Third-party automation broadcasts and the Tasker plugin require **Shevery Connectors** to be enabled in **Settings → Automation** (`shizuku_connector_enabled`).
+> 
+> **Authentication Token**: Direct broadcasts require the secret auth token (`-e auth <token>`) configured in Shevery (accessible via the Home screen **View intents** sheet). If missing or invalid, broadcasts are rejected with `RESULT_CANCELED`.
 
 Detailed guide: [Tasker & MacroDroid Automation Guide](tasker-plugin.md).
 

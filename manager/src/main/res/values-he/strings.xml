@@ -582,4 +582,28 @@ has been copied to clipboard.]]></string>
     <string name="settings_section_extras_summary"><![CDATA[Accessibility, diagnostics, and experiments]]></string>
     <string name="settings_classic_nav"><![CDATA[Classic navigation bar]]></string>
     <string name="settings_classic_nav_summary"><![CDATA[Use a fixed bottom bar instead of the floating pill]]></string>
+
+    <!-- Home - Automation -->
+    <string name="home_automation_title">שליטה ב-Shevery באמצעות יישומי אוטומציה</string>
+    <string name="home_automation_description">יישומים כמו Tasker ו-MacroDroid יכולים לשלוח כוונות (intents) כדי להפעיל, לעצור, להפעיל מחדש או להחליף מצב של Shevery באופן אוטומטי.</string>
+    <string name="home_automation_button_view_intents">הצג כוונות</string>
+    <string name="home_automation_bottom_sheet_intents">כוונות אוטומציה</string>
+    <string name="home_automation_bottom_sheet_description">הגדר כוונות ב-Tasker או MacroDroid, או הפעל את הפקודה ישירות מ-Termux / ADB. הקש להעתקה.</string>
+    <string name="home_automation_connectors_disabled_warning">המחברים מושבתים כרגע. הפעל אותם בהגדרות ← אוטומציה כדי לאפשר כוונות שידור נכנסות.</string>
+    <string name="home_automation_device_restriction">כדי להשתמש בכוונת ההפעלה בגרסאות Android ישנות יותר ללא רוט, עליך להפעיל תחילה ADB על גבי TCP על ידי הפעלת %1$s ממחשב.</string>
+    <string name="home_automation_label_action">פעולה</string>
+    <string name="home_automation_label_package">חבילה</string>
+    <string name="home_automation_label_target">רכיב יעד</string>
+    <string name="home_automation_label_extras">תוספות (טוקן אימות)</string>
+    <string name="home_automation_label_shell">פקודת Shell / Termux</string>
+    <string name="home_automation_regenerate_token">יצירה מחדש של טוקן</string>
+    <string name="home_automation_regenerate_token_confirm">האם אתה בטוח שברצונך ליצור מחדש את הטוקן? יהיה צורך לעדכן כל כוונה מוגדרת ב-Tasker או MacroDroid בטוקן החדש.</string>
+    <string name="automation_security_group_title">אימות ואבטחה</string>
+    <string name="automation_security_description">כוונות שידור ישירות דורשות טוקן אימות סודי זה שיועבר כתוספת \'auth\' (-e auth &lt;token&gt;). פעולה זו מגנה על Shevery מפני יישומים לא מורשים.</string>
+    <string name="automation_regenerate_token_summary">צור טוקן סודי חדש ובטל את תקפותו של הקיים</string>
+    <string name="automation_target_component_label">רכיב מקלט</string>
+    <string name="home_automation_connectors_disabled_status">מחברים מושבתים (כוונות אינן פעילות)</string>
+    <string name="home_automation_connectors_active">מחברים פעילים</string>
+    <string name="home_automation_connectors_active_desc">כוונות שידור נכנסות יתקבלו.</string>
+    <string name="home_automation_open_settings">פתח הגדרות אוטומציה</string>
 </resources>

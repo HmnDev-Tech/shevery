@@ -582,4 +582,28 @@ Klar til kommandoer.]]></string>
     <string name="settings_section_extras_summary"><![CDATA[Accessibility, diagnostics, and experiments]]></string>
     <string name="settings_classic_nav"><![CDATA[Classic navigation bar]]></string>
     <string name="settings_classic_nav_summary"><![CDATA[Use a fixed bottom bar instead of the floating pill]]></string>
+
+    <!-- Home - Automation -->
+    <string name="home_automation_title">Styr Shevery med automatiseringsapps</string>
+    <string name="home_automation_description">Apps som Tasker og MacroDroid kan sende intents til automatisk at starte, stoppe, genstarte eller skifte Shevery.</string>
+    <string name="home_automation_button_view_intents">Vis intents</string>
+    <string name="home_automation_bottom_sheet_intents">Automatiserings-intents</string>
+    <string name="home_automation_bottom_sheet_description">Konfigurer intents i Tasker eller MacroDroid, eller kør kommandoen direkte fra Termux / ADB. Tryk for at kopiere.</string>
+    <string name="home_automation_connectors_disabled_warning">Konnektorer er i øjeblikket deaktiveret. Aktivér dem i Indstillinger → Automatisering for at tillade indgående broadcast-intents.</string>
+    <string name="home_automation_device_restriction">For at bruge start-intentet på ældre Android-versioner uden root skal du først aktivere ADB over TCP ved at køre %1$s fra en pc.</string>
+    <string name="home_automation_label_action">Handling</string>
+    <string name="home_automation_label_package">Pakke</string>
+    <string name="home_automation_label_target">Mål</string>
+    <string name="home_automation_label_extras">Ekstra (Godkendelsestoken)</string>
+    <string name="home_automation_label_shell">Shell- / Termux-kommando</string>
+    <string name="home_automation_regenerate_token">Gendan token</string>
+    <string name="home_automation_regenerate_token_confirm">Er du sikker på, at du vil genoprette tokenet? Eventuelle konfigurerede intents skal opdateres med det nye token.</string>
+    <string name="automation_security_group_title">Godkendelse og sikkerhed</string>
+    <string name="automation_security_description">Direkte broadcast-intents kræver denne hemmelige godkendelsestoken sendt som \'auth\'-ekstra (-e auth &lt;token&gt;). Dette beskytter Shevery mod uautoriserede apps.</string>
+    <string name="automation_regenerate_token_summary">Generer et nyt hemmeligt token og gør det eksisterende ugyldigt</string>
+    <string name="automation_target_component_label">Modtagerkomponent</string>
+    <string name="home_automation_connectors_disabled_status">Konnektorer deaktiveret (Intents inaktive)</string>
+    <string name="home_automation_connectors_active">Konnektorer aktive</string>
+    <string name="home_automation_connectors_active_desc">Indgående broadcast-intents accepteres.</string>
+    <string name="home_automation_open_settings">Åbn automatiseringsindstillinger</string>
 </resources>

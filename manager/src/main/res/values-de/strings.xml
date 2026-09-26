@@ -582,4 +582,28 @@ wurde in die Zwischenablage kopiert.]]></string>
     <string name="settings_section_extras_summary"><![CDATA[Barrierefreiheit, Diagnose und Experimente]]></string>
     <string name="settings_classic_nav"><![CDATA[Klassische Navigationsleiste]]></string>
     <string name="settings_classic_nav_summary"><![CDATA[Feste Navigationsleiste statt schwebender Pille verwenden]]></string>
+
+    <!-- Home - Automation -->
+    <string name="home_automation_title">Shevery mit Automatisierungs-Apps steuern</string>
+    <string name="home_automation_description">Apps wie Tasker und MacroDroid können Intents senden, um Shevery automatisch zu starten, zu stoppen, neu zu starten oder umzuschalten.</string>
+    <string name="home_automation_button_view_intents">Intents anzeigen</string>
+    <string name="home_automation_bottom_sheet_intents">Automatisierungs-Intents</string>
+    <string name="home_automation_bottom_sheet_description">Konfigurieren Sie Intents in Tasker oder MacroDroid oder führen Sie den Befehl direkt über Termux / ADB aus. Tippen zum Kopieren.</string>
+    <string name="home_automation_connectors_disabled_warning">Connectors sind derzeit deaktiviert. Aktivieren Sie sie unter Einstellungen → Automatisierung, um eingehende Broadcast-Intents zuzulassen.</string>
+    <string name="home_automation_device_restriction">Um den Start-Intent auf älteren Android-Versionen ohne Root zu verwenden, müssen Sie zuerst ADB über TCP aktivieren, indem Sie %1$s von einem PC aus ausführen.</string>
+    <string name="home_automation_label_action">Aktion</string>
+    <string name="home_automation_label_package">Paket</string>
+    <string name="home_automation_label_target">Ziel</string>
+    <string name="home_automation_label_extras">Extras (Authentifizierungs-Token)</string>
+    <string name="home_automation_label_shell">Shell / Termux-Befehl</string>
+    <string name="home_automation_regenerate_token">Token neu generieren</string>
+    <string name="home_automation_regenerate_token_confirm">Sind Sie sicher, dass Sie das Token neu generieren möchten? Alle konfigurierten Intents müssen mit dem neuen Token aktualisiert werden.</string>
+    <string name="automation_security_group_title">Authentifizierung &amp; Sicherheit</string>
+    <string name="automation_security_description">Direkte Broadcast-Intents erfordern dieses geheime Authentifizierungs-Token im \'auth\'-Extra (-e auth &lt;token&gt;). Dies schützt Shevery vor unbefugten Apps.</string>
+    <string name="automation_regenerate_token_summary">Neues Geheimtoken generieren und das vorhandene ungültig machen</string>
+    <string name="automation_target_component_label">Empfänger-Komponente</string>
+    <string name="home_automation_connectors_disabled_status">Connectors deaktiviert (Intents inaktiv)</string>
+    <string name="home_automation_connectors_active">Connectors aktiv</string>
+    <string name="home_automation_connectors_active_desc">Eingehende Broadcast-Intents werden akzeptiert.</string>
+    <string name="home_automation_open_settings">Automatisierungs-Einstellungen öffnen</string>
 </resources>

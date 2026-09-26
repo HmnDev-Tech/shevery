@@ -588,4 +588,28 @@ Listo para comandos.]]></string>
     <string name="settings_section_extras_summary"><![CDATA[Accesibilidad, diagnósticos y experimentos]]></string>
     <string name="settings_classic_nav"><![CDATA[Barra de navegación clásica]]></string>
     <string name="settings_classic_nav_summary"><![CDATA[Usar una barra inferior fija en lugar de la píldora flotante]]></string>
+
+    <!-- Home - Automation -->
+    <string name="home_automation_title">Controla Shevery con apps de automatización</string>
+    <string name="home_automation_description">Aplicaciones como Tasker y MacroDroid pueden enviar intents para iniciar, detener, reiniciar o alternar Shevery automáticamente.</string>
+    <string name="home_automation_button_view_intents">Ver intents</string>
+    <string name="home_automation_bottom_sheet_intents">Intents de automatización</string>
+    <string name="home_automation_bottom_sheet_description">Configura los intents en Tasker o MacroDroid, o ejecuta el comando directamente desde Termux / ADB. Toca para copiar.</string>
+    <string name="home_automation_connectors_disabled_warning">Los conectores están desactivados. Actívalos en Ajustes → Automatización para permitir intents de difusión entrantes.</string>
+    <string name="home_automation_device_restriction">Para usar el intent de inicio en versiones anteriores de Android sin root, primero debes habilitar ADB sobre TCP ejecutando %1$s desde una PC.</string>
+    <string name="home_automation_label_action">Acción</string>
+    <string name="home_automation_label_package">Paquete</string>
+    <string name="home_automation_label_target">Destino</string>
+    <string name="home_automation_label_extras">Extras (Token de autenticación)</string>
+    <string name="home_automation_label_shell">Comando de Shell / Termux</string>
+    <string name="home_automation_regenerate_token">Regenerar token</string>
+    <string name="home_automation_regenerate_token_confirm">¿Estás seguro de que deseas regenerar el token? Los intents configurados en Tasker o MacroDroid deberán actualizarse con el nuevo token.</string>
+    <string name="automation_security_group_title">Autenticación y seguridad</string>
+    <string name="automation_security_description">Los intents de difusión directa requieren este token de autenticación secreto como extra \'auth\' (-e auth &lt;token&gt;). Esto protege a Shevery de aplicaciones no autorizadas.</string>
+    <string name="automation_regenerate_token_summary">Generar un nuevo token secreto e invalidar el actual</string>
+    <string name="automation_target_component_label">Componente receptor</string>
+    <string name="home_automation_connectors_disabled_status">Conectores desactivados (Intents inactivos)</string>
+    <string name="home_automation_connectors_active">Conectores activos</string>
+    <string name="home_automation_connectors_active_desc">Los intents de difusión entrantes serán aceptados.</string>
+    <string name="home_automation_open_settings">Abrir ajustes de automatización</string>
 </resources>

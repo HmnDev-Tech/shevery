@@ -582,4 +582,28 @@ Gotowość do przyjmowania poleceń.]]></string>
     <string name="settings_section_extras_summary"><![CDATA[Ułatwienia dostępu, diagnostyka i eksperymenty]]></string>
     <string name="settings_classic_nav"><![CDATA[Klasyczny pasek nawigacyjny]]></string>
     <string name="settings_classic_nav_summary"><![CDATA[Używaj stałego paska na dole zamiast pływającej pigułki]]></string>
+
+    <!-- Home - Automation -->
+    <string name="home_automation_title">Steruj Shevery za pomocą aplikacji do automatyzacji</string>
+    <string name="home_automation_description">Aplikacje takie jak Tasker i MacroDroid mogą wysyłać intencje, aby automatycznie uruchamiać, zatrzymywać, restartować lub przełączać Shevery.</string>
+    <string name="home_automation_button_view_intents">Wyświetl intencje</string>
+    <string name="home_automation_bottom_sheet_intents">Intencje automatyzacji</string>
+    <string name="home_automation_bottom_sheet_description">Skonfiguruj intencje w Taskerze lub MacroDroidzie albo uruchom polecenie bezpośrednio z Termuksa / ADB. Dotknij, aby skopiować.</string>
+    <string name="home_automation_connectors_disabled_warning">Konektory są obecnie wyłączone. Włącz je w Ustawienia → Automatyzacja, aby zezwolić na odbieranie intencji broadcastowych.</string>
+    <string name="home_automation_device_restriction">Aby użyć intencji uruchomienia na starszych wersjach Androida bez roota, najpierw włącz ADB przez TCP, uruchamiając %1$s z komputera.</string>
+    <string name="home_automation_label_action">Akcja</string>
+    <string name="home_automation_label_package">Pakiet</string>
+    <string name="home_automation_label_target">Cel</string>
+    <string name="home_automation_label_extras">Dodatki (Token uwierzytelniania)</string>
+    <string name="home_automation_label_shell">Polecenie Shell / Termux</string>
+    <string name="home_automation_regenerate_token">Wygeneruj token ponownie</string>
+    <string name="home_automation_regenerate_token_confirm">Czy na pewno chcesz ponownie wygenerować token? Wszystkie skonfigurowane intencje będą wymagały zaktualizowania o nowy token.</string>
+    <string name="automation_security_group_title">Uwierzytelnianie i bezpieczeństwo</string>
+    <string name="automation_security_description">Bezpośrednie intencje broadcastowe wymagają przekazania tego tajnego tokenu jako parametru \'auth\' (-e auth &lt;token&gt;). Chroni to Shevery przed nieautoryzowanymi aplikacjami.</string>
+    <string name="automation_regenerate_token_summary">Wygeneruj nowy tajny token i unieważnij istniejący</string>
+    <string name="automation_target_component_label">Komponent odbiornika</string>
+    <string name="home_automation_connectors_disabled_status">Konektory wyłączone (Intencje nieaktywne)</string>
+    <string name="home_automation_connectors_active">Konektory aktywne</string>
+    <string name="home_automation_connectors_active_desc">Przychodzące intencje broadcastowe będą akceptowane.</string>
+    <string name="home_automation_open_settings">Otwórz ustawienia automatyzacji</string>
 </resources>

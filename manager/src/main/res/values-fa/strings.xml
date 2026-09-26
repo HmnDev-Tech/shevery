@@ -573,4 +573,28 @@
     <string name="settings_section_extras_summary"><![CDATA[Accessibility, diagnostics, and experiments]]></string>
     <string name="settings_classic_nav"><![CDATA[Classic navigation bar]]></string>
     <string name="settings_classic_nav_summary"><![CDATA[Use a fixed bottom bar instead of the floating pill]]></string>
+
+    <!-- Home - Automation -->
+    <string name="home_automation_title">کنترل Shevery با برنامه‌های اتوماسیون</string>
+    <string name="home_automation_description">برنامه‌هایی مانند Tasker و MacroDroid می‌توانند اینتنت‌هایی برای شروع، توقف، راه‌اندازی مجدد یا تغییر وضعیت Shevery ارسال کنند.</string>
+    <string name="home_automation_button_view_intents">مشاهده اینتنت‌ها</string>
+    <string name="home_automation_bottom_sheet_intents">اینتنت‌های اتوماسیون</string>
+    <string name="home_automation_bottom_sheet_description">اینتنت‌ها را در Tasker یا MacroDroid تنظیم کنید یا دستور را مستقیماً از Termux / ADB اجرا کنید. برای کپی ضربه بزنید.</string>
+    <string name="home_automation_connectors_disabled_warning">اتصال‌دهنده‌ها در حال حاضر غیرفعال هستند. برای اجازه دادن به اینتنت‌های دریافتی، آن‌ها را در تنظیمات ← اتوماسیون فعال کنید.</string>
+    <string name="home_automation_device_restriction">برای استفاده از اینتنت شروع در نسخه‌های قدیمی‌تر اندروید بدون روت، ابتدا باید با اجرای %1$s از رایانه، ADB از طریق TCP را فعال کنید.</string>
+    <string name="home_automation_label_action">عملیات</string>
+    <string name="home_automation_label_package">بسته</string>
+    <string name="home_automation_label_target">هدف</string>
+    <string name="home_automation_label_extras">موارد اضافی (توکن احراز هویت)</string>
+    <string name="home_automation_label_shell">دستور Shell / Termux</string>
+    <string name="home_automation_regenerate_token">تولید مجدد توکن</string>
+    <string name="home_automation_regenerate_token_confirm">آیا مطمئن هستید که می‌خواهید توکن را مجدداً ایجاد کنید؟ هر اینتنت پیکربندی‌شده در Tasker یا MacroDroid باید با توکن جدید به‌روزرسانی شود.</string>
+    <string name="automation_security_group_title">احراز هویت و امنیت</string>
+    <string name="automation_security_description">اینتنت‌های پخش مستقیم نیازمند انتقال این توکن مخفی به عنوان ویژگی \'auth\' هستند (-e auth &lt;token&gt;). این امر Shevery را در برابر برنامه‌های غیرمجاز محافظت می‌کند.</string>
+    <string name="automation_regenerate_token_summary">ایجاد یک توکن مخفی جدید و باطل کردن توکن فعلی</string>
+    <string name="automation_target_component_label">مؤلفه گیرنده</string>
+    <string name="home_automation_connectors_disabled_status">اتصال‌دهنده‌ها غیرفعال هستند (اینتنت‌ها غیرفعال)</string>
+    <string name="home_automation_connectors_active">اتصال‌دهنده‌ها فعال هستند</string>
+    <string name="home_automation_connectors_active_desc">اینتنت‌های دریافتی پذیرفته خواهند شد.</string>
+    <string name="home_automation_open_settings">باز کردن تنظیمات اتوماسیون</string>
 </resources>

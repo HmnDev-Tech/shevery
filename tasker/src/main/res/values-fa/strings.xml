@@ -1,0 +1,16 @@
+<?xml version="1.0" encoding="utf-8"?>
+<resources>
+    <string name="tasker_plugin_name">Shevery Tasker</string>
+    <string name="tasker_command_start">شروع سرور</string>
+    <string name="tasker_command_stop">توقف سرور</string>
+    <string name="tasker_command_restart">راه‌اندازی مجدد سرور</string>
+    <string name="tasker_command_toggle">تغییر وضعیت سرور</string>
+    <string name="tasker_blurb_start">Shevery: شروع سرور</string>
+    <string name="tasker_blurb_stop">Shevery: توقف سرور</string>
+    <string name="tasker_blurb_restart">Shevery: راه‌اندازی مجدد سرور</string>
+    <string name="tasker_blurb_toggle">Shevery: تغییر وضعیت سرور</string>
+    <string name="tasker_condition_running">سرور در حال اجرا است</string>
+    <string name="tasker_blurb_condition">Shevery: سرور در حال اجرا است</string>
+    <string name="tasker_save">ذخیره</string>
+    <string name="tasker_cancel">لغو</string>
+</resources>
