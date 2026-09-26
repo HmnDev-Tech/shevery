@@ -70,11 +70,17 @@ public class ForwardActivity extends Activity {
                 forward.putExtra("client_uid", uid);
             }
 
-            forward.setFlags(Intent.FLAG_ACTIVITY_FORWARD_RESULT);
+            if (getCallingActivity() != null) {
+                forward.addFlags(Intent.FLAG_ACTIVITY_FORWARD_RESULT);
+            } else {
+                forward.addFlags(Intent.FLAG_ACTIVITY_NEW_TASK);
+            }
             startActivity(forward);
+            overridePendingTransition(0, 0);
         } catch (Throwable ignored) {
         }
 
         finish();
+        overridePendingTransition(0, 0);
     }
 }

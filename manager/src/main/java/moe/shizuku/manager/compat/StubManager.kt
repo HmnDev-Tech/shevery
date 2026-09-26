@@ -1,10 +1,17 @@
 package moe.shizuku.manager.compat
 
+import android.app.PendingIntent
+import android.content.BroadcastReceiver
 import android.content.Context
+import android.content.Intent
+import android.content.IntentFilter
+import android.content.pm.PackageInstaller
 import android.content.pm.PackageManager
+import android.os.Build
 import android.os.ParcelFileDescriptor
 import android.os.SystemClock
 import androidx.annotation.StringRes
+import androidx.core.content.ContextCompat
 import com.topjohnwu.superuser.Shell
 import kotlinx.coroutines.Dispatchers
 import kotlinx.coroutines.delay
@@ -14,6 +21,7 @@ import moe.shizuku.manager.ShizukuSettings
 import moe.shizuku.manager.adb.AdbClient
 import moe.shizuku.manager.adb.AdbKey
 import moe.shizuku.manager.adb.PreferenceAdbKeyStore
+import moe.shizuku.manager.deviceowner.DeviceOwnerManager
 import moe.shizuku.manager.ktx.logd
 import moe.shizuku.manager.utils.EnvironmentUtils
 import moe.shizuku.server.IShizukuService
@@ -51,6 +59,7 @@ object StubManager {
     const val STUB_PACKAGE = "moe.shizuku.privileged.api"
     const val DHIZUKU_STUB_PACKAGE = "com.rosan.dhizuku"
 
+    private const val CHANNEL_DEVICE_OWNER = "Device Owner"
     private const val CHANNEL_SERVER = "Shevery"
     private const val CHANNEL_ROOT = "root"
     private const val CHANNEL_ADB = "ADB"
@@ -85,22 +94,34 @@ object StubManager {
             }
             val apkBytes = privateApk.readBytes()
 
+            var lastFailure: Result? = null
+
+            if (DeviceOwnerManager.isDeviceOwner(context)) {
+                val doResult = runViaDeviceOwner(context, privateApk)
+                if (doResult.ok && pollInstalled(context, type, wantInstalled = true)) {
+                    return@withContext doResult
+                }
+                lastFailure = doResult
+            }
+
+            val bypassFlag = if (Build.VERSION.SDK_INT >= 34) " --bypass-low-target-sdk-block" else ""
+            val installFlags = "-r -d -t -g$bypassFlag"
+
             val scripts = arrayOf(
                 ShellScript(
                     CHANNEL_SERVER,
-                    "cat > ${type.remoteTmpPath} && pm install -r -d -t ${type.remoteTmpPath} && rm -f ${type.remoteTmpPath}"
+                    "cat > ${type.remoteTmpPath} && pm install $installFlags ${type.remoteTmpPath} && rm -f ${type.remoteTmpPath}"
                 ) { output -> output.write(apkBytes) },
                 ShellScript(
                     CHANNEL_ROOT,
-                    "pm install -r -d -t '${privateApk.absolutePath}'"
+                    "pm install $installFlags '${privateApk.absolutePath}'"
                 ),
                 ShellScript(
                     CHANNEL_ADB,
-                    "cp -f '${externalApkPath(context, type.assetName)}' ${type.remoteTmpPath} && pm install -r -d -t ${type.remoteTmpPath} && rm -f ${type.remoteTmpPath}"
+                    "cp -f '${externalApkPath(context, type.assetName)}' ${type.remoteTmpPath} && pm install $installFlags ${type.remoteTmpPath} && rm -f ${type.remoteTmpPath}"
                 )
             )
 
-            var lastFailure: Result? = null
             for (script in scripts) {
                 val result = when (script.channel) {
                     CHANNEL_SERVER -> runViaServer(script)
@@ -125,9 +146,18 @@ object StubManager {
                 return@withContext Result(true, "none")
             }
 
+            var lastFailure: Result? = null
+
+            if (DeviceOwnerManager.isDeviceOwner(context)) {
+                val doResult = uninstallViaDeviceOwner(context, type)
+                if (doResult.ok && pollInstalled(context, type, wantInstalled = false)) {
+                    return@withContext doResult
+                }
+                lastFailure = doResult
+            }
+
             val script = "pm uninstall ${type.packageName}"
 
-            var lastFailure: Result? = null
             val channels = sequenceOf(CHANNEL_SERVER, CHANNEL_ROOT, CHANNEL_ADB)
             for (channel in channels) {
                 val result = when (channel) {
@@ -141,6 +171,134 @@ object StubManager {
                 lastFailure = result
             }
             lastFailure ?: Result(false, "none", "no channel available")
+        }
+    }
+
+    private suspend fun runViaDeviceOwner(context: Context, apkFile: File): Result {
+        return withContext(Dispatchers.IO) {
+            try {
+                val packageInstaller = context.packageManager.packageInstaller
+                val params = PackageInstaller.SessionParams(PackageInstaller.SessionParams.MODE_FULL_INSTALL)
+                if (Build.VERSION.SDK_INT >= Build.VERSION_CODES.S) {
+                    params.setRequireUserAction(PackageInstaller.SessionParams.USER_ACTION_NOT_REQUIRED)
+                }
+                if (Build.VERSION.SDK_INT >= 34) {
+                    try {
+                        val method = params.javaClass.getMethod("setInstallFlags", Int::class.javaPrimitiveType)
+                        method.invoke(params, 0x01000000 or 0x00000002)
+                    } catch (_: Throwable) {}
+                }
+                val sessionId = packageInstaller.createSession(params)
+                val session = packageInstaller.openSession(sessionId)
+                try {
+                    apkFile.inputStream().use { input ->
+                        val output = session.openWrite("package", 0, apkFile.length())
+                        input.copyTo(output)
+                        session.fsync(output)
+                        output.close()
+                    }
+
+                    val action = "${context.packageName}.STUB_INSTALL_STATUS_${SystemClock.elapsedRealtime()}"
+                    val intent = Intent(action).setPackage(context.packageName)
+                    val pendingIntent = PendingIntent.getBroadcast(
+                        context,
+                        sessionId,
+                        intent,
+                        PendingIntent.FLAG_UPDATE_CURRENT or PendingIntent.FLAG_MUTABLE
+                    )
+
+                    var installResult: Result? = null
+                    val lock = Object()
+                    val receiver = object : BroadcastReceiver() {
+                        override fun onReceive(c: Context?, i: Intent?) {
+                            val status = i?.getIntExtra(PackageInstaller.EXTRA_STATUS, PackageInstaller.STATUS_FAILURE)
+                            val msg = i?.getStringExtra(PackageInstaller.EXTRA_STATUS_MESSAGE)
+                            synchronized(lock) {
+                                installResult = if (status == PackageInstaller.STATUS_SUCCESS) {
+                                    Result(true, CHANNEL_DEVICE_OWNER)
+                                } else {
+                                    Result(false, CHANNEL_DEVICE_OWNER, msg ?: "status $status")
+                                }
+                                lock.notifyAll()
+                            }
+                        }
+                    }
+                    ContextCompat.registerReceiver(
+                        context,
+                        receiver,
+                        IntentFilter(action),
+                        ContextCompat.RECEIVER_NOT_EXPORTED
+                    )
+                    try {
+                        session.commit(pendingIntent.intentSender)
+                        session.close()
+                        synchronized(lock) {
+                            if (installResult == null) {
+                                lock.wait(15000L)
+                            }
+                        }
+                    } finally {
+                        try { context.unregisterReceiver(receiver) } catch (_: Throwable) {}
+                    }
+                    installResult ?: Result(false, CHANNEL_DEVICE_OWNER, "install timed out")
+                } catch (e: Throwable) {
+                    try { session.abandon() } catch (_: Throwable) {}
+                    throw e
+                }
+            } catch (e: Throwable) {
+                Result(false, CHANNEL_DEVICE_OWNER, e.message ?: e.javaClass.simpleName)
+            }
+        }
+    }
+
+    private suspend fun uninstallViaDeviceOwner(context: Context, type: StubType): Result {
+        return withContext(Dispatchers.IO) {
+            try {
+                val packageInstaller = context.packageManager.packageInstaller
+                val action = "${context.packageName}.STUB_UNINSTALL_STATUS_${SystemClock.elapsedRealtime()}"
+                val intent = Intent(action).setPackage(context.packageName)
+                val pendingIntent = PendingIntent.getBroadcast(
+                    context,
+                    0,
+                    intent,
+                    PendingIntent.FLAG_UPDATE_CURRENT or PendingIntent.FLAG_MUTABLE
+                )
+                var uninstallResult: Result? = null
+                val lock = Object()
+                val receiver = object : BroadcastReceiver() {
+                    override fun onReceive(c: Context?, i: Intent?) {
+                        val status = i?.getIntExtra(PackageInstaller.EXTRA_STATUS, PackageInstaller.STATUS_FAILURE)
+                        val msg = i?.getStringExtra(PackageInstaller.EXTRA_STATUS_MESSAGE)
+                        synchronized(lock) {
+                            uninstallResult = if (status == PackageInstaller.STATUS_SUCCESS) {
+                                Result(true, CHANNEL_DEVICE_OWNER)
+                            } else {
+                                Result(false, CHANNEL_DEVICE_OWNER, msg ?: "status $status")
+                            }
+                            lock.notifyAll()
+                        }
+                    }
+                }
+                ContextCompat.registerReceiver(
+                    context,
+                    receiver,
+                    IntentFilter(action),
+                    ContextCompat.RECEIVER_NOT_EXPORTED
+                )
+                try {
+                    packageInstaller.uninstall(type.packageName, pendingIntent.intentSender)
+                    synchronized(lock) {
+                        if (uninstallResult == null) {
+                            lock.wait(10000L)
+                        }
+                    }
+                } finally {
+                    try { context.unregisterReceiver(receiver) } catch (_: Throwable) {}
+                }
+                uninstallResult ?: Result(false, CHANNEL_DEVICE_OWNER, "uninstall timed out")
+            } catch (e: Throwable) {
+                Result(false, CHANNEL_DEVICE_OWNER, e.message ?: e.javaClass.simpleName)
+            }
         }
     }
 
@@ -190,8 +348,16 @@ object StubManager {
                 return Result(false, CHANNEL_SERVER, "command timed out")
             }
             val exitCode = process.exitValue()
+            val errText = runCatching {
+                ParcelFileDescriptor.AutoCloseInputStream(process.errorStream).bufferedReader().readText().trim()
+            }.getOrDefault("")
+            val outText = runCatching {
+                ParcelFileDescriptor.AutoCloseInputStream(process.inputStream).bufferedReader().readText().trim()
+            }.getOrDefault("")
+            val errorMsg = listOf(errText, outText).filter { it.isNotBlank() }.joinToString(" | ")
+
             if (exitCode == 0) Result(true, CHANNEL_SERVER)
-            else Result(false, CHANNEL_SERVER, "exit code $exitCode")
+            else Result(false, CHANNEL_SERVER, if (errorMsg.isNotBlank()) errorMsg else "exit code $exitCode")
         } catch (e: Throwable) {
             Result(false, CHANNEL_SERVER, e.message ?: e.javaClass.simpleName)
         }

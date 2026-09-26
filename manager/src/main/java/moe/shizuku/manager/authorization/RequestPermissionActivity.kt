@@ -74,85 +74,57 @@ class RequestPermissionActivity : AppActivity() {
 
         setContent {
             ShizukuExpressiveTheme {
-                BackHandler { finish() }
-                Box(
-                    modifier = Modifier
-                        .fillMaxSize()
-                        .background(MaterialTheme.colorScheme.scrim.copy(alpha = 0.5f))
-                        .clickable(
-                            interactionSource = remember { MutableInteractionSource() },
-                            indication = null,
-                            onClick = { finish() }
-                        ),
-                    contentAlignment = Alignment.Center
-                ) {
-                    Surface(
-                        modifier = Modifier
-                            .fillMaxWidth()
-                            .padding(horizontal = 24.dp)
-                            .clickable(
-                                interactionSource = remember { MutableInteractionSource() },
-                                indication = null,
-                                onClick = {}
+                AlertDialog(
+                    onDismissRequest = { finish() },
+                    icon = {
+                        Icon(
+                            painter = painterResource(R.drawable.ic_system_icon),
+                            contentDescription = null,
+                            modifier = Modifier.size(36.dp),
+                            tint = MaterialTheme.colorScheme.primary
+                        )
+                    },
+                    title = {
+                        Text(
+                            text = "${stringResource(R.string.app_name)}: ${stringResource(R.string.app_management_dialog_adb_is_limited_title)}",
+                            style = MaterialTheme.typography.titleLarge,
+                            fontWeight = FontWeight.Bold,
+                            textAlign = TextAlign.Center
+                        )
+                    },
+                    text = {
+                        Text(
+                            text = htmlToPlainText(
+                                getString(
+                                    R.string.app_management_dialog_adb_is_limited_message,
+                                    Helps.ADB.get()
+                                )
                             ),
-                        shape = MaterialTheme.shapes.extraLarge,
-                        color = MaterialTheme.colorScheme.surfaceContainerHigh,
-                        tonalElevation = 6.dp,
-                        shadowElevation = 8.dp
-                    ) {
-                        Column(
-                            modifier = Modifier
-                                .fillMaxWidth()
-                                .padding(24.dp),
-                            horizontalAlignment = Alignment.CenterHorizontally
-                        ) {
-                            Icon(
-                                painter = painterResource(R.drawable.ic_system_icon),
-                                contentDescription = null,
-                                modifier = Modifier.size(36.dp),
-                                tint = MaterialTheme.colorScheme.primary
-                            )
-                            Spacer(Modifier.height(16.dp))
-                            Text(
-                                text = "${stringResource(R.string.app_name)}: ${stringResource(R.string.app_management_dialog_adb_is_limited_title)}",
-                                style = MaterialTheme.typography.titleLarge,
-                                fontWeight = FontWeight.Bold,
-                                textAlign = TextAlign.Center
-                            )
-                            Spacer(Modifier.height(12.dp))
-                            Text(
-                                text = htmlToPlainText(
-                                    getString(
-                                        R.string.app_management_dialog_adb_is_limited_message,
-                                        Helps.ADB.get()
-                                    )
-                                ),
-                                style = MaterialTheme.typography.bodyMedium,
-                                color = MaterialTheme.colorScheme.onSurfaceVariant,
-                                textAlign = TextAlign.Center
-                            )
-                            Spacer(Modifier.height(20.dp))
-                            Row(
-                                modifier = Modifier.fillMaxWidth(),
-                                horizontalArrangement = Arrangement.spacedBy(8.dp, Alignment.End)
-                            ) {
-                                OutlinedButton(
-                                    onClick = {
-                                        CustomTabsHelper.launchUrlOrCopy(
-                                            this@RequestPermissionActivity,
-                                            Helps.ADB.get()
-                                        )
-                                    }
-                                ) {
-                                    Text(stringResource(R.string.home_adb_button_view_help))
-                                }
-                                Button(onClick = { finish() }) {
-                                    Text(stringResource(android.R.string.ok))
-                                }
-                            }
+                            style = MaterialTheme.typography.bodyMedium,
+                            color = MaterialTheme.colorScheme.onSurfaceVariant,
+                            textAlign = TextAlign.Center
+                        )
+                    },
+                    confirmButton = {
+                        Button(onClick = { finish() }) {
+                            Text(stringResource(android.R.string.ok))
                         }
-                    }
-                }
+                    },
+                    dismissButton = {
+                        OutlinedButton(
+                            onClick = {
+                                CustomTabsHelper.launchUrlOrCopy(
+                                    this@RequestPermissionActivity,
+                                    Helps.ADB.get()
+                                )
+                            }
+                        ) {
+                            Text(stringResource(R.string.home_adb_button_view_help))
+                        }
+                    },
+                    containerColor = MaterialTheme.colorScheme.surfaceContainerHigh,
+                    shape = MaterialTheme.shapes.extraLarge
+                )
             }
         }
         return false
@@ -365,6 +337,7 @@ class RequestPermissionActivity : AppActivity() {
         setContent {
             ShizukuExpressiveTheme {
                 var secondsRemaining by remember { mutableIntStateOf(20) }
+                var isAuthenticating by remember { mutableStateOf(false) }
 
                 fun denyPermission() {
                     if (isDhizuku) {
@@ -378,12 +351,14 @@ class RequestPermissionActivity : AppActivity() {
                     finish()
                 }
 
-                LaunchedEffect(Unit) {
-                    while (secondsRemaining > 0) {
-                        delay(1000L)
-                        secondsRemaining--
+                LaunchedEffect(isAuthenticating) {
+                    if (!isAuthenticating) {
+                        while (secondsRemaining > 0) {
+                            delay(1000L)
+                            secondsRemaining--
+                        }
+                        denyPermission()
                     }
-                    denyPermission()
                 }
 
                 fun confirmPermission(onetime: Boolean) {
@@ -400,11 +375,13 @@ class RequestPermissionActivity : AppActivity() {
                     }
 
                     if (SecuritySettings.isActionProtected(SecuritySettings.ProtectedAction.PERMISSIONS)) {
+                        isAuthenticating = true
                         AuthManager.authenticate(
                             activity = this@RequestPermissionActivity,
                             title = getString(R.string.security_auth_prompt_title),
                             subtitle = getString(R.string.security_action_permissions),
                             onResult = { authenticated ->
+                                isAuthenticating = false
                                 if (authenticated) {
                                     proceed()
                                 }
@@ -416,168 +393,145 @@ class RequestPermissionActivity : AppActivity() {
                 }
 
                 BackHandler {
-                    denyPermission()
+                    if (!isAuthenticating) {
+                        denyPermission()
+                    }
                 }
 
-                Box(
-                    modifier = Modifier
-                        .fillMaxSize()
-                        .background(MaterialTheme.colorScheme.scrim.copy(alpha = 0.5f))
-                        .clickable(
-                            interactionSource = remember { MutableInteractionSource() },
-                            indication = null,
-                            onClick = { denyPermission() }
-                        ),
-                    contentAlignment = Alignment.Center
-                ) {
-                    Surface(
-                        modifier = Modifier
-                            .fillMaxWidth()
-                            .padding(horizontal = 24.dp)
-                            .clickable(
-                                interactionSource = remember { MutableInteractionSource() },
-                                indication = null,
-                                onClick = {} // Consume click inside dialog
-                            ),
-                        shape = MaterialTheme.shapes.extraLarge,
-                        color = MaterialTheme.colorScheme.surfaceContainerHigh,
-                        tonalElevation = 6.dp,
-                        shadowElevation = 8.dp
-                    ) {
-                        Column(
+                AlertDialog(
+                    onDismissRequest = {
+                        if (!isAuthenticating) {
+                            denyPermission()
+                        }
+                    },
+                    icon = {
+                        // Requesting app icon and Shevery icon linked together
+                        Row(
                             modifier = Modifier
                                 .fillMaxWidth()
-                                .padding(24.dp),
-                            horizontalAlignment = Alignment.CenterHorizontally
+                                .padding(vertical = 4.dp),
+                            horizontalArrangement = Arrangement.Center,
+                            verticalAlignment = Alignment.CenterVertically
                         ) {
-                            // Requesting app icon and Shevery icon linked together
-                            Row(
-                                modifier = Modifier
-                                    .fillMaxWidth()
-                                    .padding(vertical = 4.dp),
-                                horizontalArrangement = Arrangement.Center,
-                                verticalAlignment = Alignment.CenterVertically
+                            Surface(
+                                shape = RoundedCornerShape(16.dp),
+                                color = MaterialTheme.colorScheme.surfaceVariant,
+                                tonalElevation = 2.dp,
+                                modifier = Modifier.size(54.dp)
                             ) {
-                                Surface(
-                                    shape = RoundedCornerShape(16.dp),
-                                    color = MaterialTheme.colorScheme.surfaceVariant,
-                                    tonalElevation = 2.dp,
-                                    modifier = Modifier.size(54.dp)
-                                ) {
-                                    if (appBitmap != null) {
-                                        Image(
-                                            bitmap = appBitmap,
-                                            contentDescription = label.toString(),
-                                            modifier = Modifier
-                                                .fillMaxSize()
-                                                .padding(6.dp)
-                                        )
-                                    } else {
-                                        Icon(
-                                            painter = painterResource(R.drawable.ic_system_icon),
-                                            contentDescription = null,
-                                            modifier = Modifier
-                                                .fillMaxSize()
-                                                .padding(12.dp),
-                                            tint = MaterialTheme.colorScheme.primary
-                                        )
-                                    }
-                                }
-
-                                Box(
-                                    modifier = Modifier
-                                        .padding(horizontal = 14.dp)
-                                        .size(34.dp)
-                                        .background(
-                                            color = MaterialTheme.colorScheme.primaryContainer,
-                                            shape = CircleShape
-                                        ),
-                                    contentAlignment = Alignment.Center
-                                ) {
-                                    Icon(
-                                        painter = painterResource(R.drawable.ic_baseline_link_24),
-                                        contentDescription = "Link",
-                                        modifier = Modifier.size(20.dp),
-                                        tint = MaterialTheme.colorScheme.onPrimaryContainer
-                                    )
-                                }
-
-                                Surface(
-                                    shape = RoundedCornerShape(16.dp),
-                                    color = MaterialTheme.colorScheme.surfaceVariant,
-                                    tonalElevation = 2.dp,
-                                    modifier = Modifier.size(54.dp)
-                                ) {
+                                if (appBitmap != null) {
                                     Image(
-                                        painter = painterResource(R.mipmap.ic_launcher),
-                                        contentDescription = stringResource(R.string.app_name),
+                                        bitmap = appBitmap,
+                                        contentDescription = label.toString(),
                                         modifier = Modifier
                                             .fillMaxSize()
                                             .padding(6.dp)
                                     )
-                                }
-                            }
-
-                            Spacer(modifier = Modifier.height(16.dp))
-
-                            Text(
-                                text = label.toString(),
-                                style = MaterialTheme.typography.headlineSmall,
-                                fontWeight = FontWeight.Bold,
-                                textAlign = TextAlign.Center,
-                                modifier = Modifier.fillMaxWidth()
-                            )
-
-                            Spacer(modifier = Modifier.height(12.dp))
-
-                            val scopeDesc = if (isDhizuku) {
-                                stringResource(R.string.dhizuku_permission_group_description)
-                            } else {
-                                stringResource(R.string.permission_group_description)
-                            }
-
-                            Text(
-                                text = htmlToPlainText(
-                                    getString(
-                                        R.string.permission_warning_template,
-                                        label,
-                                        scopeDesc
+                                } else {
+                                    Icon(
+                                        painter = painterResource(R.drawable.ic_system_icon),
+                                        contentDescription = null,
+                                        modifier = Modifier
+                                            .fillMaxSize()
+                                            .padding(12.dp),
+                                        tint = MaterialTheme.colorScheme.primary
                                     )
-                                ),
-                                style = MaterialTheme.typography.bodyMedium,
-                                color = MaterialTheme.colorScheme.onSurfaceVariant,
-                                textAlign = TextAlign.Center,
-                                modifier = Modifier.fillMaxWidth()
-                            )
+                                }
+                            }
 
-                            Spacer(modifier = Modifier.height(24.dp))
-
-                            Column(
-                                modifier = Modifier.fillMaxWidth(),
-                                verticalArrangement = Arrangement.spacedBy(8.dp)
+                            Box(
+                                modifier = Modifier
+                                    .padding(horizontal = 14.dp)
+                                    .size(34.dp)
+                                    .background(
+                                        color = MaterialTheme.colorScheme.primaryContainer,
+                                        shape = CircleShape
+                                    ),
+                                contentAlignment = Alignment.Center
                             ) {
-                                Button(
-                                    onClick = { confirmPermission(onetime = false) },
-                                    modifier = Modifier.fillMaxWidth()
-                                ) {
-                                    Text(stringResource(R.string.grant_dialog_button_allow_always))
-                                }
-                                FilledTonalButton(
-                                    onClick = { confirmPermission(onetime = true) },
-                                    modifier = Modifier.fillMaxWidth()
-                                ) {
-                                    Text(stringResource(R.string.grant_dialog_button_allow_once))
-                                }
-                                OutlinedButton(
-                                    onClick = { denyPermission() },
-                                    modifier = Modifier.fillMaxWidth()
-                                ) {
-                                    Text("${stringResource(R.string.grant_dialog_button_deny)} (${secondsRemaining}s)")
-                                }
+                                Icon(
+                                    painter = painterResource(R.drawable.ic_baseline_link_24),
+                                    contentDescription = "Link",
+                                    modifier = Modifier.size(20.dp),
+                                    tint = MaterialTheme.colorScheme.onPrimaryContainer
+                                )
+                            }
+
+                            Surface(
+                                shape = RoundedCornerShape(16.dp),
+                                color = MaterialTheme.colorScheme.surfaceVariant,
+                                tonalElevation = 2.dp,
+                                modifier = Modifier.size(54.dp)
+                            ) {
+                                Image(
+                                    painter = painterResource(R.mipmap.ic_launcher),
+                                    contentDescription = stringResource(R.string.app_name),
+                                    modifier = Modifier
+                                        .fillMaxSize()
+                                        .padding(6.dp)
+                                )
                             }
                         }
-                    }
-                }
+                    },
+                    title = {
+                        Text(
+                            text = label.toString(),
+                            style = MaterialTheme.typography.headlineSmall,
+                            fontWeight = FontWeight.Bold,
+                            textAlign = TextAlign.Center,
+                            modifier = Modifier.fillMaxWidth()
+                        )
+                    },
+                    text = {
+                        val scopeDesc = if (isDhizuku) {
+                            stringResource(R.string.dhizuku_permission_group_description)
+                        } else {
+                            stringResource(R.string.permission_group_description)
+                        }
+
+                        Text(
+                            text = htmlToPlainText(
+                                getString(
+                                    R.string.permission_warning_template,
+                                    label,
+                                    scopeDesc
+                                )
+                            ),
+                            style = MaterialTheme.typography.bodyMedium,
+                            color = MaterialTheme.colorScheme.onSurfaceVariant,
+                            textAlign = TextAlign.Center,
+                            modifier = Modifier.fillMaxWidth()
+                        )
+                    },
+                    confirmButton = {
+                        Column(
+                            modifier = Modifier.fillMaxWidth(),
+                            verticalArrangement = Arrangement.spacedBy(8.dp)
+                        ) {
+                            Button(
+                                onClick = { confirmPermission(onetime = false) },
+                                modifier = Modifier.fillMaxWidth()
+                            ) {
+                                Text(stringResource(R.string.grant_dialog_button_allow_always))
+                            }
+                            FilledTonalButton(
+                                onClick = { confirmPermission(onetime = true) },
+                                modifier = Modifier.fillMaxWidth()
+                            ) {
+                                Text(stringResource(R.string.grant_dialog_button_allow_once))
+                            }
+                            OutlinedButton(
+                                onClick = { denyPermission() },
+                                modifier = Modifier.fillMaxWidth()
+                            ) {
+                                Text("${stringResource(R.string.grant_dialog_button_deny)} (${secondsRemaining}s)")
+                            }
+                        }
+                    },
+                    dismissButton = null,
+                    containerColor = MaterialTheme.colorScheme.surfaceContainerHigh,
+                    shape = MaterialTheme.shapes.extraLarge
+                )
             }
         }
     }

@@ -69,6 +69,8 @@ public class ForwardDhizukuActivity extends Activity {
 
             if (getCallingActivity() != null) {
                 forward.addFlags(Intent.FLAG_ACTIVITY_FORWARD_RESULT);
+            } else {
+                forward.addFlags(Intent.FLAG_ACTIVITY_NEW_TASK);
             }
             startActivity(forward);
             overridePendingTransition(0, 0);

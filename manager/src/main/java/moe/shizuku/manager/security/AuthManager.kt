@@ -38,11 +38,17 @@ object AuthManager : Application.ActivityLifecycleCallbacks {
         if (!SecuritySettings.isAuthEnabled) return true
         if (lastAuthenticatedTimestamp == 0L) return false
 
-        val timeoutSec = SecuritySettings.timeoutSeconds
-        if (timeoutSec <= 0) return false
-
-        val elapsed = (SystemClock.elapsedRealtime() - lastAuthenticatedTimestamp) / 1000
-        return elapsed < timeoutSec
+        // If the app is in background or returned from background, verify timeout
+        if (backgroundTimestamp > 0L) {
+            val elapsedMs = SystemClock.elapsedRealtime() - backgroundTimestamp
+            if (elapsedMs >= 1000L) {
+                val timeoutSec = SecuritySettings.timeoutSeconds
+                if (timeoutSec <= 0) return false
+                val elapsedSec = elapsedMs / 1000
+                if (elapsedSec >= timeoutSec) return false
+            }
+        }
+        return true
     }
 
     fun markAuthenticated() {
@@ -59,10 +65,15 @@ object AuthManager : Application.ActivityLifecycleCallbacks {
         if (startedActivityCount == 0 && !isChangingConfig) {
             // App returning from background
             if (backgroundTimestamp > 0L) {
-                val timeoutSec = SecuritySettings.timeoutSeconds
-                val elapsedSec = (SystemClock.elapsedRealtime() - backgroundTimestamp) / 1000
-                if (timeoutSec <= 0 || elapsedSec >= timeoutSec) {
-                    invalidateSession()
+                val elapsedMs = SystemClock.elapsedRealtime() - backgroundTimestamp
+                if (elapsedMs >= 1000L) {
+                    val timeoutSec = SecuritySettings.timeoutSeconds
+                    val elapsedSec = elapsedMs / 1000
+                    if (timeoutSec <= 0 || elapsedSec >= timeoutSec) {
+                        invalidateSession()
+                    }
+                } else {
+                    backgroundTimestamp = 0L
                 }
             }
         }

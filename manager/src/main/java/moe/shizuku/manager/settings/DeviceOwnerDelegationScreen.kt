@@ -48,14 +48,6 @@ fun DeviceOwnerDelegationScreen(
     var dhizukuOnly by remember { mutableStateOf(true) }
     var whitelistMode by remember { mutableStateOf(DeviceOwnerManager.isDeviceOwnerWhitelistEnabled()) }
 
-    val navBarState = moe.shizuku.manager.ui.compose.LocalFloatingNavBarVisible.current
-    DisposableEffect(Unit) {
-        navBarState.value = false
-        onDispose {
-            navBarState.value = true
-        }
-    }
-
     LaunchedEffect(dhizukuOnly) {
         loading = true
         val loaded = withContext(Dispatchers.IO) {
@@ -112,8 +104,8 @@ fun DeviceOwnerDelegationScreen(
             LazyColumn(
                 modifier = Modifier
                     .fillMaxSize()
-                    .padding(innerPadding)
-                    .padding(horizontal = 16.dp),
+                    .padding(innerPadding),
+                contentPadding = PaddingValues(start = 16.dp, top = 8.dp, end = 16.dp, bottom = 140.dp),
                 verticalArrangement = Arrangement.spacedBy(10.dp)
             ) {
                 // Strict Whitelist Card

@@ -108,7 +108,8 @@ fun CompatStubsScreen(
     ShizukuExpressiveTheme {
         ShizukuLazyScaffold(
             title = stringResource(R.string.settings_compat_stubs_title),
-            onNavigateUp = onNavigateUp
+            onNavigateUp = onNavigateUp,
+            bottomInset = 120.dp
         ) {
             item {
                 Surface(

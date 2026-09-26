@@ -15,6 +15,7 @@ import androidx.compose.foundation.shape.CircleShape
 import androidx.compose.foundation.shape.RoundedCornerShape
 import androidx.compose.material.icons.Icons
 import androidx.compose.material.icons.automirrored.filled.ArrowBack
+import androidx.compose.material.icons.filled.Check
 import androidx.compose.material.icons.outlined.Info
 import androidx.compose.material.icons.outlined.Warning
 import androidx.compose.material3.*
@@ -49,14 +50,6 @@ fun DeviceOwnerTransferScreen(
     var selectedApp by remember { mutableStateOf<DeviceOwnerManager.AdminAppInfo?>(null) }
     var showConfirmDialog by remember { mutableStateOf(false) }
 
-    val navBarState = moe.shizuku.manager.ui.compose.LocalFloatingNavBarVisible.current
-    DisposableEffect(Unit) {
-        navBarState.value = false
-        onDispose {
-            navBarState.value = true
-        }
-    }
-
     LaunchedEffect(Unit) {
         val apps = withContext(Dispatchers.IO) {
             DeviceOwnerManager.getEligibleAdminAppsDetailed(context)
@@ -79,6 +72,21 @@ fun DeviceOwnerTransferScreen(
                         Icon(
                             imageVector = Icons.AutoMirrored.Filled.ArrowBack,
                             contentDescription = stringResource(android.R.string.cancel)
+                        )
+                    }
+                },
+                actions = {
+                    IconButton(
+                        onClick = {
+                            if (selectedApp != null) {
+                                showConfirmDialog = true
+                            }
+                        },
+                        enabled = selectedApp != null
+                    ) {
+                        Icon(
+                            imageVector = Icons.Default.Check,
+                            contentDescription = stringResource(R.string.device_owner_transfer_button)
                         )
                     }
                 },
@@ -139,8 +147,8 @@ fun DeviceOwnerTransferScreen(
             LazyColumn(
                 modifier = Modifier
                     .fillMaxSize()
-                    .padding(innerPadding)
-                    .padding(horizontal = 16.dp),
+                    .padding(innerPadding),
+                contentPadding = PaddingValues(start = 16.dp, top = 8.dp, end = 16.dp, bottom = 140.dp),
                 verticalArrangement = Arrangement.spacedBy(10.dp)
             ) {
                 item {
