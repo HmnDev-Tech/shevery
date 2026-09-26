@@ -1,5 +1,6 @@
 package moe.shizuku.manager.authorization
 
+import android.content.Intent
 import android.content.pm.ApplicationInfo
 import android.content.pm.PackageManager
 import android.os.Bundle
