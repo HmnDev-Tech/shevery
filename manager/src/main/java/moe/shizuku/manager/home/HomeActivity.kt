@@ -215,7 +215,7 @@ abstract class HomeActivity : AppActivity() {
             }
         }
 
-        isAppUnlocked.value = !SecuritySettings.isActionProtected(SecuritySettings.ProtectedAction.APP_OPEN) || AuthManager.isSessionValid()
+        isAppUnlocked.value = !SecuritySettings.isActionProtected(SecuritySettings.ProtectedAction.APP_OPEN) || AuthManager.isAppOpenSessionValid()
 
         setContent {
             val serviceResource by homeModel.serviceStatus.observeAsState()
@@ -308,6 +308,7 @@ abstract class HomeActivity : AppActivity() {
                         subtitle = getString(R.string.security_auth_prompt_app_open),
                         onResult = { authenticated ->
                             if (authenticated) {
+                                AuthManager.markAppOpenAuthenticated()
                                 isAppUnlocked.value = true
                             }
                         }
@@ -336,6 +337,7 @@ abstract class HomeActivity : AppActivity() {
                                     subtitle = getString(R.string.security_auth_prompt_app_open),
                                     onResult = { authenticated ->
                                         if (authenticated) {
+                                            AuthManager.markAppOpenAuthenticated()
                                             isAppUnlocked.value = true
                                         }
                                     }
@@ -781,7 +783,7 @@ abstract class HomeActivity : AppActivity() {
 
     override fun onResume() {
         super.onResume()
-        if (SecuritySettings.isActionProtected(SecuritySettings.ProtectedAction.APP_OPEN) && !AuthManager.isSessionValid()) {
+        if (SecuritySettings.isActionProtected(SecuritySettings.ProtectedAction.APP_OPEN) && !AuthManager.isAppOpenSessionValid()) {
             isAppUnlocked.value = false
         }
         if (ModuleSettings.isAutoRefreshOnResume()) {

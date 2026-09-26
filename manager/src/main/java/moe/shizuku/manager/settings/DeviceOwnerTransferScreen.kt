@@ -32,11 +32,13 @@ import androidx.compose.ui.unit.dp
 import androidx.core.graphics.drawable.toBitmap
 import androidx.fragment.app.FragmentActivity
 import kotlinx.coroutines.Dispatchers
+import kotlinx.coroutines.launch
 import kotlinx.coroutines.withContext
 import moe.shizuku.manager.R
 import moe.shizuku.manager.deviceowner.DeviceOwnerManager
 import moe.shizuku.manager.security.AuthManager
 import moe.shizuku.manager.security.SecuritySettings
+import moe.shizuku.manager.ui.compose.LocalFloatingNavBarVisible
 
 @Composable
 fun DeviceOwnerTransferScreen(
@@ -44,6 +46,20 @@ fun DeviceOwnerTransferScreen(
 ) {
     val context = LocalContext.current
     val activity = context as? FragmentActivity
+    val navBarState = LocalFloatingNavBarVisible.current
+    val scope = rememberCoroutineScope()
+
+    DisposableEffect(Unit) {
+        navBarState.value = false
+        val watcher = scope.launch {
+            snapshotFlow { navBarState.value }.collect { visible ->
+                if (visible) navBarState.value = false
+            }
+        }
+        onDispose {
+            watcher.cancel()
+        }
+    }
 
     var loading by remember { mutableStateOf(true) }
     var eligibleApps by remember { mutableStateOf<List<DeviceOwnerManager.AdminAppInfo>>(emptyList()) }
@@ -94,44 +110,6 @@ fun DeviceOwnerTransferScreen(
                     containerColor = MaterialTheme.colorScheme.surface
                 )
             )
-        },
-        bottomBar = {
-            Surface(
-                tonalElevation = 3.dp,
-                shadowElevation = 8.dp,
-                color = MaterialTheme.colorScheme.surfaceContainer,
-                modifier = Modifier.fillMaxWidth()
-            ) {
-                Box(
-                    modifier = Modifier
-                        .fillMaxWidth()
-                        .navigationBarsPadding()
-                        .padding(horizontal = 16.dp, vertical = 12.dp)
-                ) {
-                    Button(
-                        onClick = {
-                            if (selectedApp != null) {
-                                showConfirmDialog = true
-                            }
-                        },
-                        enabled = selectedApp != null,
-                        colors = ButtonDefaults.buttonColors(
-                            containerColor = MaterialTheme.colorScheme.error,
-                            contentColor = MaterialTheme.colorScheme.onError
-                        ),
-                        shape = RoundedCornerShape(14.dp),
-                        modifier = Modifier
-                            .fillMaxWidth()
-                            .height(52.dp)
-                    ) {
-                        Text(
-                            text = stringResource(R.string.device_owner_transfer_button),
-                            fontWeight = FontWeight.Bold,
-                            style = MaterialTheme.typography.titleMedium
-                        )
-                    }
-                }
-            }
         }
     ) { innerPadding ->
         if (loading) {

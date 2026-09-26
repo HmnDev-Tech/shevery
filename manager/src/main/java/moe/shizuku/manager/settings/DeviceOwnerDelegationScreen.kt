@@ -28,11 +28,13 @@ import androidx.compose.ui.unit.dp
 import androidx.core.graphics.drawable.toBitmap
 import androidx.fragment.app.FragmentActivity
 import kotlinx.coroutines.Dispatchers
+import kotlinx.coroutines.launch
 import kotlinx.coroutines.withContext
 import moe.shizuku.manager.R
 import moe.shizuku.manager.deviceowner.DeviceOwnerManager
 import moe.shizuku.manager.security.AuthManager
 import moe.shizuku.manager.security.SecuritySettings
+import moe.shizuku.manager.ui.compose.LocalFloatingNavBarVisible
 
 @Composable
 fun DeviceOwnerDelegationScreen(
@@ -40,6 +42,20 @@ fun DeviceOwnerDelegationScreen(
 ) {
     val context = LocalContext.current
     val activity = context as? FragmentActivity
+    val navBarState = LocalFloatingNavBarVisible.current
+    val scope = rememberCoroutineScope()
+
+    DisposableEffect(Unit) {
+        navBarState.value = false
+        val watcher = scope.launch {
+            snapshotFlow { navBarState.value }.collect { visible ->
+                if (visible) navBarState.value = false
+            }
+        }
+        onDispose {
+            watcher.cancel()
+        }
+    }
 
     var loading by remember { mutableStateOf(true) }
     var apps by remember { mutableStateOf<List<DeviceOwnerManager.DelegatedAppInfo>>(emptyList()) }

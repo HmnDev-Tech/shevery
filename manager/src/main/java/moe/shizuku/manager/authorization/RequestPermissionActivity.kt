@@ -160,22 +160,51 @@ class RequestPermissionActivity : AppActivity() {
         )
 
         var uid = intent.getIntExtra("uid", -1)
+        if (uid == -1) uid = intent.getIntExtra("client_uid", -1)
+        if (uid == -1) uid = intent.getIntExtra(Intent.EXTRA_UID, -1)
         if (uid == -1) {
-            uid = intent.getIntExtra("client_uid", -1)
-        }
-        if (uid == -1) {
+            val candidateKeys = listOf(
+                DhizukuVariables.PARAM_CLIENT_UID,
+                "client_uid",
+                "clientUid",
+                "uid",
+                "EXTRA_CLIENT_UID",
+                "extra_client_uid",
+                Intent.EXTRA_UID
+            )
             for (b in bundles) {
-                if (b.containsKey(DhizukuVariables.PARAM_CLIENT_UID)) {
-                    uid = b.getInt(DhizukuVariables.PARAM_CLIENT_UID, -1)
-                    if (uid != -1) break
+                for (key in candidateKeys) {
+                    if (b.containsKey(key)) {
+                        val v = b.get(key)
+                        if (v is Int && v != -1) {
+                            uid = v
+                            break
+                        }
+                    }
                 }
+                if (uid != -1) break
             }
         }
 
         var callingPkg = intent.getStringExtra("packageName")
             ?: intent.getStringExtra("callingPackage")
             ?: intent.getStringExtra("client_package_name")
+            ?: intent.getStringExtra("clientPackageName")
             ?: callingPackage
+
+        if (callingPkg.isNullOrEmpty()) {
+            val pkgKeys = listOf("packageName", "callingPackage", "client_package_name", "clientPackageName", "package_name")
+            for (b in bundles) {
+                for (key in pkgKeys) {
+                    val p = b.getString(key)
+                    if (!p.isNullOrEmpty()) {
+                        callingPkg = p
+                        break
+                    }
+                }
+                if (!callingPkg.isNullOrEmpty()) break
+            }
+        }
 
         if (uid == -1) {
             uid = runCatching {
@@ -200,14 +229,24 @@ class RequestPermissionActivity : AppActivity() {
         }
 
         var dhizukuListener: IDhizukuRequestPermissionListener? = null
+        val listenerKeys = listOf(
+            DhizukuVariables.PARAM_CLIENT_REQUEST_PERMISSION_BINDER,
+            "client_request_permission_binder",
+            "request_permission_binder",
+            "binder",
+            "listener"
+        )
         for (b in bundles) {
-            val binder = b.getBinder(DhizukuVariables.PARAM_CLIENT_REQUEST_PERMISSION_BINDER)
-            if (binder != null) {
-                dhizukuListener = kotlin.runCatching {
-                    IDhizukuRequestPermissionListener.Stub.asInterface(binder)
-                }.getOrNull()
-                if (dhizukuListener != null) break
+            for (key in listenerKeys) {
+                val binder = b.getBinder(key)
+                if (binder != null) {
+                    dhizukuListener = kotlin.runCatching {
+                        IDhizukuRequestPermissionListener.Stub.asInterface(binder)
+                    }.getOrNull()
+                    if (dhizukuListener != null) break
+                }
             }
+            if (dhizukuListener != null) break
         }
 
         val pid = intent.getIntExtra("pid", -1)

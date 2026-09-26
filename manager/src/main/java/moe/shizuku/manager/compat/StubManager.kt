@@ -227,7 +227,7 @@ object StubManager {
                         context,
                         receiver,
                         IntentFilter(action),
-                        ContextCompat.RECEIVER_NOT_EXPORTED
+                        ContextCompat.RECEIVER_EXPORTED
                     )
                     try {
                         session.commit(pendingIntent.intentSender)
@@ -283,7 +283,7 @@ object StubManager {
                     context,
                     receiver,
                     IntentFilter(action),
-                    ContextCompat.RECEIVER_NOT_EXPORTED
+                    ContextCompat.RECEIVER_EXPORTED
                 )
                 try {
                     packageInstaller.uninstall(type.packageName, pendingIntent.intentSender)

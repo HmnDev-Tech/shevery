@@ -14,6 +14,7 @@ import static rikka.shizuku.ShizukuApiConstants.REQUEST_PERMISSION_REPLY_IS_ONET
 import static rikka.shizuku.server.ServerConstants.MANAGER_APPLICATION_ID;
 import static rikka.shizuku.server.ServerConstants.PERMISSION;
 
+import android.app.ActivityOptions;
 import android.content.ComponentName;
 import android.content.Context;
 import android.content.IContentProvider;
@@ -284,7 +285,17 @@ public class ShizukuService extends Service<ShizukuUserServiceManager, ShizukuCl
                 .putExtra("requestCode", requestCode)
                 .putExtra("packageName", clientRecord.packageName)
                 .putExtra("applicationInfo", ai);
-        ActivityManagerApis.startActivityNoThrow(intent, null, isWorkProfileUser ? 0 : userId);
+        Bundle options = null;
+        if (BuildUtils.atLeast34()) {
+            try {
+                ActivityOptions activityOptions = ActivityOptions.makeBasic();
+                java.lang.reflect.Method method = ActivityOptions.class.getMethod("setPendingIntentBackgroundActivityStartMode", int.class);
+                method.invoke(activityOptions, 1 /* MODE_BACKGROUND_ACTIVITY_START_ALLOWED */);
+                options = activityOptions.toBundle();
+            } catch (Throwable ignored) {
+            }
+        }
+        ActivityManagerApis.startActivityNoThrow(intent, options, isWorkProfileUser ? 0 : userId);
     }
 
     @Override

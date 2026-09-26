@@ -17,7 +17,11 @@ object AuthManager : Application.ActivityLifecycleCallbacks {
     private const val AUTH_TYPES = BIOMETRIC_STRONG or DEVICE_CREDENTIAL
 
     @Volatile
-    private var lastAuthenticatedTimestamp: Long = 0L
+    private var isAppOpenUnlocked: Boolean = false
+
+    private val authenticatedActionsInSession = java.util.Collections.synchronizedSet(
+        mutableSetOf<SecuritySettings.ProtectedAction>()
+    )
 
     @Volatile
     private var startedActivityCount: Int = 0
@@ -34,11 +38,11 @@ object AuthManager : Application.ActivityLifecycleCallbacks {
         return canAuth == BiometricManager.BIOMETRIC_SUCCESS
     }
 
-    fun isSessionValid(): Boolean {
-        if (!SecuritySettings.isAuthEnabled) return true
-        if (lastAuthenticatedTimestamp == 0L) return false
+    fun isAppOpenSessionValid(): Boolean {
+        if (!SecuritySettings.isAuthEnabled || !SecuritySettings.authOnAppOpen) return true
+        if (!isAppOpenUnlocked) return false
 
-        // If the app is in background or returned from background, verify timeout
+        // If the app is currently in background or returned from background, verify timeout
         if (backgroundTimestamp > 0L) {
             val elapsedMs = SystemClock.elapsedRealtime() - backgroundTimestamp
             if (elapsedMs >= 1000L) {
@@ -51,13 +55,28 @@ object AuthManager : Application.ActivityLifecycleCallbacks {
         return true
     }
 
-    fun markAuthenticated() {
-        lastAuthenticatedTimestamp = SystemClock.elapsedRealtime()
+    fun isSessionValid(): Boolean = isAppOpenSessionValid()
+
+    fun markAppOpenAuthenticated() {
+        isAppOpenUnlocked = true
         backgroundTimestamp = 0L
     }
 
+    fun markAuthenticated() {
+        markAppOpenAuthenticated()
+    }
+
+    fun isActionAuthenticatedInSession(action: SecuritySettings.ProtectedAction): Boolean {
+        return authenticatedActionsInSession.contains(action)
+    }
+
+    fun markActionAuthenticatedInSession(action: SecuritySettings.ProtectedAction) {
+        authenticatedActionsInSession.add(action)
+    }
+
     fun invalidateSession() {
-        lastAuthenticatedTimestamp = 0L
+        isAppOpenUnlocked = false
+        authenticatedActionsInSession.clear()
         backgroundTimestamp = 0L
     }
 
@@ -71,6 +90,8 @@ object AuthManager : Application.ActivityLifecycleCallbacks {
                     val elapsedSec = elapsedMs / 1000
                     if (timeoutSec <= 0 || elapsedSec >= timeoutSec) {
                         invalidateSession()
+                    } else {
+                        backgroundTimestamp = 0L
                     }
                 } else {
                     backgroundTimestamp = 0L
@@ -125,7 +146,7 @@ object AuthManager : Application.ActivityLifecycleCallbacks {
         subtitle: String? = null,
         onSuccess: () -> Unit
     ) {
-        if (!SecuritySettings.isActionProtected(action) || isSessionValid()) {
+        if (!SecuritySettings.isActionProtected(action) || isActionAuthenticatedInSession(action)) {
             onSuccess()
             return
         }
@@ -136,6 +157,7 @@ object AuthManager : Application.ActivityLifecycleCallbacks {
             subtitle = subtitle,
             onResult = { authenticated ->
                 if (authenticated) {
+                    markActionAuthenticatedInSession(action)
                     onSuccess()
                 }
             }

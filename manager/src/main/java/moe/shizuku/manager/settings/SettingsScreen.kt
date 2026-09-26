@@ -309,6 +309,13 @@ fun SettingsScreen(
         val isSubpage = nav !is SettingsNav.Hub || showAiManager
         navBarState.value = !isSubpage
         onSubpageChange(isSubpage)
+        if (isSubpage) {
+            snapshotFlow { navBarState.value }.collect { visible ->
+                if (visible) {
+                    navBarState.value = false
+                }
+            }
+        }
     }
 
     DisposableEffect(Unit) {
