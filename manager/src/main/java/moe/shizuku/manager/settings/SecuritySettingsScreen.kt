@@ -91,17 +91,23 @@ fun SecuritySettingsContent() {
                 val timeoutSummary = when (timeoutSeconds) {
                     60 -> stringResource(R.string.security_timeout_1min)
                     300 -> stringResource(R.string.security_timeout_5min)
+                    900 -> stringResource(R.string.security_timeout_15min)
+                    1800 -> stringResource(R.string.security_timeout_30min)
+                    3600 -> stringResource(R.string.security_timeout_1hour)
                     else -> stringResource(R.string.security_timeout_immediately)
                 }
 
                 SettingsRow(
-                    icon = R.drawable.ic_outline_play_arrow_24,
+                    icon = R.drawable.ic_schedule_24dp,
                     title = stringResource(R.string.security_timeout_title),
                     summary = timeoutSummary,
                     onClick = {
                         val next = when (timeoutSeconds) {
                             0 -> 60
                             60 -> 300
+                            300 -> 900
+                            900 -> 1800
+                            1800 -> 3600
                             else -> 0
                         }
                         timeoutSeconds = next

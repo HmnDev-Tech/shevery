@@ -335,7 +335,7 @@ class AboutActivity : AppActivity() {
         ),
         Contributor(
             "arysm4a",
-            "Wireless-debugging boot autostart, battery-optimization exemption, boot receiver fixes, zh-CN docs",
+            "Wireless-debugging boot autostart, Dhizuku compatibility stubs, biometric auth & session security, Jetpack Compose UI/UX modernization",
             "https://github.com/tim1540"
         ),
         Contributor(

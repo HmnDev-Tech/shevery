@@ -617,6 +617,13 @@
     <string name="security_timeout_immediately"><![CDATA[Немедленно]]></string>
     <string name="security_timeout_1min"><![CDATA[1 минута]]></string>
     <string name="security_timeout_5min"><![CDATA[5 минут]]></string>
+    <string name="security_timeout_15min"><![CDATA[15 минут]]></string>
+    <string name="security_timeout_30min"><![CDATA[30 минут]]></string>
+    <string name="security_timeout_1hour"><![CDATA[1 час]]></string>
+    <string name="app_management_onetime_badge"><![CDATA[Только на этот сеанс]]></string>
+    <string name="app_management_make_permanent_prompt"><![CDATA[Сделать разрешение постоянным?]]></string>
+    <string name="app_management_make_permanent_desc"><![CDATA[Сейчас доступ разрешен только до перезапуска. Нажмите, чтобы выдать навсегда.]]></string>
+    <string name="app_management_made_permanent"><![CDATA[Делегировано навсегда]]></string>
     <string name="security_protected_actions_title"><![CDATA[Защищаемые действия]]></string>
     <string name="security_action_app_open"><![CDATA[Вход в приложение]]></string>
     <string name="security_action_permissions"><![CDATA[Управление разрешениями приложений]]></string>

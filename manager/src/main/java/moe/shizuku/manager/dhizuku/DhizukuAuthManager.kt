@@ -16,11 +16,16 @@ object DhizukuAuthManager {
         if (onetime) {
             sessionGrantedUids.add(uid)
         } else {
+            sessionGrantedUids.remove(uid)
             val prefs = context.getSharedPreferences(PREFS_NAME, Context.MODE_PRIVATE)
             val current = prefs.getStringSet(KEY_GRANTED_UIDS, emptySet())?.toMutableSet() ?: mutableSetOf()
             current.add(uid.toString())
             prefs.edit().putStringSet(KEY_GRANTED_UIDS, current).apply()
         }
+    }
+
+    fun isOneTime(uid: Int): Boolean {
+        return sessionGrantedUids.contains(uid)
     }
 
     fun revoke(context: Context, uid: Int) {

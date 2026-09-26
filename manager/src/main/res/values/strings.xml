@@ -802,6 +802,13 @@ Wi-Fi is required for the first restart because Shevery must connect to the curr
     <string name="security_timeout_immediately">Immediately</string>
     <string name="security_timeout_1min">1 minute</string>
     <string name="security_timeout_5min">5 minutes</string>
+    <string name="security_timeout_15min">15 minutes</string>
+    <string name="security_timeout_30min">30 minutes</string>
+    <string name="security_timeout_1hour">1 hour</string>
+    <string name="app_management_onetime_badge">This session only</string>
+    <string name="app_management_make_permanent_prompt">Make permission permanent?</string>
+    <string name="app_management_make_permanent_desc">Currently granted for this session only. Tap to make it permanent.</string>
+    <string name="app_management_made_permanent">Delegated permanently</string>
     <string name="security_protected_actions_title">Protected Actions</string>
     <string name="security_action_app_open">Unlock on app launch</string>
     <string name="security_action_permissions">Managing app permissions</string>

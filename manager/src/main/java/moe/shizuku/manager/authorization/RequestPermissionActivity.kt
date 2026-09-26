@@ -414,6 +414,12 @@ class RequestPermissionActivity : AppActivity() {
                             try {
                                 dhizukuListener?.onRequestPermission(PackageManager.PERMISSION_GRANTED)
                             } catch (_: Throwable) {}
+                        } else {
+                            if (onetime) {
+                                AuthorizationManager.markOneTime(uid, true)
+                            } else {
+                                AuthorizationManager.grant(ai.packageName, uid)
+                            }
                         }
                         setShizukuResult(uid, pid, requestCode, allowed = true, onetime = onetime)
                         setResult(RESULT_OK)

@@ -62,7 +62,23 @@ object AuthorizationManager {
         return packages
     }
 
+    // Tracks UIDs granted for this session only (one-time)
+    private val sessionGrantedUids = java.util.concurrent.ConcurrentHashMap.newKeySet<Int>()
+
+    fun isOneTime(uid: Int): Boolean {
+        return sessionGrantedUids.contains(uid)
+    }
+
+    fun markOneTime(uid: Int, onetime: Boolean) {
+        if (onetime) {
+            sessionGrantedUids.add(uid)
+        } else {
+            sessionGrantedUids.remove(uid)
+        }
+    }
+
     fun granted(packageName: String, uid: Int): Boolean {
+        if (sessionGrantedUids.contains(uid)) return true
         return if (Shizuku.isPreV11()) {
             ShizukuSystemApis.checkPermission(Manifest.permission.API_V23, packageName, uid / 100000) == PackageManager.PERMISSION_GRANTED
         } else {
@@ -71,6 +87,7 @@ object AuthorizationManager {
     }
 
     fun grant(packageName: String, uid: Int) {
+        sessionGrantedUids.remove(uid)
         if (Shizuku.isPreV11()) {
             ShizukuSystemApis.grantRuntimePermission(packageName, Manifest.permission.API_V23, uid / 100000)
         } else {
@@ -79,6 +96,7 @@ object AuthorizationManager {
     }
 
     fun revoke(packageName: String, uid: Int) {
+        sessionGrantedUids.remove(uid)
         if (Shizuku.isPreV11()) {
             ShizukuSystemApis.revokeRuntimePermission(packageName, Manifest.permission.API_V23, uid / 100000)
         } else {

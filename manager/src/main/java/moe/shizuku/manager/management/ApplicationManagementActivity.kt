@@ -8,6 +8,7 @@ import android.os.Bundle
 import android.widget.Toast
 import androidx.activity.compose.setContent
 import androidx.compose.foundation.Image
+import androidx.compose.foundation.background
 import androidx.compose.foundation.clickable
 import androidx.compose.foundation.horizontalScroll
 import androidx.compose.foundation.layout.Arrangement
@@ -18,8 +19,9 @@ import androidx.compose.foundation.layout.fillMaxWidth
 import androidx.compose.foundation.layout.padding
 import androidx.compose.foundation.layout.size
 import androidx.compose.foundation.rememberScrollState
-
 import androidx.compose.foundation.shape.RoundedCornerShape
+import androidx.compose.ui.draw.clip
+import androidx.compose.ui.res.painterResource
 import androidx.compose.material.icons.Icons
 import androidx.compose.material.icons.rounded.Clear
 import androidx.compose.material.icons.rounded.Search
@@ -71,6 +73,7 @@ import moe.shizuku.manager.Helps
 import moe.shizuku.manager.R
 import moe.shizuku.manager.app.AppActivity
 import moe.shizuku.manager.authorization.AuthorizationManager
+import moe.shizuku.manager.dhizuku.DhizukuAuthManager
 import moe.shizuku.manager.ui.compose.ExpressiveSwitch
 import moe.shizuku.manager.ui.compose.ExpressiveCard
 import moe.shizuku.manager.ui.compose.ShizukuExpressiveTheme
@@ -91,7 +94,8 @@ private enum class AppFilter { ALL, ALLOWED, DENIED }
 private data class AppEntry(
     val packageInfo: PackageInfo,
     val title: String,
-    val granted: Boolean
+    val granted: Boolean,
+    val isOneTime: Boolean = false
 )
 
 class ApplicationManagementActivity : AppActivity() {
@@ -167,12 +171,15 @@ class ApplicationManagementActivity : AppActivity() {
                     } else {
                         label
                     }
-                    val granted = try {
+                    val isShizukuGranted = try {
                         AuthorizationManager.granted(pkg.packageName, uid)
                     } catch (_: SecurityException) {
                         false
                     }
-                    AppEntry(pkg, title, granted)
+                    val isDhizukuGranted = DhizukuAuthManager.isGranted(this@ApplicationManagementActivity, uid)
+                    val granted = isShizukuGranted || isDhizukuGranted
+                    val isOneTime = AuthorizationManager.isOneTime(uid) || DhizukuAuthManager.isOneTime(uid)
+                    AppEntry(pkg, title, granted, isOneTime)
                 }
             }
 
@@ -481,8 +488,10 @@ class ApplicationManagementActivity : AppActivity() {
             try {
                 if (granted) {
                     AuthorizationManager.grant(packageName, uid)
+                    DhizukuAuthManager.grant(this, uid, onetime = false)
                 } else {
                     AuthorizationManager.revoke(packageName, uid)
+                    DhizukuAuthManager.revoke(this, uid)
                 }
                 changed = true
             } catch (_: SecurityException) {
@@ -503,6 +512,7 @@ class ApplicationManagementActivity : AppActivity() {
 
     override fun onResume() {
         super.onResume()
+        viewModel.load()
         permissionTick.intValue++
     }
 }
@@ -533,10 +543,30 @@ private fun AppPermissionRow(
         try {
             if (granted) {
                 AuthorizationManager.revoke(packageName, uid)
+                DhizukuAuthManager.revoke(context, uid)
             } else {
                 AuthorizationManager.grant(packageName, uid)
+                DhizukuAuthManager.grant(context, uid, onetime = false)
             }
             granted = !granted
+            onPermissionChanged()
+        } catch (_: SecurityException) {
+            val serverUid = try {
+                Shizuku.getUid()
+            } catch (_: Throwable) {
+                return
+            }
+            if (serverUid != 0) {
+                onLimitedAdb()
+            }
+        }
+    }
+
+    fun makePermanent() {
+        try {
+            AuthorizationManager.grant(packageName, uid)
+            DhizukuAuthManager.grant(context, uid, onetime = false)
+            Toast.makeText(context, R.string.app_management_made_permanent, Toast.LENGTH_SHORT).show()
             onPermissionChanged()
         } catch (_: SecurityException) {
             val serverUid = try {
@@ -576,13 +606,36 @@ private fun AppPermissionRow(
             modifier = Modifier.weight(1f),
             verticalArrangement = Arrangement.spacedBy(3.dp)
         ) {
-            Text(
-                text = title,
-                style = MaterialTheme.typography.bodyLarge,
-                fontWeight = FontWeight.Medium,
-                maxLines = 1,
-                overflow = TextOverflow.Ellipsis
-            )
+            Row(
+                verticalAlignment = Alignment.CenterVertically,
+                horizontalArrangement = Arrangement.spacedBy(6.dp)
+            ) {
+                Text(
+                    text = title,
+                    style = MaterialTheme.typography.bodyLarge,
+                    fontWeight = FontWeight.Medium,
+                    maxLines = 1,
+                    overflow = TextOverflow.Ellipsis,
+                    modifier = Modifier.weight(1f, fill = false)
+                )
+                if (entry.isOneTime && granted) {
+                    Box(
+                        modifier = Modifier
+                            .size(24.dp)
+                            .clip(RoundedCornerShape(6.dp))
+                            .background(MaterialTheme.colorScheme.tertiaryContainer)
+                            .clickable(onClick = { makePermanent() }),
+                        contentAlignment = Alignment.Center
+                    ) {
+                        Icon(
+                            painter = painterResource(R.drawable.ic_schedule_24dp),
+                            contentDescription = stringResource(R.string.app_management_onetime_badge),
+                            tint = MaterialTheme.colorScheme.onTertiaryContainer,
+                            modifier = Modifier.size(15.dp)
+                        )
+                    }
+                }
+            }
             Text(
                 text = packageInfo.packageName,
                 style = MaterialTheme.typography.bodyMedium,
