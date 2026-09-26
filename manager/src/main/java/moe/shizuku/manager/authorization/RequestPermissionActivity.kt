@@ -362,6 +362,8 @@ class RequestPermissionActivity : AppActivity() {
             return
         }
 
+        val isDeviceOwner = DeviceOwnerManager.isDeviceOwner(this)
+
         val pm = packageManager
         val label = try {
             ai.loadLabel(pm).takeIf { !it.isNullOrBlank() } ?: (ai.packageName ?: "UID $uid")
