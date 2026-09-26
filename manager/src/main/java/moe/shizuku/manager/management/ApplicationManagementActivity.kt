@@ -73,7 +73,6 @@ import moe.shizuku.manager.Helps
 import moe.shizuku.manager.R
 import moe.shizuku.manager.app.AppActivity
 import moe.shizuku.manager.authorization.AuthorizationManager
-import moe.shizuku.manager.dhizuku.DhizukuAuthManager
 import moe.shizuku.manager.ui.compose.ExpressiveSwitch
 import moe.shizuku.manager.ui.compose.ExpressiveCard
 import moe.shizuku.manager.ui.compose.ShizukuExpressiveTheme
@@ -171,14 +170,12 @@ class ApplicationManagementActivity : AppActivity() {
                     } else {
                         label
                     }
-                    val isShizukuGranted = try {
+                    val granted = try {
                         AuthorizationManager.granted(pkg.packageName, uid)
                     } catch (_: SecurityException) {
                         false
                     }
-                    val isDhizukuGranted = DhizukuAuthManager.isGranted(this@ApplicationManagementActivity, uid)
-                    val granted = isShizukuGranted || isDhizukuGranted
-                    val isOneTime = AuthorizationManager.isOneTime(uid) || DhizukuAuthManager.isOneTime(uid)
+                    val isOneTime = AuthorizationManager.isOneTime(uid)
                     AppEntry(pkg, title, granted, isOneTime)
                 }
             }
@@ -488,10 +485,8 @@ class ApplicationManagementActivity : AppActivity() {
             try {
                 if (granted) {
                     AuthorizationManager.grant(packageName, uid)
-                    DhizukuAuthManager.grant(this, uid, onetime = false)
                 } else {
                     AuthorizationManager.revoke(packageName, uid)
-                    DhizukuAuthManager.revoke(this, uid)
                 }
                 changed = true
             } catch (_: SecurityException) {
@@ -543,10 +538,8 @@ private fun AppPermissionRow(
         try {
             if (granted) {
                 AuthorizationManager.revoke(packageName, uid)
-                DhizukuAuthManager.revoke(context, uid)
             } else {
                 AuthorizationManager.grant(packageName, uid)
-                DhizukuAuthManager.grant(context, uid, onetime = false)
             }
             granted = !granted
             onPermissionChanged()
@@ -565,7 +558,6 @@ private fun AppPermissionRow(
     fun makePermanent() {
         try {
             AuthorizationManager.grant(packageName, uid)
-            DhizukuAuthManager.grant(context, uid, onetime = false)
             Toast.makeText(context, R.string.app_management_made_permanent, Toast.LENGTH_SHORT).show()
             onPermissionChanged()
         } catch (_: SecurityException) {

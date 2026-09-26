@@ -388,11 +388,21 @@ class RequestPermissionActivity : AppActivity() {
                 fun denyPermission() {
                     if (isDhizuku) {
                         DhizukuAuthManager.revoke(this@RequestPermissionActivity, uid)
+                        if (isDeviceOwner) {
+                            try {
+                                DeviceOwnerManager.setDelegatedScopes(
+                                    this@RequestPermissionActivity,
+                                    ai.packageName,
+                                    emptyList()
+                                )
+                            } catch (_: Throwable) {}
+                        }
                         try {
                             dhizukuListener?.onRequestPermission(PackageManager.PERMISSION_DENIED)
                         } catch (_: Throwable) {}
+                    } else {
+                        setShizukuResult(uid, pid, requestCode, allowed = false, onetime = true)
                     }
-                    setShizukuResult(uid, pid, requestCode, allowed = false, onetime = true)
                     setResult(RESULT_CANCELED)
                     finish()
                 }
@@ -411,6 +421,17 @@ class RequestPermissionActivity : AppActivity() {
                     fun proceed() {
                         if (isDhizuku) {
                             DhizukuAuthManager.grant(this@RequestPermissionActivity, uid, onetime = onetime)
+                            if (isDeviceOwner) {
+                                try {
+                                    DeviceOwnerManager.setDelegatedScopes(
+                                        this@RequestPermissionActivity,
+                                        ai.packageName,
+                                        DeviceOwnerManager.ALL_SCOPES.map { it.scopeName }
+                                    )
+                                } catch (e: Throwable) {
+                                    LOGGER.w(e, "Failed to delegate scopes")
+                                }
+                            }
                             try {
                                 dhizukuListener?.onRequestPermission(PackageManager.PERMISSION_GRANTED)
                             } catch (_: Throwable) {}
@@ -420,8 +441,8 @@ class RequestPermissionActivity : AppActivity() {
                             } else {
                                 AuthorizationManager.grant(ai.packageName, uid)
                             }
+                            setShizukuResult(uid, pid, requestCode, allowed = true, onetime = onetime)
                         }
-                        setShizukuResult(uid, pid, requestCode, allowed = true, onetime = onetime)
                         setResult(RESULT_OK)
                         finish()
                     }

@@ -22,8 +22,10 @@ import androidx.compose.ui.Modifier
 import androidx.compose.ui.draw.clip
 import androidx.compose.ui.graphics.asImageBitmap
 import androidx.compose.ui.platform.LocalContext
+import androidx.compose.ui.res.painterResource
 import androidx.compose.ui.res.stringResource
 import androidx.compose.ui.text.font.FontWeight
+import androidx.compose.ui.text.style.TextOverflow
 import androidx.compose.ui.unit.dp
 import androidx.core.graphics.drawable.toBitmap
 import androidx.fragment.app.FragmentActivity
@@ -64,8 +66,23 @@ fun DeviceOwnerDelegationScreen(
     var dhizukuOnly by remember { mutableStateOf(true) }
     var whitelistMode by remember { mutableStateOf(DeviceOwnerManager.isDeviceOwnerWhitelistEnabled()) }
 
-    LaunchedEffect(dhizukuOnly) {
-        loading = true
+    val lifecycleOwner = androidx.lifecycle.compose.LocalLifecycleOwner.current
+    var refreshTick by remember { mutableIntStateOf(0) }
+
+    DisposableEffect(lifecycleOwner) {
+        val observer = androidx.lifecycle.LifecycleEventObserver { _, event ->
+            if (event == androidx.lifecycle.Lifecycle.Event.ON_RESUME) {
+                refreshTick++
+            }
+        }
+        lifecycleOwner.lifecycle.addObserver(observer)
+        onDispose {
+            lifecycleOwner.lifecycle.removeObserver(observer)
+        }
+    }
+
+    LaunchedEffect(dhizukuOnly, refreshTick) {
+        if (apps.isEmpty()) loading = true
         val loaded = withContext(Dispatchers.IO) {
             DeviceOwnerManager.getDelegationApps(context, dhizukuOnly = dhizukuOnly)
         }
@@ -245,7 +262,8 @@ fun DeviceOwnerDelegationScreen(
                     }
                 } else {
                     items(filteredApps, key = { it.packageName }) { app ->
-                        val hasScopes = app.scopes.isNotEmpty()
+                        val isDelegated = app.scopes.isNotEmpty() || app.isDhizukuGranted
+                        val isOneTime = app.isOneTime && isDelegated
                         val iconBitmap = remember(app) {
                             try {
                                 app.icon?.toBitmap(44, 44)?.asImageBitmap()
@@ -257,7 +275,7 @@ fun DeviceOwnerDelegationScreen(
                         Card(
                             shape = RoundedCornerShape(16.dp),
                             colors = CardDefaults.cardColors(
-                                containerColor = if (hasScopes)
+                                containerColor = if (isDelegated)
                                     MaterialTheme.colorScheme.primaryContainer.copy(alpha = 0.35f)
                                 else
                                     MaterialTheme.colorScheme.surfaceContainerLow
@@ -303,11 +321,57 @@ fun DeviceOwnerDelegationScreen(
                                         .weight(1f)
                                         .clickable { configuringApp = app }
                                 ) {
-                                    Text(
-                                        text = app.label,
-                                        style = MaterialTheme.typography.titleMedium,
-                                        fontWeight = FontWeight.SemiBold
-                                    )
+                                    Row(
+                                        verticalAlignment = Alignment.CenterVertically,
+                                        horizontalArrangement = Arrangement.spacedBy(6.dp)
+                                    ) {
+                                        Text(
+                                            text = app.label,
+                                            style = MaterialTheme.typography.titleMedium,
+                                            fontWeight = FontWeight.SemiBold,
+                                            maxLines = 1,
+                                            overflow = TextOverflow.Ellipsis,
+                                            modifier = Modifier.weight(1f, fill = false)
+                                        )
+                                        if (isOneTime) {
+                                            Box(
+                                                modifier = Modifier
+                                                    .size(24.dp)
+                                                    .clip(RoundedCornerShape(6.dp))
+                                                    .background(MaterialTheme.colorScheme.tertiaryContainer)
+                                                    .clickable {
+                                                        val newScopes = if (app.scopes.isEmpty()) {
+                                                            DeviceOwnerManager.ALL_SCOPES.map { it.scopeName }
+                                                        } else {
+                                                            app.scopes
+                                                        }
+                                                        DeviceOwnerManager.setDelegatedScopes(context, app.packageName, newScopes)
+                                                        moe.shizuku.manager.dhizuku.DhizukuAuthManager.grant(context, app.uid, onetime = false)
+                                                        apps = apps.map {
+                                                            if (it.packageName == app.packageName) it.copy(
+                                                                scopes = newScopes,
+                                                                isDhizukuGranted = true,
+                                                                isOneTime = false
+                                                            )
+                                                            else it
+                                                        }
+                                                        Toast.makeText(
+                                                            context,
+                                                            R.string.app_management_made_permanent,
+                                                            Toast.LENGTH_SHORT
+                                                        ).show()
+                                                    },
+                                                contentAlignment = Alignment.Center
+                                            ) {
+                                                Icon(
+                                                    painter = painterResource(R.drawable.ic_schedule_24dp),
+                                                    contentDescription = stringResource(R.string.app_management_onetime_badge),
+                                                    tint = MaterialTheme.colorScheme.onTertiaryContainer,
+                                                    modifier = Modifier.size(15.dp)
+                                                )
+                                            }
+                                        }
+                                    }
                                     Text(
                                         text = app.packageName,
                                         style = MaterialTheme.typography.bodySmall,
@@ -315,12 +379,14 @@ fun DeviceOwnerDelegationScreen(
                                     )
                                     Spacer(modifier = Modifier.height(2.dp))
                                     Text(
-                                        text = if (hasScopes)
-                                            "${app.scopes.size} ${stringResource(R.string.device_owner_delegation_scopes_count)}"
-                                        else
-                                            stringResource(R.string.device_owner_delegation_none),
+                                        text = when {
+                                            isOneTime -> stringResource(R.string.app_management_onetime_badge)
+                                            app.scopes.isNotEmpty() -> "${app.scopes.size} ${stringResource(R.string.device_owner_delegation_scopes_count)}"
+                                            app.isDhizukuGranted -> stringResource(R.string.device_owner_delegation_updated)
+                                            else -> stringResource(R.string.device_owner_delegation_none)
+                                        },
                                         style = MaterialTheme.typography.labelSmall,
-                                        color = if (hasScopes)
+                                        color = if (isDelegated)
                                             MaterialTheme.colorScheme.primary
                                         else
                                             MaterialTheme.colorScheme.outline
@@ -329,7 +395,7 @@ fun DeviceOwnerDelegationScreen(
 
                                 // Quick toggle checkbox
                                 Checkbox(
-                                    checked = hasScopes,
+                                    checked = isDelegated,
                                     onCheckedChange = { checked ->
                                         fun applyQuickToggle() {
                                             val newScopes = if (checked) {
@@ -349,7 +415,11 @@ fun DeviceOwnerDelegationScreen(
                                                     moe.shizuku.manager.dhizuku.DhizukuAuthManager.revoke(context, app.uid)
                                                 }
                                                 apps = apps.map {
-                                                    if (it.packageName == app.packageName) it.copy(scopes = newScopes)
+                                                    if (it.packageName == app.packageName) it.copy(
+                                                        scopes = newScopes,
+                                                        isDhizukuGranted = checked,
+                                                        isOneTime = false
+                                                    )
                                                     else it
                                                 }
                                                 Toast.makeText(
@@ -410,7 +480,11 @@ fun DeviceOwnerDelegationScreen(
                             moe.shizuku.manager.dhizuku.DhizukuAuthManager.revoke(context, app.uid)
                         }
                         apps = apps.map {
-                            if (it.packageName == app.packageName) it.copy(scopes = updatedScopes)
+                            if (it.packageName == app.packageName) it.copy(
+                                scopes = updatedScopes,
+                                isDhizukuGranted = updatedScopes.isNotEmpty(),
+                                isOneTime = false
+                            )
                             else it
                         }
                         Toast.makeText(

@@ -270,7 +270,9 @@ object DeviceOwnerManager {
         val icon: android.graphics.drawable.Drawable?,
         val scopes: List<String>,
         val isDeviceAdmin: Boolean,
-        val uid: Int = -1
+        val uid: Int = -1,
+        val isDhizukuGranted: Boolean = false,
+        val isOneTime: Boolean = false
     )
 
     fun getEligibleAdminApps(context: Context): List<ApplicationInfo> {
@@ -364,16 +366,20 @@ object DeviceOwnerManager {
             val isAdmin = adminPkgs.contains(app.packageName)
             val label = app.loadLabel(pm).toString()
             val icon = try { app.loadIcon(pm) } catch (_: Throwable) { null }
+            val isDhizukuGranted = moe.shizuku.manager.dhizuku.DhizukuAuthManager.isGranted(context, app.uid)
+            val isOneTime = moe.shizuku.manager.dhizuku.DhizukuAuthManager.isOneTime(app.uid)
             DelegatedAppInfo(
                 packageName = app.packageName,
                 label = label,
                 icon = icon,
                 scopes = scopes,
                 isDeviceAdmin = isAdmin,
-                uid = app.uid
+                uid = app.uid,
+                isDhizukuGranted = isDhizukuGranted,
+                isOneTime = isOneTime
             )
         }.sortedWith(
-            compareByDescending<DelegatedAppInfo> { it.scopes.isNotEmpty() }
+            compareByDescending<DelegatedAppInfo> { it.scopes.isNotEmpty() || it.isDhizukuGranted }
                 .thenByDescending { it.isDeviceAdmin }
                 .thenBy { it.label.lowercase() }
         )
