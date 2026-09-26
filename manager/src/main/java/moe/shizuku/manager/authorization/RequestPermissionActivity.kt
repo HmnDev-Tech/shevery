@@ -205,13 +205,15 @@ class RequestPermissionActivity : AppActivity() {
             ?: intent.getStringExtra("client_package_name")
             ?: callingPackage
 
-        if (android.os.Build.VERSION.SDK_INT >= 34) {
-            if (uid == -1) {
-                uid = runCatching { launchedFromUid }.getOrDefault(-1)
-            }
-            if (callingPkg.isNullOrEmpty()) {
-                callingPkg = runCatching { launchedFromPackage }.getOrNull()
-            }
+        if (uid == -1) {
+            uid = runCatching {
+                android.app.Activity::class.java.getMethod("getLaunchedFromUid").invoke(this) as? Int
+            }.getOrNull() ?: -1
+        }
+        if (callingPkg.isNullOrEmpty()) {
+            callingPkg = runCatching {
+                android.app.Activity::class.java.getMethod("getLaunchedFromPackage").invoke(this) as? String
+            }.getOrNull()
         }
 
         if (callingPkg.isNullOrEmpty()) {

@@ -34,14 +34,16 @@ public class ForwardActivity extends Activity {
 
             String callingPackage = getCallingPackage();
             int uid = -1;
-            if (Build.VERSION.SDK_INT >= 34) {
+            try {
+                java.lang.reflect.Method m = Activity.class.getMethod("getLaunchedFromUid");
+                Object res = m.invoke(this);
+                if (res instanceof Integer) uid = (Integer) res;
+            } catch (Throwable ignored) {}
+            if (callingPackage == null) {
                 try {
-                    uid = getLaunchedFromUid();
-                } catch (Throwable ignored) {}
-            }
-            if (callingPackage == null && Build.VERSION.SDK_INT >= 34) {
-                try {
-                    callingPackage = getLaunchedFromPackage();
+                    java.lang.reflect.Method m = Activity.class.getMethod("getLaunchedFromPackage");
+                    Object res = m.invoke(this);
+                    if (res instanceof String) callingPackage = (String) res;
                 } catch (Throwable ignored) {}
             }
             if (callingPackage == null) {
