@@ -1,10 +1,10 @@
 <?xml version="1.0" encoding="utf-8"?>
 <resources>
-    <string name="app_name">Shevery</string>
-    <string name="permission_group_label" translatable="false">Shevery</string>
+    <string name="app_name">Shizuku</string>
+    <string name="permission_group_label" translatable="false">Shizuku</string>
     <string name="permission_group_description" translatable="false">@string/permission_label</string>
-    <string name="permission_label">access Shevery</string>
-    <string name="permission_description">Allow the app to use Shevery.</string>
+    <string name="permission_label">access Shizuku</string>
+    <string name="permission_description">Allow the app to use Shizuku.</string>
     <string name="dhizuku_app_name">Dhizuku</string>
     <string name="dhizuku_permission_label">access Dhizuku (Shevery)</string>
     <string name="dhizuku_permission_description">Allow the app to use Dhizuku via Shevery.</string>

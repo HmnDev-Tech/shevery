@@ -26,9 +26,9 @@ class DhizukuProvider : ContentProvider() {
             return DhizukuAuthManager.isGranted(ctx, callingUid)
         }
 
-        override fun getVersionCode(): Int = 5
+        override fun getVersionCode(): Int = 2000000000
 
-        override fun getVersionName(): String = "2.5.4"
+        override fun getVersionName(): String = "14.0.0"
 
         override fun isPermissionGranted(): Boolean = isCallerAuthorized()
 
