@@ -142,7 +142,7 @@ private enum class SettingsSection(
     UPDATES(
         R.string.settings_update_group_title,
         R.string.settings_section_updates_summary,
-        R.drawable.ic_outline_arrow_upward_24
+        R.drawable.ic_system_update_24
     ),
     AI(
         R.string.comput_settings,
@@ -152,7 +152,7 @@ private enum class SettingsSection(
     BACKUPS(
         R.string.settings_backups_title,
         R.string.settings_section_backups_summary,
-        R.drawable.ic_outline_arrow_upward_24
+        R.drawable.ic_settings_backup_restore_24dp
     ),
     AUTOMATION(
         R.string.automation_settings_title,
@@ -1350,14 +1350,14 @@ private fun LazyListScope.backupsSectionContent(
     item {
         SettingsGroup(title = stringResource(R.string.backup_section_title)) {
             SettingsRow(
-                icon = R.drawable.ic_outline_arrow_upward_24,
+                icon = R.drawable.ic_backup_24dp,
                 title = stringResource(R.string.backup_title),
                 summary = stringResource(R.string.backup_summary),
                 onClick = onBackup
             )
             GroupDivider()
             SettingsRow(
-                icon = R.drawable.ic_server_restart,
+                icon = R.drawable.ic_settings_backup_restore_24dp,
                 title = stringResource(R.string.restore_title),
                 summary = stringResource(R.string.restore_summary),
                 onClick = onRestore
