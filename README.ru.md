@@ -18,6 +18,8 @@
 ## Нововведения форка
 
 - Интерфейс менеджера на Jetpack Compose с компонентами Material 3 Expressive, анимациями, переключателями и скруглёнными иконками.
+- **Управление Device Owner (Владелец устройства)**: полноценное управление правами Device Owner (делегирование полномочий приложениям, передача прав владельца, включение ADB через DPM) в стиле и совместимости с Dhizuku.
+- **Биометрическая защита и безопасность**: главный переключатель запроса биометрии или PIN/пароля/графключа с настройкой тайм-аута сессии и выборочной защитой действий.
 - **Экспериментальная поддержка Dhizuku**: специальная система bridging для Device Owner, доступная в разделе «Лаборатория».
 - **Улучшенная функция «Comput»** на основе shell/adb с объяснениями от Gemini, макросами и созданием команд через Commandium AI.
 - Работа над поддержкой Android 16/17 с актуальными SDK и инструментами сборки в этом форке.
@@ -138,6 +140,7 @@ https://github.com/RikkaApps/Shizuku-API#migration-guide-for-existing-applicatio
 ## Благодарности
 
 * [kerneldroid](https://github.com/kerneldroid) — за части интерфейса приложения, систему каталога модулей и поддержку Android 17.
+* [iamr0s/Dhizuku](https://github.com/iamr0s/Dhizuku) — за проект Dhizuku, архитектуру и концепции Device Owner, интегрированные в Shevery.
 * [RikkaApps/Shizuku](https://github.com/rikkaapps/Shizuku) — за Shizuku API и основные исходники.
 * [Landon Moran](https://github.com/LandonMoran) — за Dhizuku, исправления TCP и др.
 * [DP-Hridayan](https://github.com/DP-Hridayan/aShellYou) — за части интерфейса «Comput».

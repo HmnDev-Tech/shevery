@@ -158,11 +158,17 @@
             android:directBootAware="true"
             android:excludeFromRecents="true"
             android:exported="true"
-            android:permission="android.permission.INTERACT_ACROSS_USERS_FULL"
             android:theme="@style/GrantPermissions">
             <intent-filter>
                 <action android:name="${applicationId}.intent.action.REQUEST_PERMISSION" />
                 <action android:name="moe.shizuku.privileged.api.intent.action.REQUEST_PERMISSION" />
+                <action android:name="moe.shizuku.manager.intent.action.REQUEST_PERMISSION" />
+
+                <!-- Dhizuku compatibility actions -->
+                <action android:name="${applicationId}.action.request.permission" />
+                <action android:name="${applicationId}.action.REQUEST_DHIZUKU_PERMISSION" />
+                <action android:name="com.rosan.dhizuku.action.request.permission" />
+                <action android:name="com.rosan.dhizuku.action.REQUEST_DHIZUKU_PERMISSION" />
 
                 <category android:name="android.intent.category.DEFAULT" />
             </intent-filter>
@@ -188,6 +194,7 @@
             <intent-filter>
                 <action android:name="${applicationId}.intent.action.REQUEST_AUTHORIZATION" />
                 <action android:name="moe.shizuku.privileged.api.intent.action.REQUEST_AUTHORIZATION" />
+                <action android:name="moe.shizuku.manager.intent.action.REQUEST_AUTHORIZATION" />
 
                 <category android:name="android.intent.category.DEFAULT" />
             </intent-filter>
@@ -242,6 +249,26 @@
             </intent-filter>
             <intent-filter>
                 <action android:name="android.intent.action.BOOT_COMPLETED" />
+            </intent-filter>
+        </receiver>
+
+        <receiver
+            android:name=".receiver.SheveryDeviceAdminReceiver"
+            android:description="@string/device_admin_description"
+            android:label="@string/app_name"
+            android:permission="android.permission.BIND_DEVICE_ADMIN"
+            android:exported="true">
+            <meta-data
+                android:name="android.app.device_admin"
+                android:resource="@xml/device_admin" />
+            <intent-filter>
+                <action android:name="android.app.action.DEVICE_ADMIN_ENABLED" />
+                <action android:name="android.app.action.DEVICE_ADMIN_DISABLE_REQUESTED" />
+                <action android:name="android.app.action.DEVICE_ADMIN_DISABLED" />
+                <action android:name="android.app.action.DEVICE_OWNER_CHANGED" />
+                <action android:name="android.app.action.PROFILE_OWNER_CHANGED" />
+                <action android:name="android.app.action.PROFILE_PROVISIONING_COMPLETE" />
+                <action android:name="android.app.action.TRANSFER_OWNERSHIP_COMPLETE" />
             </intent-filter>
         </receiver>
 
@@ -306,6 +333,18 @@
             android:name=".connector.ShizukuConnectorProvider"
             android:authorities="${applicationId}.connector;moe.shizuku.privileged.api.connector"
             android:exported="true" />
+
+        <provider
+            android:name=".dhizuku.DhizukuProvider"
+            android:authorities="${applicationId}.dhizuku_server.provider;${applicationId}.server.provider"
+            android:directBootAware="true"
+            android:enabled="true"
+            android:exported="true">
+            <intent-filter>
+                <action android:name="${applicationId}.server.provider" />
+            </intent-filter>
+        </provider>
+
         <service
             android:name="androidx.work.impl.foreground.SystemForegroundService"
             android:exported="false"

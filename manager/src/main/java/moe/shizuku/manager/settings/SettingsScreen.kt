@@ -45,6 +45,7 @@ import androidx.compose.material3.RadioButton
 import androidx.compose.material3.Text
 import androidx.compose.material3.TextButton
 import androidx.compose.runtime.Composable
+import androidx.compose.runtime.DisposableEffect
 import androidx.compose.runtime.LaunchedEffect
 import androidx.compose.runtime.getValue
 import androidx.compose.runtime.mutableIntStateOf
@@ -52,6 +53,8 @@ import androidx.compose.runtime.mutableStateOf
 import androidx.compose.runtime.remember
 import androidx.compose.runtime.setValue
 import androidx.compose.runtime.rememberCoroutineScope
+import androidx.compose.runtime.snapshotFlow
+import moe.shizuku.manager.ui.compose.LocalFloatingNavBarVisible
 import androidx.compose.ui.Modifier
 import androidx.compose.ui.platform.LocalContext
 import androidx.compose.ui.platform.LocalLifecycleOwner
@@ -67,6 +70,7 @@ import moe.shizuku.manager.app.ThemeHelper
 import moe.shizuku.manager.app.ThemeHelper.KEY_BLACK_NIGHT_THEME
 import moe.shizuku.manager.app.ThemeHelper.KEY_USE_SYSTEM_COLOR
 import moe.shizuku.manager.ktx.setComponentEnabled
+import moe.shizuku.manager.deviceowner.DeviceOwnerManager
 import moe.shizuku.manager.accessibility.AccessibilityManagerActivity
 import moe.shizuku.manager.compat.StubManager
 import moe.shizuku.manager.module.ModuleSettings
@@ -120,6 +124,16 @@ enum class SettingsSection(
         R.string.settings_section_appearance_summary,
         R.drawable.ic_outline_dark_mode_24
     ),
+    SECURITY(
+        R.string.settings_security_title,
+        R.string.settings_security_summary,
+        R.drawable.ic_security_24dp
+    ),
+    DEVICE_OWNER(
+        R.string.settings_device_owner_title,
+        R.string.settings_device_owner_summary,
+        R.drawable.ic_device_owner_24dp
+    ),
     MODULES(
         R.string.modules_settings_title,
         R.string.settings_section_modules_summary,
@@ -128,7 +142,7 @@ enum class SettingsSection(
     UPDATES(
         R.string.settings_update_group_title,
         R.string.settings_section_updates_summary,
-        R.drawable.ic_outline_arrow_upward_24
+        R.drawable.ic_system_update_24
     ),
     AI(
         R.string.comput_settings,
@@ -138,7 +152,7 @@ enum class SettingsSection(
     BACKUPS(
         R.string.settings_backups_title,
         R.string.settings_section_backups_summary,
-        R.drawable.ic_outline_arrow_upward_24
+        R.drawable.ic_settings_backup_restore_24dp
     ),
     AUTOMATION(
         R.string.automation_settings_title,
@@ -161,6 +175,9 @@ private sealed interface SettingsNav {
     data object Hub : SettingsNav
     data class Section(val section: SettingsSection) : SettingsNav
     data object UpdateSettings : SettingsNav
+    data object CompatStubs : SettingsNav
+    data object DeviceOwnerTransfer : SettingsNav
+    data object DeviceOwnerDelegation : SettingsNav
 }
 
 
@@ -221,9 +238,6 @@ fun SettingsScreen(
     var showDhizukuDialog by remember { mutableStateOf(false) }
     var wifiReassert by remember {
         mutableStateOf(ModuleSettings.isWifiReassertEnabled())
-    }
-    var compatStub by remember {
-        mutableStateOf(StubManager.isInstalled(context))
     }
     var autoDisableUsbDebugging by remember {
         mutableStateOf(ShizukuSettings.getAutoDisableUsbDebugging())
@@ -448,6 +462,12 @@ fun SettingsScreen(
                 initialState is SettingsNav.Hub -> true
                 targetState is SettingsNav.UpdateSettings -> true
                 initialState is SettingsNav.UpdateSettings -> false
+                targetState is SettingsNav.CompatStubs -> true
+                initialState is SettingsNav.CompatStubs -> false
+                targetState is SettingsNav.DeviceOwnerTransfer -> true
+                initialState is SettingsNav.DeviceOwnerTransfer -> false
+                targetState is SettingsNav.DeviceOwnerDelegation -> true
+                initialState is SettingsNav.DeviceOwnerDelegation -> false
                 else -> true
             }
             if (forward) {
@@ -475,6 +495,24 @@ fun SettingsScreen(
                     onNavigateUp = { nav = SettingsNav.Section(SettingsSection.UPDATES) }
                 )
             }
+            SettingsNav.CompatStubs -> {
+                BackHandler { nav = SettingsNav.Section(SettingsSection.APPLICATION) }
+                CompatStubsScreen(
+                    onNavigateUp = { nav = SettingsNav.Section(SettingsSection.APPLICATION) }
+                )
+            }
+            SettingsNav.DeviceOwnerTransfer -> {
+                BackHandler { nav = SettingsNav.Section(SettingsSection.DEVICE_OWNER) }
+                DeviceOwnerTransferScreen(
+                    onNavigateUp = { nav = SettingsNav.Section(SettingsSection.DEVICE_OWNER) }
+                )
+            }
+            SettingsNav.DeviceOwnerDelegation -> {
+                BackHandler { nav = SettingsNav.Section(SettingsSection.DEVICE_OWNER) }
+                DeviceOwnerDelegationScreen(
+                    onNavigateUp = { nav = SettingsNav.Section(SettingsSection.DEVICE_OWNER) }
+                )
+            }
             is SettingsNav.Section -> {
                 BackHandler { nav = SettingsNav.Hub }
                 val sectionListState = remember(current.section) { LazyListState() }
@@ -494,8 +532,8 @@ fun SettingsScreen(
                             dhizukuEnabled = dhizukuEnabled,
                             notifyDeath = notifyDeath,
                             wifiReassert = wifiReassert,
-                            compatStub = compatStub,
                             autoDisableUsbDebugging = autoDisableUsbDebugging,
+                            onOpenCompatStubs = { nav = SettingsNav.CompatStubs },
                             onStartOnBootChange = { enabled ->
                                 ShizukuSettings.setStartOnBoot(enabled)
                                 startOnBoot = ShizukuSettings.getStartOnBoot()
@@ -558,33 +596,6 @@ fun SettingsScreen(
                                 ModuleSettings.setWifiReassertEnabled(enabled)
                                 wifiReassert = ModuleSettings.isWifiReassertEnabled()
                             },
-                            onCompatStubChange = { enabled ->
-                                scope.launch {
-                                    val result = if (enabled) {
-                                        StubManager.install(context)
-                                    } else {
-                                        StubManager.uninstall(context)
-                                    }
-                                    compatStub = StubManager.isInstalled(context)
-                                    if (result.ok) {
-                                        ModuleSettings.setCompatibilityStubEnabled(enabled)
-                                        val message = if (enabled) {
-                                            context.getString(R.string.settings_compat_stub_installed, result.channel)
-                                        } else {
-                                            context.getString(R.string.settings_compat_stub_uninstalled)
-                                        }
-                                        Toast.makeText(context, message, Toast.LENGTH_SHORT).show()
-                                    } else {
-                                        val action = if (enabled) "install" else "uninstall"
-                                        val message = if (result.error == "no channel available") {
-                                            context.getString(R.string.settings_compat_stub_none)
-                                        } else {
-                                            context.getString(R.string.settings_compat_stub_failed, action, result.channel, result.error ?: "unknown")
-                                        }
-                                        Toast.makeText(context, message, Toast.LENGTH_LONG).show()
-                                    }
-                                }
-                            },
                             onAutoDisableUsbDebuggingChange = { enabled ->
                                 ShizukuSettings.setAutoDisableUsbDebugging(enabled)
                                 autoDisableUsbDebugging = ShizukuSettings.getAutoDisableUsbDebugging()
@@ -623,6 +634,19 @@ fun SettingsScreen(
                                 classicNav = enabled
                             }
                         )
+                        SettingsSection.SECURITY -> {
+                            item {
+                                SecuritySettingsContent()
+                            }
+                        }
+                        SettingsSection.DEVICE_OWNER -> {
+                            item {
+                                DeviceOwnerContent(
+                                    onOpenTransfer = { nav = SettingsNav.DeviceOwnerTransfer },
+                                    onOpenDelegation = { nav = SettingsNav.DeviceOwnerDelegation }
+                                )
+                            }
+                        }
                         SettingsSection.MODULES -> modulesSectionContent(
                             moduleAccessMode = moduleAccessMode,
                             moduleBackground = moduleBackground,
@@ -740,7 +764,30 @@ fun SettingsScreen(
                                     icon = section.iconRes,
                                     title = stringResource(section.titleRes),
                                     summary = stringResource(section.summaryRes),
-                                    onClick = { nav = SettingsNav.Section(section) },
+                                    onClick = {
+                                        val fragActivity = context as? androidx.fragment.app.FragmentActivity
+                                        if (fragActivity != null && section == SettingsSection.DEVICE_OWNER) {
+                                            moe.shizuku.manager.security.AuthManager.executeWithAuth(
+                                                activity = fragActivity,
+                                                action = moe.shizuku.manager.security.SecuritySettings.ProtectedAction.DEVICE_OWNER,
+                                                title = context.getString(R.string.security_auth_prompt_title),
+                                                subtitle = context.getString(R.string.security_auth_prompt_device_owner)
+                                            ) {
+                                                nav = SettingsNav.Section(section)
+                                            }
+                                        } else if (fragActivity != null && section == SettingsSection.SECURITY && moe.shizuku.manager.security.SecuritySettings.isAuthEnabled) {
+                                            moe.shizuku.manager.security.AuthManager.executeWithAuth(
+                                                activity = fragActivity,
+                                                action = moe.shizuku.manager.security.SecuritySettings.ProtectedAction.APP_OPEN,
+                                                title = context.getString(R.string.security_auth_prompt_title),
+                                                subtitle = context.getString(R.string.settings_security_title)
+                                            ) {
+                                                nav = SettingsNav.Section(section)
+                                            }
+                                        } else {
+                                            nav = SettingsNav.Section(section)
+                                        }
+                                    },
                                     trailing = {
                                         Icon(
                                             imageVector = Icons.Rounded.ChevronRight,
@@ -1053,15 +1100,14 @@ private fun LazyListScope.applicationSectionContent(
     dhizukuEnabled: Boolean,
     notifyDeath: Boolean,
     wifiReassert: Boolean,
-    compatStub: Boolean,
     autoDisableUsbDebugging: Boolean,
+    onOpenCompatStubs: () -> Unit,
     onStartOnBootChange: (Boolean) -> Unit,
     onAdbStartOnBootChange: (Boolean) -> Unit,
     onWatchdogChange: (Boolean) -> Unit,
     onDhizukuToggle: (Boolean) -> Unit,
     onNotifyDeathChange: (Boolean) -> Unit,
     onWifiReassertChange: (Boolean) -> Unit,
-    onCompatStubChange: (Boolean) -> Unit,
     onAutoDisableUsbDebuggingChange: (Boolean) -> Unit,
     onTcpModeChange: (Boolean) -> Unit
 ) {
@@ -1098,14 +1144,16 @@ private fun LazyListScope.applicationSectionContent(
                 checked = watchdog,
                 onCheckedChange = onWatchdogChange
             )
-            GroupDivider()
-            SwitchSettingsRow(
-                icon = R.drawable.ic_outline_info_24,
-                title = stringResource(R.string.dhizuku_mode_title),
-                summary = stringResource(R.string.dhizuku_mode_summary),
-                checked = dhizukuEnabled,
-                onCheckedChange = onDhizukuToggle
-            )
+            if (!DeviceOwnerManager.isDeviceOwner(LocalContext.current)) {
+                GroupDivider()
+                SwitchSettingsRow(
+                    icon = R.drawable.ic_outline_info_24,
+                    title = stringResource(R.string.dhizuku_mode_title),
+                    summary = stringResource(R.string.dhizuku_mode_summary),
+                    checked = dhizukuEnabled,
+                    onCheckedChange = onDhizukuToggle
+                )
+            }
             GroupDivider()
             SwitchSettingsRow(
                 icon = R.drawable.ic_outline_notifications_active_24,
@@ -1123,12 +1171,11 @@ private fun LazyListScope.applicationSectionContent(
                 onCheckedChange = onWifiReassertChange
             )
             GroupDivider()
-            SwitchSettingsRow(
-                icon = R.drawable.ic_server_restart,
-                title = stringResource(R.string.settings_compat_stub),
-                summary = stringResource(R.string.settings_compat_stub_summary),
-                checked = compatStub,
-                onCheckedChange = onCompatStubChange
+            SettingsRow(
+                icon = R.drawable.ic_system_icon,
+                title = stringResource(R.string.settings_compat_stubs_title),
+                summary = stringResource(R.string.settings_compat_stubs_summary),
+                onClick = onOpenCompatStubs
             )
             SwitchSettingsRow(
                 icon = R.drawable.ic_adb_24dp,
@@ -1325,14 +1372,14 @@ private fun LazyListScope.backupsSectionContent(
     item {
         SettingsGroup(title = stringResource(R.string.backup_section_title)) {
             SettingsRow(
-                icon = R.drawable.ic_outline_arrow_upward_24,
+                icon = R.drawable.ic_backup_24dp,
                 title = stringResource(R.string.backup_title),
                 summary = stringResource(R.string.backup_summary),
                 onClick = onBackup
             )
             GroupDivider()
             SettingsRow(
-                icon = R.drawable.ic_server_restart,
+                icon = R.drawable.ic_settings_backup_restore_24dp,
                 title = stringResource(R.string.restore_title),
                 summary = stringResource(R.string.restore_summary),
                 onClick = onRestore

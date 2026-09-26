@@ -9,7 +9,9 @@
     <string name="dialog_cannot_open_browser_title"><![CDATA[Не удается запустить браузер]]></string>
     <string name="start_with_root_failed"><![CDATA[Не удалось запустить службу. Root права не выданы или они недоступны на устройстве.]]></string>
     <string name="starter"><![CDATA[Запуск]]></string>
-    <string name="permission_label"><![CDATA[доступ Shevery]]></string>
+    <string name="permission_label"><![CDATA[доступ к Shevery]]></string>
+    <string name="dhizuku_permission_label"><![CDATA[доступ к правам владельца устройства]]></string>
+    <string name="dhizuku_permission_group_description" translatable="false">@string/dhizuku_permission_label</string>
     <string name="notification_working"><![CDATA[Работает…]]></string>
     <string name="notification_service_start_no_root"><![CDATA[Не удалось запросить root права.]]></string>
     <string name="notification_service_start_failed"><![CDATA[Не удалось запустить службу Shevery.]]></string>
@@ -106,7 +108,8 @@
     <string name="wadb_notification_channel"><![CDATA[Служба автоматического запуска ADB]]></string>
     <string name="wadb_notification_attempt_now"><![CDATA[Попробуй сейчас]]></string>
     <string name="grant_dialog_button_allow_always"><![CDATA[Разрешить всегда]]></string>
-    <string name="grant_dialog_button_deny"><![CDATA[Запретить]]></string>
+    <string name="grant_dialog_button_allow_once"><![CDATA[Только в этот раз]]></string>
+    <string name="grant_dialog_button_deny"><![CDATA[Отклонить]]></string>
     <string name="permission_warning_template"><![CDATA[Разрешить <b>%1$s</b> следующее: %2$s?]]></string>
     <string name="home_root_description_sui"><![CDATA[Если вы пользуетесь Magisk, можете попробовать %1$s. Для пользователей с root правами он в конечном итоге заменит Shevery. Обратите внимание, что в уже вышедшие приложения должны внести небольшие изменения, чтобы они заработали с %2$s.]]></string>
     <string name="permission_description"><![CDATA[Разрешить приложению использовать Shevery.]]></string>

@@ -8,6 +8,7 @@ import android.os.Bundle
 import android.widget.Toast
 import androidx.activity.compose.setContent
 import androidx.compose.foundation.Image
+import androidx.compose.foundation.background
 import androidx.compose.foundation.clickable
 import androidx.compose.foundation.horizontalScroll
 import androidx.compose.foundation.layout.Arrangement
@@ -18,8 +19,9 @@ import androidx.compose.foundation.layout.fillMaxWidth
 import androidx.compose.foundation.layout.padding
 import androidx.compose.foundation.layout.size
 import androidx.compose.foundation.rememberScrollState
-
 import androidx.compose.foundation.shape.RoundedCornerShape
+import androidx.compose.ui.draw.clip
+import androidx.compose.ui.res.painterResource
 import androidx.compose.material.icons.Icons
 import androidx.compose.material.icons.rounded.Clear
 import androidx.compose.material.icons.rounded.Search
@@ -42,6 +44,13 @@ import androidx.compose.material3.Surface
 import androidx.compose.material3.Text
 import androidx.compose.material3.TextField
 import androidx.compose.material3.TextFieldDefaults
+import androidx.compose.material3.Card
+import androidx.compose.material3.CardDefaults
+import androidx.compose.material3.Switch
+import androidx.compose.foundation.layout.Spacer
+import androidx.compose.foundation.layout.height
+import androidx.compose.foundation.layout.width
+import moe.shizuku.manager.ShizukuSettings
 import androidx.compose.runtime.Composable
 import androidx.compose.runtime.getValue
 import androidx.compose.runtime.livedata.observeAsState
@@ -72,6 +81,8 @@ import moe.shizuku.manager.ui.compose.ShizukuLazyScaffold
 import moe.shizuku.manager.utils.CustomTabsHelper
 import moe.shizuku.manager.utils.ShizukuSystemApis
 import moe.shizuku.manager.utils.UserHandleCompat
+import moe.shizuku.manager.security.AuthManager
+import moe.shizuku.manager.security.SecuritySettings
 import rikka.html.text.HtmlCompat
 import rikka.lifecycle.Status
 import rikka.shizuku.Shizuku
@@ -82,7 +93,8 @@ private enum class AppFilter { ALL, ALLOWED, DENIED }
 private data class AppEntry(
     val packageInfo: PackageInfo,
     val title: String,
-    val granted: Boolean
+    val granted: Boolean,
+    val isOneTime: Boolean = false
 )
 
 class ApplicationManagementActivity : AppActivity() {
@@ -98,6 +110,22 @@ class ApplicationManagementActivity : AppActivity() {
 
     override fun onCreate(savedInstanceState: Bundle?) {
         super.onCreate(savedInstanceState)
+
+        if (SecuritySettings.isActionProtected(SecuritySettings.ProtectedAction.PERMISSIONS) &&
+            !AuthManager.isActionAuthenticatedInSession(SecuritySettings.ProtectedAction.PERMISSIONS)) {
+            AuthManager.authenticate(
+                activity = this,
+                title = getString(R.string.security_auth_prompt_title),
+                subtitle = getString(R.string.security_action_permissions),
+                onResult = { authenticated ->
+                    if (authenticated) {
+                        AuthManager.markActionAuthenticatedInSession(SecuritySettings.ProtectedAction.PERMISSIONS)
+                    } else {
+                        finish()
+                    }
+                }
+            )
+        }
 
         if (!Shizuku.pingBinder()) {
             finish()
@@ -128,6 +156,7 @@ class ApplicationManagementActivity : AppActivity() {
 
             var searchQuery by rememberSaveable { mutableStateOf("") }
             var selectedFilter by rememberSaveable { mutableStateOf(AppFilter.ALL) }
+            var whitelistMode by remember { mutableStateOf(ShizukuSettings.isShizukuWhitelistEnabled()) }
 
             val appEntries = remember(packages, tick) {
                 packages.mapNotNull { pkg ->
@@ -146,7 +175,8 @@ class ApplicationManagementActivity : AppActivity() {
                     } catch (_: SecurityException) {
                         false
                     }
-                    AppEntry(pkg, title, granted)
+                    val isOneTime = AuthorizationManager.isOneTime(uid)
+                    AppEntry(pkg, title, granted, isOneTime)
                 }
             }
 
@@ -251,6 +281,43 @@ class ApplicationManagementActivity : AppActivity() {
                                     modifier = Modifier.fillMaxWidth(),
                                     verticalArrangement = Arrangement.spacedBy(10.dp)
                                 ) {
+                                    Card(
+                                        shape = RoundedCornerShape(18.dp),
+                                        colors = CardDefaults.cardColors(
+                                            containerColor = MaterialTheme.colorScheme.surfaceContainerHigh
+                                        ),
+                                        modifier = Modifier.fillMaxWidth()
+                                    ) {
+                                        Row(
+                                            modifier = Modifier
+                                                .fillMaxWidth()
+                                                .padding(horizontal = 16.dp, vertical = 14.dp),
+                                            verticalAlignment = Alignment.CenterVertically
+                                        ) {
+                                            Column(modifier = Modifier.weight(1f)) {
+                                                Text(
+                                                    text = stringResource(R.string.whitelist_mode_title),
+                                                    style = MaterialTheme.typography.titleMedium,
+                                                    fontWeight = FontWeight.SemiBold
+                                                )
+                                                Spacer(modifier = Modifier.height(2.dp))
+                                                Text(
+                                                    text = stringResource(R.string.shizuku_whitelist_summary),
+                                                    style = MaterialTheme.typography.bodySmall,
+                                                    color = MaterialTheme.colorScheme.onSurfaceVariant
+                                                )
+                                            }
+                                            Spacer(modifier = Modifier.width(12.dp))
+                                            Switch(
+                                                checked = whitelistMode,
+                                                onCheckedChange = { checked ->
+                                                    whitelistMode = checked
+                                                    ShizukuSettings.setShizukuWhitelistEnabled(checked)
+                                                }
+                                            )
+                                        }
+                                    }
+
                                     TextField(
                                         value = searchQuery,
                                         onValueChange = { searchQuery = it },
@@ -440,6 +507,7 @@ class ApplicationManagementActivity : AppActivity() {
 
     override fun onResume() {
         super.onResume()
+        viewModel.load()
         permissionTick.intValue++
     }
 }
@@ -487,6 +555,23 @@ private fun AppPermissionRow(
         }
     }
 
+    fun makePermanent() {
+        try {
+            AuthorizationManager.grant(packageName, uid)
+            Toast.makeText(context, R.string.app_management_made_permanent, Toast.LENGTH_SHORT).show()
+            onPermissionChanged()
+        } catch (_: SecurityException) {
+            val serverUid = try {
+                Shizuku.getUid()
+            } catch (_: Throwable) {
+                return
+            }
+            if (serverUid != 0) {
+                onLimitedAdb()
+            }
+        }
+    }
+
     Row(
         modifier = Modifier
             .fillMaxWidth()
@@ -513,13 +598,36 @@ private fun AppPermissionRow(
             modifier = Modifier.weight(1f),
             verticalArrangement = Arrangement.spacedBy(3.dp)
         ) {
-            Text(
-                text = title,
-                style = MaterialTheme.typography.bodyLarge,
-                fontWeight = FontWeight.Medium,
-                maxLines = 1,
-                overflow = TextOverflow.Ellipsis
-            )
+            Row(
+                verticalAlignment = Alignment.CenterVertically,
+                horizontalArrangement = Arrangement.spacedBy(6.dp)
+            ) {
+                Text(
+                    text = title,
+                    style = MaterialTheme.typography.bodyLarge,
+                    fontWeight = FontWeight.Medium,
+                    maxLines = 1,
+                    overflow = TextOverflow.Ellipsis,
+                    modifier = Modifier.weight(1f, fill = false)
+                )
+                if (entry.isOneTime && granted) {
+                    Box(
+                        modifier = Modifier
+                            .size(24.dp)
+                            .clip(RoundedCornerShape(6.dp))
+                            .background(MaterialTheme.colorScheme.tertiaryContainer)
+                            .clickable(onClick = { makePermanent() }),
+                        contentAlignment = Alignment.Center
+                    ) {
+                        Icon(
+                            painter = painterResource(R.drawable.ic_schedule_24dp),
+                            contentDescription = stringResource(R.string.app_management_onetime_badge),
+                            tint = MaterialTheme.colorScheme.onTertiaryContainer,
+                            modifier = Modifier.size(15.dp)
+                        )
+                    }
+                }
+            }
             Text(
                 text = packageInfo.packageName,
                 style = MaterialTheme.typography.bodyMedium,

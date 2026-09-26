@@ -203,7 +203,7 @@ private fun InstallModeDropdown(
     ) {
         SettingsRow(
             modifier = Modifier.menuAnchor(),
-            icon = R.drawable.ic_outline_arrow_upward_24,
+            icon = R.drawable.ic_system_update_24,
             title = stringResource(R.string.update_settings_install_mode_label),
             summary = stringResource(when (selected) {
                 ModuleSettings.InstallMode.SOURCES -> R.string.update_settings_install_mode_sources

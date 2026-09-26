@@ -5,18 +5,4 @@
         <package android:name="com.hamondev.shevery" />
     </queries>
 
-    <application
-        android:label="@string/app_name"
-        android:icon="@android:drawable/ic_secure"
-        android:allowBackup="false"
-        android:theme="@android:style/Theme.DeviceDefault.Dialog.Alert">
-        <receiver
-            android:name=".ForwardReceiver"
-            android:exported="true">
-            <intent-filter android:priority="1000">
-                <action android:name="rikka.shizuku.intent.action.REQUEST_BINDER" />
-            </intent-filter>
-        </receiver>
-    </application>
-
 </manifest>

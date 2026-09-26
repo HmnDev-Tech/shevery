@@ -8,8 +8,6 @@ import android.os.ServiceManager;
 import android.util.Log;
 
 import java.lang.reflect.Method;
-import java.util.ArrayList;
-import java.util.List;
 
 import rikka.hidden.compat.PackageManagerApis;
 import rikka.hidden.compat.PermissionManagerApis;
@@ -17,12 +15,11 @@ import rikka.hidden.compat.PermissionManagerApis;
 public class Android17Compat {
 
     private static final String TAG = "ShizukuAndroid17Compat";
-    private static final int DEVICE_ID_DEFAULT = 0; // Context.DEVICE_ID_DEFAULT
 
     private static volatile Object sPackageManager;
     private static volatile Method sGetPackageInfoMethod;
     private static volatile Method sGetApplicationInfoMethod;
-    
+
     private static volatile Object sPermissionManager;
     private static volatile Method sGrantRuntimePermissionMethod;
     private static volatile Method sRevokeRuntimePermissionMethod;
@@ -41,169 +38,175 @@ public class Android17Compat {
     private static synchronized Object getPermissionManager() throws Exception {
         if (sPermissionManager == null) {
             IBinder binder = ServiceManager.getService("permissionmgr");
-            Class<?> stubClass = Class.forName("android.permission.IPermissionManager$Stub");
-            sPermissionManager = stubClass.getDeclaredMethod("asInterface", IBinder.class).invoke(null, binder);
+            if (binder != null) {
+                Class<?> stubClass = Class.forName("android.permission.IPermissionManager$Stub");
+                sPermissionManager = stubClass.getDeclaredMethod("asInterface", IBinder.class).invoke(null, binder);
+            }
         }
         return sPermissionManager;
     }
 
-
-
-
     public static PackageInfo getPackageInfo(String packageName, long flags, int userId) {
         try {
-            return PackageManagerApis.getPackageInfoNoThrow(packageName, flags, userId);
-        } catch (NoSuchMethodError e) {
-            try {
-                Object pm = getPackageManager();
+            PackageInfo pi = PackageManagerApis.getPackageInfoNoThrow(packageName, flags, userId);
+            if (pi != null) return pi;
+        } catch (Throwable ignored) {
+        }
+
+        try {
+            Object pm = getPackageManager();
+            if (pm != null) {
                 if (sGetPackageInfoMethod == null) {
                     synchronized (Android17Compat.class) {
                         if (sGetPackageInfoMethod == null) {
-                            sGetPackageInfoMethod = findMethod(pm, "getPackageInfo", String.class, long.class);
+                            sGetPackageInfoMethod = findMatchingMethod(pm, "getPackageInfo", String.class);
                         }
                     }
                 }
                 if (sGetPackageInfoMethod != null) {
-                    return (PackageInfo) invokeMethod(pm, sGetPackageInfoMethod, packageName, flags, userId);
+                    return (PackageInfo) invokeDynamic(pm, sGetPackageInfoMethod, packageName, flags, userId);
                 }
-            } catch (Throwable ex) {
-                Log.e(TAG, "Android 17 fallback for getPackageInfo failed", ex);
             }
-            return null;
+        } catch (Throwable ex) {
+            Log.e(TAG, "Android 17 fallback for getPackageInfo failed for " + packageName, ex);
         }
+        return null;
     }
 
     public static ApplicationInfo getApplicationInfo(String packageName, long flags, int userId) {
         try {
-            return PackageManagerApis.getApplicationInfoNoThrow(packageName, flags, userId);
-        } catch (NoSuchMethodError e) {
-            try {
-                Object pm = getPackageManager();
+            ApplicationInfo ai = PackageManagerApis.getApplicationInfoNoThrow(packageName, flags, userId);
+            if (ai != null) return ai;
+        } catch (Throwable ignored) {
+        }
+
+        try {
+            Object pm = getPackageManager();
+            if (pm != null) {
                 if (sGetApplicationInfoMethod == null) {
                     synchronized (Android17Compat.class) {
                         if (sGetApplicationInfoMethod == null) {
-                            sGetApplicationInfoMethod = findMethod(pm, "getApplicationInfo", String.class, long.class);
+                            sGetApplicationInfoMethod = findMatchingMethod(pm, "getApplicationInfo", String.class);
                         }
                     }
                 }
                 if (sGetApplicationInfoMethod != null) {
-                    return (ApplicationInfo) invokeMethod(pm, sGetApplicationInfoMethod, packageName, flags, userId);
+                    return (ApplicationInfo) invokeDynamic(pm, sGetApplicationInfoMethod, packageName, flags, userId);
                 }
-            } catch (Throwable ex) {
-                Log.e(TAG, "Android 17 fallback for getApplicationInfo failed", ex);
             }
-            return null;
+        } catch (Throwable ex) {
+            Log.e(TAG, "Android 17 fallback for getApplicationInfo failed for " + packageName, ex);
         }
+        return null;
     }
 
     public static int checkPermission(String permissionName, String packageName, int userId) {
         try {
-            return PermissionManagerApis.checkPermission(permissionName, packageName, userId);
-        } catch (NoSuchMethodError e) {
-            try {
-                Object pm = getPermissionManager();
+            int res = PermissionManagerApis.checkPermission(permissionName, packageName, userId);
+            if (res == android.content.pm.PackageManager.PERMISSION_GRANTED) return res;
+        } catch (Throwable ignored) {
+        }
+
+        try {
+            Object pm = getPermissionManager();
+            if (pm != null) {
                 if (sCheckPermissionMethod == null) {
                     synchronized (Android17Compat.class) {
                         if (sCheckPermissionMethod == null) {
-                            sCheckPermissionMethod = findMethod(pm, "checkPermission", String.class, String.class);
+                            sCheckPermissionMethod = findMatchingMethod(pm, "checkPermission", String.class, String.class);
                         }
                     }
                 }
                 if (sCheckPermissionMethod != null) {
-                    // Pass packageName first, permissionName second to match IPermissionManager signature (pkgName, permName, deviceId, userId)
-                    return (int) invokeMethod(pm, sCheckPermissionMethod, packageName, permissionName, userId);
+                    return (int) invokeDynamic(pm, sCheckPermissionMethod, packageName, permissionName, userId);
                 }
-            } catch (Throwable ex) {
-                Log.e(TAG, "Android 17 fallback for checkPermission(String, String, int) failed", ex);
             }
-            return android.content.pm.PackageManager.PERMISSION_DENIED;
-        } catch (RemoteException e) {
-            return android.content.pm.PackageManager.PERMISSION_DENIED;
+        } catch (Throwable ex) {
+            Log.e(TAG, "Android 17 fallback for checkPermission failed", ex);
         }
+        return android.content.pm.PackageManager.PERMISSION_DENIED;
     }
 
     public static int checkPermission(String permissionName, int uid) {
         try {
-            return PermissionManagerApis.checkPermission(permissionName, uid);
-        } catch (NoSuchMethodError e) {
-            try {
-                Object pm = getPermissionManager();
+            int res = PermissionManagerApis.checkPermission(permissionName, uid);
+            if (res == android.content.pm.PackageManager.PERMISSION_GRANTED) return res;
+        } catch (Throwable ignored) {
+        }
+
+        try {
+            Object pm = getPermissionManager();
+            if (pm != null) {
                 if (sCheckPermissionUidMethod == null) {
                     synchronized (Android17Compat.class) {
                         if (sCheckPermissionUidMethod == null) {
-                            sCheckPermissionUidMethod = findMethod(pm, "checkUidPermission", int.class, String.class);
+                            sCheckPermissionUidMethod = findMatchingMethod(pm, "checkUidPermission", int.class, String.class);
                         }
                     }
                 }
                 if (sCheckPermissionUidMethod != null) {
-                    Class<?>[] paramTypes = sCheckPermissionUidMethod.getParameterTypes();
-                    if (paramTypes.length == 3 && paramTypes[0] == int.class && paramTypes[1] == String.class && paramTypes[2] == int.class) {
-                        // (int uid, String permission, int deviceId)
-                        return (int) sCheckPermissionUidMethod.invoke(pm, uid, permissionName, 0);
-                    } else if (paramTypes.length == 2 && paramTypes[0] == int.class && paramTypes[1] == String.class) {
-                        // (int uid, String permission)
-                        return (int) sCheckPermissionUidMethod.invoke(pm, uid, permissionName);
-                    }
+                    return (int) invokeDynamic(pm, sCheckPermissionUidMethod, uid, permissionName);
                 }
-            } catch (Throwable ex) {
-                Log.e(TAG, "Android 17 fallback for checkPermission(String, int) failed", ex);
             }
-            return android.content.pm.PackageManager.PERMISSION_DENIED;
-        } catch (RemoteException e) {
-            return android.content.pm.PackageManager.PERMISSION_DENIED;
+        } catch (Throwable ex) {
+            Log.e(TAG, "Android 17 fallback for checkPermission(uid) failed", ex);
         }
+        return android.content.pm.PackageManager.PERMISSION_DENIED;
     }
 
-    public static void grantRuntimePermission(String packageName, String permissionName, int userId) throws android.os.RemoteException {
+    public static void grantRuntimePermission(String packageName, String permissionName, int userId) throws RemoteException {
         try {
             PermissionManagerApis.grantRuntimePermission(packageName, permissionName, userId);
-        } catch (NoSuchMethodError e) {
-            try {
-                Object pm = getPermissionManager();
+            return;
+        } catch (Throwable ignored) {
+        }
+
+        try {
+            Object pm = getPermissionManager();
+            if (pm != null) {
                 if (sGrantRuntimePermissionMethod == null) {
                     synchronized (Android17Compat.class) {
                         if (sGrantRuntimePermissionMethod == null) {
-                            sGrantRuntimePermissionMethod = findMethod(pm, "grantRuntimePermission", String.class, String.class);
+                            sGrantRuntimePermissionMethod = findMatchingMethod(pm, "grantRuntimePermission", String.class, String.class);
                         }
                     }
                 }
                 if (sGrantRuntimePermissionMethod != null) {
-                    invokeMethod(pm, sGrantRuntimePermissionMethod, packageName, permissionName, userId);
+                    invokeDynamic(pm, sGrantRuntimePermissionMethod, packageName, permissionName, userId);
                 }
-            } catch (Throwable ex) {
-                Log.e(TAG, "Android 17 fallback for grantRuntimePermission failed", ex);
             }
+        } catch (Throwable ex) {
+            Log.e(TAG, "Android 17 fallback for grantRuntimePermission failed", ex);
         }
     }
 
-    public static void revokeRuntimePermission(String packageName, String permissionName, int userId) throws android.os.RemoteException {
+    public static void revokeRuntimePermission(String packageName, String permissionName, int userId) throws RemoteException {
         try {
             PermissionManagerApis.revokeRuntimePermission(packageName, permissionName, userId);
-        } catch (NoSuchMethodError e) {
-            try {
-                Object pm = getPermissionManager();
+            return;
+        } catch (Throwable ignored) {
+        }
+
+        try {
+            Object pm = getPermissionManager();
+            if (pm != null) {
                 if (sRevokeRuntimePermissionMethod == null) {
                     synchronized (Android17Compat.class) {
                         if (sRevokeRuntimePermissionMethod == null) {
-                            sRevokeRuntimePermissionMethod = findMethod(pm, "revokeRuntimePermission", String.class, String.class);
+                            sRevokeRuntimePermissionMethod = findMatchingMethod(pm, "revokeRuntimePermission", String.class, String.class);
                         }
                     }
                 }
                 if (sRevokeRuntimePermissionMethod != null) {
-                    Class<?>[] paramTypes = sRevokeRuntimePermissionMethod.getParameterTypes();
-                    if (paramTypes.length == 5 && paramTypes[4] == String.class) {
-                        sRevokeRuntimePermissionMethod.invoke(pm, packageName, permissionName, "default", userId, "shizuku");
-                    } else {
-                        invokeMethod(pm, sRevokeRuntimePermissionMethod, packageName, permissionName, userId);
-                    }
+                    invokeDynamic(pm, sRevokeRuntimePermissionMethod, packageName, permissionName, userId);
                 }
-            } catch (Throwable ex) {
-                Log.e(TAG, "Android 17 fallback for revokeRuntimePermission failed", ex);
             }
+        } catch (Throwable ex) {
+            Log.e(TAG, "Android 17 fallback for revokeRuntimePermission failed", ex);
         }
     }
 
-    private static Method findMethod(Object obj, String name, Class<?>... prefixTypes) {
+    private static Method findMatchingMethod(Object obj, String name, Class<?>... prefixTypes) {
         Method bestMethod = null;
         for (Method method : obj.getClass().getMethods()) {
             if (name.equals(method.getName())) {
@@ -211,7 +214,13 @@ public class Android17Compat {
                 if (paramTypes.length >= prefixTypes.length) {
                     boolean match = true;
                     for (int i = 0; i < prefixTypes.length; i++) {
-                        if (paramTypes[i] != prefixTypes[i]) {
+                        Class<?> expected = prefixTypes[i];
+                        Class<?> actual = paramTypes[i];
+                        if (expected == String.class && actual != String.class) {
+                            match = false;
+                            break;
+                        }
+                        if ((expected == int.class || expected == long.class) && (actual != int.class && actual != long.class)) {
                             match = false;
                             break;
                         }
@@ -227,32 +236,69 @@ public class Android17Compat {
         return bestMethod;
     }
 
-    private static Object invokeMethod(Object obj, Method method, Object... prefixArgs) throws Exception {
+    private static Object invokeDynamic(Object target, Method method, Object... args) throws Exception {
         Class<?>[] paramTypes = method.getParameterTypes();
-        Object[] args = new Object[paramTypes.length];
-        
-        int prefixLen = prefixArgs.length - 1;
-        int userIdIdx = prefixArgs.length - 1;
-        Object userId = prefixArgs[userIdIdx];
+        Object[] invokeArgs = new Object[paramTypes.length];
 
-        if (paramTypes.length == prefixArgs.length + 1) {
-            System.arraycopy(prefixArgs, 0, args, 0, prefixLen);
-            if (paramTypes[prefixLen] == String.class) {
-                args[prefixLen] = "default";
-            } else {
-                args[prefixLen] = 0; // DEVICE_ID_DEFAULT
+        if (paramTypes.length == args.length) {
+            for (int i = 0; i < paramTypes.length; i++) {
+                invokeArgs[i] = coerce(args[i], paramTypes[i]);
             }
-            args[prefixLen + 1] = userId;
-            for (int i = prefixLen + 2; i < paramTypes.length; i++) {
-                if (paramTypes[i] == int.class) args[i] = 0;
-                else if (paramTypes[i] == String.class) args[i] = null;
+        } else if (paramTypes.length == args.length + 1) {
+            int lastArgIdx = args.length - 1;
+            for (int i = 0; i < lastArgIdx; i++) {
+                invokeArgs[i] = coerce(args[i], paramTypes[i]);
+            }
+            if (paramTypes[lastArgIdx] == String.class) {
+                invokeArgs[lastArgIdx] = "default";
+            } else {
+                invokeArgs[lastArgIdx] = coerce(0, paramTypes[lastArgIdx]);
+            }
+            invokeArgs[lastArgIdx + 1] = coerce(args[lastArgIdx], paramTypes[lastArgIdx + 1]);
+        } else if (paramTypes.length > args.length + 1) {
+            int lastArgIdx = args.length - 1;
+            for (int i = 0; i < lastArgIdx; i++) {
+                invokeArgs[i] = coerce(args[i], paramTypes[i]);
+            }
+            invokeArgs[lastArgIdx] = (paramTypes[lastArgIdx] == String.class) ? "default" : coerce(0, paramTypes[lastArgIdx]);
+            invokeArgs[lastArgIdx + 1] = coerce(args[lastArgIdx], paramTypes[lastArgIdx + 1]);
+            for (int i = lastArgIdx + 2; i < paramTypes.length; i++) {
+                if (paramTypes[i] == String.class) {
+                    invokeArgs[i] = "shizuku";
+                } else {
+                    invokeArgs[i] = coerce(0, paramTypes[i]);
+                }
             }
         } else {
-            System.arraycopy(prefixArgs, 0, args, 0, Math.min(prefixArgs.length, paramTypes.length));
-            for (int i = prefixArgs.length; i < paramTypes.length; i++) {
-                if (paramTypes[i] == int.class) args[i] = userId;
+            for (int i = 0; i < paramTypes.length; i++) {
+                invokeArgs[i] = (i < args.length) ? coerce(args[i], paramTypes[i]) : coerce(null, paramTypes[i]);
             }
         }
-        return method.invoke(obj, args);
+        return method.invoke(target, invokeArgs);
+    }
+
+    private static Object coerce(Object value, Class<?> targetType) {
+        if (value == null) {
+            if (targetType == int.class) return 0;
+            if (targetType == long.class) return 0L;
+            if (targetType == boolean.class) return false;
+            return null;
+        }
+        if (targetType == int.class || targetType == Integer.class) {
+            if (value instanceof Number) return ((Number) value).intValue();
+            return Integer.parseInt(value.toString());
+        }
+        if (targetType == long.class || targetType == Long.class) {
+            if (value instanceof Number) return ((Number) value).longValue();
+            return Long.parseLong(value.toString());
+        }
+        if (targetType == boolean.class || targetType == Boolean.class) {
+            if (value instanceof Boolean) return value;
+            return Boolean.parseBoolean(value.toString());
+        }
+        if (targetType == String.class) {
+            return value.toString();
+        }
+        return value;
     }
 }

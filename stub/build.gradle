@@ -3,11 +3,21 @@ plugins {
 }
 
 android {
-    namespace 'moe.shizuku.privileged.api'
+    namespace 'shevery.compat.stub'
     defaultConfig {
-        applicationId "moe.shizuku.privileged.api"
         versionCode 2000000000
         versionName "14.0.0"
+    }
+    flavorDimensions = ['stubType']
+    productFlavors {
+        shizuku {
+            dimension 'stubType'
+            applicationId "moe.shizuku.privileged.api"
+        }
+        dhizuku {
+            dimension 'stubType'
+            applicationId "com.rosan.dhizuku"
+        }
     }
     buildFeatures {
         buildConfig false
@@ -39,23 +49,36 @@ def registerStubApkCopyTask(String variantName) {
     tasks.register("copy${capitalized}StubApk") {
         dependsOn("assemble${capitalized}")
 
-        def apkFiles = fileTree(layout.buildDirectory.dir("outputs/apk/${variantName}")) {
-            include '*.apk'
-        }
         def stubPath = rootProject.layout.projectDirectory.dir("manager/build/generated/stub/${variantName}/assets")
-
-        inputs.files(apkFiles)
-        outputs.file(stubPath.file("shevery-stub.apk"))
+        outputs.files(
+            stubPath.file("shevery-stub.apk"),
+            stubPath.file("shevery-dhizuku-stub.apk")
+        )
 
         doLast {
-            def apk = apkFiles.files.find { it.name.endsWith(".apk") }
-            if (apk == null) {
-                throw new GradleException("Stub ${variantName} APK was not found")
+            def shizukuApk = fileTree(layout.buildDirectory.dir("outputs/apk/shizuku/${variantName}")) {
+                include '*.apk'
+            }.files.find { it.name.endsWith(".apk") }
+
+            def dhizukuApk = fileTree(layout.buildDirectory.dir("outputs/apk/dhizuku/${variantName}")) {
+                include '*.apk'
+            }.files.find { it.name.endsWith(".apk") }
+
+            if (shizukuApk == null) {
+                throw new GradleException("Stub Shizuku ${variantName} APK was not found")
+            }
+            if (dhizukuApk == null) {
+                throw new GradleException("Stub Dhizuku ${variantName} APK was not found")
             }
             copy {
-                from apk
+                from shizukuApk
                 into stubPath
                 rename { 'shevery-stub.apk' }
+            }
+            copy {
+                from dhizukuApk
+                into stubPath
+                rename { 'shevery-dhizuku-stub.apk' }
             }
         }
     }

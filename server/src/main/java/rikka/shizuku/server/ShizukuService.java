@@ -14,6 +14,7 @@ import static rikka.shizuku.ShizukuApiConstants.REQUEST_PERMISSION_REPLY_IS_ONET
 import static rikka.shizuku.server.ServerConstants.MANAGER_APPLICATION_ID;
 import static rikka.shizuku.server.ServerConstants.PERMISSION;
 
+import android.content.ComponentName;
 import android.content.Context;
 import android.content.IContentProvider;
 import android.content.Intent;
@@ -261,26 +262,27 @@ public class ShizukuService extends Service<ShizukuUserServiceManager, ShizukuCl
     public void showPermissionConfirmation(int requestCode, @NonNull ClientRecord clientRecord, int callingUid, int callingPid, int userId) {
         ApplicationInfo ai = Android17Compat.getApplicationInfo(clientRecord.packageName, 0, userId);
         if (ai == null) {
-            return;
+            ai = new ApplicationInfo();
+            ai.packageName = clientRecord.packageName;
+            ai.uid = callingUid;
         }
 
         PackageInfo pi = Android17Compat.getPackageInfo(MANAGER_APPLICATION_ID, 0, userId);
         UserInfo userInfo = UserManagerApis.getUserInfo(userId);
         boolean isWorkProfileUser = BuildUtils.atLeast30() ?
-                "android.os.usertype.profile.MANAGED".equals(userInfo.userType) :
-                (userInfo.flags & UserInfo.FLAG_MANAGED_PROFILE) != 0;
+                (userInfo != null && "android.os.usertype.profile.MANAGED".equals(userInfo.userType)) :
+                (userInfo != null && (userInfo.flags & UserInfo.FLAG_MANAGED_PROFILE) != 0);
         if (pi == null && !isWorkProfileUser) {
-            LOGGER.w("Manager not found in non work profile user %d. Revoke permission", userId);
-            clientRecord.dispatchRequestPermissionResult(requestCode, false);
-            return;
+            LOGGER.w("Manager package info not found for user %d via reflection, proceeding with start activity anyway", userId);
         }
 
         Intent intent = new Intent(ServerConstants.REQUEST_PERMISSION_ACTION)
-                .setPackage(MANAGER_APPLICATION_ID)
+                .setComponent(new ComponentName(MANAGER_APPLICATION_ID, "moe.shizuku.manager.authorization.RequestPermissionActivity"))
                 .addFlags(Intent.FLAG_ACTIVITY_NEW_TASK | Intent.FLAG_ACTIVITY_NEW_DOCUMENT)
                 .putExtra("uid", callingUid)
                 .putExtra("pid", callingPid)
                 .putExtra("requestCode", requestCode)
+                .putExtra("packageName", clientRecord.packageName)
                 .putExtra("applicationInfo", ai);
         ActivityManagerApis.startActivityNoThrow(intent, null, isWorkProfileUser ? 0 : userId);
     }

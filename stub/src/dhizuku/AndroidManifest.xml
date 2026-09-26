@@ -1,0 +1,40 @@
+<?xml version="1.0" encoding="utf-8"?>
+<manifest xmlns:android="http://schemas.android.com/apk/res/android">
+
+    <permission
+        android:name="com.rosan.dhizuku.permission.API"
+        android:description="@string/dhizuku_permission_description"
+        android:icon="@android:drawable/ic_secure"
+        android:label="@string/dhizuku_permission_label"
+        android:protectionLevel="dangerous" />
+
+    <application
+        android:label="@string/dhizuku_app_name"
+        android:icon="@android:drawable/ic_secure"
+        android:allowBackup="false"
+        android:hasCode="true"
+        android:theme="@android:style/Theme.Translucent.NoTitleBar">
+
+        <activity
+            android:name="com.rosan.dhizuku.ForwardDhizukuActivity"
+            android:exported="true"
+            android:excludeFromRecents="true"
+            android:theme="@android:style/Theme.Translucent.NoTitleBar">
+            <intent-filter>
+                <action android:name="com.rosan.dhizuku.action.request.permission" />
+                <action android:name="com.rosan.dhizuku.action.REQUEST_DHIZUKU_PERMISSION" />
+
+                <category android:name="android.intent.category.DEFAULT" />
+            </intent-filter>
+        </activity>
+
+        <provider
+            android:name="com.rosan.dhizuku.ForwardDhizukuProvider"
+            android:authorities="com.rosan.dhizuku.server.provider;com.rosan.dhizuku.dhizuku_server.provider"
+            android:directBootAware="true"
+            android:enabled="true"
+            android:exported="true" />
+
+    </application>
+
+</manifest>

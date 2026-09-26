@@ -58,6 +58,7 @@ import androidx.compose.material.icons.automirrored.rounded.HelpOutline
 import androidx.compose.material.icons.automirrored.rounded.OpenInNew
 import androidx.compose.material.icons.rounded.AdminPanelSettings
 import androidx.compose.material.icons.rounded.Apps
+import androidx.compose.material.icons.rounded.Backup
 import androidx.compose.material.icons.rounded.Cancel
 import androidx.compose.material.icons.rounded.Check
 import androidx.compose.material.icons.rounded.CheckCircle
@@ -76,6 +77,8 @@ import androidx.compose.material.icons.rounded.PlayArrow
 import androidx.compose.material.icons.rounded.Refresh
 import androidx.compose.material.icons.rounded.School
 import androidx.compose.material.icons.rounded.Settings
+import androidx.compose.material.icons.rounded.SettingsBackupRestore
+import androidx.compose.material.icons.rounded.SystemUpdate
 import androidx.compose.material.icons.rounded.Terminal
 import androidx.compose.material.icons.rounded.Translate
 import androidx.compose.material.icons.rounded.Warning
@@ -393,9 +396,7 @@ fun ShizukuScaffold(
         val navBarState = LocalFloatingNavBarVisible.current
         DisposableEffect(Unit) {
             navBarState.value = false
-            onDispose {
-                navBarState.value = true
-            }
+            onDispose {}
         }
     }
 
@@ -874,6 +875,9 @@ private fun roundedIconFor(@DrawableRes icon: Int): ImageVector? {
         R.drawable.ic_adb_24dp -> Icons.Rounded.DeveloperMode
         R.drawable.ic_learn_more_24dp -> Icons.Rounded.School
         R.drawable.ic_root_24dp -> Icons.Rounded.AdminPanelSettings
+        R.drawable.ic_system_update_24 -> Icons.Rounded.SystemUpdate
+        R.drawable.ic_settings_backup_restore_24dp -> Icons.Rounded.SettingsBackupRestore
+        R.drawable.ic_backup_24dp -> Icons.Rounded.Backup
         else -> null
     }
 }

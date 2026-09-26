@@ -22,6 +22,7 @@
     <string name="home_adb_button_view_help">Read help</string>
     <string name="home_adb_button_view_command">View command</string>
     <string name="home_adb_dialog_view_command_notice">There are some other considerations, please confirm that you have read the help first.</string>
+    <string name="home_adb_dialog_view_command_message"><![CDATA[<font face="monospace">%1$s</font><br/><br/>* There are some other considerations, please confirm that you have read the help first.]]></string>
     <string name="home_adb_dialog_view_command_copy_button">Copy</string>
     <string name="home_adb_dialog_view_command_button_send">Send</string>
 
@@ -282,10 +283,13 @@ With %1$s, in any terminal app, you can connect to and interact with the shell r
     <string name="permission_group_label" translatable="false">Shevery</string>
     <string name="permission_group_description" translatable="false">@string/permission_label</string>
     <string name="permission_label">access Shevery</string>
+    <string name="dhizuku_permission_label">access Device Owner privileges</string>
+    <string name="dhizuku_permission_group_description" translatable="false">@string/dhizuku_permission_label</string>
     <string name="permission_description">Allow the app to use Shevery.</string>
     <string name="permission_warning_template"><![CDATA[Allow <b>%1$s</b> to %2$s?]]></string>
     <string name="grant_dialog_button_allow_always">Allow all the time</string>
-    <string name="grant_dialog_button_deny">"Deny"</string>
+    <string name="grant_dialog_button_allow_once">Allow this time</string>
+    <string name="grant_dialog_button_deny">Deny</string>
 
     <!-- Starter -->
     <string name="starter">Starter</string>
