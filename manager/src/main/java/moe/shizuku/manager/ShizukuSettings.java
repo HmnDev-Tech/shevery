@@ -169,6 +169,25 @@ public class ShizukuSettings {
         getPreferences().edit().putBoolean(USE_CLASSIC_NAV, enabled).apply();
     }
 
+    public static final String SHIZUKU_WHITELIST_MODE = "shizuku_whitelist_mode";
+    public static final String DEVICE_OWNER_WHITELIST_MODE = "device_owner_whitelist_mode";
+
+    public static boolean isShizukuWhitelistEnabled() {
+        return getPreferences().getBoolean(SHIZUKU_WHITELIST_MODE, false);
+    }
+
+    public static void setShizukuWhitelistEnabled(boolean enabled) {
+        getPreferences().edit().putBoolean(SHIZUKU_WHITELIST_MODE, enabled).apply();
+    }
+
+    public static boolean isDeviceOwnerWhitelistEnabled() {
+        return getPreferences().getBoolean(DEVICE_OWNER_WHITELIST_MODE, false);
+    }
+
+    public static void setDeviceOwnerWhitelistEnabled(boolean enabled) {
+        getPreferences().edit().putBoolean(DEVICE_OWNER_WHITELIST_MODE, enabled).apply();
+    }
+
     public static final String AUTH_TOKEN = "auth_token";
 
     public static String getAuthToken() {
