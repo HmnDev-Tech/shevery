@@ -4,6 +4,7 @@ import android.content.ContentProvider;
 import android.content.ContentValues;
 import android.database.Cursor;
 import android.net.Uri;
+import android.os.Build;
 import android.os.Bundle;
 
 public class ForwardDhizukuProvider extends ContentProvider {
@@ -19,8 +20,12 @@ public class ForwardDhizukuProvider extends ContentProvider {
     public Bundle call(String method, String arg, Bundle extras) {
         try {
             if (getContext() != null) {
-                Uri uri = Uri.parse("content://" + SHEVERY_AUTHORITY);
-                return getContext().getContentResolver().call(uri, method, arg, extras);
+                if (Build.VERSION.SDK_INT >= Build.VERSION_CODES.Q) {
+                    Uri uri = Uri.parse("content://" + SHEVERY_AUTHORITY);
+                    return getContext().getContentResolver().call(uri, method, arg, extras);
+                } else {
+                    return getContext().getContentResolver().call(SHEVERY_AUTHORITY, method, arg, extras);
+                }
             }
         } catch (Throwable ignored) {
         }

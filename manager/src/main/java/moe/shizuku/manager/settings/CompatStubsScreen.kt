@@ -22,10 +22,12 @@ import androidx.compose.ui.text.font.FontFamily
 import androidx.compose.ui.text.font.FontWeight
 import androidx.compose.ui.unit.dp
 import kotlinx.coroutines.launch
+import androidx.compose.runtime.snapshotFlow
 import moe.shizuku.manager.R
 import moe.shizuku.manager.compat.StubManager
 import moe.shizuku.manager.security.AuthManager
 import moe.shizuku.manager.security.SecuritySettings
+import moe.shizuku.manager.ui.compose.LocalFloatingNavBarVisible
 import moe.shizuku.manager.ui.compose.ShizukuExpressiveTheme
 import moe.shizuku.manager.ui.compose.ShizukuLazyScaffold
 
@@ -35,6 +37,19 @@ fun CompatStubsScreen(
 ) {
     val context = LocalContext.current
     val scope = rememberCoroutineScope()
+    val navBarState = LocalFloatingNavBarVisible.current
+
+    DisposableEffect(Unit) {
+        navBarState.value = false
+        val watcher = scope.launch {
+            snapshotFlow { navBarState.value }.collect { visible ->
+                if (visible) navBarState.value = false
+            }
+        }
+        onDispose {
+            watcher.cancel()
+        }
+    }
 
     var shizukuInstalled by remember { mutableStateOf(StubManager.isInstalled(context, StubManager.StubType.SHIZUKU)) }
     var dhizukuInstalled by remember { mutableStateOf(StubManager.isInstalled(context, StubManager.StubType.DHIZUKU)) }
@@ -109,7 +124,7 @@ fun CompatStubsScreen(
         ShizukuLazyScaffold(
             title = stringResource(R.string.settings_compat_stubs_title),
             onNavigateUp = onNavigateUp,
-            bottomInset = 120.dp
+            bottomInset = 32.dp
         ) {
             item {
                 Surface(

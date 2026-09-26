@@ -179,9 +179,6 @@ object StubManager {
             try {
                 val packageInstaller = context.packageManager.packageInstaller
                 val params = PackageInstaller.SessionParams(PackageInstaller.SessionParams.MODE_FULL_INSTALL)
-                if (Build.VERSION.SDK_INT >= Build.VERSION_CODES.S) {
-                    params.setRequireUserAction(PackageInstaller.SessionParams.USER_ACTION_NOT_REQUIRED)
-                }
                 if (Build.VERSION.SDK_INT >= 34) {
                     try {
                         val method = params.javaClass.getMethod("setInstallFlags", Int::class.javaPrimitiveType)
@@ -213,6 +210,19 @@ object StubManager {
                         override fun onReceive(c: Context?, i: Intent?) {
                             val status = i?.getIntExtra(PackageInstaller.EXTRA_STATUS, PackageInstaller.STATUS_FAILURE)
                             val msg = i?.getStringExtra(PackageInstaller.EXTRA_STATUS_MESSAGE)
+                            if (status == PackageInstaller.STATUS_PENDING_USER_ACTION) {
+                                val confirmIntent = if (Build.VERSION.SDK_INT >= Build.VERSION_CODES.TIRAMISU) {
+                                    i.getParcelableExtra(Intent.EXTRA_INTENT, Intent::class.java)
+                                } else {
+                                    @Suppress("DEPRECATION")
+                                    i.getParcelableExtra(Intent.EXTRA_INTENT)
+                                }
+                                if (confirmIntent != null) {
+                                    confirmIntent.addFlags(Intent.FLAG_ACTIVITY_NEW_TASK)
+                                    context.startActivity(confirmIntent)
+                                    return
+                                }
+                            }
                             synchronized(lock) {
                                 installResult = if (status == PackageInstaller.STATUS_SUCCESS) {
                                     Result(true, CHANNEL_DEVICE_OWNER)
@@ -234,7 +244,7 @@ object StubManager {
                         session.close()
                         synchronized(lock) {
                             if (installResult == null) {
-                                lock.wait(15000L)
+                                lock.wait(60000L)
                             }
                         }
                     } finally {
@@ -269,6 +279,19 @@ object StubManager {
                     override fun onReceive(c: Context?, i: Intent?) {
                         val status = i?.getIntExtra(PackageInstaller.EXTRA_STATUS, PackageInstaller.STATUS_FAILURE)
                         val msg = i?.getStringExtra(PackageInstaller.EXTRA_STATUS_MESSAGE)
+                        if (status == PackageInstaller.STATUS_PENDING_USER_ACTION) {
+                            val confirmIntent = if (Build.VERSION.SDK_INT >= Build.VERSION_CODES.TIRAMISU) {
+                                i.getParcelableExtra(Intent.EXTRA_INTENT, Intent::class.java)
+                            } else {
+                                @Suppress("DEPRECATION")
+                                i.getParcelableExtra(Intent.EXTRA_INTENT)
+                            }
+                            if (confirmIntent != null) {
+                                confirmIntent.addFlags(Intent.FLAG_ACTIVITY_NEW_TASK)
+                                context.startActivity(confirmIntent)
+                                return
+                            }
+                        }
                         synchronized(lock) {
                             uninstallResult = if (status == PackageInstaller.STATUS_SUCCESS) {
                                 Result(true, CHANNEL_DEVICE_OWNER)
@@ -289,7 +312,7 @@ object StubManager {
                     packageInstaller.uninstall(type.packageName, pendingIntent.intentSender)
                     synchronized(lock) {
                         if (uninstallResult == null) {
-                            lock.wait(10000L)
+                            lock.wait(30000L)
                         }
                     }
                 } finally {
@@ -356,7 +379,8 @@ object StubManager {
             }.getOrDefault("")
             val errorMsg = listOf(errText, outText).filter { it.isNotBlank() }.joinToString(" | ")
 
-            if (exitCode == 0) Result(true, CHANNEL_SERVER)
+            val hasFailure = outText.contains("Failure", ignoreCase = true) || errText.contains("Failure", ignoreCase = true)
+            if (exitCode == 0 && !hasFailure) Result(true, CHANNEL_SERVER)
             else Result(false, CHANNEL_SERVER, if (errorMsg.isNotBlank()) errorMsg else "exit code $exitCode")
         } catch (e: Throwable) {
             Result(false, CHANNEL_SERVER, e.message ?: e.javaClass.simpleName)
@@ -415,7 +439,7 @@ object StubManager {
         return Result(false, CHANNEL_ADB, "all ADB ports failed")
     }
 
-    private suspend fun pollInstalled(context: Context, type: StubType, wantInstalled: Boolean, timeoutMs: Long = 5_000L): Boolean {
+    private suspend fun pollInstalled(context: Context, type: StubType, wantInstalled: Boolean, timeoutMs: Long = 10_000L): Boolean {
         val deadline = SystemClock.elapsedRealtime() + timeoutMs
         while (SystemClock.elapsedRealtime() < deadline) {
             if (isInstalled(context, type) == wantInstalled) return true
