@@ -458,7 +458,12 @@ abstract class HomeActivity : AppActivity() {
                                     listState = modulesListState,
                                     modulesState = cachedModules
                                 )
-                                2 -> moe.shizuku.manager.logs.ComputScreen(listState = computListState)
+                                2 -> moe.shizuku.manager.logs.ComputScreen(
+                                    listState = computListState,
+                                    onSubpageChange = { isSubpage ->
+                                        floatingNavBarVisible.value = !isSubpage
+                                    }
+                                )
                                 3 -> moe.shizuku.manager.settings.SettingsScreen(
                                     listState = settingsListState,
                                     onSubpageChange = { isSubpage ->

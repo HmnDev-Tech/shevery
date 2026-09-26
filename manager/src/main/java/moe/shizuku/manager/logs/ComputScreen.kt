@@ -103,6 +103,7 @@ import androidx.compose.material3.TextField
 import androidx.compose.material3.TextFieldDefaults
 import androidx.compose.material3.rememberModalBottomSheetState
 import androidx.compose.runtime.Composable
+import androidx.compose.runtime.DisposableEffect
 import androidx.compose.runtime.LaunchedEffect
 import androidx.compose.runtime.derivedStateOf
 import androidx.compose.runtime.getValue
@@ -136,6 +137,7 @@ import kotlinx.coroutines.launch
 import kotlinx.coroutines.withContext
 import moe.shizuku.manager.R
 import moe.shizuku.manager.module.ModuleSettings
+import moe.shizuku.manager.ui.compose.LocalFloatingNavBarVisible
 import moe.shizuku.manager.ui.compose.ShizukuScaffold
 import moe.shizuku.manager.settings.AiManagerScreen
 import moe.shizuku.manager.utils.AiExplainUtil
@@ -165,7 +167,8 @@ private val ComputSpring = spring<Float>(
 
 @Composable
 fun ComputScreen(
-    listState: LazyListState = rememberLazyListState()
+    listState: LazyListState = rememberLazyListState(),
+    onSubpageChange: (Boolean) -> Unit = {}
 ) {
     val context = LocalContext.current
     val scope = rememberCoroutineScope()
@@ -192,6 +195,28 @@ fun ComputScreen(
     var showAiManager by remember { mutableStateOf(false) }
     var showMacrosSheet by remember { mutableStateOf(false) }
     var showPresetsSheet by remember { mutableStateOf(false) }
+
+    val navBarState = LocalFloatingNavBarVisible.current
+
+    LaunchedEffect(showAiManager) {
+        val isSubpage = showAiManager
+        navBarState.value = !isSubpage
+        onSubpageChange(isSubpage)
+        if (isSubpage) {
+            snapshotFlow { navBarState.value }.collect { visible ->
+                if (visible) {
+                    navBarState.value = false
+                }
+            }
+        }
+    }
+
+    DisposableEffect(Unit) {
+        onDispose {
+            navBarState.value = true
+            onSubpageChange(false)
+        }
+    }
 
     // AI Provider manager replaces the whole Comput tab while open: composing
     // it AFTER the Scaffold stacked a second TopAppBar over this one (dead
