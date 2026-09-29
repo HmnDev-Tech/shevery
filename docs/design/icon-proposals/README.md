@@ -50,6 +50,18 @@ the author's own design. All artwork is contributed under the project's
 license and contains no third-party assets or mascots from other
 projects.
 
+## Feedback welcome
+
+If you have thoughts on any of these concepts — color, composition, 
+which one feels right for Shevery — please share in the linked issue. 
+Happy to iterate or create variations.
+
+## How to preview
+
+Each SVG file can be opened directly in any modern browser, or imported 
+into Figma/Illustrator/Inkscape for editing. The shared palette above 
+makes it easy to recolor any concept to match a different theme.
+
 ## Next step (once a concept is chosen)
 
 A follow-up PR will implement the chosen concept as a real adaptive
