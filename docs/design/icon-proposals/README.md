@@ -1,7 +1,7 @@
 # Launcher Icon Proposals
 
 Design proposals for a refreshed Shevery launcher icon, discussed in
-issue #ISSUE_NUMBER and introduced by PR #PR_NUMBER.
+introduced by PR #https://github.com/HmnDev-Tech/shevery/pull/253.
 
 The current icon's composition (cat cropped into a corner, gear mostly
 hidden behind it) does not respect the adaptive-icon safe zone, so many
