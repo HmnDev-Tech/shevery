@@ -11,9 +11,12 @@
     <circle cx="256" cy="256" r="152"/>
   </g>
   <circle cx="256" cy="256" r="120" fill="#1B2036"/>
+  <circle cx="256" cy="256" r="102" fill="#6672C5"/>
   <g fill="#F7F7FB">
-    <path d="M184 210 L194 146 L240 188 Z"/>
-    <path d="M328 210 L318 146 L272 188 Z"/>
-    <ellipse cx="256" cy="264" rx="90" ry="82"/>
+    <ellipse cx="222" cy="212" rx="22" ry="32" transform="rotate(-12 222 212)"/>
+    <ellipse cx="290" cy="212" rx="22" ry="32" transform="rotate(12 290 212)"/>
+    <ellipse cx="172" cy="252" rx="20" ry="28" transform="rotate(-32 172 252)"/>
+    <ellipse cx="340" cy="252" rx="20" ry="28" transform="rotate(32 340 252)"/>
+    <path d="M256 252c38 0 70 28 70 60 0 34-31 52-70 52s-70-18-70-52c0-32 32-60 70-60z"/>
   </g>
 </svg>
