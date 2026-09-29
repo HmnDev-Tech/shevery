@@ -1,0 +1,19 @@
+<svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 512 512">
+  <rect width="512" height="512" fill="#6672C5"/>
+  <path d="M196 132 A 150 150 0 1 1 132 320" fill="none" stroke="#F7F7FB" stroke-width="72" stroke-linecap="round"/>
+  <g fill="#F7F7FB">
+    <path d="M150 96 L158 50 L198 78 Z"/>
+    <path d="M232 84 L254 42 L264 92 Z"/>
+    <ellipse cx="198" cy="128" rx="62" ry="54"/>
+  </g>
+  <circle cx="184" cy="128" r="9" fill="#262B45"/>
+  <g fill="#262B45">
+    <rect id="t" x="244" y="176" width="24" height="42" rx="6"/>
+    <use href="#t" transform="rotate(45 256 256)"/><use href="#t" transform="rotate(90 256 256)"/>
+    <use href="#t" transform="rotate(135 256 256)"/><use href="#t" transform="rotate(180 256 256)"/>
+    <use href="#t" transform="rotate(225 256 256)"/><use href="#t" transform="rotate(270 256 256)"/>
+    <use href="#t" transform="rotate(315 256 256)"/>
+    <circle cx="256" cy="256" r="62"/>
+  </g>
+  <circle cx="256" cy="256" r="26" fill="#F7F7FB"/>
+</svg>
