@@ -59,7 +59,7 @@ class RequestPermissionActivity : AppActivity() {
     }
 
     private fun checkSelfPermission(): Boolean {
-        if (DeviceOwnerManager.isDeviceOwner(this)) {
+        if (DeviceOwnerManager.isOwner(this)) {
             return true
         }
         if (!Shizuku.isPreV11()) {
@@ -284,7 +284,7 @@ class RequestPermissionActivity : AppActivity() {
         }
 
         val isDhizuku = dhizukuListener != null || intent.action?.contains("dhizuku", ignoreCase = true) == true
-        val isDeviceOwner = DeviceOwnerManager.isDeviceOwner(this)
+        val isOwner = DeviceOwnerManager.isOwner(this)
 
         if (isDhizuku && DhizukuAuthManager.isGranted(this, uid)) {
             LOGGER.i("UID $uid already granted Dhizuku permission, confirming immediately")
@@ -326,7 +326,7 @@ class RequestPermissionActivity : AppActivity() {
             }
         }
 
-        if (isDhizuku || isDeviceOwner) {
+        if (isDhizuku || isOwner) {
             initUi(uid, pid, requestCode, ai, dhizukuListener, isDhizuku)
         } else if (Shizuku.pingBinder()) {
             initUi(uid, pid, requestCode, ai, dhizukuListener, isDhizuku)
@@ -362,7 +362,7 @@ class RequestPermissionActivity : AppActivity() {
             return
         }
 
-        val isDeviceOwner = DeviceOwnerManager.isDeviceOwner(this)
+        val isOwner = DeviceOwnerManager.isOwner(this)
 
         val pm = packageManager
         val label = try {
@@ -390,7 +390,7 @@ class RequestPermissionActivity : AppActivity() {
                 fun denyPermission() {
                     if (isDhizuku) {
                         DhizukuAuthManager.revoke(this@RequestPermissionActivity, uid)
-                        if (isDeviceOwner) {
+                        if (isOwner) {
                             try {
                                 DeviceOwnerManager.setDelegatedScopes(
                                     this@RequestPermissionActivity,
@@ -423,7 +423,7 @@ class RequestPermissionActivity : AppActivity() {
                     fun proceed() {
                         if (isDhizuku) {
                             DhizukuAuthManager.grant(this@RequestPermissionActivity, uid, onetime = onetime)
-                            if (isDeviceOwner) {
+                            if (isOwner) {
                                 try {
                                     DeviceOwnerManager.setDelegatedScopes(
                                         this@RequestPermissionActivity,

@@ -1145,7 +1145,7 @@ private fun LazyListScope.applicationSectionContent(
                 checked = watchdog,
                 onCheckedChange = onWatchdogChange
             )
-            if (!DeviceOwnerManager.isDeviceOwner(LocalContext.current)) {
+            if (!DeviceOwnerManager.isOwner(LocalContext.current)) {
                 GroupDivider()
                 SwitchSettingsRow(
                     icon = R.drawable.ic_outline_info_24,

@@ -59,7 +59,7 @@ object AdbArm {
      */
     fun method(context: Context): Method = when {
         hasWriteSecureSettings(context) -> Method.WRITE_SECURE_SETTINGS
-        DeviceOwnerManager.isDeviceOwner(context) -> Method.DEVICE_OWNER
+        DeviceOwnerManager.isOwner(context) -> Method.DEVICE_OWNER
         else -> Method.NONE
     }
 

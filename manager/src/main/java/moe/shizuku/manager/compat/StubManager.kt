@@ -96,7 +96,7 @@ object StubManager {
 
             var lastFailure: Result? = null
 
-            if (DeviceOwnerManager.isDeviceOwner(context)) {
+            if (DeviceOwnerManager.isOwner(context)) {
                 val doResult = runViaDeviceOwner(context, privateApk)
                 if (doResult.ok && pollInstalled(context, type, wantInstalled = true)) {
                     return@withContext doResult
@@ -148,7 +148,7 @@ object StubManager {
 
             var lastFailure: Result? = null
 
-            if (DeviceOwnerManager.isDeviceOwner(context)) {
+            if (DeviceOwnerManager.isOwner(context)) {
                 val doResult = uninstallViaDeviceOwner(context, type)
                 if (doResult.ok && pollInstalled(context, type, wantInstalled = false)) {
                     return@withContext doResult
