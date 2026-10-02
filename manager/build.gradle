@@ -140,7 +140,7 @@ registerStealthApkCopyTask("release")
 def collapseFlavoredReleaseResourceNames = { String flavor, String buildType ->
     def variantName = "${flavor}${buildType.capitalize()}"
     def capitalized = variantName.capitalize()
-    def collapseTask = tasks.register("collapse${capitalized}ResourceNames").doLast {
+    def collapseTask = task("collapse${capitalized}ResourceNames").doLast {
         def aapt2 = Paths.get(androidSdkDirectory().path, 'build-tools', project.android.buildToolsVersion, 'aapt2')
         def zip = Paths.get(project.buildDir.path, 'intermediates',
                 'optimized_processed_res', variantName, "optimize${capitalized}Resources", "resources-${variantName}-optimize.ap_")
