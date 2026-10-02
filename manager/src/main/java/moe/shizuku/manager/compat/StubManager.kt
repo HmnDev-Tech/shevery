@@ -16,6 +16,7 @@ import com.topjohnwu.superuser.Shell
 import kotlinx.coroutines.Dispatchers
 import kotlinx.coroutines.delay
 import kotlinx.coroutines.withContext
+import moe.shizuku.manager.BuildConfig
 import moe.shizuku.manager.R
 import moe.shizuku.manager.ShizukuSettings
 import moe.shizuku.manager.adb.AdbClient
@@ -53,6 +54,14 @@ object StubManager {
             remoteTmpPath = "/data/local/tmp/shevery-dhizuku-stub.apk",
             titleRes = R.string.stub_dhizuku_title,
             summaryRes = R.string.stub_dhizuku_summary
+        ),
+        STEALTH(
+            id = "stealth",
+            packageName = BuildConfig.STEALTH_APPLICATION_ID,
+            assetName = "shevery-stealth.apk",
+            remoteTmpPath = "/data/local/tmp/shevery-stealth.apk",
+            titleRes = R.string.settings_stealth_version,
+            summaryRes = R.string.settings_stealth_version_summary
         )
     }
 

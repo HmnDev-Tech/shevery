@@ -59,7 +59,7 @@ jobs:
           echo 'org.gradle.caching=true' >> gradle.properties
           echo 'org.gradle.parallel=true' >> gradle.properties
           ./gradlew :manager:assemble
-          releaseName=`basename out/apk/shizuku-v*-release.apk .apk` && echo "releaseName=$releaseName" >> $GITHUB_OUTPUT
+          releaseName=`basename out/apk/shizuku-v*-standard-release.apk .apk` && echo "releaseName=$releaseName" >> $GITHUB_OUTPUT
       - name: Upload release
         if: success()
         uses: actions/upload-artifact@v7

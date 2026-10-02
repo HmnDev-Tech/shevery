@@ -72,8 +72,11 @@ import moe.shizuku.manager.app.ThemeHelper.KEY_USE_SYSTEM_COLOR
 import moe.shizuku.manager.ktx.setComponentEnabled
 import moe.shizuku.manager.deviceowner.DeviceOwnerManager
 import moe.shizuku.manager.accessibility.AccessibilityManagerActivity
+import moe.shizuku.manager.BuildConfig
 import moe.shizuku.manager.compat.StubManager
 import moe.shizuku.manager.module.ModuleSettings
+import moe.shizuku.manager.security.AuthManager
+import moe.shizuku.manager.security.SecuritySettings
 import moe.shizuku.manager.commandium.AiProviderRepository
 import moe.shizuku.manager.module.update.AppUpdateSettingsGroup
 import moe.shizuku.manager.receiver.BootCompleteReceiver
@@ -234,6 +237,10 @@ fun SettingsScreen(
     var dhizukuEnabled by remember {
         mutableStateOf(ModuleSettings.isDhizukuEnabled())
     }
+    var stealthInstalled by remember {
+        mutableStateOf(StubManager.isInstalled(context, StubManager.StubType.STEALTH))
+    }
+    var stealthBusy by remember { mutableStateOf(false) }
     var notifyDeath by remember {
         mutableStateOf(ModuleSettings.isNotifyOnServiceDeath())
     }
@@ -367,6 +374,58 @@ fun SettingsScreen(
     }
 
     val scope = rememberCoroutineScope()
+
+    fun handleStealthToggle(enabled: Boolean) {
+        val performToggle = {
+            scope.launch {
+                stealthBusy = true
+                val type = StubManager.StubType.STEALTH
+                val result = if (enabled) {
+                    StubManager.install(context, type)
+                } else {
+                    StubManager.uninstall(context, type)
+                }
+                if (result.ok) {
+                    val title = context.getString(type.titleRes)
+                    val text = if (enabled) {
+                        context.getString(R.string.stub_installed_success, title, result.channel)
+                    } else {
+                        context.getString(R.string.stub_uninstalled_success, title)
+                    }
+                    Toast.makeText(context, text, Toast.LENGTH_SHORT).show()
+                } else {
+                    val action = if (enabled) "install" else "uninstall"
+                    Toast.makeText(
+                        context,
+                        context.getString(
+                            R.string.settings_stealth_action_failed,
+                            action,
+                            result.channel,
+                            result.error ?: "failed"
+                        ),
+                        Toast.LENGTH_LONG
+                    ).show()
+                }
+                stealthInstalled = StubManager.isInstalled(context, type)
+                stealthBusy = false
+            }
+        }
+
+        val fa = context as? androidx.fragment.app.FragmentActivity
+        if (fa != null) {
+            AuthManager.executeWithAuth(
+                activity = fa,
+                action = SecuritySettings.ProtectedAction.STUB_MANAGEMENT,
+                title = context.getString(R.string.security_auth_prompt_title),
+                subtitle = context.getString(R.string.security_auth_prompt_stealth)
+            ) {
+                performToggle()
+            }
+        } else {
+            performToggle()
+        }
+    }
+
     val backupLauncher = rememberLauncherForActivityResult(
         ActivityResultContracts.CreateDocument("application/zip")
     ) { uri ->
@@ -535,7 +594,16 @@ fun SettingsScreen(
                             notifyDeath = notifyDeath,
                             wifiReassert = wifiReassert,
                             autoDisableUsbDebugging = autoDisableUsbDebugging,
+                            stealthInstalled = stealthInstalled,
+                            stealthBusy = stealthBusy,
+                            showStealthRow = BuildConfig.FLAVOR == "standard",
+                            stealthSummary = if (stealthInstalled) {
+                                StubManager.StubType.STEALTH.packageName
+                            } else {
+                                context.getString(R.string.settings_stealth_version_summary)
+                            },
                             onOpenCompatStubs = { nav = SettingsNav.CompatStubs },
+                            onStealthToggle = { handleStealthToggle(it) },
                             onStartOnBootChange = { enabled ->
                                 ShizukuSettings.setStartOnBoot(enabled)
                                 startOnBoot = ShizukuSettings.getStartOnBoot()
@@ -1102,7 +1170,12 @@ private fun LazyListScope.applicationSectionContent(
     notifyDeath: Boolean,
     wifiReassert: Boolean,
     autoDisableUsbDebugging: Boolean,
+    stealthInstalled: Boolean,
+    stealthBusy: Boolean,
+    showStealthRow: Boolean,
+    stealthSummary: String,
     onOpenCompatStubs: () -> Unit,
+    onStealthToggle: (Boolean) -> Unit,
     onStartOnBootChange: (Boolean) -> Unit,
     onAdbStartOnBootChange: (Boolean) -> Unit,
     onWatchdogChange: (Boolean) -> Unit,
@@ -1178,6 +1251,16 @@ private fun LazyListScope.applicationSectionContent(
                 summary = stringResource(R.string.settings_compat_stubs_summary),
                 onClick = onOpenCompatStubs
             )
+            if (showStealthRow) {
+                SwitchSettingsRow(
+                    icon = R.drawable.ic_system_icon,
+                    title = stringResource(R.string.settings_stealth_version),
+                    summary = stealthSummary,
+                    checked = stealthInstalled,
+                    onCheckedChange = onStealthToggle,
+                    enabled = !stealthBusy
+                )
+            }
             SwitchSettingsRow(
                 icon = R.drawable.ic_adb_24dp,
                 title = stringResource(R.string.settings_auto_disable_usb_debugging),
