@@ -187,9 +187,10 @@ afterEvaluate {
         ['debug', 'release'].each { buildType ->
             def buildTypeCapitalized = buildType.capitalize()
             def variantName = "${flavor}${buildTypeCapitalized}"
-            tasks.getByName("pre${variantName}Build").dependsOn(":shell:copy${buildTypeCapitalized}ShellDex")
+            def variantCapitalized = variantName.capitalize()
+            tasks.getByName("pre${variantCapitalized}Build").dependsOn(":shell:copy${buildTypeCapitalized}ShellDex")
             tasks.getByName("merge${variantName}Assets").dependsOn(":shell:copy${buildTypeCapitalized}ShellDex")
-            tasks.getByName("pre${variantName}Build").dependsOn(":stub:copy${buildTypeCapitalized}StubApk")
+            tasks.getByName("pre${variantCapitalized}Build").dependsOn(":stub:copy${buildTypeCapitalized}StubApk")
             tasks.getByName("merge${variantName}Assets").dependsOn(":stub:copy${buildTypeCapitalized}StubApk")
         }
     }
@@ -198,7 +199,8 @@ afterEvaluate {
     // The stealth edition never embeds it (that would be a circular build dependency).
     ['debug', 'release'].each { buildType ->
         def buildTypeCapitalized = buildType.capitalize()
-        tasks.getByName("preStandard${buildTypeCapitalized}Build").dependsOn("copy${buildTypeCapitalized}StealthApk")
+        def variantCapitalized = "Standard${buildTypeCapitalized}"
+        tasks.getByName("pre${variantCapitalized}Build").dependsOn("copy${buildTypeCapitalized}StealthApk")
         tasks.getByName("mergeStandard${buildTypeCapitalized}Assets").dependsOn("copy${buildTypeCapitalized}StealthApk")
     }
 
@@ -206,8 +208,9 @@ afterEvaluate {
         ['debug', 'release'].each { buildType ->
             def buildTypeCapitalized = buildType.capitalize()
             def variantName = "${flavor}${buildTypeCapitalized}"
-            def copyApk = tasks.register("copy${variantName}ManagerApk") {
-                mustRunAfter("assemble${variantName}")
+            def variantCapitalized = variantName.capitalize()
+            def copyApk = tasks.register("copy${variantCapitalized}ManagerApk") {
+                mustRunAfter("assemble${variantCapitalized}")
                 doLast {
                     def versionName = rootProject.ext.versionName
                     def apkDir = layout.buildDirectory.dir("outputs/apk/${flavor}/${buildType}").get().asFile
@@ -232,7 +235,7 @@ afterEvaluate {
                     }
                 }
             }
-            tasks.getByName("assemble${variantName}").finalizedBy(copyApk)
+            tasks.getByName("assemble${variantCapitalized}").finalizedBy(copyApk)
         }
     }
 }
