@@ -189,9 +189,9 @@ afterEvaluate {
             def variantName = "${flavor}${buildTypeCapitalized}"
             def variantCapitalized = variantName.capitalize()
             tasks.getByName("pre${variantCapitalized}Build").dependsOn(":shell:copy${buildTypeCapitalized}ShellDex")
-            tasks.getByName("merge${variantName}Assets").dependsOn(":shell:copy${buildTypeCapitalized}ShellDex")
+            tasks.getByName("merge${variantCapitalized}Assets").dependsOn(":shell:copy${buildTypeCapitalized}ShellDex")
             tasks.getByName("pre${variantCapitalized}Build").dependsOn(":stub:copy${buildTypeCapitalized}StubApk")
-            tasks.getByName("merge${variantName}Assets").dependsOn(":stub:copy${buildTypeCapitalized}StubApk")
+            tasks.getByName("merge${variantCapitalized}Assets").dependsOn(":stub:copy${buildTypeCapitalized}StubApk")
         }
     }
 
@@ -201,7 +201,7 @@ afterEvaluate {
         def buildTypeCapitalized = buildType.capitalize()
         def variantCapitalized = "Standard${buildTypeCapitalized}"
         tasks.getByName("pre${variantCapitalized}Build").dependsOn("copy${buildTypeCapitalized}StealthApk")
-        tasks.getByName("mergeStandard${buildTypeCapitalized}Assets").dependsOn("copy${buildTypeCapitalized}StealthApk")
+        tasks.getByName("merge${variantCapitalized}Assets").dependsOn("copy${buildTypeCapitalized}StealthApk")
     }
 
     ['standard', 'stealth'].each { flavor ->
