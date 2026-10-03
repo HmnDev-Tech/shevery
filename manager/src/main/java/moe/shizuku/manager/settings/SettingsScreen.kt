@@ -72,12 +72,10 @@ import moe.shizuku.manager.app.ThemeHelper.KEY_USE_SYSTEM_COLOR
 import moe.shizuku.manager.ktx.setComponentEnabled
 import moe.shizuku.manager.deviceowner.DeviceOwnerManager
 import moe.shizuku.manager.accessibility.AccessibilityManagerActivity
-import android.content.ContentValues
-import android.os.Environment
-import android.provider.MediaStore
 import androidx.compose.material3.TextField
 import moe.shizuku.manager.BuildConfig
 import moe.shizuku.manager.module.ModuleSettings
+import moe.shizuku.manager.stealth.StealthApkGenerator
 import moe.shizuku.manager.commandium.AiProviderRepository
 import moe.shizuku.manager.module.update.AppUpdateSettingsGroup
 import moe.shizuku.manager.receiver.BootCompleteReceiver
@@ -242,6 +240,7 @@ fun SettingsScreen(
     var stealthFileName by remember {
         mutableStateOf("SystemToolkit-v${BuildConfig.VERSION_NAME}")
     }
+    var stealthPackage by remember { mutableStateOf(StealthApkGenerator.randomPackage()) }
     var notifyDeath by remember {
         mutableStateOf(ModuleSettings.isNotifyOnServiceDeath())
     }
@@ -376,10 +375,12 @@ fun SettingsScreen(
 
     val scope = rememberCoroutineScope()
 
-    fun handleStealthSave(fileName: String) {
+    fun handleStealthSave(fileName: String, packageName: String) {
         scope.launch {
             val savedName = try {
-                withContext(Dispatchers.IO) { saveStealthApkToDownloads(context, fileName) }
+                withContext(Dispatchers.IO) {
+                    StealthApkGenerator.saveToDownloads(context, fileName, packageName)
+                }
             } catch (_: Throwable) {
                 null
             }
@@ -568,13 +569,11 @@ fun SettingsScreen(
                             wifiReassert = wifiReassert,
                             autoDisableUsbDebugging = autoDisableUsbDebugging,
                             showStealthRow = BuildConfig.FLAVOR == "standard",
-                            stealthSummary = context.getString(
-                                R.string.settings_stealth_version_summary,
-                                BuildConfig.STEALTH_APPLICATION_ID
-                            ),
+                            stealthSummary = context.getString(R.string.settings_stealth_version_summary),
                             onOpenCompatStubs = { nav = SettingsNav.CompatStubs },
                             onOpenStealthDialog = {
                                 stealthFileName = "SystemToolkit-v${BuildConfig.VERSION_NAME}"
+                                stealthPackage = StealthApkGenerator.randomPackage()
                                 showStealthDialog = true
                             },
                             onStartOnBootChange = { enabled ->
@@ -970,7 +969,7 @@ fun SettingsScreen(
                     Text(
                         context.getString(
                             R.string.settings_stealth_dialog_message,
-                            BuildConfig.STEALTH_APPLICATION_ID,
+                            stealthPackage,
                             BuildConfig.VERSION_NAME
                         )
                     )
@@ -986,7 +985,7 @@ fun SettingsScreen(
                 TextButton(
                     onClick = {
                         showStealthDialog = false
-                        handleStealthSave(stealthFileName)
+                        handleStealthSave(stealthFileName, stealthPackage)
                     }
                 ) {
                     Text(stringResource(R.string.settings_stealth_action_save))
@@ -1172,31 +1171,6 @@ fun SettingsScreen(
             shape = MaterialTheme.shapes.extraLarge
         )
     }
-}
-
-private fun saveStealthApkToDownloads(context: Context, fileName: String): String? {
-    if (Build.VERSION.SDK_INT < Build.VERSION_CODES.Q) return null
-    val baseName = fileName.replace(Regex("[\\\\/:*?\"<>|]"), "").trim().takeIf { it.isNotEmpty() }
-        ?: return null
-    val displayName = if (baseName.endsWith(".apk", ignoreCase = true)) baseName else "$baseName.apk"
-    val values = ContentValues().apply {
-        put(MediaStore.Downloads.DISPLAY_NAME, displayName)
-        put(MediaStore.Downloads.MIME_TYPE, "application/vnd.android.package-archive")
-        put(MediaStore.Downloads.RELATIVE_PATH, Environment.DIRECTORY_DOWNLOADS)
-    }
-    val resolver = context.contentResolver
-    val uri = resolver.insert(MediaStore.Downloads.getContentUri(MediaStore.VOLUME_EXTERNAL_PRIMARY), values)
-        ?: return null
-    try {
-        context.assets.open("shevery-stealth.apk").use { input ->
-            resolver.openOutputStream(uri)?.use { output -> input.copyTo(output) }
-                ?: error("openOutputStream returned null")
-        }
-    } catch (e: Throwable) {
-        resolver.delete(uri, null, null)
-        throw e
-    }
-    return displayName
 }
 
 private fun LazyListScope.applicationSectionContent(

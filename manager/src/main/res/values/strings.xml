@@ -897,7 +897,7 @@ Wi-Fi is required for the first restart because Shevery must connect to the curr
     <string name="settings_security_summary">Biometric authentication and protected actions</string>
     <string name="settings_security_title">Security</string>
     <string name="settings_stealth_version">Stealth version</string>
-    <string name="settings_stealth_version_summary">Disguised copy with random package %1$s. Saves the APK file to Downloads</string>
+    <string name="settings_stealth_version_summary">Disguised copy with a random package name. Saves the APK file to Downloads</string>
     <string name="settings_stealth_dialog_title">Save stealth APK</string>
     <string name="settings_stealth_dialog_message">Package name: %1$s\nApp version: %2$s\n\nThe stealth copy declares the same Shizuku authorities, so uninstall the normal Shevery before installing it.</string>
     <string name="settings_stealth_filename_label">File name</string>

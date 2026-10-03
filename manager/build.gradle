@@ -8,20 +8,13 @@ plugins {
     id('dev.rikka.tools.refine')
 }
 
-// Stealth edition identity: same Shevery code and authorities, but a random package
-// name generated per build (overridable with -PstealthAppId=... for reproducibility).
+// Stealth edition identity: same Shevery code and authorities, built with a fixed
+// template package id. The app itself rewrites it to a fresh random id of the SAME
+// LENGTH every time the user saves a stealth copy (see StealthApkGenerator).
 // Single source of truth, also exposed to code via BuildConfig.STEALTH_APPLICATION_ID.
 // The stealth copy intentionally declares the SAME provider authorities as the standard
 // edition, so both cannot be installed at once: it is a replacement, not a second copy.
-def randomIdSegment = { int length ->
-    def random = new Random()
-    def letters = ('a'..'z')
-    return (1..length).collect { letters[random.nextInt(letters.size())] }.join()
-}
-def stealthApplicationId = "${findProperty('stealthAppId') ?: "com.${randomIdSegment(8)}.${randomIdSegment(8)}"}"
-if (!(stealthApplicationId ==~ /^[a-z][a-z0-9_]*(\.[a-z][a-z0-9_]*)+$/)) {
-    throw new GradleException("Invalid stealthAppId '${stealthApplicationId}'")
-}
+def stealthApplicationId = "com.stealthp.lacehold"
 
 android {
     namespace 'moe.shizuku.manager'
@@ -232,13 +225,7 @@ afterEvaluate {
                     copy {
                         from apk
                         into rootProject.layout.projectDirectory.dir('out/apk')
-                        rename {
-                            if (flavor == 'stealth') {
-                                "shizuku-v${versionName}-stealth-${stealthApplicationId}-${buildType}.apk"
-                            } else {
-                                "shizuku-v${versionName}-${flavor}-${buildType}.apk"
-                            }
-                        }
+                        rename { "shizuku-v${versionName}-${flavor}-${buildType}.apk" }
                     }
                     if (buildType == 'release') {
                         def mapping = layout.buildDirectory.file("outputs/mapping/${variantName}/mapping.txt").get().asFile
