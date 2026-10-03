@@ -322,7 +322,7 @@
 
         <provider
             android:name=".ShizukuManagerProvider"
-            android:authorities="${applicationId}.shizuku;moe.shizuku.privileged.api.shizuku"
+            android:authorities="${shizukuProviderAuthorities}"
             android:directBootAware="true"
             android:enabled="true"
             android:exported="true"
@@ -331,7 +331,7 @@
 
         <provider
             android:name=".connector.ShizukuConnectorProvider"
-            android:authorities="${applicationId}.connector;moe.shizuku.privileged.api.connector"
+            android:authorities="${connectorProviderAuthorities}"
             android:exported="true" />
 
         <provider

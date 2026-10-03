@@ -10,15 +10,23 @@ plugins {
 
 // Stealth edition identity: same Shevery code, fully different package name and app id.
 // Single source of truth, also exposed to code via BuildConfig.STEALTH_APPLICATION_ID.
+def standardApplicationId = "com.hamondev.shevery"
 def stealthApplicationId = "com.system.toolkit"
 
 android {
     namespace 'moe.shizuku.manager'
     defaultConfig {
-        applicationId "com.hamondev.shevery"
+        applicationId standardApplicationId
         versionCode rootProject.ext.versionCode
         versionName rootProject.ext.versionName
         buildConfigField "String", "STEALTH_APPLICATION_ID", "\"${stealthApplicationId}\""
+        // Provider authorities must be unique per installed package. The standard edition
+        // keeps the legacy moe.shizuku.privileged.api.* aliases; the stealth edition
+        // must not declare them or its install fails with INSTALL_FAILED_CONFLICTING_PROVIDER.
+        manifestPlaceholders = [
+                shizukuProviderAuthorities  : "${standardApplicationId}.shizuku;moe.shizuku.privileged.api.shizuku",
+                connectorProviderAuthorities: "${standardApplicationId}.connector;moe.shizuku.privileged.api.connector"
+        ]
         externalNativeBuild {
             cmake {
                 arguments '-DANDROID_STL=none'
@@ -33,6 +41,10 @@ android {
         stealth {
             dimension 'edition'
             applicationId stealthApplicationId
+            manifestPlaceholders = [
+                    shizukuProviderAuthorities  : "${stealthApplicationId}.shizuku",
+                    connectorProviderAuthorities: "${stealthApplicationId}.connector"
+            ]
         }
     }
     buildFeatures {

@@ -145,7 +145,9 @@ object StubManager {
                     lastFailure = result
                 }
             }
-            lastFailure ?: Result(false, "none", "no channel available")
+            val finalFailure = lastFailure ?: Result(false, "none", "no channel available")
+            logd("Install ${type.id} (${type.packageName}) failed via ${finalFailure.channel}: ${finalFailure.error}")
+            finalFailure
         }
     }
 
@@ -179,7 +181,9 @@ object StubManager {
                 }
                 lastFailure = result
             }
-            lastFailure ?: Result(false, "none", "no channel available")
+            val finalFailure = lastFailure ?: Result(false, "none", "no channel available")
+            logd("Uninstall ${type.id} (${type.packageName}) failed via ${finalFailure.channel}: ${finalFailure.error}")
+            finalFailure
         }
     }
 
