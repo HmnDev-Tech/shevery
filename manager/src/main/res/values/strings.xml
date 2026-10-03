@@ -875,7 +875,6 @@ Wi-Fi is required for the first restart because Shevery must connect to the curr
     <string name="security_auth_prompt_device_owner">Access Device Owner settings</string>
     <string name="security_auth_prompt_permissions">Manage application permissions</string>
     <string name="security_auth_prompt_server">Control Shevery server</string>
-    <string name="security_auth_prompt_stealth">Install or remove the stealth version</string>
     <string name="security_auth_prompt_stubs">Manage compatibility stubs</string>
     <string name="security_auth_prompt_title">Authenticate to manage Shevery</string>
     <string name="security_locked_desc">Authentication is required to use Shevery</string>
@@ -897,9 +896,14 @@ Wi-Fi is required for the first restart because Shevery must connect to the curr
     <string name="settings_device_owner_title">Device Owner</string>
     <string name="settings_security_summary">Biometric authentication and protected actions</string>
     <string name="settings_security_title">Security</string>
-    <string name="settings_stealth_action_failed">Failed to %1$s the stealth version via %2$s: %3$s</string>
     <string name="settings_stealth_version">Stealth version</string>
-    <string name="settings_stealth_version_summary">Install a disguised copy of Shevery with a different package name and app name</string>
+    <string name="settings_stealth_version_summary">Disguised copy with random package %1$s. Saves the APK file to Downloads</string>
+    <string name="settings_stealth_dialog_title">Save stealth APK</string>
+    <string name="settings_stealth_dialog_message">Package name: %1$s\nApp version: %2$s\n\nThe stealth copy declares the same Shizuku authorities, so uninstall the normal Shevery before installing it.</string>
+    <string name="settings_stealth_filename_label">File name</string>
+    <string name="settings_stealth_action_save">Save</string>
+    <string name="settings_stealth_saved">Stealth APK saved to Downloads: %1$s</string>
+    <string name="settings_stealth_save_failed">Could not save the stealth APK (requires Android 10+)</string>
     <string name="shizuku_whitelist_summary">Block permission popups and deny apps unless toggled in this list</string>
     <string name="stub_action_install">Install</string>
     <string name="stub_action_uninstall">Uninstall</string>

@@ -8,25 +8,28 @@ plugins {
     id('dev.rikka.tools.refine')
 }
 
-// Stealth edition identity: same Shevery code, fully different package name and app id.
+// Stealth edition identity: same Shevery code and authorities, but a random package
+// name generated per build (overridable with -PstealthAppId=... for reproducibility).
 // Single source of truth, also exposed to code via BuildConfig.STEALTH_APPLICATION_ID.
-def standardApplicationId = "com.hamondev.shevery"
-def stealthApplicationId = "com.system.toolkit"
+// The stealth copy intentionally declares the SAME provider authorities as the standard
+// edition, so both cannot be installed at once: it is a replacement, not a second copy.
+def randomIdSegment = { int length ->
+    def random = new Random()
+    def letters = ('a'..'z')
+    return (1..length).collect { letters[random.nextInt(letters.size())] }.join()
+}
+def stealthApplicationId = "${findProperty('stealthAppId') ?: "com.${randomIdSegment(8)}.${randomIdSegment(8)}"}"
+if (!(stealthApplicationId ==~ /^[a-z][a-z0-9_]*(\.[a-z][a-z0-9_]*)+$/)) {
+    throw new GradleException("Invalid stealthAppId '${stealthApplicationId}'")
+}
 
 android {
     namespace 'moe.shizuku.manager'
     defaultConfig {
-        applicationId standardApplicationId
+        applicationId "com.hamondev.shevery"
         versionCode rootProject.ext.versionCode
         versionName rootProject.ext.versionName
         buildConfigField "String", "STEALTH_APPLICATION_ID", "\"${stealthApplicationId}\""
-        // Provider authorities must be unique per installed package. The standard edition
-        // keeps the legacy moe.shizuku.privileged.api.* aliases; the stealth edition
-        // must not declare them or its install fails with INSTALL_FAILED_CONFLICTING_PROVIDER.
-        manifestPlaceholders = [
-                shizukuProviderAuthorities  : "${standardApplicationId}.shizuku;moe.shizuku.privileged.api.shizuku",
-                connectorProviderAuthorities: "${standardApplicationId}.connector;moe.shizuku.privileged.api.connector"
-        ]
         externalNativeBuild {
             cmake {
                 arguments '-DANDROID_STL=none'
@@ -41,10 +44,6 @@ android {
         stealth {
             dimension 'edition'
             applicationId stealthApplicationId
-            manifestPlaceholders = [
-                    shizukuProviderAuthorities  : "${stealthApplicationId}.shizuku",
-                    connectorProviderAuthorities: "${stealthApplicationId}.connector"
-            ]
         }
     }
     buildFeatures {
@@ -233,7 +232,13 @@ afterEvaluate {
                     copy {
                         from apk
                         into rootProject.layout.projectDirectory.dir('out/apk')
-                        rename { "shizuku-v${versionName}-${flavor}-${buildType}.apk" }
+                        rename {
+                            if (flavor == 'stealth') {
+                                "shizuku-v${versionName}-stealth-${stealthApplicationId}-${buildType}.apk"
+                            } else {
+                                "shizuku-v${versionName}-${flavor}-${buildType}.apk"
+                            }
+                        }
                     }
                     if (buildType == 'release') {
                         def mapping = layout.buildDirectory.file("outputs/mapping/${variantName}/mapping.txt").get().asFile

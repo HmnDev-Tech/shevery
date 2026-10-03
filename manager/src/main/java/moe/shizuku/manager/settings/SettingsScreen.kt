@@ -72,11 +72,12 @@ import moe.shizuku.manager.app.ThemeHelper.KEY_USE_SYSTEM_COLOR
 import moe.shizuku.manager.ktx.setComponentEnabled
 import moe.shizuku.manager.deviceowner.DeviceOwnerManager
 import moe.shizuku.manager.accessibility.AccessibilityManagerActivity
+import android.content.ContentValues
+import android.os.Environment
+import android.provider.MediaStore
+import androidx.compose.material3.TextField
 import moe.shizuku.manager.BuildConfig
-import moe.shizuku.manager.compat.StubManager
 import moe.shizuku.manager.module.ModuleSettings
-import moe.shizuku.manager.security.AuthManager
-import moe.shizuku.manager.security.SecuritySettings
 import moe.shizuku.manager.commandium.AiProviderRepository
 import moe.shizuku.manager.module.update.AppUpdateSettingsGroup
 import moe.shizuku.manager.receiver.BootCompleteReceiver
@@ -237,10 +238,10 @@ fun SettingsScreen(
     var dhizukuEnabled by remember {
         mutableStateOf(ModuleSettings.isDhizukuEnabled())
     }
-    var stealthInstalled by remember {
-        mutableStateOf(StubManager.isInstalled(context, StubManager.StubType.STEALTH))
+    var showStealthDialog by remember { mutableStateOf(false) }
+    var stealthFileName by remember {
+        mutableStateOf("SystemToolkit-v${BuildConfig.VERSION_NAME}")
     }
-    var stealthBusy by remember { mutableStateOf(false) }
     var notifyDeath by remember {
         mutableStateOf(ModuleSettings.isNotifyOnServiceDeath())
     }
@@ -375,54 +376,26 @@ fun SettingsScreen(
 
     val scope = rememberCoroutineScope()
 
-    fun handleStealthToggle(enabled: Boolean) {
-        val performToggle = {
-            scope.launch {
-                stealthBusy = true
-                val type = StubManager.StubType.STEALTH
-                val result = if (enabled) {
-                    StubManager.install(context, type)
-                } else {
-                    StubManager.uninstall(context, type)
-                }
-                if (result.ok) {
-                    val title = context.getString(type.titleRes)
-                    val text = if (enabled) {
-                        context.getString(R.string.stub_installed_success, title, result.channel)
-                    } else {
-                        context.getString(R.string.stub_uninstalled_success, title)
-                    }
-                    Toast.makeText(context, text, Toast.LENGTH_SHORT).show()
-                } else {
-                    val action = if (enabled) "install" else "uninstall"
-                    Toast.makeText(
-                        context,
-                        context.getString(
-                            R.string.settings_stealth_action_failed,
-                            action,
-                            result.channel,
-                            result.error ?: "failed"
-                        ),
-                        Toast.LENGTH_LONG
-                    ).show()
-                }
-                stealthInstalled = StubManager.isInstalled(context, type)
-                stealthBusy = false
+    fun handleStealthSave(fileName: String) {
+        scope.launch {
+            val savedName = try {
+                withContext(Dispatchers.IO) { saveStealthApkToDownloads(context, fileName) }
+            } catch (_: Throwable) {
+                null
             }
-        }
-
-        val fa = context as? androidx.fragment.app.FragmentActivity
-        if (fa != null) {
-            AuthManager.executeWithAuth(
-                activity = fa,
-                action = SecuritySettings.ProtectedAction.STUB_MANAGEMENT,
-                title = context.getString(R.string.security_auth_prompt_title),
-                subtitle = context.getString(R.string.security_auth_prompt_stealth)
-            ) {
-                performToggle()
+            if (savedName != null) {
+                Toast.makeText(
+                    context,
+                    context.getString(R.string.settings_stealth_saved, savedName),
+                    Toast.LENGTH_LONG
+                ).show()
+            } else {
+                Toast.makeText(
+                    context,
+                    context.getString(R.string.settings_stealth_save_failed),
+                    Toast.LENGTH_LONG
+                ).show()
             }
-        } else {
-            performToggle()
         }
     }
 
@@ -594,16 +567,16 @@ fun SettingsScreen(
                             notifyDeath = notifyDeath,
                             wifiReassert = wifiReassert,
                             autoDisableUsbDebugging = autoDisableUsbDebugging,
-                            stealthInstalled = stealthInstalled,
-                            stealthBusy = stealthBusy,
                             showStealthRow = BuildConfig.FLAVOR == "standard",
-                            stealthSummary = if (stealthInstalled) {
-                                StubManager.StubType.STEALTH.packageName
-                            } else {
-                                context.getString(R.string.settings_stealth_version_summary)
-                            },
+                            stealthSummary = context.getString(
+                                R.string.settings_stealth_version_summary,
+                                BuildConfig.STEALTH_APPLICATION_ID
+                            ),
                             onOpenCompatStubs = { nav = SettingsNav.CompatStubs },
-                            onStealthToggle = { handleStealthToggle(it) },
+                            onOpenStealthDialog = {
+                                stealthFileName = "SystemToolkit-v${BuildConfig.VERSION_NAME}"
+                                showStealthDialog = true
+                            },
                             onStartOnBootChange = { enabled ->
                                 ShizukuSettings.setStartOnBoot(enabled)
                                 startOnBoot = ShizukuSettings.getStartOnBoot()
@@ -988,6 +961,47 @@ fun SettingsScreen(
         )
     }
 
+    if (showStealthDialog) {
+        AlertDialog(
+            onDismissRequest = { showStealthDialog = false },
+            title = { Text(stringResource(R.string.settings_stealth_dialog_title)) },
+            text = {
+                Column {
+                    Text(
+                        context.getString(
+                            R.string.settings_stealth_dialog_message,
+                            BuildConfig.STEALTH_APPLICATION_ID,
+                            BuildConfig.VERSION_NAME
+                        )
+                    )
+                    TextField(
+                        value = stealthFileName,
+                        onValueChange = { stealthFileName = it },
+                        label = { Text(stringResource(R.string.settings_stealth_filename_label)) },
+                        singleLine = true
+                    )
+                }
+            },
+            confirmButton = {
+                TextButton(
+                    onClick = {
+                        showStealthDialog = false
+                        handleStealthSave(stealthFileName)
+                    }
+                ) {
+                    Text(stringResource(R.string.settings_stealth_action_save))
+                }
+            },
+            dismissButton = {
+                TextButton(onClick = { showStealthDialog = false }) {
+                    Text(stringResource(android.R.string.cancel))
+                }
+            },
+            containerColor = MaterialTheme.colorScheme.surfaceContainerHigh,
+            shape = MaterialTheme.shapes.extraLarge
+        )
+    }
+
     if (showRegenerateTokenDialog) {
         AlertDialog(
             onDismissRequest = { showRegenerateTokenDialog = false },
@@ -1160,6 +1174,31 @@ fun SettingsScreen(
     }
 }
 
+private fun saveStealthApkToDownloads(context: Context, fileName: String): String? {
+    if (Build.VERSION.SDK_INT < Build.VERSION_CODES.Q) return null
+    val baseName = fileName.replace(Regex("[\\\\/:*?\"<>|]"), "").trim().takeIf { it.isNotEmpty() }
+        ?: return null
+    val displayName = if (baseName.endsWith(".apk", ignoreCase = true)) baseName else "$baseName.apk"
+    val values = ContentValues().apply {
+        put(MediaStore.Downloads.DISPLAY_NAME, displayName)
+        put(MediaStore.Downloads.MIME_TYPE, "application/vnd.android.package-archive")
+        put(MediaStore.Downloads.RELATIVE_PATH, Environment.DIRECTORY_DOWNLOADS)
+    }
+    val resolver = context.contentResolver
+    val uri = resolver.insert(MediaStore.Downloads.getContentUri(MediaStore.VOLUME_EXTERNAL_PRIMARY), values)
+        ?: return null
+    try {
+        context.assets.open("shevery-stealth.apk").use { input ->
+            resolver.openOutputStream(uri)?.use { output -> input.copyTo(output) }
+                ?: error("openOutputStream returned null")
+        }
+    } catch (e: Throwable) {
+        resolver.delete(uri, null, null)
+        throw e
+    }
+    return displayName
+}
+
 private fun LazyListScope.applicationSectionContent(
     rooted: Boolean,
     startOnBoot: Boolean,
@@ -1170,12 +1209,10 @@ private fun LazyListScope.applicationSectionContent(
     notifyDeath: Boolean,
     wifiReassert: Boolean,
     autoDisableUsbDebugging: Boolean,
-    stealthInstalled: Boolean,
-    stealthBusy: Boolean,
     showStealthRow: Boolean,
     stealthSummary: String,
     onOpenCompatStubs: () -> Unit,
-    onStealthToggle: (Boolean) -> Unit,
+    onOpenStealthDialog: () -> Unit,
     onStartOnBootChange: (Boolean) -> Unit,
     onAdbStartOnBootChange: (Boolean) -> Unit,
     onWatchdogChange: (Boolean) -> Unit,
@@ -1252,13 +1289,11 @@ private fun LazyListScope.applicationSectionContent(
                 onClick = onOpenCompatStubs
             )
             if (showStealthRow) {
-                SwitchSettingsRow(
+                SettingsRow(
                     icon = R.drawable.ic_system_icon,
                     title = stringResource(R.string.settings_stealth_version),
                     summary = stealthSummary,
-                    checked = stealthInstalled,
-                    onCheckedChange = onStealthToggle,
-                    enabled = !stealthBusy
+                    onClick = onOpenStealthDialog
                 )
             }
             SwitchSettingsRow(
