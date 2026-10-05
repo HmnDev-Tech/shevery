@@ -15,8 +15,8 @@ import androidx.compose.material.icons.Icons
 import androidx.compose.material.icons.rounded.ChevronRight
 import androidx.compose.material3.Icon
 import moe.shizuku.manager.about.AboutActivity
-import moe.shizuku.manager.about.AlsoTry
-import moe.shizuku.manager.about.AlsoTryApp
+import moe.shizuku.manager.about.ShizukuApp
+import moe.shizuku.manager.about.ShizukuApps
 import android.os.Build
 import android.text.TextUtils
 import androidx.appcompat.app.AppCompatDelegate
@@ -1699,49 +1699,60 @@ private fun LazyListScope.aboutSectionContent(
     }
 
     item {
-        AlsoTryGroup()
+        ShizukuAppsGroup()
     }
 }
 
 @Composable
-private fun AlsoTryGroup() {
+private fun ShizukuAppsGroup() {
     val context = LocalContext.current
-    val dayStamp = remember { AlsoTry.dayStamp() }
-    val githubPicks = remember { AlsoTry.dailyPick(AlsoTry.githubDaily) }
-    val shizukuPicks = remember { AlsoTry.dailyPick(AlsoTry.shizukuDaily) }
+    var liveApps by remember { mutableStateOf<List<ShizukuApp>?>(null) }
+    var isLive by remember { mutableStateOf(false) }
+    val dayStamp = remember { ShizukuApps.dayStamp() }
 
-    SettingsGroup(title = "Also Try...") {
+    LaunchedEffect(Unit) {
+        val state = withContext(Dispatchers.IO) { ShizukuApps.load(context) }
+        liveApps = state.apps
+        isLive = state.isLive
+    }
+
+    val apps = liveApps ?: ShizukuApps.dailyPick(ShizukuApps.fallback)
+
+    SettingsGroup(title = "Shizuku apps") {
         Text(
-            text = "Hand-picked open source Android apps that pair well with Shevery. The two lists below refresh every day.",
+            text = if (isLive) {
+                "Random Shizuku-powered apps from GitHub, refreshed daily · $dayStamp"
+            } else {
+                "Random Shizuku-powered apps, refreshed daily · $dayStamp. Add a GitHub token in Settings for a live GitHub list."
+            },
             style = MaterialTheme.typography.bodyMedium,
             color = MaterialTheme.colorScheme.onSurfaceVariant,
             modifier = Modifier.padding(horizontal = 16.dp, vertical = 8.dp)
         )
 
-        SectionHeader("Featured")
-        AlsoTryRows(apps = AlsoTry.featured, context = context)
-
-        GroupDivider()
-        SectionHeader("Kotlin apps on GitHub · $dayStamp")
-        AlsoTryRows(apps = githubPicks, context = context)
-
-        GroupDivider()
         SectionHeader("Apps that need Shizuku · $dayStamp")
-        AlsoTryRows(apps = shizukuPicks, context = context)
+        ShizukuAppsRows(apps = apps, context = context)
     }
 }
 
 @Composable
-private fun AlsoTryRows(
-    apps: List<AlsoTryApp>,
+private fun ShizukuAppsRows(
+    apps: List<ShizukuApp>,
     context: Context
 ) {
     apps.forEachIndexed { index, app ->
         if (index > 0) GroupDivider()
+        val summary = if (app.stars > 0 && app.summary.isNotBlank()) {
+            "${app.summary} ★${app.stars}"
+        } else if (app.stars > 0) {
+            "★${app.stars}"
+        } else {
+            app.summary.ifBlank { null }
+        }
         SettingsRow(
             icon = null,
             title = app.name,
-            summary = app.summary,
+            summary = summary,
             onClick = { CustomTabsHelper.launchUrlOrCopy(context, app.url) }
         )
     }

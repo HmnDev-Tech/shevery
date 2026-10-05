@@ -38,8 +38,16 @@ import java.util.zip.ZipOutputStream
  * swap, offsets stay valid, and only the signatures have to be regenerated
  * (v1 JAR signing, the stale v2/v3 block is dropped with the zip rebuild).
  *
+ * Both ASCII/MUTF-8 and UTF-16LE encodings are rewritten: the binary
+ * manifest and resources.arsc store the package name as UTF-16LE, so an
+ * ASCII-only swap left the installed package unchanged (still the template
+ * id). DEX files additionally get their checksum/signature recalculated.
+ *
  * The stealth copy keeps the same Shizuku authorities, so it conflicts with
- * the normal Shevery by design: it is a replacement, not a second copy.
+ * the normal Shevery by design: uninstall the normal Shevery before
+ * installing the stealth copy, it is a replacement, not a second copy.
+ * Shizuku privileges come from the declared authorities/permissions, so the
+ * renamed copy keeps real Shizuku privileges once it replaces the original.
  */
 object StealthApkGenerator {
 
@@ -184,7 +192,66 @@ object StealthApkGenerator {
         val data = zf.getInputStream(entry).use { it.readBytes() }
         // Nested APKs are separate packages with their own valid signatures: never touch them.
         if (entry.name.startsWith("assets/") && entry.name.endsWith(".apk", ignoreCase = true)) return data
-        return swapAll(data, oldPkg, newPkg)
+        // DEX stores strings as MUTF-8 (ASCII-compatible): ASCII swap only, then fix header.
+        // Everywhere else the package also appears as UTF-16LE (binary manifest,
+        // resources.arsc), which an ASCII-only swap missed — leaving the template id.
+        if (isDex(data)) {
+            val swapped = swapAll(data, oldPkg, newPkg)
+            return fixDex(swapped)
+        }
+        val oldUtf16 = String(oldPkg, Charsets.US_ASCII).toByteArray(Charsets.UTF_16LE)
+        val newUtf16 = String(newPkg, Charsets.US_ASCII).toByteArray(Charsets.UTF_16LE)
+        val swapped = swapAll(swapAll(data, oldPkg, newPkg), oldUtf16, newUtf16)
+        if (entry.name == "AndroidManifest.xml") {
+            verifyManifestRewrite(swapped, oldPkg, newPkg, oldUtf16, newUtf16)
+        }
+        return swapped
+    }
+
+    private fun verifyManifestRewrite(
+        manifest: ByteArray,
+        oldPkg: ByteArray,
+        newPkg: ByteArray,
+        oldUtf16: ByteArray,
+        newUtf16: ByteArray,
+    ) {
+        val hasNew = indexOf(manifest, newPkg, 0) >= 0 || indexOf(manifest, newUtf16, 0) >= 0
+        val hasOld = indexOf(manifest, oldPkg, 0) >= 0 || indexOf(manifest, oldUtf16, 0) >= 0
+        if (!hasNew || hasOld) {
+            error("Stealth package rewrite verification failed (hasNew=$hasNew hasOld=$hasOld)")
+        }
+    }
+
+    private fun isDex(data: ByteArray): Boolean {
+        if (data.size < 8) return false
+        return data[0] == 'd'.code.toByte() && data[1] == 'e'.code.toByte() &&
+                data[2] == 'x'.code.toByte() && data[3] == '\n'.code.toByte()
+    }
+
+    /**
+     * Recalculates the DEX header checksum (Adler32 from offset 12) and
+     * signature (SHA-1 from offset 32) after the byte swap. Without this the
+     * rewritten classes*.dex is rejected at install time.
+     */
+    private fun fixDex(data: ByteArray): ByteArray {
+        if (data.size < 32) return data
+        if (!isDex(data)) return data
+        return try {
+            val sha1 = MessageDigest.getInstance("SHA-1")
+            sha1.update(data, 32, data.size - 32)
+            val sig = sha1.digest()
+            sig.copyInto(data, 12)
+            val adler = java.util.zip.Adler32()
+            adler.update(data, 12, data.size - 12)
+            val checksum = adler.value.toInt()
+            data[8] = (checksum and 0xFF).toByte()
+            data[9] = ((checksum ushr 8) and 0xFF).toByte()
+            data[10] = ((checksum ushr 16) and 0xFF).toByte()
+            data[11] = ((checksum ushr 24) and 0xFF).toByte()
+            data
+        } catch (_: Throwable) {
+            data
+        }
     }
 
     private fun swapAll(data: ByteArray, old: ByteArray, repl: ByteArray): ByteArray {

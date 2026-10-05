@@ -51,27 +51,29 @@ jobs:
           build-scan-publish: true
           build-scan-terms-of-use-url: "https://gradle.com/terms-of-service"
           build-scan-terms-of-use-agree: "yes"
-      - name: Build with Gradle
+      - name: Build with Gradle (standard only, stealth is generated on-device)
         id: buildWithGradle
         run: |
           echo 'android.sdk.channel=3' >> gradle.properties
           echo 'android.native.buildOutput=verbose' >> gradle.properties
           echo 'org.gradle.caching=true' >> gradle.properties
           echo 'org.gradle.parallel=true' >> gradle.properties
-          ./gradlew :manager:assemble
+          ./gradlew :manager:assembleStandardRelease
           releaseName=`basename out/apk/shizuku-v*-standard-release.apk .apk` && echo "releaseName=$releaseName" >> $GITHUB_OUTPUT
-      - name: Upload release
+      - name: Upload release (standard only, no System Toolkit publish)
         if: success()
         uses: actions/upload-artifact@v7
         with:
           name: ${{ steps.buildWithGradle.outputs.releaseName }}
-          path: "out"
+          path: |
+            out/apk/*standard*.apk
+            out/mapping/mapping-*.txt
           compression-level: 9
 
-      - name: GitHub Release
+      - name: GitHub Release (standard only, no System Toolkit publish)
         uses: softprops/action-gh-release@v3
         if: startsWith(github.ref, 'refs/tags/')
         with:
-          files: out/apk/*.apk
+          files: out/apk/*standard*.apk
           fail_on_unmatched_files: true
           generate_release_notes: true

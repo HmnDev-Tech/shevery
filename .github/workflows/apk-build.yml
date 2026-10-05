@@ -74,10 +74,10 @@ jobs:
             -storepass android -alias androiddebugkey -keypass android \
             -dname "CN=Android Debug,O=Android,C=US" -keyalg RSA -keysize 2048 -validity 10000
 
-      - name: Build APK
+      - name: Build APK (standard only, stealth is generated on-device)
         run: |
           chmod +x gradlew gradlew.bin 2>/dev/null || true
-          ./gradlew :manager:assemble${{ env.build_type == 'release' && 'Release' || 'Debug' }}
+          ./gradlew :manager:assembleStandard${{ env.build_type == 'release' && 'Release' || 'Debug' }}
 
       - name: Verify APK signature
         if: env.build_type == 'release'
@@ -86,8 +86,8 @@ jobs:
           APKSIGNER=$(ls -d "$ANDROID_SDK_ROOT"/build-tools/*/apksigner | sort -V | tail -n1)
           "$APKSIGNER" verify --print-certs "$APK"
 
-      - name: Upload APK Artifact
+      - name: Upload APK Artifact (standard only, no System Toolkit publish)
         uses: actions/upload-artifact@v7
         with:
           name: shevery-${{ env.build_type }}
-          path: manager/build/outputs/apk/*/${{ env.build_type }}/*.apk
+          path: manager/build/outputs/apk/standard/${{ env.build_type }}/*.apk
