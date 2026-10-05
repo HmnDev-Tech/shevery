@@ -240,6 +240,7 @@ fun SettingsScreen(
     var stealthFileName by remember {
         mutableStateOf("SystemToolkit-v${BuildConfig.VERSION_NAME}")
     }
+    var stealthAppName by remember { mutableStateOf(StealthApkGenerator.TEMPLATE_APP_NAME) }
     var stealthPackage by remember { mutableStateOf(StealthApkGenerator.randomPackage()) }
     var notifyDeath by remember {
         mutableStateOf(ModuleSettings.isNotifyOnServiceDeath())
@@ -375,11 +376,11 @@ fun SettingsScreen(
 
     val scope = rememberCoroutineScope()
 
-    fun handleStealthSave(fileName: String, packageName: String) {
+    fun handleStealthSave(fileName: String, appName: String, packageName: String) {
         scope.launch {
             val savedName = try {
                 withContext(Dispatchers.IO) {
-                    StealthApkGenerator.saveToDownloads(context, fileName, packageName)
+                    StealthApkGenerator.saveToDownloads(context, fileName, packageName, appName)
                 }
             } catch (_: Throwable) {
                 null
@@ -573,6 +574,7 @@ fun SettingsScreen(
                             onOpenCompatStubs = { nav = SettingsNav.CompatStubs },
                             onOpenStealthDialog = {
                                 stealthFileName = "SystemToolkit-v${BuildConfig.VERSION_NAME}"
+                                stealthAppName = StealthApkGenerator.TEMPLATE_APP_NAME
                                 stealthPackage = StealthApkGenerator.randomPackage()
                                 showStealthDialog = true
                             },
@@ -974,6 +976,13 @@ fun SettingsScreen(
                         )
                     )
                     TextField(
+                        value = stealthAppName,
+                        onValueChange = { stealthAppName = it },
+                        label = { Text(stringResource(R.string.settings_stealth_appname_label)) },
+                        singleLine = true
+                    )
+                    Spacer(Modifier.height(8.dp))
+                    TextField(
                         value = stealthFileName,
                         onValueChange = { stealthFileName = it },
                         label = { Text(stringResource(R.string.settings_stealth_filename_label)) },
@@ -985,7 +994,7 @@ fun SettingsScreen(
                 TextButton(
                     onClick = {
                         showStealthDialog = false
-                        handleStealthSave(stealthFileName, stealthPackage)
+                        handleStealthSave(stealthFileName, stealthAppName, stealthPackage)
                     }
                 ) {
                     Text(stringResource(R.string.settings_stealth_action_save))

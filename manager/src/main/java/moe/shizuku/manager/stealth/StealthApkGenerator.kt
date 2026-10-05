@@ -53,6 +53,7 @@ object StealthApkGenerator {
 
     const val TEMPLATE_ASSET = "shevery-stealth.apk"
     const val TEMPLATE_PACKAGE = "com.stealthp.lacehold"
+    const val TEMPLATE_APP_NAME = "System Toolkit"
 
     private val random = SecureRandom()
     private val LETTERS = ('a'..'z').toList()
@@ -68,10 +69,20 @@ object StealthApkGenerator {
     }
 
     /**
-     * Rewrites the embedded template with [packageName] and streams the result
-     * into Downloads as [fileName]. Returns the saved display name, or null.
+     * Rewrites the embedded template with [packageName] and the launcher label
+     * [appName], then streams the result into Downloads as [fileName].
+     * Returns the saved display name, or null.
+     *
+     * The label is normalized to the exact byte/unit length of
+     * [TEMPLATE_APP_NAME] (truncated on a char boundary, space-padded), so the
+     * binary string pools stay valid without parsing them.
      */
-    fun saveToDownloads(context: Context, fileName: String, packageName: String): String? {
+    fun saveToDownloads(
+        context: Context,
+        fileName: String,
+        packageName: String,
+        appName: String = TEMPLATE_APP_NAME,
+    ): String? {
         if (Build.VERSION.SDK_INT < Build.VERSION_CODES.Q) return null
         if (packageName.length != TEMPLATE_PACKAGE.length) {
             logd("Stealth package length mismatch: ${packageName.length}")
@@ -88,6 +99,10 @@ object StealthApkGenerator {
             }
             val oldPkg = TEMPLATE_PACKAGE.toByteArray(Charsets.US_ASCII)
             val newPkg = packageName.toByteArray(Charsets.US_ASCII)
+            val oldLabelUtf8 = TEMPLATE_APP_NAME.toByteArray(Charsets.UTF_8)
+            val newLabelUtf8 = fitLabelUtf8(appName)
+            val oldLabelUtf16 = TEMPLATE_APP_NAME.toByteArray(Charsets.UTF_16LE)
+            val newLabelUtf16 = fitLabelUtf16(appName)
 
             val keyPair = KeyPairGenerator.getInstance("RSA").also { it.initialize(2048, random) }.generateKeyPair()
             val signer = JcaContentSignerBuilder("SHA256withRSA").build(keyPair.private)
@@ -105,7 +120,11 @@ object StealthApkGenerator {
             try {
                 resolver.openOutputStream(uri)?.use { rawOut ->
                     ZipOutputStream(rawOut).use { zos ->
-                        rewriteApk(templateFile, zos, oldPkg, newPkg, keyPair, certHolder, signer)
+                        rewriteApk(
+                            templateFile, zos, oldPkg, newPkg,
+                            oldLabelUtf8, newLabelUtf8, oldLabelUtf16, newLabelUtf16,
+                            keyPair, certHolder, signer
+                        )
                     }
                 } ?: error("openOutputStream returned null")
             } catch (e: Throwable) {
@@ -124,6 +143,10 @@ object StealthApkGenerator {
         zos: ZipOutputStream,
         oldPkg: ByteArray,
         newPkg: ByteArray,
+        oldLabelUtf8: ByteArray,
+        newLabelUtf8: ByteArray,
+        oldLabelUtf16: ByteArray,
+        newLabelUtf16: ByteArray,
         keyPair: KeyPair,
         certHolder: org.bouncycastle.cert.X509CertificateHolder,
         signer: org.bouncycastle.operator.ContentSigner,
@@ -136,7 +159,10 @@ object StealthApkGenerator {
             manifest.write("Manifest-Version: 1.0\r\nCreated-By: Shevery Stealth\r\n\r\n".toByteArray())
             val sections = ArrayList<Pair<String, ByteArray>>(entries.size)
             for (entry in entries) {
-                val data = readTransformed(zf, entry, oldPkg, newPkg)
+                val data = readTransformed(
+                    zf, entry, oldPkg, newPkg,
+                    oldLabelUtf8, newLabelUtf8, oldLabelUtf16, newLabelUtf16
+                )
                 val section = manifestSection(entry.name, b64(sha256(data)))
                 manifest.write(section)
                 sections.add(entry.name to section)
@@ -157,7 +183,10 @@ object StealthApkGenerator {
             // Pass 2: entries + fresh signatures.
             writeStored(zos, "META-INF/MANIFEST.MF", manifestBytes)
             for (entry in entries) {
-                val data = readTransformed(zf, entry, oldPkg, newPkg)
+                val data = readTransformed(
+                    zf, entry, oldPkg, newPkg,
+                    oldLabelUtf8, newLabelUtf8, oldLabelUtf16, newLabelUtf16
+                )
                 if (entry.isDirectory) {
                     zos.putNextEntry(ZipEntry(entry.name).apply { time = entry.time })
                     zos.closeEntry()
@@ -182,11 +211,52 @@ object StealthApkGenerator {
         }
     }
 
+    /**
+     * Normalizes a user label to the exact UTF-8 byte length of [TEMPLATE_APP_NAME]:
+     * truncated on a char boundary when too long, space-padded when shorter.
+     * Same byte length keeps a UTF-8 string pool (resources.arsc, binary
+     * manifest) valid without parsing it.
+     */
+    private fun fitLabelUtf8(appName: String): ByteArray {
+        val max = TEMPLATE_APP_NAME.toByteArray(Charsets.UTF_8).size
+        val trimmed = appName.trim()
+        if (trimmed.isEmpty()) return TEMPLATE_APP_NAME.toByteArray(Charsets.UTF_8)
+        val taken = buildString {
+            var bytes = 0
+            for (c in trimmed) {
+                val charBytes = c.toString().toByteArray(Charsets.UTF_8).size
+                if (bytes + charBytes > max) break
+                append(c)
+                bytes += charBytes
+            }
+        }.ifEmpty { TEMPLATE_APP_NAME }
+        val out = taken.toByteArray(Charsets.UTF_8)
+        if (out.size == max) return out
+        return out + ByteArray(max - out.size) { ' '.code.toByte() }
+    }
+
+    /**
+     * Normalizes a user label to the exact UTF-16 unit length of [TEMPLATE_APP_NAME].
+     * Only one of the UTF-8 / UTF-16 pools actually holds the label; the other
+     * fitted form simply matches nothing, so each encoding gets its own fit.
+     */
+    private fun fitLabelUtf16(appName: String): ByteArray {
+        val max = TEMPLATE_APP_NAME.length
+        val trimmed = appName.trim()
+        if (trimmed.isEmpty()) return TEMPLATE_APP_NAME.toByteArray(Charsets.UTF_16LE)
+        val taken = trimmed.take(max).ifEmpty { TEMPLATE_APP_NAME }
+        return taken.padEnd(max, ' ').toByteArray(Charsets.UTF_16LE)
+    }
+
     private fun readTransformed(
         zf: ZipFile,
         entry: ZipEntry,
         oldPkg: ByteArray,
         newPkg: ByteArray,
+        oldLabelUtf8: ByteArray,
+        newLabelUtf8: ByteArray,
+        oldLabelUtf16: ByteArray,
+        newLabelUtf16: ByteArray,
     ): ByteArray {
         if (entry.isDirectory) return ByteArray(0)
         val data = zf.getInputStream(entry).use { it.readBytes() }
@@ -195,13 +265,17 @@ object StealthApkGenerator {
         // DEX stores strings as MUTF-8 (ASCII-compatible): ASCII swap only, then fix header.
         // Everywhere else the package also appears as UTF-16LE (binary manifest,
         // resources.arsc), which an ASCII-only swap missed — leaving the template id.
+        // The launcher label is swapped the same way (UTF-8 + UTF-16LE).
         if (isDex(data)) {
-            val swapped = swapAll(data, oldPkg, newPkg)
+            val swapped = swapAll(swapAll(data, oldPkg, newPkg), oldLabelUtf8, newLabelUtf8)
             return fixDex(swapped)
         }
         val oldUtf16 = String(oldPkg, Charsets.US_ASCII).toByteArray(Charsets.UTF_16LE)
         val newUtf16 = String(newPkg, Charsets.US_ASCII).toByteArray(Charsets.UTF_16LE)
-        val swapped = swapAll(swapAll(data, oldPkg, newPkg), oldUtf16, newUtf16)
+        val swapped = swapAll(
+            swapAll(swapAll(swapAll(data, oldPkg, newPkg), oldUtf16, newUtf16), oldLabelUtf8, newLabelUtf8),
+            oldLabelUtf16, newLabelUtf16
+        )
         if (entry.name == "AndroidManifest.xml") {
             verifyManifestRewrite(swapped, oldPkg, newPkg, oldUtf16, newUtf16)
         }
