@@ -50,5 +50,5 @@ Maintainers triage the report first, then coordinate a fix and a disclosure date
 
 - Secret scanning and push protection are enabled on this repository.
 - Private vulnerability reporting is enabled.
-- Releases are created only by the repository owner, through the manually approved **Create latest release** workflow; collaborators and contributors cannot publish releases.
+- Releases are created only by the repository owner.
 - Treat tokens, signing keys (`keystore.jks`, `signing.properties`), and AI provider keys as secrets: never commit them. `local.properties` and signing files are ignored by design.
