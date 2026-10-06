@@ -27,7 +27,7 @@
         android:theme="@android:style/Theme.NoDisplay">
 
         <activity
-            android:name=".ForwardActivity"
+            android:name="moe.shizuku.privileged.api.ForwardActivity"
             android:exported="true"
             android:excludeFromRecents="true"
             android:theme="@android:style/Theme.NoDisplay">
@@ -42,7 +42,7 @@
         </activity>
 
         <receiver
-            android:name=".ForwardReceiver"
+            android:name="moe.shizuku.privileged.api.ForwardReceiver"
             android:exported="true">
             <intent-filter android:priority="1000">
                 <action android:name="rikka.shizuku.intent.action.REQUEST_BINDER" />
