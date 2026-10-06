@@ -33,6 +33,11 @@ import java.util.concurrent.atomic.AtomicLong
  * - heartbeat overdue by 60s, or dead binder, issues a restart
  *   command for the last launch mode (root / adb / dhizuku).
  *
+ * Hang detection also runs inside shizuku_server itself
+ * (rikka.shizuku.server.Watchdog, NightDog principle): on a 60s main-thread
+ * hang the server kills its own process, this manager observes binder death
+ * and issues the restart command.
+ *
  * No foreground service, no persistent notification, no death/recovery
  * notifications, no force-kill, no StateFlow loops.
  */
