@@ -1,31 +1,21 @@
 package moe.shizuku.manager.service
 
-import android.app.NotificationChannel
-import android.app.NotificationManager
-import android.app.PendingIntent
 import android.content.Context
-import android.content.Intent
-import android.os.Build
 import android.os.Handler
 import android.os.HandlerThread
 import android.os.SystemClock
-import android.provider.Settings
-import androidx.core.app.NotificationCompat
 import com.topjohnwu.superuser.Shell
 import kotlinx.coroutines.CoroutineScope
 import kotlinx.coroutines.Dispatchers
 import kotlinx.coroutines.launch
 import kotlinx.coroutines.suspendCancellableCoroutine
 import kotlinx.coroutines.withTimeoutOrNull
-import moe.shizuku.manager.MainActivity
-import moe.shizuku.manager.R
 import moe.shizuku.manager.ShizukuSettings
 import moe.shizuku.manager.ShizukuSettings.LaunchMethod
 import moe.shizuku.manager.ktx.logd
 import moe.shizuku.manager.ktx.logi
 import moe.shizuku.manager.ktx.logw
 import moe.shizuku.manager.module.ModuleSettings
-import moe.shizuku.manager.receiver.SheveryControlReceiver
 import moe.shizuku.manager.starter.Starter
 import moe.shizuku.manager.utils.ShizukuStateMachine
 import moe.shizuku.manager.worker.AdbStartWorker
@@ -34,18 +24,17 @@ import java.util.concurrent.atomic.AtomicBoolean
 import java.util.concurrent.atomic.AtomicLong
 
 /**
- * Lightweight Watchdog inspired by NightDog (kerneldroid/Nightzuku).
+ * Watchdog rewritten from scratch on the NightDog principle
+ * (kerneldroid/Nightzuku: heartbeat + 60s poll + restart command).
  *
- * Principle (NightDog):
- * - server/manager calls [beat] on every binder-received heartbeat;
- * - a single watchdog thread polls every [POLL_INTERVAL_MS];
- * - if heartbeat is overdue by [HEARTBEAT_TIMEOUT_MS], or binder death is
- *   observed, we don't just kill/stop Shevery: we issue a restart command
- *   routed by last launch mode (root / adb / dhizuku).
+ * There is intentionally nothing else here:
+ * - heartbeat via [beat], updated on every binder-received;
+ * - a single HandlerThread polls every 60s;
+ * - heartbeat overdue by 60s, or dead binder, issues a restart
+ *   command for the last launch mode (root / adb / dhizuku).
  *
- * Old heavy methods were deleted: zombie-protect coroutine loops with
- * StateFlow, pidof force-kill via IShizukuService.newProcess, duplicate
- * death/recovery channels. Single HandlerThread + single IO scope only.
+ * No foreground service, no persistent notification, no death/recovery
+ * notifications, no force-kill, no StateFlow loops.
  */
 object WatchdogManager {
 
@@ -56,15 +45,11 @@ object WatchdogManager {
         val error: String? = null
     )
 
-    private const val DEATH_CHANNEL_ID = "service_watchdog_death"
-    private const val NOTIFICATION_ID = 1001
+    private const val HEARTBEAT_TIMEOUT_MS = 60_000L
+    private const val POLL_INTERVAL_MS = 60_000L
     private const val EXPECTED_DEATH_WINDOW_MS = 30_000L
     private const val MIN_RESTART_INTERVAL_MS = 15_000L
     private const val KEY_USER_STOP_REQUESTED = "watchdog_user_stop_requested"
-
-    // NightDog defaults: heartbeat overdue 60s, poll 60s.
-    private const val HEARTBEAT_TIMEOUT_MS = 60_000L
-    private const val POLL_INTERVAL_MS = 60_000L
 
     @Volatile
     var isStarterActive = false
@@ -94,7 +79,6 @@ object WatchdogManager {
     @Volatile
     private var userStopRequested = false
 
-    // NightDog-style heartbeat + single watchdog thread.
     private val lastBeatMs = AtomicLong(0L)
     private var watchdogThread: HandlerThread? = null
     private var watchdogHandler: Handler? = null
@@ -117,12 +101,12 @@ object WatchdogManager {
 
         userStopRequested = ShizukuSettings.getPreferences().getBoolean(KEY_USER_STOP_REQUESTED, false)
 
-        logi("Initializing service watchdog (NightDog-style)")
+        logi("Watchdog init (heartbeat only)")
 
         Shizuku.addBinderReceivedListenerSticky {
             beat()
             expectingDeath = false
-            clearUserStopRequest(appContext)
+            setUserStopRequested(false)
         }
 
         Shizuku.addBinderDeadListener {
@@ -134,7 +118,7 @@ object WatchdogManager {
 
     fun isEnabled(): Boolean = ModuleSettings.isWatchdogEnabled()
 
-    /** NightDog heartbeat: call when binder is received / healthy. */
+    /** NightDog heartbeat: refresh on every binder-received. */
     fun beat() {
         lastBeatMs.set(SystemClock.elapsedRealtime())
     }
@@ -149,9 +133,9 @@ object WatchdogManager {
 
     fun shouldRunService(): Boolean = isEnabled() && !isUserStopRequested()
 
+    /** Starts/stops the single HandlerThread monitor. No service, no notification. */
     fun reconcileService(context: Context) {
         if (shouldRunService()) startMonitor() else stopMonitor()
-        WatchdogService.reconcile(context.applicationContext)
     }
 
     private fun startMonitor() {
@@ -163,7 +147,7 @@ object WatchdogManager {
         watchdogHandler = handler
         if (lastBeatMs.get() == 0L && Shizuku.pingBinder()) beat()
         handler.postDelayed(monitorRunnable, POLL_INTERVAL_MS)
-        logi("Watchdog monitor started (poll=${POLL_INTERVAL_MS}ms)")
+        logi("Watchdog monitor started")
     }
 
     private fun stopMonitor() {
@@ -188,7 +172,6 @@ object WatchdogManager {
         watchdogThread = null
     }
 
-    /** Single 60s poll: heartbeat overdue or ping failure -> restart command. */
     private fun checkHealth() {
         if (!shouldRunService()) return
         if (isExpectingDeathActive()) return
@@ -197,52 +180,31 @@ object WatchdogManager {
 
         val beat = lastBeatMs.get()
         if (beat > 0 && SystemClock.elapsedRealtime() - beat <= HEARTBEAT_TIMEOUT_MS) {
-            // Fresh heartbeat; verify binder still answers (NightDog fallback ping).
             if (Shizuku.pingBinder()) return
         }
 
         val overdue = beat > 0 && SystemClock.elapsedRealtime() - beat > HEARTBEAT_TIMEOUT_MS
-        val dead = !Shizuku.pingBinder()
-        if (!overdue && !dead) return
+        if (!overdue && Shizuku.pingBinder()) return
 
         if (overdue) {
-            logw("Watchdog: heartbeat overdue, issuing restart command")
+            logw("Watchdog: heartbeat overdue, restart command")
         } else {
-            logw("Watchdog: binder dead on poll, issuing restart command")
+            logw("Watchdog: binder dead, restart command")
         }
         try {
-            val app = moe.shizuku.manager.application.applicationContext
-            attemptRestart(app)
+            attemptRestart(moe.shizuku.manager.application.applicationContext)
         } catch (e: Throwable) {
             logd("Watchdog poll restart failed: ${e.message}")
         }
     }
 
     private fun onServiceDied(context: Context) {
-        logw("Service died detected by watchdog")
-
-        if (isStarterActive) {
-            logi("Service death while StarterActivity is active. Suppressing restart.")
-            return
-        }
-
-        if (consumeExpectedDeath()) {
-            logi("Service death was expected.")
-            return
-        }
-
-        if (isUserStopRequested()) {
-            logi("Service death from user-initiated stop. Suppressing restart.")
-            return
-        }
-
-        if (ModuleSettings.isNotifyOnServiceDeath() || isEnabled()) {
-            showDeathNotification(context)
-        }
-
-        if (isEnabled()) {
-            attemptRestart(context)
-        }
+        logw("Watchdog: service died")
+        if (isStarterActive) return
+        if (consumeExpectedDeath()) return
+        if (isUserStopRequested()) return
+        if (!isEnabled()) return
+        attemptRestart(context)
     }
 
     private fun consumeExpectedDeath(): Boolean {
@@ -255,68 +217,10 @@ object WatchdogManager {
         return false
     }
 
-    private fun showDeathNotification(context: Context) {
-        val notificationManager = context.getSystemService(Context.NOTIFICATION_SERVICE) as NotificationManager
-
-        if (Build.VERSION.SDK_INT >= Build.VERSION_CODES.O) {
-            val channel = NotificationChannel(
-                DEATH_CHANNEL_ID,
-                context.getString(R.string.notification_channel_watchdog_death),
-                NotificationManager.IMPORTANCE_DEFAULT
-            )
-            notificationManager.createNotificationChannel(channel)
-        }
-
-        val launchIntent = Intent(context, MainActivity::class.java)
-        val launchPendingIntent = PendingIntent.getActivity(
-            context, 0x7F050001, launchIntent,
-            PendingIntent.FLAG_IMMUTABLE or PendingIntent.FLAG_UPDATE_CURRENT
-        )
-
-        val restartIntent = Intent(context, SheveryControlReceiver::class.java).apply {
-            action = SheveryControlReceiver.ACTION_START_SERVER
-        }
-        val restartPendingIntent = PendingIntent.getBroadcast(
-            context, 0x7F050003, restartIntent,
-            PendingIntent.FLAG_IMMUTABLE or PendingIntent.FLAG_UPDATE_CURRENT
-        )
-
-        val nb = NotificationCompat.Builder(context, DEATH_CHANNEL_ID)
-            .setSmallIcon(R.drawable.ic_server_error_24dp)
-            .setContentTitle(context.getString(R.string.notification_watchdog_title))
-            .setContentText(context.getString(R.string.notification_watchdog_text))
-            .setPriority(NotificationCompat.PRIORITY_DEFAULT)
-            .setContentIntent(launchPendingIntent)
-            .setAutoCancel(true)
-            .addAction(
-                R.drawable.ic_server_ok_24dp,
-                context.getString(R.string.home_root_button_restart),
-                restartPendingIntent
-            )
-
-        if (Build.VERSION.SDK_INT >= Build.VERSION_CODES.O) {
-            val channelSettingsIntent = Intent(Settings.ACTION_CHANNEL_NOTIFICATION_SETTINGS).apply {
-                putExtra(Settings.EXTRA_APP_PACKAGE, context.packageName)
-                putExtra(Settings.EXTRA_CHANNEL_ID, DEATH_CHANNEL_ID)
-            }
-            val channelSettingsPendingIntent = PendingIntent.getActivity(
-                context, 0x7F050004, channelSettingsIntent,
-                PendingIntent.FLAG_IMMUTABLE or PendingIntent.FLAG_UPDATE_CURRENT
-            )
-            nb.addAction(
-                0,
-                context.getString(R.string.watchdog_action_channel_settings),
-                channelSettingsPendingIntent
-            )
-        }
-
-        notificationManager.notify(NOTIFICATION_ID, nb.build())
-    }
-
     fun clearUserStopRequest(context: Context? = null) {
         setUserStopRequested(false)
         expectingDeath = false
-        context?.let { WatchdogService.reconcile(it.applicationContext) }
+        context?.let { reconcileService(it.applicationContext) }
     }
 
     private fun setUserStopRequested(value: Boolean) {
@@ -331,95 +235,50 @@ object WatchdogManager {
         return userStopRequested || ShizukuSettings.getPreferences().getBoolean(KEY_USER_STOP_REQUESTED, false)
     }
 
-    fun showDeathNotificationPublic(context: Context) = showDeathNotification(context)
-
-    fun showRecoveryNotificationIfEnabled(context: Context) {
-        if (!ModuleSettings.isNotifyOnRecovery()) return
-        val notificationManager = context.getSystemService(Context.NOTIFICATION_SERVICE) as NotificationManager
-
-        if (Build.VERSION.SDK_INT >= Build.VERSION_CODES.O) {
-            val channel = NotificationChannel(
-                DEATH_CHANNEL_ID,
-                context.getString(R.string.notification_channel_watchdog_death),
-                NotificationManager.IMPORTANCE_DEFAULT
-            )
-            notificationManager.createNotificationChannel(channel)
-        }
-
-        val intent = Intent(context, MainActivity::class.java)
-        val pendingIntent = PendingIntent.getActivity(
-            context, 0x7F050002, intent,
-            PendingIntent.FLAG_IMMUTABLE or PendingIntent.FLAG_UPDATE_CURRENT
-        )
-
-        val notification = NotificationCompat.Builder(context, DEATH_CHANNEL_ID)
-            .setSmallIcon(R.drawable.ic_server_ok_24dp)
-            .setContentTitle(context.getString(R.string.notification_recovery_title))
-            .setContentText(context.getString(R.string.notification_recovery_text))
-            .setPriority(NotificationCompat.PRIORITY_DEFAULT)
-            .setContentIntent(pendingIntent)
-            .setAutoCancel(true)
-            .build()
-
-        notificationManager.notify(NOTIFICATION_ID + 1, notification)
-    }
-
-    suspend fun waitForBinder(timeoutMs: Long = 10_000L): Boolean =
-        ShizukuStateMachine.awaitRunning(timeoutMs)
-
-    /**
-     * NightDog upgrade: instead of only killing/stopping Shevery,
-     * issue a restart command for the last launch mode, then verify recovery.
-     */
+    /** Kill is not enough: issue a restart command, then verify the binder is back. */
     fun attemptRestart(context: Context) {
         val appContext = context.applicationContext
 
         if (isStarterActive) {
-            logi("Skipping watchdog restart: StarterActivity is active")
+            logi("Watchdog: skip restart, starter active")
             return
         }
         if (isUserStopRequested()) {
-            logi("Skipping watchdog restart: user-initiated stop")
+            logi("Watchdog: skip restart, user stop")
             return
         }
 
         val lastMode = ShizukuSettings.getLastLaunchMode()
         if (lastMode == LaunchMethod.UNKNOWN) {
-            logd("Skipping watchdog restart: server was never started")
+            logd("Watchdog: skip restart, never started")
             return
         }
 
         val now = SystemClock.elapsedRealtime()
         if (now - lastRestartAttemptMs < MIN_RESTART_INTERVAL_MS) {
-            logd("Skipping watchdog restart: cooldown active")
+            logd("Watchdog: skip restart, cooldown")
             return
         }
         if (!restartInProgress.compareAndSet(false, true)) {
-            logd("Restart already in progress, skipping duplicate")
+            logd("Watchdog: restart already in progress")
             return
         }
         lastRestartAttemptMs = now
 
         CoroutineScope(Dispatchers.IO).launch {
             try {
-                logi("Watchdog restart command (last mode: $lastMode)")
+                logi("Watchdog restart command (mode: $lastMode)")
                 when (lastMode) {
                     LaunchMethod.ROOT -> restartRoot()
                     LaunchMethod.ADB -> restartAdb(appContext)
                     LaunchMethod.DHIZUKU -> restartDhizuku(appContext)
-                    else -> logd("Unknown last mode $lastMode")
+                    else -> logd("Watchdog: unknown mode $lastMode")
                 }
-
-                val recovered = ShizukuStateMachine.awaitRunning(15_000L)
-                if (recovered) {
-                    logi("Watchdog: Shevery service recovered after restart command")
+                if (ShizukuStateMachine.awaitRunning(15_000L)) {
+                    logi("Watchdog: recovered after restart command")
                     beat()
-                    showRecoveryNotificationIfEnabled(appContext)
                 } else {
                     logw("Watchdog: restart command did not recover binder")
-                    if (ModuleSettings.isNotifyOnServiceDeath()) {
-                        showDeathNotification(appContext)
-                    }
                 }
             } finally {
                 restartInProgress.set(false)
@@ -430,14 +289,14 @@ object WatchdogManager {
     fun requestStopServer(context: Context? = null, userInitiated: Boolean = true): Throwable? {
         if (userInitiated) {
             setUserStopRequested(true)
-            context?.let { WatchdogService.reconcile(it.applicationContext) }
+            context?.let { reconcileService(it.applicationContext) }
         }
         expectingDeath = true
         return try {
             Shizuku.exit()
             null
         } catch (e: Throwable) {
-            logd("Failed to stop Shevery service: ${e.message}")
+            logd("Watchdog stop failed: ${e.message}")
             expectingDeath = false
             e
         }
@@ -480,10 +339,9 @@ object WatchdogManager {
 
     private suspend fun restartDhizuku(context: Context) {
         try {
-            logi("Watchdog attempting Dhizuku restart...")
             val initResult = com.rosan.dhizuku.api.Dhizuku.init(context.applicationContext)
             if (!initResult || !com.rosan.dhizuku.api.Dhizuku.isPermissionGranted()) {
-                logd("Dhizuku not ready for watchdog restart")
+                logd("Watchdog: Dhizuku not ready")
                 return
             }
             val args = com.rosan.dhizuku.api.DhizukuUserServiceArgs(
@@ -507,11 +365,7 @@ object WatchdogManager {
                             cont.resumeWith(Result.success(null))
                         }
                     }
-                }
-                if (binder == null) {
-                    logd("Dhizuku bind failed in watchdog")
-                    return
-                }
+                } ?: return
                 val service = moe.shizuku.manager.dhizuku.IDhizukuService.Stub.asInterface(binder)
                 ShizukuStateMachine.set(ShizukuStateMachine.State.STARTING)
                 service.runCommand(Starter.internalCommand)
