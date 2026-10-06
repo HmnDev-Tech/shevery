@@ -6,9 +6,6 @@ import kotlinx.serialization.json.Json
 import moe.shizuku.manager.module.catalog.TokenStore
 import okhttp3.OkHttpClient
 import okhttp3.Request
-import java.text.DateFormat
-import java.util.Date
-import java.util.GregorianCalendar
 import java.util.concurrent.TimeUnit
 
 internal data class ShizukuApp(
@@ -20,13 +17,12 @@ internal data class ShizukuApp(
 
 internal data class ShizukuAppsState(
     val apps: List<ShizukuApp>,
-    val dayStamp: String,
     val isLive: Boolean
 )
 
 internal object ShizukuApps {
 
-    const val DAILY_PICK_COUNT = 3
+    const val PICK_COUNT = 3
 
     /** Offline fallback only: used when there is no token/network or the API fails. */
     val fallback: List<ShizukuApp> = listOf(
@@ -72,37 +68,33 @@ internal object ShizukuApps {
         val fork: Boolean = false
     )
 
-    fun dayStamp(): String = DateFormat.getDateInstance(DateFormat.MEDIUM).format(Date())
-
-    fun <T> dailyPick(pool: List<T>, count: Int = DAILY_PICK_COUNT): List<T> {
+    fun <T> randomPick(pool: List<T>, count: Int = PICK_COUNT): List<T> {
         if (pool.isEmpty()) return emptyList()
-        val start = dayIndex() % pool.size
-        return (0 until minOf(count, pool.size)).map { pool[(start + it) % pool.size] }
-    }
-
-    private fun dayIndex(): Int {
-        val calendar = GregorianCalendar()
-        return calendar.get(GregorianCalendar.YEAR) * 1000 + calendar.get(GregorianCalendar.DAY_OF_YEAR)
+        if (pool.size <= count) return pool.shuffled()
+        return pool.shuffled().take(count)
     }
 
     /**
-     * Loads a fresh daily pick of Shizuku apps from GitHub in real time.
-     * Uses the stored GitHub PAT when present (5000 req/h), otherwise the
-     * unauthenticated quota. Falls back to [fallback] when offline or on error.
+     * Loads Shizuku apps from GitHub on demand (no daily rotation).
+     * Call from a Refresh button. Uses the stored GitHub PAT when present
+     * (5000 req/h), otherwise the unauthenticated quota.
+     * Falls back to [fallback] when offline or on error.
      */
     fun load(context: Context): ShizukuAppsState {
-        val stamp = dayStamp()
         return try {
             val live = searchShizukuRepos(context)
             if (live.isEmpty()) {
-                ShizukuAppsState(dailyPick(fallback), stamp, false)
+                ShizukuAppsState(randomPick(fallback), false)
             } else {
-                ShizukuAppsState(dailyPick(live), stamp, true)
+                ShizukuAppsState(randomPick(live), true)
             }
         } catch (_: Throwable) {
-            ShizukuAppsState(dailyPick(fallback), stamp, false)
+            ShizukuAppsState(randomPick(fallback), false)
         }
     }
+
+    /** Explicit manual refresh entry-point for the Refresh button. */
+    fun refresh(context: Context): ShizukuAppsState = load(context)
 
     private fun searchShizukuRepos(context: Context): List<ShizukuApp> {
         val url = "https://api.github.com/search/repositories" +

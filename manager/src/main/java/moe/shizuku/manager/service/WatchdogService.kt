@@ -11,63 +11,33 @@ import android.content.pm.ServiceInfo
 import android.os.Build
 import android.os.IBinder
 import androidx.core.app.NotificationCompat
-import kotlinx.coroutines.*
-import kotlinx.coroutines.flow.MutableStateFlow
-import kotlinx.coroutines.flow.StateFlow
-import kotlinx.coroutines.flow.asStateFlow
 import moe.shizuku.manager.MainActivity
 import moe.shizuku.manager.R
-import moe.shizuku.manager.ShizukuSettings
-import moe.shizuku.manager.ktx.logd
 import moe.shizuku.manager.ktx.logi
 import moe.shizuku.manager.ktx.logw
 import moe.shizuku.manager.module.ModuleSettings
-import moe.shizuku.manager.utils.ShizukuStateMachine
-import moe.shizuku.server.IShizukuService
 
+/**
+ * Minimal foreground holder for the NightDog-style [WatchdogManager].
+ *
+ * Old heavy methods deleted: zombie-protect coroutine loop, StateFlow
+ * isRunning, ShizukuStateMachine crash listener, binder listeners,
+ * HealthResult transactions, handleUnhealthy/requestStop round-trips.
+ * Monitoring lives in [WatchdogManager] on a single HandlerThread (60s poll);
+ * this service only keeps the foreground notification while enabled.
+ */
 class WatchdogService : Service() {
-
-    private var zombieProtectJob: Job? = null
-    private val serviceJob = SupervisorJob()
-    private val serviceScope = CoroutineScope(Dispatchers.Default + serviceJob)
-
-    // Infrequent check (60s) solely to detect "zombie" binders where the process
-    // is running and answers pingBinder(), but IPC transactions fail/hang.
-    // Process death is detected immediately (0ms) by ShizukuStateMachine listener.
-    private val zombieCheckIntervalMs = 60_000L
-
-    private val stateListener: (ShizukuStateMachine.State) -> Unit = { state ->
-        if (state == ShizukuStateMachine.State.CRASHED) {
-            logw("WatchdogService: observed CRASHED state from ShizukuStateMachine")
-            serviceScope.launch {
-                handleCrashState()
-            }
-        }
-    }
-
-    private val binderReceivedListener = object : rikka.shizuku.Shizuku.OnBinderReceivedListener {
-        override fun onBinderReceived() {
-            startAsForeground()
-        }
-    }
-
-    private val binderDeadListener = object : rikka.shizuku.Shizuku.OnBinderDeadListener {
-        override fun onBinderDead() {
-            startAsForeground()
-        }
-    }
 
     override fun onCreate() {
         super.onCreate()
-        _isRunning.value = true
         WatchdogManager.init(applicationContext)
-        ShizukuStateMachine.addListener(stateListener)
     }
 
     override fun onStartCommand(intent: Intent?, flags: Int, startId: Int): Int {
         if (intent?.action == ACTION_STOP_SERVICE) {
-            logi("WatchdogService: received ACTION_STOP_SERVICE from notification action")
+            logi("WatchdogService: received ACTION_STOP_SERVICE")
             ModuleSettings.setWatchdogEnabled(false)
+            WatchdogManager.reconcileService(applicationContext)
             stopSelf()
             return START_NOT_STICKY
         }
@@ -77,155 +47,16 @@ class WatchdogService : Service() {
             return START_NOT_STICKY
         }
 
-        _isRunning.value = true
         startAsForeground()
-        startZombieProtectLoop()
-
-        rikka.shizuku.Shizuku.removeBinderReceivedListener(binderReceivedListener)
-        rikka.shizuku.Shizuku.removeBinderDeadListener(binderDeadListener)
-        rikka.shizuku.Shizuku.addBinderReceivedListenerSticky(binderReceivedListener)
-        rikka.shizuku.Shizuku.addBinderDeadListener(binderDeadListener)
         return START_STICKY
     }
 
     override fun onDestroy() {
-        ShizukuStateMachine.removeListener(stateListener)
-        rikka.shizuku.Shizuku.removeBinderReceivedListener(binderReceivedListener)
-        rikka.shizuku.Shizuku.removeBinderDeadListener(binderDeadListener)
-        stopZombieProtectLoop()
-        serviceJob.cancel()
-        _isRunning.value = false
         super.onDestroy()
     }
 
     override fun onTaskRemoved(rootIntent: Intent?) {
         super.onTaskRemoved(rootIntent)
-        // Foreground service persists independently of task recents.
-    }
-
-    private suspend fun handleCrashState() {
-        if (!WatchdogManager.shouldRunService()) {
-            logd("WatchdogService: watchdog disabled, skipping crash restart")
-            return
-        }
-        if (WatchdogManager.isExpectingDeathActive()) {
-            logd("WatchdogService: death is expected or starter active, skipping crash restart")
-            return
-        }
-        if (WatchdogManager.isUserStopRequested()) {
-            logi("WatchdogService: stop was user-initiated, skipping crash restart")
-            return
-        }
-        if (ShizukuSettings.getLastLaunchMode() == ShizukuSettings.LaunchMethod.UNKNOWN) {
-            logd("WatchdogService: server never started (UNKNOWN mode), skipping crash restart")
-            return
-        }
-
-        withContext(Dispatchers.IO) {
-            logw("WatchdogService: reactive restart triggered following daemon crash")
-            WatchdogManager.attemptRestart(applicationContext)
-        }
-    }
-
-    private data class HealthResult(
-        val healthy: Boolean,
-        val reason: String,
-        val binderAlive: Boolean
-    )
-
-    private fun checkHealth(): HealthResult {
-        try {
-            val binder = rikka.shizuku.Shizuku.getBinder()
-                ?: return HealthResult(false, "binder is null", false)
-            val ping = try {
-                rikka.shizuku.Shizuku.pingBinder() && binder.pingBinder()
-            } catch (e: Throwable) {
-                false
-            }
-            if (!ping) {
-                return HealthResult(false, "pingBinder() failed", false)
-            }
-            // Real remote transaction to verify the daemon process is responsive
-            val service = IShizukuService.Stub.asInterface(binder)
-            val version = try {
-                service.version
-            } catch (e: Throwable) {
-                return HealthResult(false, "binder transaction failed: ${e.javaClass.simpleName}", true)
-            }
-            if (version <= 0) {
-                return HealthResult(false, "bad remote version=$version", true)
-            }
-            return HealthResult(true, "ok version=$version", true)
-        } catch (e: Throwable) {
-            return HealthResult(false, "check threw ${e.javaClass.simpleName}: ${e.message}", rikka.shizuku.Shizuku.pingBinder())
-        }
-    }
-
-    private fun startZombieProtectLoop() {
-        zombieProtectJob?.cancel()
-        zombieProtectJob = null
-        if (!ModuleSettings.isWatchdogEnabled()) return
-
-        zombieProtectJob = serviceScope.launch {
-            var consecutiveFailures = 0
-            logi("WatchdogService: zombie protection monitoring started (interval=${zombieCheckIntervalMs}ms)")
-            while (isActive) {
-                delay(zombieCheckIntervalMs)
-                if (!ModuleSettings.isWatchdogEnabled()) break
-
-                val result = checkHealth()
-                if (result.healthy) {
-                    if (consecutiveFailures > 0) {
-                        logi("WatchdogService: service healthy (${result.reason})")
-                    }
-                    consecutiveFailures = 0
-                } else {
-                    consecutiveFailures++
-                    logw("WatchdogService: unhealthy [$consecutiveFailures/$FAILURES_TO_RESTART]: ${result.reason}")
-                    if (consecutiveFailures >= FAILURES_TO_RESTART) {
-                        consecutiveFailures = 0
-                        handleUnhealthy(result)
-                        if (!isActive) break
-                    }
-                }
-            }
-            logi("WatchdogService: zombie protection monitoring stopped")
-        }
-    }
-
-    private suspend fun handleUnhealthy(result: HealthResult) {
-        if (ShizukuSettings.getLastLaunchMode() == ShizukuSettings.LaunchMethod.UNKNOWN) {
-            logd("WatchdogService: server never started (UNKNOWN mode), skipping restart")
-            return
-        }
-        if (WatchdogManager.isExpectingDeathActive()) {
-            logd("WatchdogService: death is expected or starter active, skipping restart")
-            return
-        }
-        if (WatchdogManager.isUserStopRequested()) {
-            logi("WatchdogService: last stop was user-initiated, skipping restart")
-            return
-        }
-        if (!WatchdogManager.shouldRunService()) {
-            logd("WatchdogService: watchdog disabled, skipping restart")
-            return
-        }
-
-        withContext(Dispatchers.IO) {
-            if (result.binderAlive) {
-                logw("WatchdogService: zombie binder detected (${result.reason}). Stopping before restart...")
-                WatchdogManager.requestStopServer(applicationContext, userInitiated = false)
-                ShizukuStateMachine.awaitStopped(3_000L)
-            } else {
-                logw("WatchdogService: binder dead (${result.reason}). Restarting...")
-            }
-            WatchdogManager.attemptRestart(applicationContext)
-        }
-    }
-
-    private fun stopZombieProtectLoop() {
-        zombieProtectJob?.cancel()
-        zombieProtectJob = null
     }
 
     override fun onBind(intent: Intent?): IBinder? = null
@@ -311,11 +142,7 @@ class WatchdogService : Service() {
         const val ACTION_STOP_SERVICE = "moe.shizuku.manager.action.STOP_WATCHDOG_SERVICE"
         private const val CHANNEL_ID = "service_watchdog"
         private const val NOTIFICATION_ID = 1004
-        private const val FAILURES_TO_RESTART = 2
         private var channelCreated = false
-
-        private val _isRunning = MutableStateFlow(false)
-        val isRunning: StateFlow<Boolean> = _isRunning.asStateFlow()
 
         fun reconcile(context: Context) {
             val appContext = context.applicationContext

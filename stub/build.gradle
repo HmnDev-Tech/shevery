@@ -6,7 +6,7 @@ android {
     namespace 'shevery.compat.stub'
     defaultConfig {
         versionCode 2000000000
-        versionName "14.1.0"
+        versionName "14.2.0"
     }
     flavorDimensions = ['stubType']
     productFlavors {

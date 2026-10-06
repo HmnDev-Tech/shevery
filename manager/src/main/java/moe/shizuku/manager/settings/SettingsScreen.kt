@@ -28,12 +28,18 @@ import androidx.compose.animation.slideInHorizontally
 import androidx.compose.animation.slideOutHorizontally
 import androidx.compose.animation.togetherWith
 
+import androidx.compose.foundation.layout.Arrangement
 import androidx.compose.foundation.layout.Column
+import androidx.compose.foundation.layout.Row
 import androidx.compose.foundation.layout.Spacer
 import androidx.compose.foundation.layout.fillMaxWidth
 import androidx.compose.foundation.layout.height
 import androidx.compose.foundation.layout.heightIn
 import androidx.compose.foundation.layout.padding
+import androidx.compose.foundation.layout.size
+import androidx.compose.material3.CircularProgressIndicator
+import androidx.compose.material3.OutlinedButton
+import androidx.compose.ui.Alignment
 import androidx.compose.foundation.lazy.LazyListState
 import androidx.compose.foundation.lazy.rememberLazyListState
 import androidx.compose.foundation.rememberScrollState
@@ -1715,32 +1721,64 @@ private fun LazyListScope.aboutSectionContent(
 @Composable
 private fun ShizukuAppsGroup() {
     val context = LocalContext.current
-    var liveApps by remember { mutableStateOf<List<ShizukuApp>?>(null) }
+    var apps by remember { mutableStateOf<List<ShizukuApp>>(emptyList()) }
     var isLive by remember { mutableStateOf(false) }
-    val dayStamp = remember { ShizukuApps.dayStamp() }
+    var isLoading by remember { mutableStateOf(true) }
+    var refreshTick by remember { mutableIntStateOf(0) }
 
-    LaunchedEffect(Unit) {
-        val state = withContext(Dispatchers.IO) { ShizukuApps.load(context) }
-        liveApps = state.apps
+    LaunchedEffect(refreshTick) {
+        isLoading = true
+        val state = withContext(Dispatchers.IO) { ShizukuApps.refresh(context) }
+        apps = state.apps
         isLive = state.isLive
+        isLoading = false
     }
-
-    val apps = liveApps ?: ShizukuApps.dailyPick(ShizukuApps.fallback)
 
     SettingsGroup(title = "Shizuku apps") {
         Text(
             text = if (isLive) {
-                "Random Shizuku-powered apps from GitHub, refreshed daily · $dayStamp"
+                "Shizuku-powered apps from GitHub. Tap Refresh to reload the list."
             } else {
-                "Random Shizuku-powered apps, refreshed daily · $dayStamp. Add a GitHub token in Settings for a live GitHub list."
+                "Shizuku-powered apps (offline list). Add a GitHub token in Settings for a live GitHub list. Tap Refresh to retry."
             },
             style = MaterialTheme.typography.bodyMedium,
             color = MaterialTheme.colorScheme.onSurfaceVariant,
             modifier = Modifier.padding(horizontal = 16.dp, vertical = 8.dp)
         )
 
-        SectionHeader("Apps that need Shizuku · $dayStamp")
-        ShizukuAppsRows(apps = apps, context = context)
+        Row(
+            modifier = Modifier.fillMaxWidth().padding(horizontal = 16.dp, vertical = 4.dp),
+            horizontalArrangement = Arrangement.spacedBy(12.dp),
+            verticalAlignment = Alignment.CenterVertically
+        ) {
+            OutlinedButton(
+                onClick = { refreshTick++ },
+                enabled = !isLoading
+            ) {
+                Text(if (isLoading) "Loading…" else "Refresh")
+            }
+            if (isLoading) {
+                CircularProgressIndicator(modifier = Modifier.size(20.dp), strokeWidth = 2.dp)
+            } else {
+                Text(
+                    text = if (isLive) "Live from GitHub" else "Offline",
+                    style = MaterialTheme.typography.bodySmall,
+                    color = MaterialTheme.colorScheme.onSurfaceVariant
+                )
+            }
+        }
+
+        SectionHeader("Apps that need Shizuku")
+        if (apps.isEmpty() && isLoading) {
+            Text(
+                text = "Loading…",
+                style = MaterialTheme.typography.bodyMedium,
+                color = MaterialTheme.colorScheme.onSurfaceVariant,
+                modifier = Modifier.padding(horizontal = 16.dp, vertical = 8.dp)
+            )
+        } else {
+            ShizukuAppsRows(apps = apps, context = context)
+        }
     }
 }
 
