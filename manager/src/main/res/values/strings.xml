@@ -331,6 +331,24 @@ With %1$s, in any terminal app, you can connect to and interact with the shell r
 Wi-Fi is required for the first restart because Shevery must connect to the current Wireless Debugging port before switching ADB to 5555.</string>
     <string name="settings_auto_disable_usb_debugging">Auto-disable USB debugging</string>
     <string name="settings_auto_disable_usb_debugging_summary">Turn off USB debugging after reboot when Shevery is not configured to start on boot</string>
+    <string name="usb_debugging_hide_title">Hide USB debugging</string>
+    <string name="usb_debugging_hide_open_summary">Temporarily turn off USB debugging while selected apps are in front</string>
+    <string name="usb_debugging_hide_warning">This changes the device-wide USB debugging setting; it is not hidden from only the selected app. ADB-based connections may stop while it is off. Usage access and permission to change secure settings are required. If you force-stop Shevery, Android prevents cleanup until Shevery is opened again.</string>
+    <string name="usb_debugging_hide_usage_access">Usage access</string>
+    <string name="usb_debugging_hide_usage_access_granted">Granted</string>
+    <string name="usb_debugging_hide_usage_access_required">Tap to grant access to detect the foreground app</string>
+    <string name="usb_debugging_hide_permission_required">Start Shevery with Shizuku or configure it as Device Owner so it can change USB debugging.</string>
+    <string name="usb_debugging_hide_apps">Selected apps</string>
+    <string name="usb_debugging_hide_notification_channel">USB debugging hide</string>
+    <string name="usb_debugging_hide_notification_title">USB debugging is being managed</string>
+    <string name="usb_debugging_hide_notification_summary">USB debugging is turned off only while a selected app is in the foreground</string>
+    <string name="network_firewall_title">Firewall</string>
+    <string name="network_firewall_open_summary">Block selected apps from network access without a VPN</string>
+    <string name="network_firewall_summary">Uses Android’s platform firewall (Android 11 or newer), not a VPN. Shevery shows rules it created; the firewall chain is shared, so enabling it may also activate rules set by other apps.</string>
+    <string name="network_firewall_unsupported">The platform firewall commands require Android 11 or newer.</string>
+    <string name="network_firewall_server_required">Start Shevery with Shizuku before changing firewall rules.</string>
+    <string name="network_firewall_apps">Apps</string>
+    <string name="network_firewall_change_failed">Could not apply the firewall rule. Check that Shevery is running with Shizuku permission.</string>
     <string name="settings_service_group">Service Maintenance</string>
     <string name="settings_application">Application</string>
     <string name="settings_appearance">Appearance</string>

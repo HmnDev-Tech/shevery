@@ -114,13 +114,26 @@ object AdbArm {
 
     /** Turn USB debugging off (honours the auto-disable-USB-debugging toggle). */
     fun disarmUsbDebugging(context: Context): Boolean {
+        return setUsbDebuggingEnabled(context, false)
+    }
+
+    fun setUsbDebuggingEnabled(context: Context, enabled: Boolean): Boolean {
         val app = context.applicationContext
-        return when (method(app)) {
-            Method.WRITE_SECURE_SETTINGS -> putInt(app, Settings.Global.ADB_ENABLED, 0)
+        val expected = if (enabled) 1 else 0
+        val written = when (method(app)) {
+            Method.WRITE_SECURE_SETTINGS ->
+                putInt(app, Settings.Global.ADB_ENABLED, expected)
             Method.DEVICE_OWNER ->
-                DeviceOwnerManager.setGlobalSetting(app, Settings.Global.ADB_ENABLED, "0")
+                DeviceOwnerManager.setGlobalSetting(
+                    app,
+                    Settings.Global.ADB_ENABLED,
+                    expected.toString()
+                )
             Method.NONE -> false
         }
+        return written && runCatching {
+            Settings.Global.getInt(app.contentResolver, Settings.Global.ADB_ENABLED, 0) == expected
+        }.getOrDefault(false)
     }
 
     /**
