@@ -333,7 +333,7 @@ Wi-Fi is required for the first restart because Shevery must connect to the curr
     <string name="settings_auto_disable_usb_debugging_summary">Turn off USB debugging after reboot when Shevery is not configured to start on boot</string>
     <string name="usb_debugging_hide_title">Hide USB debugging</string>
     <string name="usb_debugging_hide_open_summary">Temporarily turn off USB debugging while selected apps are in front</string>
-    <string name="usb_debugging_hide_warning">This changes the device-wide USB debugging setting; it is not hidden from only the selected app. ADB-based connections may stop while it is off. Usage access and permission to change secure settings are required.</string>
+    <string name="usb_debugging_hide_warning">This changes the device-wide USB debugging setting; it is not hidden from only the selected app. ADB-based connections may stop while it is off. Usage access and permission to change secure settings are required. If you force-stop Shevery, Android prevents cleanup until Shevery is opened again.</string>
     <string name="usb_debugging_hide_usage_access">Usage access</string>
     <string name="usb_debugging_hide_usage_access_granted">Granted</string>
     <string name="usb_debugging_hide_usage_access_required">Tap to grant access to detect the foreground app</string>

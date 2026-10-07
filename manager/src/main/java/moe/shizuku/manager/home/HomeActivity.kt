@@ -111,6 +111,8 @@ import moe.shizuku.manager.BuildConfig
 import moe.shizuku.manager.Helps
 import moe.shizuku.manager.R
 import moe.shizuku.manager.ShizukuSettings
+import moe.shizuku.manager.settings.UsbDebuggingHideManager
+import moe.shizuku.manager.settings.UsbDebuggingHideService
 import moe.shizuku.manager.settings.SettingsSection
 import moe.shizuku.manager.adb.AdbArm
 import moe.shizuku.manager.adb.AdbStarter
@@ -822,6 +824,8 @@ abstract class HomeActivity : AppActivity() {
 
     override fun onResume() {
         super.onResume()
+        UsbDebuggingHideManager.restore(this)
+        UsbDebuggingHideService.refresh(this)
         if (SecuritySettings.isActionProtected(SecuritySettings.ProtectedAction.APP_OPEN) && !AuthManager.isAppOpenSessionValid()) {
             isAppUnlocked.value = false
         }
