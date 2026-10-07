@@ -25,6 +25,9 @@
     <uses-permission
         android:name="android.permission.WRITE_SECURE_SETTINGS"
         tools:ignore="ProtectedPermissions" />
+    <uses-permission
+        android:name="android.permission.PACKAGE_USAGE_STATS"
+        tools:ignore="ProtectedPermissions" />
     <!-- mDNS discovery for wireless ADB (matches DJG reference) -->
     <uses-permission
         android:name="android.permission.CHANGE_WIFI_MULTICAST_STATE"
@@ -130,6 +133,14 @@
             android:name=".settings.LabFeaturesActivity"
             android:exported="false"
             android:label="Lab Features" />
+        <activity
+            android:name=".settings.UsbDebuggingHideActivity"
+            android:exported="false"
+            android:label="@string/usb_debugging_hide_title" />
+        <activity
+            android:name=".settings.NetworkFirewallActivity"
+            android:exported="false"
+            android:label="@string/network_firewall_title" />
 
         <activity
             android:name=".accessibility.AccessibilityManagerActivity"
@@ -226,6 +237,17 @@
             <property
                 android:name="android.app.PROPERTY_SPECIAL_USE_FGS_SUBTYPE"
                 android:value="Keeps Shevery service watchdog monitoring active while keep-alive or auto-restart is enabled." />
+        </service>
+
+        <service
+            android:name=".settings.UsbDebuggingHideService"
+            android:enabled="true"
+            android:exported="false"
+            android:foregroundServiceType="specialUse"
+            tools:targetApi="34">
+            <property
+                android:name="android.app.PROPERTY_SPECIAL_USE_FGS_SUBTYPE"
+                android:value="Temporarily changes USB debugging while configured apps are in the foreground." />
         </service>
 
         <service
