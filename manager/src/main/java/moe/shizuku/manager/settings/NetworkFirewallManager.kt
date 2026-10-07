@@ -17,6 +17,15 @@ object NetworkFirewallManager {
             .orEmpty()
             .toSet()
 
+    fun retainInstalledPackages(installedPackages: Set<String>) {
+        val blocked = blockedPackages()
+        val retained = blocked intersect installedPackages
+        if (blocked == retained) return
+        ShizukuSettings.getPreferences().edit()
+            .putStringSet(KEY_BLOCKED_PACKAGES, retained)
+            .apply()
+    }
+
     fun setBlocked(packageName: String, blocked: Boolean): Boolean {
         if (!packageNamePattern.matches(packageName)) return false
 

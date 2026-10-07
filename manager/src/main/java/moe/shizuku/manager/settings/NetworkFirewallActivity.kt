@@ -48,6 +48,8 @@ class NetworkFirewallActivity : AppActivity() {
             }
             androidx.compose.runtime.LaunchedEffect(refresh) {
                 apps = withContext(Dispatchers.IO) { loadApps() }
+                NetworkFirewallManager.retainInstalledPackages(apps.map { it.packageName }.toSet())
+                blocked = NetworkFirewallManager.blockedPackages()
             }
             val supported = Build.VERSION.SDK_INT >= Build.VERSION_CODES.R
             val serverRunning = Shizuku.pingBinder()

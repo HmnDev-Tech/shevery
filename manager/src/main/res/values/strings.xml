@@ -344,7 +344,7 @@ Wi-Fi is required for the first restart because Shevery must connect to the curr
     <string name="usb_debugging_hide_notification_summary">USB debugging is turned off only while a selected app is in the foreground</string>
     <string name="network_firewall_title">Firewall</string>
     <string name="network_firewall_open_summary">Block selected apps from network access without a VPN</string>
-    <string name="network_firewall_summary">Uses Android’s platform firewall (Android 11 or newer), not a VPN. The rule is shared with other apps that use this firewall chain.</string>
+    <string name="network_firewall_summary">Uses Android’s platform firewall (Android 11 or newer), not a VPN. Shevery shows rules it created; the firewall chain is shared, so enabling it may also activate rules set by other apps.</string>
     <string name="network_firewall_unsupported">The platform firewall commands require Android 11 or newer.</string>
     <string name="network_firewall_server_required">Start Shevery with Shizuku before changing firewall rules.</string>
     <string name="network_firewall_apps">Apps</string>
