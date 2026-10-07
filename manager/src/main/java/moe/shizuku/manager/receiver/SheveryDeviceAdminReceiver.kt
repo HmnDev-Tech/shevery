@@ -20,8 +20,23 @@ class SheveryDeviceAdminReceiver : DeviceAdminReceiver() {
 
     override fun onEnabled(context: Context, intent: Intent) {
         super.onEnabled(context, intent)
-        Log.i(TAG, "Shevery Device Admin enabled")
-        LOGGER.i("Device Admin enabled")
+        val dpm = context.getSystemService(Context.DEVICE_POLICY_SERVICE) as? android.app.admin.DevicePolicyManager
+        val isDo = dpm?.isDeviceOwnerApp(context.packageName) == true
+        val isPo = dpm?.isProfileOwnerApp(context.packageName) == true
+        val type = when {
+            isDo -> "Device Owner"
+            isPo -> "Profile Owner"
+            else -> "Device Admin"
+        }
+        Log.i(TAG, "Shevery $type enabled")
+        LOGGER.i("$type enabled")
+        try {
+            android.widget.Toast.makeText(
+                context,
+                context.getString(moe.shizuku.manager.R.string.device_owner_admin_enabled_toast, type),
+                android.widget.Toast.LENGTH_LONG
+            ).show()
+        } catch (_: Throwable) {}
     }
 
     override fun onDisabled(context: Context, intent: Intent) {
@@ -32,13 +47,13 @@ class SheveryDeviceAdminReceiver : DeviceAdminReceiver() {
 
     override fun onProfileProvisioningComplete(context: Context, intent: Intent) {
         super.onProfileProvisioningComplete(context, intent)
-        Log.i(TAG, "Device provisioning complete")
-        LOGGER.i("Device provisioning complete")
+        Log.i(TAG, "Profile provisioning complete")
+        LOGGER.i("Profile provisioning complete")
     }
 
     override fun onTransferOwnershipComplete(context: Context, bundle: PersistableBundle?) {
         super.onTransferOwnershipComplete(context, bundle)
-        Log.i(TAG, "Device Owner ownership transfer complete")
-        LOGGER.i("Device Owner ownership transfer complete")
+        Log.i(TAG, "Ownership transfer complete")
+        LOGGER.i("Ownership transfer complete")
     }
 }

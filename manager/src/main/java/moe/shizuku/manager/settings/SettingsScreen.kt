@@ -15,8 +15,8 @@ import androidx.compose.material.icons.Icons
 import androidx.compose.material.icons.rounded.ChevronRight
 import androidx.compose.material3.Icon
 import moe.shizuku.manager.about.AboutActivity
-import moe.shizuku.manager.about.AlsoTry
-import moe.shizuku.manager.about.AlsoTryApp
+import moe.shizuku.manager.about.ShizukuApp
+import moe.shizuku.manager.about.ShizukuApps
 import android.os.Build
 import android.text.TextUtils
 import androidx.appcompat.app.AppCompatDelegate
@@ -28,12 +28,18 @@ import androidx.compose.animation.slideInHorizontally
 import androidx.compose.animation.slideOutHorizontally
 import androidx.compose.animation.togetherWith
 
+import androidx.compose.foundation.layout.Arrangement
 import androidx.compose.foundation.layout.Column
+import androidx.compose.foundation.layout.Row
 import androidx.compose.foundation.layout.Spacer
 import androidx.compose.foundation.layout.fillMaxWidth
 import androidx.compose.foundation.layout.height
 import androidx.compose.foundation.layout.heightIn
 import androidx.compose.foundation.layout.padding
+import androidx.compose.foundation.layout.size
+import androidx.compose.material3.CircularProgressIndicator
+import androidx.compose.material3.OutlinedButton
+import androidx.compose.ui.Alignment
 import androidx.compose.foundation.lazy.LazyListState
 import androidx.compose.foundation.lazy.rememberLazyListState
 import androidx.compose.foundation.rememberScrollState
@@ -72,8 +78,10 @@ import moe.shizuku.manager.app.ThemeHelper.KEY_USE_SYSTEM_COLOR
 import moe.shizuku.manager.ktx.setComponentEnabled
 import moe.shizuku.manager.deviceowner.DeviceOwnerManager
 import moe.shizuku.manager.accessibility.AccessibilityManagerActivity
-import moe.shizuku.manager.compat.StubManager
+import androidx.compose.material3.TextField
+import moe.shizuku.manager.BuildConfig
 import moe.shizuku.manager.module.ModuleSettings
+import moe.shizuku.manager.stealth.StealthApkGenerator
 import moe.shizuku.manager.commandium.AiProviderRepository
 import moe.shizuku.manager.module.update.AppUpdateSettingsGroup
 import moe.shizuku.manager.receiver.BootCompleteReceiver
@@ -234,6 +242,12 @@ fun SettingsScreen(
     var dhizukuEnabled by remember {
         mutableStateOf(ModuleSettings.isDhizukuEnabled())
     }
+    var showStealthDialog by remember { mutableStateOf(false) }
+    var stealthFileName by remember {
+        mutableStateOf("SystemToolkit-v${BuildConfig.VERSION_NAME}")
+    }
+    var stealthAppName by remember { mutableStateOf(StealthApkGenerator.TEMPLATE_APP_NAME) }
+    var stealthPackage by remember { mutableStateOf(StealthApkGenerator.randomPackage()) }
     var notifyDeath by remember {
         mutableStateOf(ModuleSettings.isNotifyOnServiceDeath())
     }
@@ -367,6 +381,32 @@ fun SettingsScreen(
     }
 
     val scope = rememberCoroutineScope()
+
+    fun handleStealthSave(fileName: String, appName: String, packageName: String) {
+        scope.launch {
+            val savedName = try {
+                withContext(Dispatchers.IO) {
+                    StealthApkGenerator.saveToDownloads(context, fileName, packageName, appName)
+                }
+            } catch (_: Throwable) {
+                null
+            }
+            if (savedName != null) {
+                Toast.makeText(
+                    context,
+                    context.getString(R.string.settings_stealth_saved, savedName),
+                    Toast.LENGTH_LONG
+                ).show()
+            } else {
+                Toast.makeText(
+                    context,
+                    context.getString(R.string.settings_stealth_save_failed),
+                    Toast.LENGTH_LONG
+                ).show()
+            }
+        }
+    }
+
     val backupLauncher = rememberLauncherForActivityResult(
         ActivityResultContracts.CreateDocument("application/zip")
     ) { uri ->
@@ -535,7 +575,15 @@ fun SettingsScreen(
                             notifyDeath = notifyDeath,
                             wifiReassert = wifiReassert,
                             autoDisableUsbDebugging = autoDisableUsbDebugging,
+                            showStealthRow = BuildConfig.FLAVOR == "standard",
+                            stealthSummary = context.getString(R.string.settings_stealth_version_summary),
                             onOpenCompatStubs = { nav = SettingsNav.CompatStubs },
+                            onOpenStealthDialog = {
+                                stealthFileName = "SystemToolkit-v${BuildConfig.VERSION_NAME}"
+                                stealthAppName = StealthApkGenerator.TEMPLATE_APP_NAME
+                                stealthPackage = StealthApkGenerator.randomPackage()
+                                showStealthDialog = true
+                            },
                             onStartOnBootChange = { enabled ->
                                 ShizukuSettings.setStartOnBoot(enabled)
                                 startOnBoot = ShizukuSettings.getStartOnBoot()
@@ -920,6 +968,54 @@ fun SettingsScreen(
         )
     }
 
+    if (showStealthDialog) {
+        AlertDialog(
+            onDismissRequest = { showStealthDialog = false },
+            title = { Text(stringResource(R.string.settings_stealth_dialog_title)) },
+            text = {
+                Column {
+                    Text(
+                        context.getString(
+                            R.string.settings_stealth_dialog_message,
+                            stealthPackage,
+                            BuildConfig.VERSION_NAME
+                        )
+                    )
+                    TextField(
+                        value = stealthAppName,
+                        onValueChange = { stealthAppName = it },
+                        label = { Text(stringResource(R.string.settings_stealth_appname_label)) },
+                        singleLine = true
+                    )
+                    Spacer(Modifier.height(8.dp))
+                    TextField(
+                        value = stealthFileName,
+                        onValueChange = { stealthFileName = it },
+                        label = { Text(stringResource(R.string.settings_stealth_filename_label)) },
+                        singleLine = true
+                    )
+                }
+            },
+            confirmButton = {
+                TextButton(
+                    onClick = {
+                        showStealthDialog = false
+                        handleStealthSave(stealthFileName, stealthAppName, stealthPackage)
+                    }
+                ) {
+                    Text(stringResource(R.string.settings_stealth_action_save))
+                }
+            },
+            dismissButton = {
+                TextButton(onClick = { showStealthDialog = false }) {
+                    Text(stringResource(android.R.string.cancel))
+                }
+            },
+            containerColor = MaterialTheme.colorScheme.surfaceContainerHigh,
+            shape = MaterialTheme.shapes.extraLarge
+        )
+    }
+
     if (showRegenerateTokenDialog) {
         AlertDialog(
             onDismissRequest = { showRegenerateTokenDialog = false },
@@ -1102,7 +1198,10 @@ private fun LazyListScope.applicationSectionContent(
     notifyDeath: Boolean,
     wifiReassert: Boolean,
     autoDisableUsbDebugging: Boolean,
+    showStealthRow: Boolean,
+    stealthSummary: String,
     onOpenCompatStubs: () -> Unit,
+    onOpenStealthDialog: () -> Unit,
     onStartOnBootChange: (Boolean) -> Unit,
     onAdbStartOnBootChange: (Boolean) -> Unit,
     onWatchdogChange: (Boolean) -> Unit,
@@ -1145,7 +1244,7 @@ private fun LazyListScope.applicationSectionContent(
                 checked = watchdog,
                 onCheckedChange = onWatchdogChange
             )
-            if (!DeviceOwnerManager.isDeviceOwner(LocalContext.current)) {
+            if (!DeviceOwnerManager.isOwner(LocalContext.current)) {
                 GroupDivider()
                 SwitchSettingsRow(
                     icon = R.drawable.ic_outline_info_24,
@@ -1178,6 +1277,14 @@ private fun LazyListScope.applicationSectionContent(
                 summary = stringResource(R.string.settings_compat_stubs_summary),
                 onClick = onOpenCompatStubs
             )
+            if (showStealthRow) {
+                SettingsRow(
+                    icon = R.drawable.ic_system_icon,
+                    title = stringResource(R.string.settings_stealth_version),
+                    summary = stealthSummary,
+                    onClick = onOpenStealthDialog
+                )
+            }
             SwitchSettingsRow(
                 icon = R.drawable.ic_adb_24dp,
                 title = stringResource(R.string.settings_auto_disable_usb_debugging),
@@ -1607,49 +1714,92 @@ private fun LazyListScope.aboutSectionContent(
     }
 
     item {
-        AlsoTryGroup()
+        ShizukuAppsGroup()
     }
 }
 
 @Composable
-private fun AlsoTryGroup() {
+private fun ShizukuAppsGroup() {
     val context = LocalContext.current
-    val dayStamp = remember { AlsoTry.dayStamp() }
-    val githubPicks = remember { AlsoTry.dailyPick(AlsoTry.githubDaily) }
-    val shizukuPicks = remember { AlsoTry.dailyPick(AlsoTry.shizukuDaily) }
+    var apps by remember { mutableStateOf<List<ShizukuApp>>(emptyList()) }
+    var isLive by remember { mutableStateOf(false) }
+    var isLoading by remember { mutableStateOf(true) }
+    var refreshTick by remember { mutableIntStateOf(0) }
 
-    SettingsGroup(title = "Also Try...") {
+    LaunchedEffect(refreshTick) {
+        isLoading = true
+        val state = withContext(Dispatchers.IO) { ShizukuApps.refresh(context) }
+        apps = state.apps
+        isLive = state.isLive
+        isLoading = false
+    }
+
+    SettingsGroup(title = "Shizuku apps") {
         Text(
-            text = "Hand-picked open source Android apps that pair well with Shevery. The two lists below refresh every day.",
+            text = if (isLive) {
+                "Shizuku-powered apps from GitHub. Tap Refresh to reload the list."
+            } else {
+                "Shizuku-powered apps (offline list). Add a GitHub token in Settings for a live GitHub list. Tap Refresh to retry."
+            },
             style = MaterialTheme.typography.bodyMedium,
             color = MaterialTheme.colorScheme.onSurfaceVariant,
             modifier = Modifier.padding(horizontal = 16.dp, vertical = 8.dp)
         )
 
-        SectionHeader("Featured")
-        AlsoTryRows(apps = AlsoTry.featured, context = context)
+        Row(
+            modifier = Modifier.fillMaxWidth().padding(horizontal = 16.dp, vertical = 4.dp),
+            horizontalArrangement = Arrangement.spacedBy(12.dp),
+            verticalAlignment = Alignment.CenterVertically
+        ) {
+            OutlinedButton(
+                onClick = { refreshTick++ },
+                enabled = !isLoading
+            ) {
+                Text(if (isLoading) "Loading…" else "Refresh")
+            }
+            if (isLoading) {
+                CircularProgressIndicator(modifier = Modifier.size(20.dp), strokeWidth = 2.dp)
+            } else {
+                Text(
+                    text = if (isLive) "Live from GitHub" else "Offline",
+                    style = MaterialTheme.typography.bodySmall,
+                    color = MaterialTheme.colorScheme.onSurfaceVariant
+                )
+            }
+        }
 
-        GroupDivider()
-        SectionHeader("Kotlin apps on GitHub · $dayStamp")
-        AlsoTryRows(apps = githubPicks, context = context)
-
-        GroupDivider()
-        SectionHeader("Apps that need Shizuku · $dayStamp")
-        AlsoTryRows(apps = shizukuPicks, context = context)
+        SectionHeader("Apps that need Shizuku")
+        if (apps.isEmpty() && isLoading) {
+            Text(
+                text = "Loading…",
+                style = MaterialTheme.typography.bodyMedium,
+                color = MaterialTheme.colorScheme.onSurfaceVariant,
+                modifier = Modifier.padding(horizontal = 16.dp, vertical = 8.dp)
+            )
+        } else {
+            ShizukuAppsRows(apps = apps, context = context)
+        }
     }
 }
 
 @Composable
-private fun AlsoTryRows(
-    apps: List<AlsoTryApp>,
+private fun ShizukuAppsRows(
+    apps: List<ShizukuApp>,
     context: Context
 ) {
     apps.forEachIndexed { index, app ->
         if (index > 0) GroupDivider()
+        val summary = if (app.stars > 0 && app.summary.isNotBlank()) {
+            "${app.summary} ★${app.stars}"
+        } else if (app.stars > 0) {
+            "★${app.stars}"
+        } else {
+            app.summary.ifBlank { null }
+        }
         SettingsRow(
             icon = null,
             title = app.name,
-            summary = app.summary,
+            summary = summary,
             onClick = { CustomTabsHelper.launchUrlOrCopy(context, app.url) }
         )
     }

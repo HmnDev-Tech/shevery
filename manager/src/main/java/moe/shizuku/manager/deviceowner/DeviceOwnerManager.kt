@@ -59,6 +59,10 @@ object DeviceOwnerManager {
         return SheveryDeviceAdminReceiver.getComponentName(context)
     }
 
+    fun isOwner(context: Context): Boolean {
+        return isDeviceOwner(context) || isProfileOwner(context)
+    }
+
     fun isDeviceOwner(context: Context): Boolean {
         return try {
             val dpm = getDpm(context)
@@ -86,9 +90,18 @@ object DeviceOwnerManager {
         }
     }
 
-    fun getAdbCommand(context: Context): String {
+    fun getAdbCommand(context: Context, asProfileOwner: Boolean = false): String {
+        return if (asProfileOwner) getProfileOwnerAdbCommand(context) else getDeviceOwnerAdbCommand(context)
+    }
+
+    fun getDeviceOwnerAdbCommand(context: Context): String {
         val cn = getAdminComponent(context).flattenToShortString()
         return "dpm set-device-owner $cn"
+    }
+
+    fun getProfileOwnerAdbCommand(context: Context): String {
+        val cn = getAdminComponent(context).flattenToShortString()
+        return "dpm set-profile-owner $cn"
     }
 
     /**
@@ -241,22 +254,63 @@ object DeviceOwnerManager {
         }
     }
 
-    fun clearDeviceOwner(context: Context): Boolean {
+    fun clearOwner(context: Context): Boolean {
         return try {
             val dpm = getDpm(context)
             val admin = getAdminComponent(context)
-            dpm.clearDeviceOwnerApp(context.packageName)
+            var ok = false
+            if (isProfileOwner(context)) {
+                try {
+                    @Suppress("DEPRECATION")
+                    dpm.clearProfileOwner(admin)
+                    ok = true
+                } catch (e: Throwable) {
+                    LOGGER.w("clearProfileOwner failed: ${e.message}")
+                }
+            }
+            if (isDeviceOwner(context)) {
+                try {
+                    dpm.clearDeviceOwnerApp(context.packageName)
+                    ok = true
+                } catch (e: Throwable) {
+                    LOGGER.w("clearDeviceOwnerApp failed: ${e.message}")
+                }
+            }
             try {
                 dpm.removeActiveAdmin(admin)
             } catch (e: Throwable) {
-                LOGGER.w("removeActiveAdmin after clearDeviceOwner failed: ${e.message}")
+                LOGGER.w("removeActiveAdmin after clearOwner failed: ${e.message}")
             }
-            LOGGER.i("Cleared Device Owner for ${context.packageName}")
-            true
+            LOGGER.i("Cleared Owner for ${context.packageName}, success=$ok")
+            ok || !isOwner(context)
         } catch (e: Exception) {
-            Log.e(TAG, "Failed to clear device owner", e)
-            LOGGER.e(e, "clearDeviceOwner")
+            Log.e(TAG, "Failed to clear owner", e)
+            LOGGER.e(e, "clearOwner")
             false
+        }
+    }
+
+    fun clearDeviceOwner(context: Context): Boolean = clearOwner(context)
+
+    fun activateOwnerViaShizuku(context: Context, asProfileOwner: Boolean = true): Pair<Boolean, String> {
+        val binder = rikka.shizuku.Shizuku.getBinder() ?: return false to "Shizuku service is not running"
+        return try {
+            val service = moe.shizuku.server.IShizukuService.Stub.asInterface(binder)
+            val cn = getAdminComponent(context).flattenToShortString()
+            val cmd = if (asProfileOwner) "dpm set-profile-owner $cn" else "dpm set-device-owner $cn"
+            val process = service.newProcess(arrayOf("sh", "-c", cmd), null, null)
+            val exitCode = process.waitFor()
+            val err = android.os.ParcelFileDescriptor.AutoCloseInputStream(process.errorStream).bufferedReader().readText().trim()
+            val out = android.os.ParcelFileDescriptor.AutoCloseInputStream(process.inputStream).bufferedReader().readText().trim()
+            val success = exitCode == 0 && (if (asProfileOwner) isProfileOwner(context) else isDeviceOwner(context))
+            if (success) {
+                true to (out.ifBlank { "Success" })
+            } else {
+                false to (err.ifBlank { out.ifBlank { "Command returned exit code $exitCode" } })
+            }
+        } catch (e: Throwable) {
+            LOGGER.e(e, "activateOwnerViaShizuku failed")
+            false to (e.message ?: "Unknown error")
         }
     }
 

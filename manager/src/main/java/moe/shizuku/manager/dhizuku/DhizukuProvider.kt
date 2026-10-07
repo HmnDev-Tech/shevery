@@ -28,7 +28,7 @@ class DhizukuProvider : ContentProvider() {
 
         override fun getVersionCode(): Int = 2000000000
 
-        override fun getVersionName(): String = "14.1.0"
+        override fun getVersionName(): String = "14.2.0"
 
         override fun isPermissionGranted(): Boolean = isCallerAuthorized()
 

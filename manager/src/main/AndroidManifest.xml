@@ -229,17 +229,6 @@
             android:permission="moe.shizuku.manager.permission.API_V23" />
 
         <service
-            android:name=".service.WatchdogService"
-            android:enabled="true"
-            android:exported="false"
-            android:foregroundServiceType="specialUse"
-            tools:targetApi="34">
-            <property
-                android:name="android.app.PROPERTY_SPECIAL_USE_FGS_SUBTYPE"
-                android:value="Keeps Shevery service watchdog monitoring active while keep-alive or auto-restart is enabled." />
-        </service>
-
-        <service
             android:name=".settings.UsbDebuggingHideService"
             android:enabled="true"
             android:exported="false"

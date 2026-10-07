@@ -62,17 +62,17 @@ class DhizukuService(private val context: Context) : IDhizukuService.Stub() {
                 return false
             }
 
-            // Find the device owner admin component
+            // Find the owner admin component (Device Owner or Profile Owner)
             val ownerAdmin = admins.firstOrNull { admin ->
                 try {
-                    dpm.isDeviceOwnerApp(admin.packageName)
+                    dpm.isDeviceOwnerApp(admin.packageName) || dpm.isProfileOwnerApp(admin.packageName)
                 } catch (e: Exception) {
                     false
                 }
             }
 
             if (ownerAdmin == null) {
-                Log.e(TAG, "No device owner admin found among active admins: ${admins.map { it.flattenToString() }}")
+                Log.e(TAG, "No device/profile owner admin found among active admins: ${admins.map { it.flattenToString() }}")
                 return false
             }
 
