@@ -1,0 +1,427 @@
+package moe.shizuku.manager.stealth
+
+import android.content.ContentValues
+import android.content.Context
+import android.os.Build
+import android.os.Environment
+import android.provider.MediaStore
+import android.util.Base64
+import moe.shizuku.manager.ktx.logd
+import org.bouncycastle.asn1.x500.X500Name
+import org.bouncycastle.asn1.x509.SubjectPublicKeyInfo
+import org.bouncycastle.cert.X509v3CertificateBuilder
+import org.bouncycastle.cms.CMSProcessableByteArray
+import org.bouncycastle.cms.CMSSignedDataGenerator
+import org.bouncycastle.cms.jcajce.JcaSignerInfoGeneratorBuilder
+import org.bouncycastle.operator.jcajce.JcaContentSignerBuilder
+import org.bouncycastle.operator.jcajce.JcaDigestCalculatorProviderBuilder
+import java.io.ByteArrayOutputStream
+import java.io.File
+import java.math.BigInteger
+import java.security.KeyPair
+import java.security.KeyPairGenerator
+import java.security.MessageDigest
+import java.security.SecureRandom
+import java.util.Date
+import java.util.zip.ZipEntry
+import java.util.zip.ZipFile
+import java.util.zip.ZipOutputStream
+
+/**
+ * Generates a disguised copy of Shevery on the device itself.
+ *
+ * The standard edition embeds a stealth template APK built with the fixed
+ * [TEMPLATE_PACKAGE] id. When the user saves a stealth copy, every occurrence
+ * of the template id inside the manifest, resources and dex files is replaced
+ * with a freshly generated random id of the EXACT SAME LENGTH. Because no file
+ * grows or shrinks, no binary format needs to be parsed: it is a pure byte
+ * swap, offsets stay valid, and only the signatures have to be regenerated
+ * (v1 JAR signing, the stale v2/v3 block is dropped with the zip rebuild).
+ *
+ * Both ASCII/MUTF-8 and UTF-16LE encodings are rewritten: the binary
+ * manifest and resources.arsc store the package name as UTF-16LE, so an
+ * ASCII-only swap left the installed package unchanged (still the template
+ * id). DEX files additionally get their checksum/signature recalculated.
+ *
+ * The stealth copy keeps the same Shizuku authorities, so it conflicts with
+ * the normal Shevery by design: uninstall the normal Shevery before
+ * installing the stealth copy, it is a replacement, not a second copy.
+ * Shizuku privileges come from the declared authorities/permissions, so the
+ * renamed copy keeps real Shizuku privileges once it replaces the original.
+ */
+object StealthApkGenerator {
+
+    const val TEMPLATE_ASSET = "shevery-stealth.apk"
+    const val TEMPLATE_PACKAGE = "com.stealthp.lacehold"
+    const val TEMPLATE_APP_NAME = "System Toolkit"
+
+    private val random = SecureRandom()
+    private val LETTERS = ('a'..'z').toList()
+    private val ALNUM = (('a'..'z') + ('0'..'9')).toList()
+
+    /** Random package id, always the same length as [TEMPLATE_PACKAGE]. */
+    fun randomPackage(): String {
+        fun seg(): String = buildString {
+            append(LETTERS[random.nextInt(LETTERS.size)])
+            repeat(7) { append(ALNUM[random.nextInt(ALNUM.size)]) }
+        }
+        return "com.${seg()}.${seg()}"
+    }
+
+    /**
+     * Rewrites the embedded template with [packageName] and the launcher label
+     * [appName], then streams the result into Downloads as [fileName].
+     * Returns the saved display name, or null.
+     *
+     * The label is normalized to the exact byte/unit length of
+     * [TEMPLATE_APP_NAME] (truncated on a char boundary, space-padded), so the
+     * binary string pools stay valid without parsing them.
+     */
+    fun saveToDownloads(
+        context: Context,
+        fileName: String,
+        packageName: String,
+        appName: String = TEMPLATE_APP_NAME,
+    ): String? {
+        if (Build.VERSION.SDK_INT < Build.VERSION_CODES.Q) return null
+        if (packageName.length != TEMPLATE_PACKAGE.length) {
+            logd("Stealth package length mismatch: ${packageName.length}")
+            return null
+        }
+        val baseName = fileName.replace(Regex("[\\\\/:*?\"<>|]"), "").trim().takeIf { it.isNotEmpty() }
+            ?: return null
+        val displayName = if (baseName.endsWith(".apk", ignoreCase = true)) baseName else "$baseName.apk"
+
+        val templateFile = File(context.cacheDir, "stealth-template.apk")
+        try {
+            context.assets.open(TEMPLATE_ASSET).use { input ->
+                templateFile.outputStream().use { output -> input.copyTo(output) }
+            }
+            val oldPkg = TEMPLATE_PACKAGE.toByteArray(Charsets.US_ASCII)
+            val newPkg = packageName.toByteArray(Charsets.US_ASCII)
+            val oldLabelUtf8 = TEMPLATE_APP_NAME.toByteArray(Charsets.UTF_8)
+            val newLabelUtf8 = fitLabelUtf8(appName)
+            val oldLabelUtf16 = TEMPLATE_APP_NAME.toByteArray(Charsets.UTF_16LE)
+            val newLabelUtf16 = fitLabelUtf16(appName)
+
+            val keyPair = KeyPairGenerator.getInstance("RSA").also { it.initialize(2048, random) }.generateKeyPair()
+            val signer = JcaContentSignerBuilder("SHA256withRSA").build(keyPair.private)
+            val certHolder = selfSignedCert(keyPair)
+
+            val values = ContentValues().apply {
+                put(MediaStore.Downloads.DISPLAY_NAME, displayName)
+                put(MediaStore.Downloads.MIME_TYPE, "application/vnd.android.package-archive")
+                put(MediaStore.Downloads.RELATIVE_PATH, Environment.DIRECTORY_DOWNLOADS)
+            }
+            val resolver = context.contentResolver
+            val uri = resolver.insert(
+                MediaStore.Downloads.getContentUri(MediaStore.VOLUME_EXTERNAL_PRIMARY), values
+            ) ?: return null
+            try {
+                resolver.openOutputStream(uri)?.use { rawOut ->
+                    ZipOutputStream(rawOut).use { zos ->
+                        rewriteApk(
+                            templateFile, zos, oldPkg, newPkg,
+                            oldLabelUtf8, newLabelUtf8, oldLabelUtf16, newLabelUtf16,
+                            keyPair, certHolder, signer
+                        )
+                    }
+                } ?: error("openOutputStream returned null")
+            } catch (e: Throwable) {
+                resolver.delete(uri, null, null)
+                throw e
+            }
+            logd("Stealth APK saved as $displayName ($packageName)")
+            return displayName
+        } finally {
+            templateFile.delete()
+        }
+    }
+
+    private fun rewriteApk(
+        templateFile: File,
+        zos: ZipOutputStream,
+        oldPkg: ByteArray,
+        newPkg: ByteArray,
+        oldLabelUtf8: ByteArray,
+        newLabelUtf8: ByteArray,
+        oldLabelUtf16: ByteArray,
+        newLabelUtf16: ByteArray,
+        keyPair: KeyPair,
+        certHolder: org.bouncycastle.cert.X509CertificateHolder,
+        signer: org.bouncycastle.operator.ContentSigner,
+    ) {
+        ZipFile(templateFile).use { zf ->
+            val entries = java.util.Collections.list(zf.entries()).filter { !it.name.startsWith("META-INF/") }
+
+            // Pass 1: manifest sections (digests only, data is re-read in pass 2).
+            val manifest = ByteArrayOutputStream()
+            manifest.write("Manifest-Version: 1.0\r\nCreated-By: Shevery Stealth\r\n\r\n".toByteArray())
+            val sections = ArrayList<Pair<String, ByteArray>>(entries.size)
+            for (entry in entries) {
+                val data = readTransformed(
+                    zf, entry, oldPkg, newPkg,
+                    oldLabelUtf8, newLabelUtf8, oldLabelUtf16, newLabelUtf16
+                )
+                val section = manifestSection(entry.name, b64(sha256(data)))
+                manifest.write(section)
+                sections.add(entry.name to section)
+            }
+            val manifestBytes = manifest.toByteArray()
+
+            val sf = ByteArrayOutputStream()
+            sf.write(
+                ("Signature-Version: 1.0\r\nCreated-By: Shevery Stealth\r\n" +
+                    "SHA-256-Digest-Manifest: ${b64(sha256(manifestBytes))}\r\n\r\n").toByteArray()
+            )
+            for ((name, section) in sections) {
+                sf.write(manifestSection(name, b64(sha256(section))))
+            }
+            val sfBytes = sf.toByteArray()
+            val rsaBytes = cmsBlock(sfBytes, keyPair, certHolder, signer)
+
+            // Pass 2: entries + fresh signatures.
+            writeStored(zos, "META-INF/MANIFEST.MF", manifestBytes)
+            for (entry in entries) {
+                val data = readTransformed(
+                    zf, entry, oldPkg, newPkg,
+                    oldLabelUtf8, newLabelUtf8, oldLabelUtf16, newLabelUtf16
+                )
+                if (entry.isDirectory) {
+                    zos.putNextEntry(ZipEntry(entry.name).apply { time = entry.time })
+                    zos.closeEntry()
+                } else if (entry.method == ZipEntry.STORED) {
+                    val out = ZipEntry(entry.name).apply {
+                        method = ZipEntry.STORED
+                        time = entry.time
+                        size = data.size.toLong()
+                        crc = crc32(data)
+                    }
+                    zos.putNextEntry(out)
+                    zos.write(data)
+                    zos.closeEntry()
+                } else {
+                    zos.putNextEntry(ZipEntry(entry.name).apply { time = entry.time })
+                    zos.write(data)
+                    zos.closeEntry()
+                }
+            }
+            writeStored(zos, "META-INF/CERT.SF", sfBytes)
+            writeStored(zos, "META-INF/CERT.RSA", rsaBytes)
+        }
+    }
+
+    /**
+     * Normalizes a user label to the exact UTF-8 byte length of [TEMPLATE_APP_NAME]:
+     * truncated on a char boundary when too long, space-padded when shorter.
+     * Same byte length keeps a UTF-8 string pool (resources.arsc, binary
+     * manifest) valid without parsing it.
+     */
+    private fun fitLabelUtf8(appName: String): ByteArray {
+        val max = TEMPLATE_APP_NAME.toByteArray(Charsets.UTF_8).size
+        val trimmed = appName.trim()
+        if (trimmed.isEmpty()) return TEMPLATE_APP_NAME.toByteArray(Charsets.UTF_8)
+        val taken = buildString {
+            var bytes = 0
+            for (c in trimmed) {
+                val charBytes = c.toString().toByteArray(Charsets.UTF_8).size
+                if (bytes + charBytes > max) break
+                append(c)
+                bytes += charBytes
+            }
+        }.ifEmpty { TEMPLATE_APP_NAME }
+        val out = taken.toByteArray(Charsets.UTF_8)
+        if (out.size == max) return out
+        return out + ByteArray(max - out.size) { ' '.code.toByte() }
+    }
+
+    /**
+     * Normalizes a user label to the exact UTF-16 unit length of [TEMPLATE_APP_NAME].
+     * Only one of the UTF-8 / UTF-16 pools actually holds the label; the other
+     * fitted form simply matches nothing, so each encoding gets its own fit.
+     */
+    private fun fitLabelUtf16(appName: String): ByteArray {
+        val max = TEMPLATE_APP_NAME.length
+        val trimmed = appName.trim()
+        if (trimmed.isEmpty()) return TEMPLATE_APP_NAME.toByteArray(Charsets.UTF_16LE)
+        val taken = trimmed.take(max).ifEmpty { TEMPLATE_APP_NAME }
+        return taken.padEnd(max, ' ').toByteArray(Charsets.UTF_16LE)
+    }
+
+    private fun readTransformed(
+        zf: ZipFile,
+        entry: ZipEntry,
+        oldPkg: ByteArray,
+        newPkg: ByteArray,
+        oldLabelUtf8: ByteArray,
+        newLabelUtf8: ByteArray,
+        oldLabelUtf16: ByteArray,
+        newLabelUtf16: ByteArray,
+    ): ByteArray {
+        if (entry.isDirectory) return ByteArray(0)
+        val data = zf.getInputStream(entry).use { it.readBytes() }
+        // Nested APKs are separate packages with their own valid signatures: never touch them.
+        if (entry.name.startsWith("assets/") && entry.name.endsWith(".apk", ignoreCase = true)) return data
+        // DEX stores strings as MUTF-8 (ASCII-compatible): ASCII swap only, then fix header.
+        // Everywhere else the package also appears as UTF-16LE (binary manifest,
+        // resources.arsc), which an ASCII-only swap missed — leaving the template id.
+        // The launcher label is swapped the same way (UTF-8 + UTF-16LE).
+        if (isDex(data)) {
+            val swapped = swapAll(swapAll(data, oldPkg, newPkg), oldLabelUtf8, newLabelUtf8)
+            return fixDex(swapped)
+        }
+        val oldUtf16 = String(oldPkg, Charsets.US_ASCII).toByteArray(Charsets.UTF_16LE)
+        val newUtf16 = String(newPkg, Charsets.US_ASCII).toByteArray(Charsets.UTF_16LE)
+        val swapped = swapAll(
+            swapAll(swapAll(swapAll(data, oldPkg, newPkg), oldUtf16, newUtf16), oldLabelUtf8, newLabelUtf8),
+            oldLabelUtf16, newLabelUtf16
+        )
+        if (entry.name == "AndroidManifest.xml") {
+            verifyManifestRewrite(swapped, oldPkg, newPkg, oldUtf16, newUtf16)
+        }
+        return swapped
+    }
+
+    private fun verifyManifestRewrite(
+        manifest: ByteArray,
+        oldPkg: ByteArray,
+        newPkg: ByteArray,
+        oldUtf16: ByteArray,
+        newUtf16: ByteArray,
+    ) {
+        val hasNew = indexOf(manifest, newPkg, 0) >= 0 || indexOf(manifest, newUtf16, 0) >= 0
+        val hasOld = indexOf(manifest, oldPkg, 0) >= 0 || indexOf(manifest, oldUtf16, 0) >= 0
+        if (!hasNew || hasOld) {
+            error("Stealth package rewrite verification failed (hasNew=$hasNew hasOld=$hasOld)")
+        }
+    }
+
+    private fun isDex(data: ByteArray): Boolean {
+        if (data.size < 8) return false
+        return data[0] == 'd'.code.toByte() && data[1] == 'e'.code.toByte() &&
+                data[2] == 'x'.code.toByte() && data[3] == '\n'.code.toByte()
+    }
+
+    /**
+     * Recalculates the DEX header checksum (Adler32 from offset 12) and
+     * signature (SHA-1 from offset 32) after the byte swap. Without this the
+     * rewritten classes*.dex is rejected at install time.
+     */
+    private fun fixDex(data: ByteArray): ByteArray {
+        if (data.size < 32) return data
+        if (!isDex(data)) return data
+        return try {
+            val sha1 = MessageDigest.getInstance("SHA-1")
+            sha1.update(data, 32, data.size - 32)
+            val sig = sha1.digest()
+            sig.copyInto(data, 12)
+            val adler = java.util.zip.Adler32()
+            adler.update(data, 12, data.size - 12)
+            val checksum = adler.value.toInt()
+            data[8] = (checksum and 0xFF).toByte()
+            data[9] = ((checksum ushr 8) and 0xFF).toByte()
+            data[10] = ((checksum ushr 16) and 0xFF).toByte()
+            data[11] = ((checksum ushr 24) and 0xFF).toByte()
+            data
+        } catch (_: Throwable) {
+            data
+        }
+    }
+
+    private fun swapAll(data: ByteArray, old: ByteArray, repl: ByteArray): ByteArray {
+        var i = indexOf(data, old, 0)
+        if (i < 0) return data
+        val out = data.copyOf()
+        while (i >= 0) {
+            repl.copyInto(out, i)
+            i = indexOf(out, old, i + old.size)
+        }
+        return out
+    }
+
+    private fun indexOf(data: ByteArray, pattern: ByteArray, from: Int): Int {
+        outer@ for (i in from..data.size - pattern.size) {
+            for (j in pattern.indices) {
+                if (data[i + j] != pattern[j]) continue@outer
+            }
+            return i
+        }
+        return -1
+    }
+
+    private fun manifestSection(name: String, digestB64: String): ByteArray {
+        val out = ByteArrayOutputStream()
+        writeWrapped(out, "Name: $name")
+        writeWrapped(out, "SHA-256-Digest: $digestB64")
+        out.write("\r\n".toByteArray())
+        return out.toByteArray()
+    }
+
+    private fun writeWrapped(out: ByteArrayOutputStream, line: String) {
+        var bytes = line.toByteArray(Charsets.UTF_8)
+        var first = true
+        while (bytes.isNotEmpty()) {
+            var n = minOf(if (first) 72 else 71, bytes.size)
+            while (n > 0 && n < bytes.size && bytes[n].toInt() and 0xC0 == 0x80) n--
+            if (n == 0) n = minOf(if (first) 72 else 71, bytes.size)
+            if (!first) out.write(' '.code)
+            out.write(bytes, 0, n)
+            out.write("\r\n".toByteArray())
+            bytes = bytes.copyOfRange(n, bytes.size)
+            first = false
+        }
+    }
+
+    private fun selfSignedCert(keyPair: KeyPair): org.bouncycastle.cert.X509CertificateHolder {
+        val cn = buildString {
+            append("toolkit")
+            repeat(6) { append(ALNUM[random.nextInt(ALNUM.size)]) }
+        }
+        val dn = X500Name("CN=$cn")
+        val now = System.currentTimeMillis()
+        return X509v3CertificateBuilder(
+            dn,
+            BigInteger.valueOf(now),
+            Date(now - 86400000L),
+            Date(now + 30L * 365 * 86400000L),
+            dn,
+            SubjectPublicKeyInfo.getInstance(keyPair.public.encoded)
+        ).build(JcaContentSignerBuilder("SHA256withRSA").build(keyPair.private))
+    }
+
+    private fun cmsBlock(
+        sfBytes: ByteArray,
+        keyPair: KeyPair,
+        certHolder: org.bouncycastle.cert.X509CertificateHolder,
+        signer: org.bouncycastle.operator.ContentSigner,
+    ): ByteArray {
+        val gen = CMSSignedDataGenerator()
+        gen.addSignerInfoGenerator(
+            JcaSignerInfoGeneratorBuilder(JcaDigestCalculatorProviderBuilder().build()).build(signer, certHolder)
+        )
+        gen.addCertificate(certHolder)
+        return gen.generate(CMSProcessableByteArray(sfBytes), false).encoded
+    }
+
+    private fun sha256(data: ByteArray): ByteArray = MessageDigest.getInstance("SHA-256").digest(data)
+
+    private fun b64(data: ByteArray): String = Base64.encodeToString(data, Base64.NO_WRAP)
+
+    private fun crc32(data: ByteArray): Long {
+        val crc = java.util.zip.CRC32()
+        crc.update(data)
+        return crc.value
+    }
+
+    private fun writeStored(zos: ZipOutputStream, name: String, data: ByteArray) {
+        val entry = ZipEntry(name).apply {
+            method = ZipEntry.STORED
+            time = System.currentTimeMillis()
+            size = data.size.toLong()
+            crc = crc32(data)
+        }
+        zos.putNextEntry(entry)
+        zos.write(data)
+        zos.closeEntry()
+    }
+}

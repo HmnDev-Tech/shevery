@@ -138,6 +138,13 @@ object AppUpdateInstaller {
     private fun confirmIntent(intent: Intent): Intent? {
             // The pre-populated user-action intent rides in Intent.EXTRA_INTENT (CommonsWare
             // documents this): EXTRA_STATUS_PENDING_USER_ACTION has never been public SDK.
-            return intent.getParcelableExtra(Intent.EXTRA_INTENT, Intent::class.java)
+            // getParcelableExtra(String, Class) requires API 33; the deprecated single-arg
+            // overload must be used below (same guard as StubManager).
+            return if (Build.VERSION.SDK_INT >= Build.VERSION_CODES.TIRAMISU) {
+                intent.getParcelableExtra(Intent.EXTRA_INTENT, Intent::class.java)
+            } else {
+                @Suppress("DEPRECATION")
+                intent.getParcelableExtra(Intent.EXTRA_INTENT)
+            }
         }
 }

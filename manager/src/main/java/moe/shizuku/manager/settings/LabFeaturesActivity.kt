@@ -1,6 +1,7 @@
 package moe.shizuku.manager.settings
 
 import android.os.Bundle
+import android.content.Intent
 import android.widget.Toast
 import androidx.activity.compose.setContent
 import androidx.compose.material3.AlertDialog
@@ -99,6 +100,28 @@ class LabFeaturesActivity : AppActivity() {
                                 onCheckedChange = { value ->
                                     verboseLogging = value
                                     ModuleSettings.setVerboseLogging(value)
+                                }
+                            )
+                            GroupDivider()
+                            SettingsRow(
+                                icon = R.drawable.ic_adb_24dp,
+                                title = stringResource(R.string.usb_debugging_hide_title),
+                                summary = stringResource(R.string.usb_debugging_hide_open_summary),
+                                onClick = {
+                                    context.startActivity(Intent(context, UsbDebuggingHideActivity::class.java))
+                                }
+                            )
+                        }
+                    }
+
+                    item {
+                        SettingsGroup(title = stringResource(R.string.network_firewall_title)) {
+                            SettingsRow(
+                                icon = R.drawable.ic_security_24dp,
+                                title = stringResource(R.string.network_firewall_title),
+                                summary = stringResource(R.string.network_firewall_open_summary),
+                                onClick = {
+                                    context.startActivity(Intent(context, NetworkFirewallActivity::class.java))
                                 }
                             )
                         }

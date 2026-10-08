@@ -131,6 +131,10 @@ public class ShizukuService extends Service<ShizukuUserServiceManager, ShizukuCl
 
         BinderSender.register(this);
 
+        // Server-process watchdog (NightDog principle): main-thread heartbeat
+        // every 5s, self-kill on 60s hang; restart is issued from the manager.
+        Watchdog.start(mainHandler);
+
         mainHandler.post(() -> {
             sendBinderToManager();
             sendBinderToClient();

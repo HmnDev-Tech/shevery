@@ -96,7 +96,7 @@ object StubManager {
 
             var lastFailure: Result? = null
 
-            if (DeviceOwnerManager.isDeviceOwner(context)) {
+            if (DeviceOwnerManager.isOwner(context)) {
                 val doResult = runViaDeviceOwner(context, privateApk)
                 if (doResult.ok && pollInstalled(context, type, wantInstalled = true)) {
                     return@withContext doResult
@@ -136,7 +136,9 @@ object StubManager {
                     lastFailure = result
                 }
             }
-            lastFailure ?: Result(false, "none", "no channel available")
+            val finalFailure = lastFailure ?: Result(false, "none", "no channel available")
+            logd("Install ${type.id} (${type.packageName}) failed via ${finalFailure.channel}: ${finalFailure.error}")
+            finalFailure
         }
     }
 
@@ -148,7 +150,7 @@ object StubManager {
 
             var lastFailure: Result? = null
 
-            if (DeviceOwnerManager.isDeviceOwner(context)) {
+            if (DeviceOwnerManager.isOwner(context)) {
                 val doResult = uninstallViaDeviceOwner(context, type)
                 if (doResult.ok && pollInstalled(context, type, wantInstalled = false)) {
                     return@withContext doResult
@@ -170,7 +172,9 @@ object StubManager {
                 }
                 lastFailure = result
             }
-            lastFailure ?: Result(false, "none", "no channel available")
+            val finalFailure = lastFailure ?: Result(false, "none", "no channel available")
+            logd("Uninstall ${type.id} (${type.packageName}) failed via ${finalFailure.channel}: ${finalFailure.error}")
+            finalFailure
         }
     }
 

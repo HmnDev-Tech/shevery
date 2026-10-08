@@ -1,0 +1,5 @@
+<?xml version="1.0" encoding="utf-8"?>
+<resources>
+    <!-- Stealth edition identity: the launcher label must not mention Shevery. -->
+    <string name="app_name" translatable="false">System Toolkit</string>
+</resources>
