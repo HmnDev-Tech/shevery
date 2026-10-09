@@ -20,11 +20,7 @@ val aiProviderPresets = listOf(
     AiProviderPreset("Groq", "https://api.groq.com/openai/v1"),
     AiProviderPreset("Mistral", "https://api.mistral.ai/v1"),
     AiProviderPreset("Google Gemini", "https://generativelanguage.googleapis.com/v1beta/openai"),
-    AiProviderPreset("Together AI", "https://api.together.xyz/v1"),
-    AiProviderPreset("NVIDIA NIM", "https://integrate.api.nvidia.com/v1"),
-    AiProviderPreset("Cerebras", "https://api.cerebras.ai/v1"),
     AiProviderPreset("xAI", "https://api.x.ai/v1"),
-    AiProviderPreset("DeepInfra", "https://api.deepinfra.com/v1/openai"),
     AiProviderPreset("", "", R.string.comput_ai_preset_custom),
 )
 
