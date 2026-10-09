@@ -25,8 +25,6 @@ val aiProviderPresets = listOf(
     AiProviderPreset("Cerebras", "https://api.cerebras.ai/v1"),
     AiProviderPreset("xAI", "https://api.x.ai/v1"),
     AiProviderPreset("DeepInfra", "https://api.deepinfra.com/v1/openai"),
-    AiProviderPreset("Requesty", "https://router.requesty.ai/v1"),
-    AiProviderPreset("API Route", "https://global.api-route.com/v1"),
     AiProviderPreset("", "", R.string.comput_ai_preset_custom),
 )
 
