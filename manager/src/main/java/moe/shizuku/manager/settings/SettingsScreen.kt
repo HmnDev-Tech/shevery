@@ -80,6 +80,7 @@ import moe.shizuku.manager.deviceowner.DeviceOwnerManager
 import moe.shizuku.manager.accessibility.AccessibilityManagerActivity
 import androidx.compose.material3.TextField
 import moe.shizuku.manager.BuildConfig
+import moe.shizuku.manager.comput.agent.AgentSafetyMode
 import moe.shizuku.manager.module.ModuleSettings
 import moe.shizuku.manager.stealth.StealthApkGenerator
 import moe.shizuku.manager.commandium.AiProviderRepository
@@ -309,6 +310,20 @@ fun SettingsScreen(
     var computRecommand by remember {
         mutableStateOf(ModuleSettings.isComputRecommandEnabled())
     }
+    var agentSafetyMode by remember {
+        mutableStateOf(ModuleSettings.getAgentSafetyMode())
+    }
+    var agentMaxSteps by remember {
+        mutableStateOf(ModuleSettings.getAgentMaxSteps())
+    }
+    var agentAskShell by remember {
+        mutableStateOf(ModuleSettings.isAgentAskShell())
+    }
+    var agentAskModule by remember {
+        mutableStateOf(ModuleSettings.isAgentAskModuleService())
+    }
+    var showAgentModeDialog by remember { mutableStateOf(false) }
+    var showAgentStepsDialog by remember { mutableStateOf(false) }
     var showAiManager by remember { mutableStateOf(false) }
     var aiProvidersVersion by remember { mutableStateOf(0) }
     var showMissingPermissionDialog by remember { mutableStateOf(false) }
@@ -463,6 +478,10 @@ fun SettingsScreen(
                 notifyRecovery = ModuleSettings.isNotifyOnRecovery()
                 autoRefresh = ModuleSettings.isAutoRefreshOnResume()
                 aiExplain = ModuleSettings.isComputAiExplainEnabled()
+                agentSafetyMode = ModuleSettings.getAgentSafetyMode()
+                agentMaxSteps = ModuleSettings.getAgentMaxSteps()
+                agentAskShell = ModuleSettings.isAgentAskShell()
+                agentAskModule = ModuleSettings.isAgentAskModuleService()
                 recreateTick++
             }.onFailure {
                 Toast.makeText(context, "Restore failed: ${it.message}", Toast.LENGTH_LONG).show()
@@ -727,6 +746,20 @@ fun SettingsScreen(
                             onComputRecommandChange = { enabled ->
                                 ModuleSettings.setComputRecommandEnabled(enabled)
                                 computRecommand = enabled
+                            },
+                            agentSafetyMode = agentSafetyMode,
+                            agentMaxSteps = agentMaxSteps,
+                            agentAskShell = agentAskShell,
+                            agentAskModule = agentAskModule,
+                            onAgentModeClick = { showAgentModeDialog = true },
+                            onAgentStepsClick = { showAgentStepsDialog = true },
+                            onAgentAskShellChange = { enabled ->
+                                ModuleSettings.setAgentAskShell(enabled)
+                                agentAskShell = enabled
+                            },
+                            onAgentAskModuleChange = { enabled ->
+                                ModuleSettings.setAgentAskModuleService(enabled)
+                                agentAskModule = enabled
                             }
                         )
                         SettingsSection.BACKUPS -> backupsSectionContent(
@@ -1076,6 +1109,65 @@ fun SettingsScreen(
                 ModuleSettings.setCustomPermissions(value)
                 customPermissions = value
                 showCustomPermissionsDialog = false
+            }
+        )
+    }
+
+    if (showAgentModeDialog) {
+        val agentModes = listOf(
+            AgentSafetyMode.SECURE,
+            AgentSafetyMode.TURBO,
+            AgentSafetyMode.CUSTOM
+        )
+        ChoiceDialog(
+            title = stringResource(R.string.comput_agent_safety_title),
+            choices = agentModes.map { mode ->
+                ChoiceOption(
+                    title = stringResource(
+                        when (mode) {
+                            AgentSafetyMode.SECURE -> R.string.comput_agent_mode_secure
+                            AgentSafetyMode.TURBO -> R.string.comput_agent_mode_turbo
+                            AgentSafetyMode.CUSTOM -> R.string.comput_agent_mode_custom
+                        }
+                    ),
+                    summary = stringResource(
+                        when (mode) {
+                            AgentSafetyMode.SECURE -> R.string.comput_agent_mode_secure_summary
+                            AgentSafetyMode.TURBO -> R.string.comput_agent_mode_turbo_summary
+                            AgentSafetyMode.CUSTOM -> R.string.comput_agent_mode_custom_summary
+                        }
+                    ),
+                    icon = R.drawable.ic_code_24dp
+                )
+            },
+            selectedIndex = agentModes.indexOf(agentSafetyMode),
+            onDismiss = { showAgentModeDialog = false },
+            onSelect = { index ->
+                val mode = agentModes[index]
+                ModuleSettings.setAgentSafetyMode(mode)
+                agentSafetyMode = mode
+                showAgentModeDialog = false
+            }
+        )
+    }
+
+    if (showAgentStepsDialog) {
+        val stepOptions = listOf(3, 5, 10)
+        ChoiceDialog(
+            title = stringResource(R.string.comput_agent_max_steps),
+            choices = stepOptions.map { steps ->
+                ChoiceOption(
+                    title = stringResource(R.string.comput_agent_max_steps_value, steps),
+                    icon = R.drawable.ic_outline_play_arrow_24
+                )
+            },
+            selectedIndex = stepOptions.indexOf(agentMaxSteps).takeIf { it >= 0 } ?: 1,
+            onDismiss = { showAgentStepsDialog = false },
+            onSelect = { index ->
+                val steps = stepOptions[index]
+                ModuleSettings.setAgentMaxSteps(steps)
+                agentMaxSteps = steps
+                showAgentStepsDialog = false
             }
         )
     }
@@ -1444,7 +1536,15 @@ private fun LazyListScope.aiSectionContent(
     computAiBaseUrl: String?,
     computRecommand: Boolean,
     onOpenAiManager: () -> Unit,
-    onComputRecommandChange: (Boolean) -> Unit
+    onComputRecommandChange: (Boolean) -> Unit,
+    agentSafetyMode: AgentSafetyMode,
+    agentMaxSteps: Int,
+    agentAskShell: Boolean,
+    agentAskModule: Boolean,
+    onAgentModeClick: () -> Unit,
+    onAgentStepsClick: () -> Unit,
+    onAgentAskShellChange: (Boolean) -> Unit,
+    onAgentAskModuleChange: (Boolean) -> Unit
 ) {
     item {
         SettingsGroup(title = stringResource(R.string.comput_settings)) {
@@ -1469,6 +1569,47 @@ private fun LazyListScope.aiSectionContent(
                 checked = computRecommand,
                 onCheckedChange = onComputRecommandChange
             )
+        }
+    }
+    item {
+        SettingsGroup(title = stringResource(R.string.comput_agent_title)) {
+            SettingsRow(
+                icon = R.drawable.ic_code_24dp,
+                title = stringResource(R.string.comput_agent_safety_title),
+                summary = stringResource(
+                    when (agentSafetyMode) {
+                        AgentSafetyMode.SECURE -> R.string.comput_agent_mode_secure
+                        AgentSafetyMode.TURBO -> R.string.comput_agent_mode_turbo
+                        AgentSafetyMode.CUSTOM -> R.string.comput_agent_mode_custom
+                    }
+                ),
+                onClick = onAgentModeClick
+            )
+            if (agentSafetyMode == AgentSafetyMode.CUSTOM) {
+                GroupDivider()
+                SettingsRow(
+                    icon = R.drawable.ic_outline_play_arrow_24,
+                    title = stringResource(R.string.comput_agent_max_steps),
+                    summary = stringResource(R.string.comput_agent_max_steps_value, agentMaxSteps),
+                    onClick = onAgentStepsClick
+                )
+                GroupDivider()
+                SwitchSettingsRow(
+                    icon = R.drawable.ic_warning_24,
+                    title = stringResource(R.string.comput_agent_ask_shell_title),
+                    summary = stringResource(R.string.comput_agent_ask_shell_summary),
+                    checked = agentAskShell,
+                    onCheckedChange = onAgentAskShellChange
+                )
+                GroupDivider()
+                SwitchSettingsRow(
+                    icon = R.drawable.ic_warning_24,
+                    title = stringResource(R.string.comput_agent_ask_module_title),
+                    summary = stringResource(R.string.comput_agent_ask_module_summary),
+                    checked = agentAskModule,
+                    onCheckedChange = onAgentAskModuleChange
+                )
+            }
         }
     }
 }

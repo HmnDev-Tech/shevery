@@ -68,6 +68,7 @@ import androidx.compose.material.icons.rounded.History
 import androidx.compose.material.icons.rounded.KeyboardDoubleArrowDown
 import androidx.compose.material.icons.rounded.PlaylistPlay
 import androidx.compose.material.icons.rounded.Search
+import androidx.compose.material.icons.rounded.SmartToy
 import androidx.compose.material.icons.rounded.Stop
 import androidx.compose.material.icons.rounded.Terminal
 import androidx.compose.material3.AlertDialog
@@ -136,6 +137,8 @@ import kotlinx.coroutines.isActive
 import kotlinx.coroutines.launch
 import kotlinx.coroutines.withContext
 import moe.shizuku.manager.R
+import moe.shizuku.manager.comput.agent.AgentModuleInfo
+import moe.shizuku.manager.module.AdbModuleManager
 import moe.shizuku.manager.module.ModuleSettings
 import moe.shizuku.manager.ui.compose.LocalFloatingNavBarVisible
 import moe.shizuku.manager.ui.compose.ShizukuScaffold
@@ -192,6 +195,7 @@ fun ComputScreen(
     var cmdHistory by remember { mutableStateOf(listOf<String>()) }
 
     var showCommandiumSheet by remember { mutableStateOf(false) }
+    var showAgentSheet by remember { mutableStateOf(false) }
     var showAiManager by remember { mutableStateOf(false) }
     var showMacrosSheet by remember { mutableStateOf(false) }
     var showPresetsSheet by remember { mutableStateOf(false) }
@@ -691,6 +695,11 @@ fun ComputScreen(
                         onClick = { showAiManager = true }
                     )
                     ComputUtilityButton(
+                        icon = Icons.Rounded.SmartToy,
+                        contentDescription = stringResource(R.string.comput_agent_open),
+                        onClick = { showAgentSheet = true }
+                    )
+                    ComputUtilityButton(
                         icon = Icons.Rounded.AutoAwesome,
                         contentDescription = stringResource(R.string.comput_tab_commandium),
                         onClick = { showCommandiumSheet = true }
@@ -1096,6 +1105,46 @@ fun ComputScreen(
                 showAiManager = true
             },
             history = commandiumHistory,
+        )
+    }
+
+    // AI agent: plans + runs shell commands and module services with approvals.
+    if (showAgentSheet) {
+        ComputAgentSheet(
+            onDismiss = { showAgentSheet = false },
+            onConfigureProvider = {
+                showAgentSheet = false
+                showAiManager = true
+            },
+            onCopy = { text ->
+                copyToClipboard("Agent", text,
+                    context.getString(R.string.comput_copied_to_clipboard))
+            },
+            modulesProvider = {
+                AdbModuleManager.listModules(context).map { module ->
+                    AgentModuleInfo(
+                        id = module.id,
+                        name = module.name,
+                        description = module.description.orEmpty(),
+                        hasService = module.hasService
+                    )
+                }
+            },
+            onRunShell = { cmd -> executeCommandInternal(cmd) },
+            onRunModuleService = { moduleId ->
+                try {
+                    val module = AdbModuleManager.listModules(context)
+                        .firstOrNull { it.id == moduleId }
+                    if (module == null) {
+                        Pair("[E] Module not found: $moduleId", true)
+                    } else {
+                        val result = AdbModuleManager.runService(module)
+                        Pair(result.combinedOutput, result.exitCode != 0)
+                    }
+                } catch (e: Exception) {
+                    Pair("[E] Module service failed: ${e.message}", true)
+                }
+            },
         )
     }
 

@@ -4,6 +4,7 @@ import androidx.annotation.StringRes
 import moe.shizuku.manager.R
 import moe.shizuku.manager.ShizukuSettings
 import moe.shizuku.manager.commandium.AiProviderRepository
+import moe.shizuku.manager.comput.agent.AgentSafetyMode
 
 object ModuleSettings {
 
@@ -400,6 +401,50 @@ object ModuleSettings {
 
     fun setComputMacros(value: String) {
         ShizukuSettings.getPreferences().edit().putString(KEY_COMPUT_MACROS, value).apply()
+    }
+
+    // Comput Agent: agentic loop over shell + module services on the AI provider.
+    private const val KEY_AGENT_SAFETY_MODE = "comput_agent_safety_mode"
+    private const val KEY_AGENT_MAX_STEPS = "comput_agent_max_steps"
+    private const val KEY_AGENT_ASK_SHELL = "comput_agent_ask_shell"
+    private const val KEY_AGENT_ASK_MODULE = "comput_agent_ask_module"
+
+    fun getAgentSafetyMode(): AgentSafetyMode {
+        return AgentSafetyMode.fromValue(
+            ShizukuSettings.getPreferences().getString(KEY_AGENT_SAFETY_MODE, AgentSafetyMode.SECURE.value)
+        )
+    }
+
+    fun setAgentSafetyMode(mode: AgentSafetyMode) {
+        ShizukuSettings.getPreferences().edit().putString(KEY_AGENT_SAFETY_MODE, mode.value).apply()
+    }
+
+    fun getAgentMaxSteps(): Int {
+        return ShizukuSettings.getPreferences()
+            .getInt(KEY_AGENT_MAX_STEPS, 5)
+            .coerceIn(1, moe.shizuku.manager.comput.agent.ComputAgent.MAX_STEPS_HARD)
+    }
+
+    fun setAgentMaxSteps(value: Int) {
+        ShizukuSettings.getPreferences().edit()
+            .putInt(KEY_AGENT_MAX_STEPS, value.coerceIn(1, moe.shizuku.manager.comput.agent.ComputAgent.MAX_STEPS_HARD))
+            .apply()
+    }
+
+    fun isAgentAskShell(): Boolean {
+        return ShizukuSettings.getPreferences().getBoolean(KEY_AGENT_ASK_SHELL, true)
+    }
+
+    fun setAgentAskShell(value: Boolean) {
+        ShizukuSettings.getPreferences().edit().putBoolean(KEY_AGENT_ASK_SHELL, value).apply()
+    }
+
+    fun isAgentAskModuleService(): Boolean {
+        return ShizukuSettings.getPreferences().getBoolean(KEY_AGENT_ASK_MODULE, true)
+    }
+
+    fun setAgentAskModuleService(value: Boolean) {
+        ShizukuSettings.getPreferences().edit().putBoolean(KEY_AGENT_ASK_MODULE, value).apply()
     }
 
     enum class UpdateFrequency(val value: String) {
