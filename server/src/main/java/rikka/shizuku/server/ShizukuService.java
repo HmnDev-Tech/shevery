@@ -600,6 +600,10 @@ public class ShizukuService extends Service<ShizukuUserServiceManager, ShizukuCl
     }
 
     static void sendBinderToManager(Binder binder, int userId) {
+        if (userId != 0 && Android17Compat.getApplicationInfo(MANAGER_APPLICATION_ID, 0, userId) == null) {
+            LOGGER.d("Manager app not installed in user %d, skipping binder dispatch", userId);
+            return;
+        }
         sendBinderToUserApp(binder, MANAGER_APPLICATION_ID, userId);
     }
 

@@ -136,6 +136,15 @@ class AdbStartWorker(context: Context, params: WorkerParameters) : CoroutineWork
 
     override suspend fun doWork(): Result {
         try {
+            if (Shizuku.pingBinder() || ShizukuStateMachine.isRunning()) {
+                Log.i(AppConstants.TAG, "AdbStartWorker: Shizuku is already running, skipping start")
+                ShizukuReceiverStarter.updateNotification(
+                    applicationContext,
+                    ShizukuReceiverStarter.WorkerState.STOPPED
+                )
+                return Result.success()
+            }
+
             ShizukuReceiverStarter.updateNotification(
                 applicationContext,
                 ShizukuReceiverStarter.WorkerState.RUNNING
@@ -330,6 +339,15 @@ class AdbStartWorker(context: Context, params: WorkerParameters) : CoroutineWork
                         }
                     }
                 }.first()
+            }
+
+            if (Shizuku.pingBinder() || ShizukuStateMachine.isRunning()) {
+                Log.i(AppConstants.TAG, "AdbStartWorker: Shizuku became running before ADB starter launch, skipping")
+                ShizukuReceiverStarter.updateNotification(
+                    applicationContext,
+                    ShizukuReceiverStarter.WorkerState.STOPPED
+                )
+                return Result.success()
             }
 
             AdbStarter.start("127.0.0.1", port, applicationContext)
