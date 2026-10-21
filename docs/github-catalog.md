@@ -34,7 +34,7 @@ Modules are discovered via GitHub Topics search (`topic:shevery-modules`). Modul
 
 ## Security
 
-- Token stored in SharedPreferences (not encrypted — trade-off for emulator compatibility)
+- Token stored encrypted on-device via `TokenStore` using AndroidX Security `EncryptedSharedPreferences` backed by `MasterKey` (AES256-GCM / AES256-SIV) with automatic migration from legacy plaintext storage
 - Token validated for `ghp_`/`github_pat_` prefix (30+ chars)
 - Token NOT logged to logcat
 - Token only sent to `api.github.com` / `github.com` domains (not leaked to updateJson URLs)

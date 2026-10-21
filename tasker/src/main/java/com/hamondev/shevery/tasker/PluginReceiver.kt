@@ -127,13 +127,23 @@ class PluginReceiver : BroadcastReceiver() {
 
     private fun executeCommand(context: Context, command: Command) {
         when (command) {
-            Command.START -> sendControl(context, PluginContract.ACTION_START_SERVER)
+            Command.START -> {
+                if (Shizuku.pingBinder()) {
+                    Log.i(TAG, "Server already running; ignoring START command")
+                } else {
+                    sendControl(context, PluginContract.ACTION_START_SERVER)
+                }
+            }
             Command.STOP -> sendControl(context, PluginContract.ACTION_STOP_SERVER)
             Command.RESTART -> restartServer(context)
-            Command.TOGGLE -> if (Shizuku.pingBinder()) {
-                sendControl(context, PluginContract.ACTION_STOP_SERVER)
-            } else {
-                sendControl(context, PluginContract.ACTION_START_SERVER)
+            Command.TOGGLE -> {
+                if (isRestarting.get()) {
+                    Log.i(TAG, "Server restart in progress; ignoring TOGGLE command")
+                } else if (Shizuku.pingBinder()) {
+                    sendControl(context, PluginContract.ACTION_STOP_SERVER)
+                } else {
+                    sendControl(context, PluginContract.ACTION_START_SERVER)
+                }
             }
         }
     }
@@ -159,6 +169,11 @@ class PluginReceiver : BroadcastReceiver() {
             return
         }
 
+        if (!isRestarting.compareAndSet(false, true)) {
+            Log.i(TAG, "Server restart already in progress; ignoring duplicate RESTART command")
+            return
+        }
+
         val pendingResult = goAsync()
         val appContext = context.applicationContext
         val executed = AtomicBoolean(false)
@@ -175,6 +190,7 @@ class PluginReceiver : BroadcastReceiver() {
                 try {
                     sendControl(appContext, PluginContract.ACTION_START_SERVER)
                 } finally {
+                    isRestarting.set(false)
                     pendingResult.finish()
                 }
             }
@@ -269,5 +285,6 @@ class PluginReceiver : BroadcastReceiver() {
     companion object {
         private const val TAG = "SheveryPluginReceiver"
         private const val RESTART_WAIT_MS = 10_000L
+        private val isRestarting = AtomicBoolean(false)
     }
 }

@@ -93,7 +93,8 @@ Environment variables:
 MODDIR=/data/user/0/<package>/files/adb_modules/<id>
 ASH_STANDALONE=1
 SHIZUKU_MODULE_ID=<id>
-SHIZUKU_MODULE_MODE=safe|full
+SHIZUKU_MODULE_MODE=safe|custom|full
+SHIZUKU_MODULE_TRUSTED=0|1
 SHIZUKU_MODULE_BACKGROUND=0|1
 ```
 

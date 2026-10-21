@@ -22,12 +22,19 @@
 
 ## 文档
 
-
+- [Shevery Wiki](https://github.com/HmnDev-Tech/shevery/wiki)
+- [Comput AI 智能体指南](docs/comput-agent.md)
+- [Device Owner 与 Profile Owner 指南](docs/device-owner.md)
+- [隐身版本与兼容性存根 (Stubs)](docs/stealth-and-stubs.md)
+- [无障碍管理、隐藏 USB 调试与网络防火墙](docs/lab-and-extras.md)
+- [Tasker 与 MacroDroid 自动化指南](docs/tasker-plugin.md)
+- [Intent 广播操作参考](docs/intents.md)
 - [ADB Modules 指南](docs/adb-modules-guide.md)
 - [ADB Modules API 参考](docs/adb-modules-api.md)
+- [ADB Modules 发布指南](docs/github-catalog.md)
 - [Shizuku Connectors API](docs/shizuku-connectors.md)
 - [Android 17 兼容性](docs/android-17-compatibility.md)
-- [ADB Modules 发布指南](docs/github-catalog.md)
+- [NightDog 看门狗与启动器恢复](docs/nightdog.md)
 
 ## 背景
 

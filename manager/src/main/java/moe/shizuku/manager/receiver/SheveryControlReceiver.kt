@@ -3,6 +3,7 @@ package moe.shizuku.manager.receiver
 import android.content.BroadcastReceiver
 import android.content.Context
 import android.content.Intent
+import androidx.work.WorkManager
 import kotlinx.coroutines.CoroutineScope
 import kotlinx.coroutines.Dispatchers
 import kotlinx.coroutines.launch
@@ -40,11 +41,18 @@ class SheveryControlReceiver : BroadcastReceiver() {
                 }
             }
             ACTION_STOP_SERVER -> {
+                val appCtx = context.applicationContext
+                WorkManager.getInstance(appCtx)
+                    .cancelUniqueWork(AdbStartWorker.UNIQUE_WORK_NAME)
+                ShizukuReceiverStarter.updateNotification(
+                    appCtx,
+                    ShizukuReceiverStarter.WorkerState.STOPPED
+                )
                 val pendingResult = goAsync()
                 CoroutineScope(Dispatchers.IO).launch {
                     try {
-                        WatchdogManager.stopServerAndWait(context.applicationContext, userInitiated = true)
-                        SheveryNotificationManager.updateNotification(context.applicationContext)
+                        WatchdogManager.stopServerAndWait(appCtx, userInitiated = true)
+                        SheveryNotificationManager.updateNotification(appCtx)
                     } catch (e: Exception) {
                         logw("Stop server failed", e)
                     } finally {

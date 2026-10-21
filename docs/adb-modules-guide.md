@@ -60,7 +60,7 @@ cd my-module
 zip -r ../my-module.zip .
 ```
 
-Install `my-module.zip` from the ADB Modules screen.
+Install `my-module.zip` from the ADB Modules screen, or open/share the ZIP file directly into Shevery from any file manager.
 
 ## Optional Files
 
@@ -140,10 +140,12 @@ ReCommand can show a confirmation dialog before WebUI shell execution and Action
 execution. The dialog uses icon-only expand/collapse and copy controls, and the
 expand/collapse control is shown only for long commands.
 
-The optional Gemini checker is hidden by default. In Settings, tap the
-translation contributors row five times quickly to reveal the AI settings row and
-the Gemini star in ReCommand dialogs. Repeat the same five-tap gesture to hide it
-again. The Gemini API key is stored encrypted with Android Keystore.
+AI settings are directly accessible under **Settings → AI** (supporting Google Gemini,
+OpenAI-compatible endpoints, and custom models via `AiManagerScreen`). API keys are
+stored encrypted with Android Keystore. In addition to command verification, AI powers
+the interactive multi-step **Comput Agent** (see [comput-agent.md](comput-agent.md)),
+natural-language command creation in Commandium, and real-time AI error explanations
+in the Comput console.
 
 ## Safety Limits
 

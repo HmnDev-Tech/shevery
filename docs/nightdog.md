@@ -29,7 +29,7 @@ NightDog is controlled via **Settings -> Lab Features -> NightDog Watchdog** acr
 
 When `shizuku_server` is launched or exits abnormally / is killed by NightDog:
 
-- The native `starter` (`rust/starter/src/main.rs`) ignores `SIGPIPE` and `SIGHUP` (`SIG_IGN`) so closing the launching ADB/root shell cannot kill the background supervisor or trigger broken-pipe terminations, while restoring `SIG_DFL` inside the spawned `shizuku_server` child before `execvp`.
+- The native `starter` (`manager/src/main/jni/starter.cpp`) ignores `SIGPIPE` and `SIGHUP` (`SIG_IGN`) so closing the launching ADB/root shell cannot kill the background supervisor or trigger broken-pipe terminations, while restoring `SIG_DFL` inside the spawned `shizuku_server` child before `execvp`.
 - Before spawning a new supervisor, `starter` terminates both stale `shizuku_server` instances and any lingering previous `starter` supervisor processes (matched via `/proc/<pid>/exe`) so duplicate supervisors never race each other.
 - `starter` forks a detached background supervisor (`setsid`, `/dev/null` stdio) and communicates the initial `shizuku_server` PID over a pipe so the foreground starter process immediately prints `info: shizuku_server pid is <pid>` and `info: shizuku_starter exit with 0` and exits cleanly without blocking `StarterActivity` or wireless ADB sessions.
 - The detached supervisor waits on `shizuku_server` via `waitpid` (retrying on `EINTR`), logs lifecycle events to Android logcat (`Shizuku` tag), and waits 5 seconds before respawning `shizuku_server` on abnormal exit.
@@ -52,10 +52,11 @@ When `shizuku_server` is launched or exits abnormally / is killed by NightDog:
 ## Files
 
 - `nightdog/src/main/java/rikka/shizuku/nightdog/NightDog.kt`
-- `server/src/main/java/rikka/shizuku/server/ShizukuService.kt`
-- `server/src/main/java/rikka/shizuku/server/ShizukuConfigManager.kt`
+- `server/src/main/java/rikka/shizuku/server/ShizukuService.java`
+- `server/src/main/java/rikka/shizuku/server/ShizukuConfigManager.java`
 - `server/src/main/java/rikka/shizuku/server/BinderSender.kt`
-- `rust/starter/src/main.rs`
+- `manager/src/main/jni/starter.cpp`
+- `starter/src/main/java/moe/shizuku/starter/ServiceStarter.java`
 - `manager/src/main/java/moe/shizuku/manager/nightdog/NightDogClient.kt`
 - `manager/src/main/java/moe/shizuku/manager/settings/SettingsScreen.kt`
 - `manager/src/main/java/moe/shizuku/manager/settings/TvLabMenuScreen.kt`

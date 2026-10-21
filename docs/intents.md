@@ -60,12 +60,12 @@ Detailed guide: [Tasker & MacroDroid Automation Guide](tasker-plugin.md).
 
 ### Request permission (runtime dialog)
 
-Launches `RequestPermissionActivity` (`exported=true`, requires `android.permission.INTERACT_ACROSS_USERS_FULL`):
+Launches `RequestPermissionActivity` (`exported=true`, category `android.intent.category.DEFAULT`):
 
 - `com.hamondev.shevery.intent.action.REQUEST_PERMISSION`
 - `moe.shizuku.privileged.api.intent.action.REQUEST_PERMISSION` (legacy alias)
 
-Always add category `android.intent.category.DEFAULT`. This is the `ShizukuService#requestPermission()` flow — user taps Allow/Deny, decision is stored as `FLAG_ALLOWED` / `FLAG_DENIED`.
+Always add category `android.intent.category.DEFAULT`. This is the `ShizukuService#requestPermission()` flow — user taps Allow/Deny, decision is stored as `FLAG_ALLOWED` / `FLAG_DENIED`. Note: The permission `android.permission.INTERACT_ACROSS_USERS_FULL` is required by the internal binder transport provider `ShizukuManagerProvider`, not by this dialog activity.
 
 ### Legacy authorization
 
@@ -88,6 +88,19 @@ Used by the `rish` / shell path (`ShellBinderRequestHandler`, `ShizukuReceiverSt
 ### Accessibility manager shortcut
 
 - `com.hamondev.shevery.action.ACCESSIBILITY_MANAGER` (+ `DEFAULT` category) → `AccessibilityManagerActivity` (`exported=true`). Lists system accessibility services, enable/disable/pin via `WRITE_SECURE_SETTINGS`.
+
+### External module ZIP intake
+
+Activity: `moe.shizuku.manager.module.InstallZipModuleActivity` (`exported=true`).
+
+Supports opening or sharing module ZIP files directly from file managers and web browsers into Shevery.
+
+| Action | MIME Types | Data Type |
+|---|---|---|
+| `android.intent.action.VIEW` | `application/zip`, `application/x-zip-compressed` | Content URI (`Intent.getData()`) |
+| `android.intent.action.SEND` | `application/zip`, `application/x-zip-compressed` | Stream URI (`Intent.EXTRA_STREAM`) |
+
+The incoming stream is safely cached in `cacheDir/modules_zip/` before handing off the local file path to `HomeActivity` via `EXTRA_ZIP_PATH` to prevent content-provider permission revocation during asynchronous installation.
 
 ## Quick examples
 
