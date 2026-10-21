@@ -162,6 +162,12 @@ object Android17Compat {
                     "getPackageInfo",
                     listOf(STRING, LONG, INT),
                     listOf(packageName, flags, userId)
+                ),
+                Candidate(
+                    Backend.PACKAGE,
+                    "getPackageInfo",
+                    listOf(STRING, INT, INT),
+                    listOf(packageName, flags.toInt(), userId)
                 )
             )
         ) as PackageInfo?
@@ -178,6 +184,12 @@ object Android17Compat {
                         "getApplicationInfo",
                         listOf(STRING, LONG, INT),
                         listOf(packageName, flags, userId)
+                    ),
+                    Candidate(
+                        Backend.PACKAGE,
+                        "getApplicationInfo",
+                        listOf(STRING, INT, INT),
+                        listOf(packageName, flags.toInt(), userId)
                     )
                 )
             ) as ApplicationInfo?

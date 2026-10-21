@@ -45,8 +45,8 @@ Two details matter, and both are easy to get wrong:
 `IPackageManager`:
 
 ```
-PackageInfo     getPackageInfo(String, long, int)         unchanged
-ApplicationInfo getApplicationInfo(String, long, int)     unchanged
+PackageInfo     getPackageInfo(String, long, int)         Android 13+; (String, int, int) on Android <= 12
+ApplicationInfo getApplicationInfo(String, long, int)     Android 13+; (String, int, int) on Android <= 12
                 getInstalledPackages(long, int)           ParceledListSlice -> PackageInfoList on 17
                 getInstalledApplications(long, int)       unchanged
 ```
