@@ -1,5 +1,6 @@
 package moe.shizuku.manager.module
 
+import android.app.ActivityManager
 import android.content.Context
 import android.content.Intent
 import android.graphics.Bitmap
@@ -11,6 +12,7 @@ import androidx.core.content.pm.ShortcutInfoCompat
 import androidx.core.content.pm.ShortcutManagerCompat
 import androidx.core.graphics.drawable.IconCompat
 import moe.shizuku.manager.R
+import java.io.File
 
 object ModuleShortcutHelper {
 
@@ -45,19 +47,75 @@ object ModuleShortcutHelper {
     }
 
     private fun createShortcutIcon(context: Context, module: AdbModule): IconCompat {
-        val iconFile = module.icon ?: module.banner
-        if (iconFile != null && iconFile.exists()) {
-            try {
-                val bitmap = BitmapFactory.decodeFile(iconFile.absolutePath)
-                if (bitmap != null) {
-                    val square = createSquareBitmap(bitmap, 192)
-                    return IconCompat.createWithBitmap(square)
-                }
-            } catch (_: Throwable) {
-                // Fall back to app icon
+        // 1. Detect icon.png in module files
+        val iconFile = findIconFile(context, module)
+        if (iconFile != null) {
+            val bitmap = decodeSquareBitmap(context, iconFile)
+            if (bitmap != null) {
+                return IconCompat.createWithBitmap(bitmap)
             }
         }
+
+        // 2. If icon.png isn't available, use banner.png
+        val bannerFile = findBannerFile(context, module)
+        if (bannerFile != null) {
+            val bitmap = decodeSquareBitmap(context, bannerFile)
+            if (bitmap != null) {
+                return IconCompat.createWithBitmap(bitmap)
+            }
+        }
+
+        // 3. If both unavailable, use default app icon
         return IconCompat.createWithResource(context, R.mipmap.ic_launcher)
+    }
+
+    private fun findIconFile(context: Context, module: AdbModule): File? {
+        val dir = if (module.directory.exists()) module.directory else AdbModuleManager.modulesRoot(context).resolve(module.id)
+        if (!dir.exists() || !dir.isDirectory) return null
+
+        val directIcon = dir.resolve("icon.png")
+        if (directIcon.isFile) return directIcon
+
+        module.webRoot?.resolve("icon.png")?.takeIf { it.isFile }?.let { return it }
+
+        module.icon?.takeIf { it.isFile && it.name.equals("icon.png", ignoreCase = true) }?.let { return it }
+
+        return runCatching {
+            dir.walkTopDown()
+                .maxDepth(4)
+                .filter { it.isFile }
+                .firstOrNull { it.name.equals("icon.png", ignoreCase = true) }
+        }.getOrNull()
+    }
+
+    private fun findBannerFile(context: Context, module: AdbModule): File? {
+        val dir = if (module.directory.exists()) module.directory else AdbModuleManager.modulesRoot(context).resolve(module.id)
+        if (!dir.exists() || !dir.isDirectory) return null
+
+        val directBanner = dir.resolve("banner.png")
+        if (directBanner.isFile) return directBanner
+
+        module.webRoot?.resolve("banner.png")?.takeIf { it.isFile }?.let { return it }
+
+        module.banner?.takeIf { it.isFile && it.name.equals("banner.png", ignoreCase = true) }?.let { return it }
+
+        return runCatching {
+            dir.walkTopDown()
+                .maxDepth(4)
+                .filter { it.isFile }
+                .firstOrNull { it.name.equals("banner.png", ignoreCase = true) }
+        }.getOrNull()
+    }
+
+    private fun decodeSquareBitmap(context: Context, file: File): Bitmap? {
+        return try {
+            val bitmap = BitmapFactory.decodeFile(file.absolutePath) ?: return null
+            val am = context.getSystemService(Context.ACTIVITY_SERVICE) as? ActivityManager
+            val targetSize = am?.launcherLargeIconSize?.takeIf { it > 0 } ?: 192
+            createSquareBitmap(bitmap, targetSize)
+        } catch (_: Throwable) {
+            null
+        }
     }
 
     private fun createSquareBitmap(source: Bitmap, targetSize: Int): Bitmap {
