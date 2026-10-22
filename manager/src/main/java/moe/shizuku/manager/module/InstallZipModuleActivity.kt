@@ -54,8 +54,9 @@ class InstallZipModuleActivity : Activity() {
         finish()
     }
 
-    private fun resolveZipUri(intent: Intent): Uri? {
-        return when (intent.action) {
+    private fun resolveZipUri(intent: Intent?): Uri? {
+        intent ?: return null
+        val directUri = when (intent.action) {
             Intent.ACTION_VIEW -> intent.data
             Intent.ACTION_SEND -> if (Build.VERSION.SDK_INT >= Build.VERSION_CODES.TIRAMISU) {
                 intent.getParcelableExtra(Intent.EXTRA_STREAM, Uri::class.java)
@@ -63,21 +64,61 @@ class InstallZipModuleActivity : Activity() {
                 @Suppress("DEPRECATION")
                 intent.getParcelableExtra(Intent.EXTRA_STREAM)
             }
+            Intent.ACTION_SEND_MULTIPLE -> if (Build.VERSION.SDK_INT >= Build.VERSION_CODES.TIRAMISU) {
+                intent.getParcelableArrayListExtra(Intent.EXTRA_STREAM, Uri::class.java)?.firstOrNull()
+            } else {
+                @Suppress("DEPRECATION")
+                intent.getParcelableArrayListExtra<Uri>(Intent.EXTRA_STREAM)?.firstOrNull()
+            }
             else -> null
         }
+        if (directUri != null) return directUri
+
+        val clipData = intent.clipData
+        if (clipData != null && clipData.itemCount > 0) {
+            for (i in 0 until clipData.itemCount) {
+                clipData.getItemAt(i)?.uri?.let { return it }
+            }
+        }
+        return intent.data
     }
 
     private fun copyToCache(uri: Uri): File? {
         val target = File(cacheDir, "shared_module_${System.currentTimeMillis()}.zip")
         return try {
-            val input = contentResolver.openInputStream(uri) ?: return null
+            val input = if (uri.scheme.equals("file", ignoreCase = true)) {
+                uri.path?.let { File(it).inputStream() }
+            } else {
+                contentResolver.openInputStream(uri)
+            } ?: return null
+
             input.use { source ->
                 target.outputStream().use { output -> source.copyTo(output) }
+            }
+            if (!isLikelyZipFile(target)) {
+                target.delete()
+                return null
             }
             target
         } catch (ignore: Exception) {
             target.delete()
             null
+        }
+    }
+
+    private fun isLikelyZipFile(file: File): Boolean {
+        if (!file.isFile || file.length() < 4L) return false
+        return try {
+            file.inputStream().use { stream ->
+                val header = ByteArray(4)
+                val read = stream.read(header)
+                read == 4 &&
+                    header[0] == 0x50.toByte() &&
+                    header[1] == 0x4B.toByte() &&
+                    (header[2] == 0x03.toByte() || header[2] == 0x05.toByte() || header[2] == 0x07.toByte())
+            }
+        } catch (ignore: Exception) {
+            false
         }
     }
 }

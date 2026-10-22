@@ -212,7 +212,7 @@ With %1$s, in any terminal app, you can connect to and interact with the shell r
     <string name="modules_empty_summary">ADB modules use a KernelSU/Magisk-style ZIP with module.prop, optional banner, WebUI, action.sh and service.sh.</string>
     <string name="modules_install_success">Installed %s</string>
     <string name="modules_install_failed">Install failed: %s</string>
-    <string name="modules_install_zip_module">Install ZIP Module</string>
+    <string name="modules_install_zip_module">Install Module</string>
     <string name="modules_installing_zip">Installing ZIP module…</string>
     <string name="modules_zip_unreadable">Unable to read ZIP file</string>
     <string name="modules_live_log_title">Running %s</string>

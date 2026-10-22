@@ -345,30 +345,39 @@ abstract class HomeActivity : AppActivity() {
             val cachedModules = remember {
                 mutableStateOf<List<moe.shizuku.manager.module.AdbModule>>(emptyList(), neverEqualPolicy())
             }
-            // ZIP handed over by another app through "Install ZIP Module":
-            // install first, then land on ADB Modules with the module present.
+            val modulesReloadTick by AdbModuleManager.modulesReloadTick.collectAsState()
+            LaunchedEffect(modulesReloadTick) {
+                cachedModules.value = AdbModuleManager.listModules(applicationContext)
+            }
+            // ZIP handed over by another app through "Install Module":
+            // land on ADB Modules immediately and stream installation in the Live Console
+            // on AdbModuleManager.operationScope so recomposition never cancels it.
             val incomingZip = incomingZipPath.value
             LaunchedEffect(incomingZip) {
                 val path = incomingZip ?: return@LaunchedEffect
                 incomingZipPath.value = null
                 if (!consumedZipPaths.add(path)) return@LaunchedEffect
-                Toast.makeText(this@HomeActivity, getString(R.string.modules_installing_zip), Toast.LENGTH_SHORT).show()
-                val result = runCatching {
-                    AdbModuleManager.install(this@HomeActivity, Uri.fromFile(File(path)))
-                }
                 selectedTab = 1
-                result.onSuccess { module ->
-                    Toast.makeText(
-                        this@HomeActivity,
-                        getString(R.string.modules_install_success, module.name),
-                        Toast.LENGTH_SHORT
-                    ).show()
-                }.onFailure {
-                    Toast.makeText(
-                        this@HomeActivity,
-                        getString(R.string.modules_install_failed, it.message ?: it.javaClass.simpleName),
-                        Toast.LENGTH_LONG
-                    ).show()
+                val zipFile = File(path)
+                AdbModuleManager.launchInstallFromUri(
+                    context = applicationContext,
+                    uri = Uri.fromFile(zipFile),
+                    displayName = zipFile.name,
+                    deleteFile = zipFile
+                ) { result ->
+                    result.onSuccess { module ->
+                        Toast.makeText(
+                            applicationContext,
+                            getString(R.string.modules_install_success, module.name),
+                            Toast.LENGTH_SHORT
+                        ).show()
+                    }.onFailure {
+                        Toast.makeText(
+                            applicationContext,
+                            getString(R.string.modules_install_failed, it.message ?: it.javaClass.simpleName),
+                            Toast.LENGTH_LONG
+                        ).show()
+                    }
                 }
             }
             val homeListState = rememberSaveable(saver = LazyListState.Saver) {

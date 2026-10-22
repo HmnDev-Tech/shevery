@@ -55,6 +55,7 @@ import androidx.compose.material3.Text
 import androidx.compose.material3.TextButton
 import androidx.compose.runtime.Composable
 import androidx.compose.runtime.LaunchedEffect
+import androidx.compose.runtime.collectAsState
 import androidx.compose.runtime.getValue
 import androidx.compose.runtime.mutableStateOf
 import androidx.compose.runtime.remember
@@ -153,7 +154,8 @@ fun CatalogScreen(onNavigateUp: () -> Unit) {
         }
     }
 
-    LaunchedEffect(modules) {
+    val reloadTick by AdbModuleManager.modulesReloadTick.collectAsState()
+    LaunchedEffect(modules, reloadTick) {
         installedIds = AdbModuleManager.listModules(context).map { it.id }.toSet()
     }
 
@@ -241,15 +243,19 @@ fun CatalogScreen(onNavigateUp: () -> Unit) {
                     showInstallDialog = null
                     ModuleSettings.setInstallMode(mode)
                     installing = module.moduleId
-                    scope.launch {
-                        val owner = module.repoFullName.substringBefore('/')
-                        val repo = module.repoFullName.substringAfter('/')
-                        val result = installer.installModule(context, module.moduleId, owner, repo, module.subPath)
+                    val owner = module.repoFullName.substringBefore('/')
+                    val repo = module.repoFullName.substringAfter('/')
+                    AdbModuleManager.launchCatalogInstall(
+                        context = context,
+                        moduleId = module.moduleId,
+                        moduleName = module.moduleName,
+                        owner = owner,
+                        repo = repo,
+                        subPath = module.subPath
+                    ) { result ->
                         installing = null
                         result.fold(
                             onSuccess = {
-                                installedIds = AdbModuleManager.listModules(context).map { it.id }.toSet()
-                                installSuccess = true
                                 Toast.makeText(context, context.getString(R.string.modules_install_success, module.moduleName), Toast.LENGTH_SHORT).show()
                             },
                             onFailure = {

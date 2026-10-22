@@ -27,20 +27,27 @@ class SourceZipBuilder private constructor() {
         moduleId: String,
         files: List<ContentItem>,
         githubPat: String? = null,
-        subPath: String? = null
+        subPath: String? = null,
+        onLog: (String) -> Unit = {},
+        onProgress: (Float?) -> Unit = {}
     ): File? {
         val cacheDir = File(context.cacheDir, "module_zips").apply { mkdirs() }
         val zipFile = File(cacheDir, "$moduleId-source.zip")
         val prefix = subPath?.trim('/')?.let { "$it/" } ?: ""
         val packed = linkedSetOf<String>()
+        val downloadable = files.filter { it.downloadUrl != null }
+        val totalFiles = downloadable.size.coerceAtLeast(1)
 
         return try {
             ZipOutputStream(zipFile.outputStream()).use { zip ->
-                for (file in files) {
-                    if (file.downloadUrl == null) continue
+                downloadable.forEachIndexed { index, file ->
+                    val downloadUrl = file.downloadUrl ?: return@forEachIndexed
                     val entryName = relativeEntryName(file.path, prefix)
                     require(packed.add(entryName)) { "Duplicate module file: $entryName" }
-                    val content = downloadFile(file.downloadUrl, githubPat)
+                    onLog("- [${index + 1}/$totalFiles] Downloading $entryName...")
+                    onProgress((index.toFloat() / totalFiles.toFloat()) * 0.65f + 0.10f)
+                    val content = downloadFile(downloadUrl, githubPat)
+                    onLog("  ✓ $entryName (${formatBytes(content.size.toLong())})")
                     zip.putNextEntry(ZipEntry(entryName))
                     zip.write(content)
                     zip.closeEntry()
@@ -51,6 +58,8 @@ class SourceZipBuilder private constructor() {
                 zipFile.delete()
                 null
             } else {
+                onLog("- Packed ${packed.size} files into ${zipFile.name} (${formatBytes(zipFile.length())})")
+                onProgress(0.78f)
                 zipFile
             }
         } catch (e: Exception) {
@@ -58,6 +67,13 @@ class SourceZipBuilder private constructor() {
             zipFile.delete()
             throw e
         }
+    }
+
+    private fun formatBytes(bytes: Long): String {
+        if (bytes < 1024L) return "$bytes B"
+        val kb = bytes / 1024.0
+        if (kb < 1024.0) return String.format(java.util.Locale.US, "%.1f KB", kb)
+        return String.format(java.util.Locale.US, "%.2f MB", kb / 1024.0)
     }
 
     private fun downloadFile(url: String, githubPat: String?): ByteArray {

@@ -8,6 +8,7 @@ import moe.shizuku.manager.module.ModuleSettings
 import moe.shizuku.manager.module.discovery.ContentItem
 import moe.shizuku.manager.module.discovery.GitHubRepo
 import moe.shizuku.manager.module.discovery.RateLimitTracker
+import kotlinx.coroutines.CancellationException
 import kotlinx.coroutines.Dispatchers
 import kotlinx.coroutines.withContext
 import kotlinx.serialization.json.Json
@@ -17,6 +18,7 @@ import moe.shizuku.manager.module.catalog.TokenStore
 import java.io.File
 import java.io.IOException
 import java.net.URLEncoder
+import java.util.Locale
 import java.util.concurrent.TimeUnit
 
 class ModuleInstaller private constructor() {
@@ -35,7 +37,9 @@ class ModuleInstaller private constructor() {
         moduleId: String,
         owner: String,
         repo: String,
-        subPath: String? = null
+        subPath: String? = null,
+        onLog: (String) -> Unit = {},
+        onProgress: (Float?) -> Unit = {}
     ): Result<moe.shizuku.manager.module.AdbModule> = withContext(Dispatchers.IO) {
         try {
             cleanupOldZips(context)
@@ -43,13 +47,20 @@ class ModuleInstaller private constructor() {
             val installMode = ModuleSettings.getInstallMode()
             val githubPat = TokenStore.getToken(context)
             Log.d(TAG, "Installing $moduleId mode=$installMode token=${if (githubPat.isNullOrBlank()) "null" else "set"}")
+            onLog("- Repository: $owner/$repo${if (!subPath.isNullOrBlank()) " ($subPath)" else ""}")
+            onLog("- Install mode: ${if (installMode == ModuleSettings.InstallMode.SOURCES) "Build from sources" else "Release ZIP"}")
+            onProgress(0.02f)
 
             val zipUri = when (installMode) {
                 ModuleSettings.InstallMode.SOURCES -> {
-                    buildFromSources(context, moduleId, owner, repo, subPath, githubPat)
+                    buildFromSources(context, moduleId, owner, repo, subPath, githubPat, onLog, onProgress)
                 }
                 ModuleSettings.InstallMode.RELEASE -> {
-                    downloadRelease(context, moduleId, owner, repo, githubPat)
+                    downloadRelease(context, moduleId, owner, repo, githubPat, onLog, onProgress)
+                        ?: run {
+                            onLog("- Release ZIP unavailable, falling back to building from sources...")
+                            buildFromSources(context, moduleId, owner, repo, subPath, githubPat, onLog, onProgress)
+                        }
                 }
             }
 
@@ -57,10 +68,13 @@ class ModuleInstaller private constructor() {
                 return@withContext Result.failure(Exception("Failed to prepare module ZIP"))
             }
 
-            val module = AdbModuleManager.install(context, zipUri)
+            val module = AdbModuleManager.install(context, zipUri, onLog = onLog, onProgress = onProgress)
             Result.success(module)
+        } catch (ce: CancellationException) {
+            throw ce
         } catch (e: Exception) {
             Log.e(TAG, "Install failed for $moduleId", e)
+            onLog("! Error: ${e.message ?: e.javaClass.simpleName}")
             Result.failure(e)
         }
     }
@@ -71,9 +85,12 @@ class ModuleInstaller private constructor() {
         owner: String,
         repo: String,
         subPath: String?,
-        githubPat: String?
+        githubPat: String?,
+        onLog: (String) -> Unit,
+        onProgress: (Float?) -> Unit
     ): Uri? {
         val repoUrl = "https://api.github.com/repos/$owner/$repo"
+        onLog("- Querying GitHub repository metadata ($owner/$repo)...")
         val repoRequest = buildGitHubRequest(repoUrl, githubPat)
         val repoResponse = client.newCall(repoRequest).execute()
 
@@ -87,9 +104,12 @@ class ModuleInstaller private constructor() {
                 json.decodeFromString<GitHubRepo>(body).defaultBranch
             }
         }
+        onLog("- Using branch: $defaultBranch")
+        onProgress(0.06f)
 
         val rootPath = subPath?.trim('/')?.takeIf { it.isNotEmpty() } ?: ""
         val url = contentsUrl(owner, repo, rootPath, defaultBranch)
+        onLog("- Listing directory contents: /${rootPath}")
 
         val request = buildGitHubRequest(url, githubPat)
         val response = client.newCall(request).execute()
@@ -99,6 +119,7 @@ class ModuleInstaller private constructor() {
 
             if (!resp.isSuccessful) {
                 Log.w(TAG, "Contents API failed: ${resp.code} for $url")
+                onLog("! GitHub Contents API returned HTTP ${resp.code}")
                 return null
             }
 
@@ -121,6 +142,7 @@ class ModuleInstaller private constructor() {
                 val dirPath = dirsToFetch.removeFirst()
                 if (!visitedDirs.add(dirPath)) continue
 
+                onLog("- Scanning subdirectory: /$dirPath")
                 val dirUrl = contentsUrl(owner, repo, dirPath, defaultBranch)
                 val dirRequest = buildGitHubRequest(dirUrl, githubPat)
                 val dirResponse = client.newCall(dirRequest).execute()
@@ -145,11 +167,22 @@ class ModuleInstaller private constructor() {
 
             if (allFiles.isEmpty()) {
                 Log.w(TAG, "No files found in $url")
+                onLog("! No files found in repository path")
                 return null
             }
 
-            val zipFile = sourceZipBuilder.buildZip(context, moduleId, allFiles, githubPat, subPath)
-                ?: return null
+            onLog("- Discovered ${allFiles.size} files in repository")
+            onProgress(0.10f)
+
+            val zipFile = sourceZipBuilder.buildZip(
+                context = context,
+                moduleId = moduleId,
+                files = allFiles,
+                githubPat = githubPat,
+                subPath = subPath,
+                onLog = onLog,
+                onProgress = onProgress
+            ) ?: return null
 
             return Uri.fromFile(zipFile)
         }
@@ -171,9 +204,12 @@ class ModuleInstaller private constructor() {
         moduleId: String,
         owner: String,
         repo: String,
-        githubPat: String?
+        githubPat: String?,
+        onLog: (String) -> Unit,
+        onProgress: (Float?) -> Unit
     ): Uri? {
         val url = "https://api.github.com/repos/$owner/$repo/releases/latest"
+        onLog("- Checking latest GitHub release for $owner/$repo...")
 
         val request = buildGitHubRequest(url, githubPat)
         val response = client.newCall(request).execute()
@@ -183,6 +219,7 @@ class ModuleInstaller private constructor() {
 
             if (!resp.isSuccessful) {
                 Log.w(TAG, "Releases API failed: ${resp.code}")
+                onLog("- Latest release endpoint returned HTTP ${resp.code}")
                 return null
             }
 
@@ -198,36 +235,69 @@ class ModuleInstaller private constructor() {
 
         if (zipAsset == null) {
             Log.w(TAG, "No ZIP asset found in release")
+            onLog("- Release ${release.tagName} has no .zip asset attached")
             return null
         }
 
+        onLog("- Found release ${release.tagName}: ${zipAsset.name} (${formatBytes(zipAsset.size)})")
         val downloadUrl = zipAsset.browserDownloadUrl
         val cacheDir = File(context.cacheDir, "module_zips").apply { mkdirs() }
         val zipFile = File(cacheDir, "$moduleId-release.zip")
 
         return try {
+            onLog("- Downloading ${zipAsset.name}...")
+            onProgress(0.10f)
             val downloadRequest = buildGitHubRequest(downloadUrl, githubPat)
             val downloadResponse = client.newCall(downloadRequest).execute()
 
             downloadResponse.use { dlResp ->
                 if (!dlResp.isSuccessful) {
                     Log.w(TAG, "ZIP download failed: ${dlResp.code}")
+                    onLog("! Asset download failed with HTTP ${dlResp.code}")
                     return null
                 }
 
-                dlResp.body?.byteStream()?.use { input ->
+                val body = dlResp.body ?: return null
+                val totalBytes = body.contentLength().takeIf { it > 0L } ?: zipAsset.size
+                body.byteStream().use { input ->
                     zipFile.outputStream().use { output ->
-                        input.copyTo(output)
+                        val buffer = ByteArray(8192)
+                        var downloaded = 0L
+                        var nextMilestone = 20
+                        while (true) {
+                            val read = input.read(buffer)
+                            if (read <= 0) break
+                            output.write(buffer, 0, read)
+                            downloaded += read
+                            if (totalBytes > 0L) {
+                                val pct = ((downloaded * 100L) / totalBytes).toInt().coerceIn(0, 100)
+                                onProgress(0.10f + (pct / 100f) * 0.65f)
+                                if (pct >= nextMilestone && nextMilestone <= 100) {
+                                    onLog("  ↳ $pct% (${formatBytes(downloaded)} / ${formatBytes(totalBytes)})")
+                                    nextMilestone += 20
+                                }
+                            }
+                        }
                     }
                 }
+                onLog("- Downloaded ${zipFile.name} (${formatBytes(zipFile.length())})")
+                onProgress(0.78f)
 
                 Uri.fromFile(zipFile)
             }
         } catch (e: Exception) {
             Log.e(TAG, "ZIP download error", e)
+            onLog("! Download error: ${e.message ?: e.javaClass.simpleName}")
             zipFile.delete()
             null
         }
+    }
+
+    private fun formatBytes(bytes: Long): String {
+        if (bytes < 1024L) return "$bytes B"
+        val kb = bytes / 1024.0
+        if (kb < 1024.0) return String.format(Locale.US, "%.1f KB", kb)
+        return String.format(Locale.US, "%.2f MB", kb / 1024.0)
     }
 
     private fun cleanupOldZips(context: Context) {
