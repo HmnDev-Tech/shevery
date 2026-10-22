@@ -364,6 +364,29 @@ object AdbModuleManager {
                 "banner.jpeg",
                 "banner.webp"
             ),
+            icon = findFirstExistingFile(
+                directory,
+                props["icon"],
+                "icon.png",
+                "icon.jpg",
+                "icon.jpeg",
+                "icon.webp"
+            ) ?: findFirstExistingDir(
+                directory,
+                props["webui"],
+                "webroot",
+                "webui",
+                "web"
+            )?.let { webRoot ->
+                findFirstExistingFile(
+                    webRoot,
+                    "icon.png",
+                    "icon.jpg",
+                    "icon.webp",
+                    "favicon.png",
+                    "favicon.ico"
+                )
+            },
             webRoot = findFirstExistingDir(
                 directory,
                 props["webui"],
