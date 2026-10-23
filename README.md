@@ -32,11 +32,18 @@ Upstream project reference: <https://github.com/RikkaApps/Shizuku>
 ## Documentation
 
 - [Shevery Wiki](https://github.com/HmnDev-Tech/shevery/wiki)
+- [Comput AI Agent guide](docs/comput-agent.md)
+- [Device Owner & Profile Owner guide](docs/device-owner.md)
+- [Stealth Edition & Compatibility Stubs](docs/stealth-and-stubs.md)
+- [Accessibility Manager, USB Debugging Hiding & Network Firewall](docs/lab-and-extras.md)
+- [Tasker & MacroDroid Automation Guide](docs/tasker-plugin.md)
+- [Intents Reference](docs/intents.md)
 - [ADB Modules guide](docs/adb-modules-guide.md)
 - [ADB Modules API reference](docs/adb-modules-api.md)
 - [ADB Modules publishing & GitHub Catalog guide](docs/github-catalog.md)
 - [Shizuku Connectors API](docs/shizuku-connectors.md)
 - [Android 17 Compatibility](docs/android-17-compatibility.md)
+- [NightDog Watchdog & Starter Recovery](docs/nightdog.md)
 
 ## Background
 

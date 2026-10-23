@@ -9,6 +9,7 @@
     <string name="home_status_service_not_running"><![CDATA[%1$s n\'est pas en cours d\'exécution]]></string>
     <string name="home_status_service_version">Version %2$s, %1$s</string>
     <string name="home_status_service_version_update"><![CDATA[Version %2$s, %1$s<br/>Redémarrez pour mettre à jour vers la version %3$s]]></string>
+    <string name="home_status_uptime"><![CDATA[Depuis: %1$s]]></string>
     <string name="home_adb_title"><![CDATA[Démarrer en vous connectant à un ordinateur]]></string>
     <string name="home_adb_description"><![CDATA[Pour les appareils non rootés, vous devez utiliser ADB pour démarrer Shevery (requiert une connexion ordinateur). Ce processus doit être répété après chaque redémarrage de l\'appareil. Veuillez <b><a href="%1$s">lire l\'aide</a></b>.]]></string>
     <string name="home_adb_button_view_help"><![CDATA[Lire l\'aide]]></string>

@@ -31,7 +31,7 @@ on:
   issues:
     types: [opened, reopened]
   pull_request_target:
-    types: [opened, reopened, ready_for_review]
+    types: [opened, reopened, synchronize, ready_for_review]
 
 permissions:
   issues: write
@@ -84,6 +84,17 @@ jobs:
     if: github.event_name == 'pull_request_target' && github.event.sender.type != 'Bot'
     runs-on: ubuntu-latest
     steps:
+      - name: Purge Vercel bot comments
+        env:
+          GH_TOKEN: ${{ secrets.GITHUB_TOKEN }}
+          REPO: ${{ github.repository }}
+          PR: ${{ github.event.pull_request.number }}
+        run: |
+          sleep 5
+          for cid in $(gh api "repos/$REPO/issues/$PR/comments" --jq '.[] | select(.user.login == "vercel[bot]") | .id' 2>/dev/null); do
+            gh api --method DELETE "repos/$REPO/issues/comments/$cid" >/dev/null 2>&1 || true
+          done
+
       - name: Request Copilot code review
         env:
           COPILOT_PAT: ${{ secrets.COPILOT_PAT }}

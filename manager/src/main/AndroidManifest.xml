@@ -157,6 +157,40 @@
             android:name=".module.ModuleWebViewActivity"
             android:exported="false"
             android:label="@string/modules_webui" />
+        <!-- "Open with"/share sheet entry: any app can hand over a module ZIP,
+             InstallZipModuleActivity caches it and opens ADB Modules. -->
+        <activity
+            android:name=".module.InstallZipModuleActivity"
+            android:excludeFromRecents="true"
+            android:exported="true"
+            android:label="@string/modules_install_zip_module"
+            android:noHistory="true"
+            android:theme="@style/GrantPermissions">
+            <intent-filter>
+                <action android:name="android.intent.action.VIEW" />
+
+                <category android:name="android.intent.category.DEFAULT" />
+                <category android:name="android.intent.category.BROWSABLE" />
+
+                <data android:scheme="content" />
+                <data android:scheme="file" />
+                <data android:mimeType="application/zip" />
+                <data android:mimeType="application/x-zip" />
+                <data android:mimeType="application/x-zip-compressed" />
+                <data android:mimeType="application/octet-stream" />
+            </intent-filter>
+            <intent-filter>
+                <action android:name="android.intent.action.SEND" />
+                <action android:name="android.intent.action.SEND_MULTIPLE" />
+
+                <category android:name="android.intent.category.DEFAULT" />
+
+                <data android:mimeType="application/zip" />
+                <data android:mimeType="application/x-zip" />
+                <data android:mimeType="application/x-zip-compressed" />
+                <data android:mimeType="application/octet-stream" />
+            </intent-filter>
+        </activity>
         <activity
             android:name=".starter.StarterActivity"
             android:label="@string/starter" />

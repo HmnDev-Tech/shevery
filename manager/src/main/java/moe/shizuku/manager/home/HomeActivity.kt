@@ -8,13 +8,19 @@
 package moe.shizuku.manager.home
 
 import android.Manifest
+import android.app.Activity
 import android.content.ClipData
 import android.content.ClipboardManager
+import android.content.Context
+import android.content.ContextWrapper
 import android.content.Intent
 import android.content.pm.PackageManager
 import android.os.Build
 import android.os.Bundle
+import android.os.SystemClock
+import android.net.Uri
 import android.view.Menu
+import android.view.WindowManager
 import android.widget.Toast
 import androidx.activity.compose.BackHandler
 import androidx.activity.compose.setContent
@@ -107,6 +113,7 @@ import androidx.compose.foundation.pager.rememberPagerState
 import moe.shizuku.manager.ui.compose.scrollMotionBlur
 import androidx.compose.ui.graphics.vector.ImageVector
 import androidx.compose.ui.platform.LocalContext
+import androidx.compose.ui.platform.LocalView
 import androidx.compose.ui.res.stringResource
 import androidx.compose.ui.text.font.FontWeight
 import androidx.compose.ui.text.style.TextOverflow
@@ -160,6 +167,7 @@ import moe.shizuku.manager.compat.StubManager
 import moe.shizuku.manager.utils.ShizukuStateMachine
 import androidx.lifecycle.lifecycleScope
 import kotlinx.coroutines.*
+import java.io.File
 
 abstract class HomeActivity : AppActivity() {
 
@@ -210,9 +218,17 @@ abstract class HomeActivity : AppActivity() {
 
     private var onNavigateAutomationSettings: (() -> Unit)? = null
 
+    private val incomingZipPath = mutableStateOf<String?>(null)
+
+    private fun consumeZipIntent(intent: Intent?) {
+        val path = intent?.getStringExtra(EXTRA_ZIP_PATH) ?: return
+        incomingZipPath.value = path
+    }
+
     override fun onNewIntent(intent: Intent) {
         super.onNewIntent(intent)
         setIntent(intent)
+        consumeZipIntent(intent)
         if (intent.getStringExtra(PluginContract.EXTRA_TARGET_SECTION) ==
             PluginContract.TARGET_SECTION_AUTOMATION
         ) {
@@ -222,6 +238,7 @@ abstract class HomeActivity : AppActivity() {
 
     override fun onCreate(savedInstanceState: Bundle?) {
         super.onCreate(savedInstanceState)
+        consumeZipIntent(intent)
 
         if (Build.VERSION.SDK_INT >= Build.VERSION_CODES.TIRAMISU) {
             if (ContextCompat.checkSelfPermission(this, Manifest.permission.POST_NOTIFICATIONS) != PackageManager.PERMISSION_GRANTED) {
@@ -240,9 +257,13 @@ abstract class HomeActivity : AppActivity() {
 
         lifecycleScope.launch(Dispatchers.IO) {
             try {
-                // Arm adbd on launch: WRITE_SECURE_SETTINGS when granted, otherwise
-                // Device Owner setGlobalSetting (AdbArm decides between them).
-                AdbArm.arm(applicationContext)
+                // Arm adbd on launch only when the server is not already running
+                // and no live TCP port is active; flipping adb_wifi_enabled 0 -> 1
+                // while TCP mode (port 5555) is running restarts adbd and drops
+                // the active session on OEM ROMs (Issue #278).
+                if (!Shizuku.pingBinder() && (!ShizukuSettings.isTcpMode() || EnvironmentUtils.getLiveAdbTcpPort() <= 0)) {
+                    AdbArm.arm(applicationContext)
+                }
             } catch (_: Throwable) {
             }
         }
@@ -329,6 +350,41 @@ abstract class HomeActivity : AppActivity() {
             }
             val cachedModules = remember {
                 mutableStateOf<List<moe.shizuku.manager.module.AdbModule>>(emptyList(), neverEqualPolicy())
+            }
+            val modulesReloadTick by AdbModuleManager.modulesReloadTick.collectAsState()
+            LaunchedEffect(modulesReloadTick) {
+                cachedModules.value = AdbModuleManager.listModules(applicationContext)
+            }
+            // ZIP handed over by another app through "Install Module":
+            // land on ADB Modules immediately and stream installation in the Live Console
+            // on AdbModuleManager.operationScope so recomposition never cancels it.
+            val incomingZip = incomingZipPath.value
+            LaunchedEffect(incomingZip) {
+                val path = incomingZip ?: return@LaunchedEffect
+                incomingZipPath.value = null
+                if (!consumedZipPaths.add(path)) return@LaunchedEffect
+                selectedTab = 1
+                val zipFile = File(path)
+                AdbModuleManager.launchInstallFromUri(
+                    context = applicationContext,
+                    uri = Uri.fromFile(zipFile),
+                    displayName = zipFile.name,
+                    deleteFile = zipFile
+                ) { result ->
+                    result.onSuccess { module ->
+                        Toast.makeText(
+                            applicationContext,
+                            getString(R.string.modules_install_success, module.name),
+                            Toast.LENGTH_SHORT
+                        ).show()
+                    }.onFailure {
+                        Toast.makeText(
+                            applicationContext,
+                            getString(R.string.modules_install_failed, it.message ?: it.javaClass.simpleName),
+                            Toast.LENGTH_LONG
+                        ).show()
+                    }
+                }
             }
             val homeListState = rememberSaveable(saver = LazyListState.Saver) {
                 LazyListState()
@@ -1075,6 +1131,11 @@ abstract class HomeActivity : AppActivity() {
         private const val PERMISSION_ACCESS_LOCAL_NETWORK = "android.permission.ACCESS_LOCAL_NETWORK"
         private const val PERMISSION_USE_LOOPBACK_INTERFACE = "android.permission.USE_LOOPBACK_INTERFACE"
         private var hasPromptedTcpDialogThisSession = false
+
+        const val EXTRA_ZIP_PATH = "moe.shizuku.manager.extra.ZIP_PATH"
+
+        /** Main-thread only: guards against re-installing the same shared ZIP after a config change. */
+        private val consumedZipPaths = mutableSetOf<String>()
     }
 }
 
@@ -1145,6 +1206,7 @@ private fun HomeScreen(
     val status = serviceResource?.data ?: ServiceStatus()
     val grantedCount = grantedResource?.data ?: 0
     val running = serverState == ShizukuStateMachine.State.RUNNING || status.isRunning
+    val starting = serverState == ShizukuStateMachine.State.STARTING
     val adbPermission = status.permission
     val canUseWirelessAdb by produceState(
         initialValue = Build.VERSION.SDK_INT >= Build.VERSION_CODES.R || ShizukuSettings.isTcpMode(),
@@ -1162,6 +1224,50 @@ private fun HomeScreen(
     val watchdogEnabled = ModuleSettings.isWatchdogEnabled()
     val tcpMode = ShizukuSettings.isTcpMode()
     val launchMode = ShizukuSettings.getLastLaunchMode()
+
+    // Experimental (Extras > Experimental): opt-in service feedback. Prefs are
+    // read at composition time so toggling them in Settings applies on the next
+    // recomposition without restarting the app.
+    val hapticsEnabled = ModuleSettings.isServiceStateHapticsEnabled()
+    val view = LocalView.current
+    var previousRunning by remember { mutableStateOf<Boolean?>(null) }
+    LaunchedEffect(running) {
+        if (hapticsEnabled && previousRunning != null && previousRunning != running) {
+            view.performHapticFeedback(android.view.HapticFeedbackConstants.CONFIRM)
+        }
+        previousRunning = running
+    }
+
+    val keepScreenOnStarting = ModuleSettings.isKeepScreenOnWhileStarting()
+    LaunchedEffect(starting, keepScreenOnStarting) {
+        var ctx: Context? = context
+        while (ctx is ContextWrapper && ctx !is Activity) {
+            ctx = ctx.baseContext
+        }
+        val window = (ctx as? Activity)?.window ?: return@LaunchedEffect
+        if (starting && keepScreenOnStarting) {
+            window.addFlags(WindowManager.LayoutParams.FLAG_KEEP_SCREEN_ON)
+        } else {
+            window.clearFlags(WindowManager.LayoutParams.FLAG_KEEP_SCREEN_ON)
+        }
+    }
+
+    val showUptime = ModuleSettings.isServiceUptimeShown()
+    var runningSince by remember { mutableStateOf<Long?>(null) }
+    LaunchedEffect(running) {
+        runningSince = if (running) SystemClock.elapsedRealtime() else null
+    }
+    val uptimeNow by produceState(initialValue = 0L, key1 = running) {
+        while (true) {
+            value = SystemClock.elapsedRealtime()
+            delay(30_000L)
+        }
+    }
+    val uptimeText = if (showUptime && running && runningSince != null) {
+        formatServiceUptime(uptimeNow - runningSince!!)
+    } else {
+        null
+    }
     val diagnostics = remember(status, grantedCount, localNetworkPermissionState, isRooted, watchdogEnabled, dhizukuEnabled, tcpMode, launchMode) {
         buildDiagnostics(context, status, grantedCount, localNetworkPermissionState, isRooted, watchdogEnabled, dhizukuEnabled, tcpMode, launchMode)
     }
@@ -1228,7 +1334,8 @@ private fun HomeScreen(
                     onStartWirelessAdb = onStartWirelessAdb,
                     onStartDhizuku = onStartDhizuku,
                     onManageApps = onManageApps,
-                    onStop = onStop
+                    onStop = onStop,
+                    uptime = uptimeText
                 )
             }
 
@@ -1399,7 +1506,8 @@ private fun StatusHero(
     onStartWirelessAdb: () -> Unit,
     onStartDhizuku: () -> Unit,
     onManageApps: () -> Unit,
-    onStop: () -> Unit
+    onStop: () -> Unit,
+    uptime: String? = null
 ) {
     val context = LocalContext.current
     val title = if (running) {
@@ -1463,6 +1571,17 @@ private fun StatusHero(
                     if (summary.isNotBlank()) {
                         Text(
                             text = summary,
+                            style = MaterialTheme.typography.bodyMedium,
+                            color = if (running) {
+                                MaterialTheme.colorScheme.onPrimaryContainer.copy(alpha = 0.75f)
+                            } else {
+                                MaterialTheme.colorScheme.onSurfaceVariant
+                            }
+                        )
+                    }
+                    if (!uptime.isNullOrEmpty()) {
+                        Text(
+                            text = stringResource(R.string.home_status_uptime, uptime),
                             style = MaterialTheme.typography.bodyMedium,
                             color = if (running) {
                                 MaterialTheme.colorScheme.onPrimaryContainer.copy(alpha = 0.75f)
@@ -2181,6 +2300,18 @@ private fun ButtonIcon(@DrawableRes icon: Int) {
             .padding(end = 8.dp)
             .size(18.dp)
     )
+}
+
+private fun formatServiceUptime(millis: Long): String {
+    val totalSeconds = (millis / 1000L).coerceAtLeast(0L)
+    val hours = totalSeconds / 3600L
+    val minutes = (totalSeconds % 3600L) / 60L
+    val seconds = totalSeconds % 60L
+    return when {
+        hours > 0 -> "${hours}h ${minutes}m"
+        minutes > 0 -> "${minutes}m"
+        else -> "${seconds}s"
+    }
 }
 
 private fun buildServiceSummary(context: android.content.Context, status: ServiceStatus): String {

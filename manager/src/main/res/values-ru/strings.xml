@@ -180,6 +180,11 @@
     <string name="modules_empty_summary"><![CDATA[ADB-модули используют ZIP в стиле KernelSU/Magisk: module.prop, опционально banner, WebUI, action.sh и service.sh.]]></string>
     <string name="modules_install_success"><![CDATA[Установлен %s]]></string>
     <string name="modules_install_failed"><![CDATA[Ошибка установки: %s]]></string>
+    <string name="modules_install_zip_module"><![CDATA[Установить модуль]]></string>
+    <string name="modules_installing_zip"><![CDATA[Установка ZIP-модуля…]]></string>
+    <string name="modules_zip_unreadable"><![CDATA[Не удалось прочитать ZIP-файл]]></string>
+    <string name="modules_live_log_title"><![CDATA[Выполнение %s]]></string>
+    <string name="modules_live_log_hide"><![CDATA[Скрыть]]></string>
     <string name="modules_enabled"><![CDATA[Включен]]></string>
     <string name="modules_disabled"><![CDATA[Выключен]]></string>
     <string name="modules_enable"><![CDATA[Включить]]></string>

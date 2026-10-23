@@ -328,7 +328,7 @@ private class ViewModel(context: Context, root: Boolean, dhizuku: Boolean, host:
         viewModelScope.launch(Dispatchers.IO) {
             ShizukuStateMachine.onStartRequested()
             runCatching {
-                AdbStarter.start(host, port, context = appContext, listener = {
+                AdbStarter.start(host, port, context = appContext, force = true, listener = {
                     synchronized(outputLock) {
                         sb.append(String(it))
                     }

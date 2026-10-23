@@ -136,6 +136,15 @@ class AdbStartWorker(context: Context, params: WorkerParameters) : CoroutineWork
 
     override suspend fun doWork(): Result {
         try {
+            if (Shizuku.pingBinder()) {
+                ShizukuStateMachine.update()
+                ShizukuReceiverStarter.updateNotification(
+                    applicationContext,
+                    ShizukuReceiverStarter.WorkerState.STOPPED
+                )
+                return Result.success()
+            }
+
             ShizukuReceiverStarter.updateNotification(
                 applicationContext,
                 ShizukuReceiverStarter.WorkerState.RUNNING
@@ -195,14 +204,21 @@ class AdbStartWorker(context: Context, params: WorkerParameters) : CoroutineWork
 
             val cr = applicationContext.contentResolver
 
+            val tcpPort = EnvironmentUtils.getAdbTcpPort()
+            var liveTcpPort = EnvironmentUtils.getLiveAdbTcpPort()
+
             // Arm adbd through whichever path this install has: WRITE_SECURE_SETTINGS
             // writes everything (including adb_allowed_connection_time = 0, which keeps
             // pairing keys from expiring), Device Owner writes only the two keys AOSP
-            // allowlists (ADB_ENABLED + adb_wifi_enabled). See AdbArm.
-            AdbArm.arm(applicationContext)
-
-            val tcpPort = EnvironmentUtils.getAdbTcpPort()
-            val liveTcpPort = EnvironmentUtils.getLiveAdbTcpPort()
+            // allowlists (ADB_ENABLED + adb_wifi_enabled). Skip flipping adb_wifi_enabled
+            // when a configured TCP port (e.g. 5555) is already listening so we don't
+            // restart adbd mid-session.
+            if (EnvironmentUtils.isWifiRequired() || liveTcpPort <= 0) {
+                AdbArm.arm(applicationContext)
+                if (liveTcpPort <= 0) {
+                    liveTcpPort = EnvironmentUtils.getLiveAdbTcpPort()
+                }
+            }
 
             val port = if (EnvironmentUtils.isTelevision()) {
                 // TV devices with a configured/static TCP port use TCP directly;
@@ -330,6 +346,15 @@ class AdbStartWorker(context: Context, params: WorkerParameters) : CoroutineWork
                         }
                     }
                 }.first()
+            }
+
+            if (Shizuku.pingBinder()) {
+                ShizukuStateMachine.update()
+                ShizukuReceiverStarter.updateNotification(
+                    applicationContext,
+                    ShizukuReceiverStarter.WorkerState.STOPPED
+                )
+                return Result.success()
             }
 
             AdbStarter.start("127.0.0.1", port, applicationContext)

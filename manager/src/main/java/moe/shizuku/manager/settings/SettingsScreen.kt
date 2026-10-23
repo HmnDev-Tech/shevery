@@ -348,6 +348,9 @@ fun SettingsScreen(
     var notifyRecovery by remember { mutableStateOf(ModuleSettings.isNotifyOnRecovery()) }
     var autoRefresh by remember { mutableStateOf(ModuleSettings.isAutoRefreshOnResume()) }
     var aiExplain by remember { mutableStateOf(ModuleSettings.isComputAiExplainEnabled()) }
+    var expHaptics by remember { mutableStateOf(ModuleSettings.isServiceStateHapticsEnabled()) }
+    var expUptime by remember { mutableStateOf(ModuleSettings.isServiceUptimeShown()) }
+    var expKeepScreen by remember { mutableStateOf(ModuleSettings.isKeepScreenOnWhileStarting()) }
     var showUnsafeDialog by remember { mutableStateOf(false) }
     var showRevokeDialog by remember { mutableStateOf(false) }
     var recreateTick by remember { mutableIntStateOf(0) }
@@ -404,7 +407,7 @@ fun SettingsScreen(
     fun applyTcpMode(enabled: Boolean, restart: Boolean = false) {
         ShizukuSettings.setTcpMode(enabled)
         tcpMode = ShizukuSettings.isTcpMode()
-        if (restart && enabled) {
+        if (restart) {
             restartAdbForTcpMode()
         }
     }
@@ -496,6 +499,9 @@ fun SettingsScreen(
                 notifyRecovery = ModuleSettings.isNotifyOnRecovery()
                 autoRefresh = ModuleSettings.isAutoRefreshOnResume()
                 aiExplain = ModuleSettings.isComputAiExplainEnabled()
+                expHaptics = ModuleSettings.isServiceStateHapticsEnabled()
+                expUptime = ModuleSettings.isServiceUptimeShown()
+                expKeepScreen = ModuleSettings.isKeepScreenOnWhileStarting()
                 agentSafetyMode = ModuleSettings.getAgentSafetyMode()
                 agentMaxSteps = ModuleSettings.getAgentMaxSteps()
                 agentAskShell = ModuleSettings.isAgentAskShell()
@@ -848,6 +854,9 @@ fun SettingsScreen(
                             autoRefresh = autoRefresh,
                             verboseLogging = verboseLogging,
                             aiExplain = aiExplain,
+                            expHaptics = expHaptics,
+                            expUptime = expUptime,
+                            expKeepScreen = expKeepScreen,
                             onNotifyRecoveryChange = { value ->
                                 notifyRecovery = value
                                 ModuleSettings.setNotifyOnRecovery(value)
@@ -864,11 +873,23 @@ fun SettingsScreen(
                                 aiExplain = value
                                 ModuleSettings.setComputAiExplainEnabled(value)
                             },
+                            onExpHapticsChange = { value ->
+                                expHaptics = value
+                                ModuleSettings.setServiceStateHapticsEnabled(value)
+                            },
+                            onExpUptimeChange = { value ->
+                                expUptime = value
+                                ModuleSettings.setServiceUptimeShown(value)
+                            },
+                            onExpKeepScreenChange = { value ->
+                                expKeepScreen = value
+                                ModuleSettings.setKeepScreenOnWhileStarting(value)
+                            },
                             onOpenAccessibility = {
                                 context.startActivity(Intent(context, AccessibilityManagerActivity::class.java))
                             },
                             onRestartService = {
-                                WatchdogManager.attemptRestart(context)
+                                WatchdogManager.attemptRestart(context, force = true)
                                 Toast.makeText(context, "Restart requested", Toast.LENGTH_SHORT).show()
                             },
                             onClearUpdateBanner = {
@@ -1880,10 +1901,16 @@ private fun LazyListScope.extrasSectionContent(
     autoRefresh: Boolean,
     verboseLogging: Boolean,
     aiExplain: Boolean,
+    expHaptics: Boolean,
+    expUptime: Boolean,
+    expKeepScreen: Boolean,
     onNotifyRecoveryChange: (Boolean) -> Unit,
     onAutoRefreshChange: (Boolean) -> Unit,
     onVerboseLoggingChange: (Boolean) -> Unit,
     onAiExplainChange: (Boolean) -> Unit,
+    onExpHapticsChange: (Boolean) -> Unit,
+    onExpUptimeChange: (Boolean) -> Unit,
+    onExpKeepScreenChange: (Boolean) -> Unit,
     onOpenAccessibility: () -> Unit,
     onRestartService: () -> Unit,
     onClearUpdateBanner: () -> Unit,
@@ -1987,6 +2014,35 @@ private fun LazyListScope.extrasSectionContent(
                 title = stringResource(R.string.lab_revoke_trusted_title),
                 summary = stringResource(R.string.lab_revoke_trusted_summary),
                 onClick = onRevokeTrusted
+            )
+        }
+    }
+
+    // New experimental features live here; existing settings stay where they are.
+    item {
+        SettingsGroup(title = stringResource(R.string.lab_experimental_title)) {
+            SwitchSettingsRow(
+                icon = R.drawable.ic_system_icon,
+                title = stringResource(R.string.lab_exp_haptics_title),
+                summary = stringResource(R.string.lab_exp_haptics_summary),
+                checked = expHaptics,
+                onCheckedChange = onExpHapticsChange
+            )
+            GroupDivider()
+            SwitchSettingsRow(
+                icon = R.drawable.ic_outline_info_24,
+                title = stringResource(R.string.lab_exp_uptime_title),
+                summary = stringResource(R.string.lab_exp_uptime_summary),
+                checked = expUptime,
+                onCheckedChange = onExpUptimeChange
+            )
+            GroupDivider()
+            SwitchSettingsRow(
+                icon = R.drawable.ic_server_restart,
+                title = stringResource(R.string.lab_exp_keep_screen_title),
+                summary = stringResource(R.string.lab_exp_keep_screen_summary),
+                checked = expKeepScreen,
+                onCheckedChange = onExpKeepScreenChange
             )
         }
     }

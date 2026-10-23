@@ -9,6 +9,7 @@
     <string name="home_status_service_not_running"><![CDATA[%1$s no se está ejecutando]]></string>
     <string name="home_status_service_version"><![CDATA[Versión %2$s, %1$s]]></string>
     <string name="home_status_service_version_update"><![CDATA[Versión %2$s, %1$s<br/>Reinicie para actualizar a la versión %3$s]]></string>
+    <string name="home_status_uptime"><![CDATA[Tiempo activo: %1$s]]></string>
     <string name="home_adb_title"><![CDATA[Iniciar conectando a una computadora]]></string>
     <string name="home_adb_description"><![CDATA[En dispositivos sin root, requiere ADB para iniciar Shevery (necesita conexión a computadora). Este proceso debe repetirse al reiniciar el dispositivo. Por favor <b><a href="%1$s">lea la ayuda</a></b>.]]></string>
     <string name="home_adb_button_view_help"><![CDATA[Leer ayuda]]></string>
@@ -16,7 +17,7 @@
     <string name="home_adb_dialog_view_command_message"><![CDATA[<font face="monospace">%1$s</font><br/><br/>* Hay otras consideraciones, por favor confirme que ha leído la ayuda primero.]]></string>
     <string name="home_adb_dialog_view_command_copy_button"><![CDATA[Copiar]]></string>
     <string name="home_adb_dialog_view_command_button_send"><![CDATA[Enviar]]></string>
-    <string name="home_wireless_adb_title"><![CDATA[Iniciar mediante depuración inalámbrica]]></string>
+    <string name="home_wireless_adb_title"><![CDATA[Depuración inalámbrica]]></string>
     <string name="home_wireless_adb_description"><![CDATA[En Android 11 o superior, puede activar la depuración inalámbrica e iniciar Shevery directamente desde su dispositivo sin una computadora.<p>Consulte la guía paso a paso.]]></string>
     <string name="home_wireless_adb_description_pre_11"><![CDATA[En versiones anteriores a Android 11, se requiere conexión a una computadora para activar la depuración inalámbrica.]]></string>
     <string name="home_wireless_adb_view_guide_button"><![CDATA[Guía paso a paso]]></string>
@@ -33,7 +34,7 @@ Nota: no desactive "Opciones de desarrollador" ni "Depuración por USB".]]></str
     <string name="dialog_adb_discovery_message_toggle_wireless_debugging"><![CDATA[Intente desactivar y volver a activar "Depuración inalámbrica" si la búsqueda continúa.]]></string>
     <string name="dialog_adb_port"><![CDATA[Puerto]]></string>
     <string name="dialog_adb_invalid_port"><![CDATA[El puerto debe ser un entero entre 1 y 65535.]]></string>
-    <string name="adb_pairing"><![CDATA[Emparejamiento]]></string>
+    <string name="adb_pairing"><![CDATA[Emparejar]]></string>
     <string name="dialog_adb_pairing_title"><![CDATA[Emparejar con dispositivo]]></string>
     <string name="dialog_adb_pairing_discovery"><![CDATA[Buscando servicio de emparejamiento]]></string>
     <string name="dialog_adb_pairing_paring_code"><![CDATA[Código de emparejamiento]]></string>
@@ -102,7 +103,7 @@ Nota: antes de Android 11 requiere computadora.]]></string>
     <string name="settings_start_on_boot"><![CDATA[Iniciar al encender]]></string>
     <string name="settings_start_on_boot_summary"><![CDATA[Shevery iniciará automáticamente al encender el dispositivo.]]></string>
     <string name="settings_use_system_color"><![CDATA[Usar colores del sistema]]></string>
-    <string name="modules_title"><![CDATA[Módulos ADB]]></string>
+    <string name="modules_title"><![CDATA[Módulos]]></string>
     <string name="modules_settings_title"><![CDATA[Módulos]]></string>
     <string name="modules_settings_summary"><![CDATA[Instale módulos ZIP y ejecute sus acciones mediante Shevery]]></string>
     <string name="modules_header_summary"><![CDATA[%1$d instalados, %2$d activados]]></string>
@@ -190,7 +191,7 @@ Nota: antes de Android 11 requiere computadora.]]></string>
     <string name="action_about"><![CDATA[Acerca de]]></string>
     <string name="about_source_code_button"><![CDATA[Código fuente]]></string>
     <string name="about_view_source_code"><![CDATA[Ver código fuente en %s]]></string>
-    <string name="action_stop"><![CDATA[Detener Shevery]]></string>
+    <string name="action_stop"><![CDATA[Detener]]></string>
     <string name="dialog_stop_message"><![CDATA[El servicio Shevery se detendrá.]]></string>
     <string name="service_already_stopped"><![CDATA[El servicio ya está detenido.]]></string>
     <string name="service_stop_success"><![CDATA[Servicio Shevery detenido.]]></string>
@@ -235,7 +236,7 @@ copiado al portapapeles.]]></string>
     <string name="unsafe_warning_message"><![CDATA[Función INSEGURA. ¿Continuar?]]></string>
     <string name="dhizuku_mode_title"><![CDATA[Modo Dhizuku]]></string>
     <string name="dhizuku_mode_summary"><![CDATA[Operar mediante vinculación con Dhizuku]]></string>
-    <string name="home_dhizuku_title"><![CDATA[Iniciar (vía Dhizuku)]]></string>
+    <string name="home_dhizuku_title"><![CDATA[Dhizuku]]></string>
     <string name="home_dhizuku_description"><![CDATA[Para dispositivos gestionados por Dhizuku con privilegios de Propietario.]]></string>
     <string name="dhizuku_warning_title"><![CDATA[Advertencia: Modo Dhizuku]]></string>
     <string name="dhizuku_warning_message"><![CDATA[Dhizuku requiere privilegios de propietario. Comandos ADB podrían ser inactivos. ¿Desea continuar?]]></string>
@@ -331,7 +332,7 @@ copiado al portapapeles.]]></string>
     <string name="backup_summary"><![CDATA[Exportar configuración y módulos a ZIP]]></string>
     <string name="restore_title"><![CDATA[Restaurar ajustes y módulos]]></string>
     <string name="restore_summary"><![CDATA[Importar configuración y módulos desde ZIP]]></string>
-    <string name="comput_title"><![CDATA[computar]]></string>
+    <string name="comput_title"><![CDATA[Computar]]></string>
     <string name="comput_settings"><![CDATA[Ajustes de consola Comput]]></string>
     <string name="comput_adb_console"><![CDATA[Consola Comput ADB]]></string>
     <string name="comput_recommand_title"><![CDATA[ReCommand para Comput]]></string>
@@ -432,7 +433,7 @@ Listo.]]></string>
     <string name="home_quick_terminal"><![CDATA[Terminal]]></string>
     <string name="home_quick_wireless"><![CDATA[ADB inalámbrico]]></string>
     <string name="home_quick_tcp">TCP 5555</string>
-    <string name="home_manage_apps_button"><![CDATA[Administrar aplicaciones]]></string>
+    <string name="home_manage_apps_button"><![CDATA[Administrar]]></string>
     <string name="app_management_loading"><![CDATA[Cargando aplicaciones…]]></string>
     <string name="settings_start_on_boot_adb"><![CDATA[Iniciar al arrancar mediante depuración inalámbrica]]></string>
     <string name="settings_start_on_boot_adb_summary"><![CDATA[Al iniciar el sistema, habilita temporalmente la depuración inalámbrica e inicia Shevery a través de ADB (puerto TCP 5555). No se requiere acceso root; solo necesitas Wi-Fi por un momento.]]></string>
@@ -656,6 +657,13 @@ Listo.]]></string>
     <string name="lab_revoke_trusted_summary"><![CDATA[Quitar todas las concesiones de confianza por módulo; los módulos volverán a las reglas del modo de acceso]]></string>
     <string name="lab_revoke_trusted_warning_title"><![CDATA[¿Revocar los módulos de confianza?]]></string>
     <string name="lab_revoke_trusted_warning_message"><![CDATA[Todos los módulos perderán su estado de confianza y se evaluarán de nuevo según las reglas del modo de acceso. ¿Continuar?]]></string>
+    <string name="lab_experimental_title"><![CDATA[Experimental]]></string>
+    <string name="lab_exp_haptics_title"><![CDATA[Comentarios hápticos al cambiar el servicio]]></string>
+    <string name="lab_exp_haptics_summary"><![CDATA[Vibrar brevemente cada vez que el servicio de Shevery se inicia o se detiene]]></string>
+    <string name="lab_exp_uptime_title"><![CDATA[Mostrar tiempo activo del servicio]]></string>
+    <string name="lab_exp_uptime_summary"><![CDATA[Mostrar cuánto tiempo lleva en ejecución el servicio bajo la tarjeta de estado]]></string>
+    <string name="lab_exp_keep_screen_title"><![CDATA[Mantener la pantalla encendida al iniciar]]></string>
+    <string name="lab_exp_keep_screen_summary"><![CDATA[Evitar que la pantalla se apague mientras se inicia el servicio]]></string>
     <string name="settings_section_startup_summary"><![CDATA[Inicio en arranque, watchdog, conexión]]></string>
     <string name="settings_section_lab_summary"><![CDATA[Funciones de laboratorio, copia y restauración]]></string>
     <string name="settings_section_appearance_summary"><![CDATA[Idioma, tema oscuro y colores]]></string>

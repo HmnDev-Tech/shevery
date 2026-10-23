@@ -3,27 +3,27 @@
     <string name="home_status_service_version"><![CDATA[Versie %2$s, %1$s]]></string>
     <string name="home_status_service_not_running"><![CDATA[%1$s is niet actief]]></string>
     <string name="home_status_service_is_running"><![CDATA[%1$s is actief]]></string>
-    <string name="shevery_update_auto_check">Controleer op updates op de achtergrond</string>
+    <string name="shevery_update_auto_check">Zoek naar updates op de achtergrond</string>
     <string name="shevery_update_auto_check_summary">Zoek naar nieuwe versies, zelfs als de app gesloten is</string>
-    <string name="update_settings_frequency_label"><![CDATA[Controleer frequentie]]></string>
+    <string name="update_settings_frequency_label"><![CDATA[Controleerfrequentie]]></string>
     <string name="home_update_available_title"><![CDATA[Shevery-update beschikbaar: %s]]></string>
-    <string name="home_update_available_body"><![CDATA[Een nieuwere versie is klaar. Tik om te downloaden.]]></string>
-    <string name="translation_contributors">sermart1234, ruvlad</string>
+    <string name="home_update_available_body">Nieuwe versie beschikbaar. Tik om te downloaden</string>
+    <string name="translation_contributors">Meteor0id, sermart1234, ruvlad</string>
     <string name="accessibility_navigate_up"><![CDATA[Een niveau omhoog gaan]]></string>
     <string name="accessibility_close"><![CDATA[Sluiten]]></string>
     <string name="accessibility_more_options"><![CDATA[Meer opties]]></string>
     <string name="accessibility_open_on_github"><![CDATA[Openen op GitHub]]></string>
     <string name="home_status_service_version_update"><![CDATA[Versie %2$s, %1$s<br/>Opnieuw starten om bij te werken naar versie %3$s]]></string>
-    <string name="home_adb_title"><![CDATA[Begin met het aansluiten op een computer]]></string>
-    <string name="home_adb_description"><![CDATA[Bij toestellen zonder root-toegang moet je adb gebruiken om Shevery te starten (hiervoor is een verbinding met een computer nodig). Dit proces moet elke keer dat het toestel opnieuw wordt opgestart, worden herhaald. Lees alstublieft <b><a href="%1$s">de help</a></b>.]]></string>
+    <string name="home_adb_title"><![CDATA[Begin met aansluiten op een computer]]></string>
+    <string name="home_adb_description"><![CDATA[Bij toestellen zonder root-toegang moet u adb gebruiken om Shevery te starten (hiervoor is een verbinding met een computer nodig). Dit proces moet elke keer dat het toestel opnieuw wordt opgestart, worden herhaald. Lees alstublieft <b><a href="%1$s">de help</a></b>.]]></string>
     <string name="home_adb_button_view_help"><![CDATA[Lees de help-pagina]]></string>
     <string name="home_adb_button_view_command"><![CDATA[Commando ‘Bekijken’]]></string>
-    <string name="home_adb_dialog_view_command_notice"><![CDATA[Er zijn nog enkele andere zaken waarmee u rekening moet houden; controleer alstublieft of u de helptekst eerst hebt gelezen.]]></string>
+    <string name="home_adb_dialog_view_command_notice"><![CDATA[Er zijn nog enkele andere zaken waarmee u rekening moet houden; wees er zeker van dat u de helptekst gelezen heeft.]]></string>
     <string name="home_adb_dialog_view_command_copy_button"><![CDATA[Kopiëren]]></string>
     <string name="home_adb_dialog_view_command_button_send"><![CDATA[Verzenden]]></string>
     <string name="home_wireless_adb_title"><![CDATA[Start via draadloos debuggen]]></string>
-    <string name="home_wireless_adb_description"><![CDATA[Op Android 11 of hoger kun je draadloos debuggen inschakelen en Shevery rechtstreeks vanaf je apparaat starten, zonder verbinding te maken met een computer.<p>Bekijk eerst de stapsgewijze handleiding.]]></string>
-    <string name="home_wireless_adb_description_pre_11"><![CDATA[Vóór Android 11 moet je verbinding maken met een computer om draadloos foutopsporen in te schakelen.]]></string>
+    <string name="home_wireless_adb_description"><![CDATA[Op Android 11 of hoger kunt u draadloos debuggen inschakelen en Shevery rechtstreeks vanaf uw apparaat starten, zonder verbinding te maken met een computer.<p>Bekijk eerst de stapsgewijze handleiding.]]></string>
+    <string name="home_wireless_adb_description_pre_11"><![CDATA[Bij Android-versies ouder dan Android 11 moet u verbinding maken met een computer om draadloos foutopsporen in te schakelen.]]></string>
     <string name="home_wireless_adb_view_guide_button"><![CDATA[Stapsgewijze handleiding]]></string>
     <string name="home_local_network_title"><![CDATA[Toegang tot het lokale netwerk]]></string>
     <string name="home_local_network_description"><![CDATA[Voor draadloos debuggen is %1$s vereist op deze Android-versie.]]></string>
@@ -38,14 +38,14 @@ Let op: schakel ‘Ontwikkelaarsopties’ of ‘USB-foutopsporen’ niet uit, an
     <string name="dialog_adb_discovery_message_toggle_wireless_debugging"><![CDATA[Probeer "Draadloos foutopsporen" eens uit te schakelen en weer in te schakelen als het blijft zoeken.]]></string>
     <string name="dialog_adb_port"><![CDATA[Haven]]></string>
     <string name="dialog_adb_invalid_port"><![CDATA[Port is een geheel getal tussen 1 en 65535.]]></string>
-    <string name="adb_pairing"><![CDATA[Combineren]]></string>
+    <string name="adb_pairing"><![CDATA[Koppelen]]></string>
     <string name="dialog_adb_pairing_title"><![CDATA[Koppelen met apparaat]]></string>
     <string name="dialog_adb_pairing_discovery"><![CDATA[Op zoek naar een koppelingsdienst]]></string>
     <string name="dialog_adb_pairing_paring_code"><![CDATA[Koppelingscode]]></string>
     <string name="paring_code_is_wrong"><![CDATA[De koppelingscode is onjuist.]]></string>
     <string name="cannot_connect_port"><![CDATA[Er kan geen verbinding worden gemaakt met de draadloze foutopsporingsdienst.]]></string>
     <string name="dialog_wireless_adb_not_enabled"><![CDATA[Draadloos debuggen is niet ingeschakeld.
-Let op: vóór Android 11 is een verbinding met een computer vereist om draadloos debuggen in te schakelen.]]></string>
+Let op: Bij Android-versies ouder dan Android 11 is een verbinding met een computer vereist om draadloos debuggen in te schakelen.]]></string>
     <string name="dialog_adb_pairing_message"><![CDATA[Ga als volgt te werk om het koppelen te starten: "Opties voor ontwikkelaars" - "Draadloos foutopsporen" - "Apparaat koppelen met koppelingscode".
 
 Zodra het koppelingsproces is gestart, kunt u de koppelingscode invoeren.]]></string>
@@ -56,26 +56,26 @@ Dit kan komen doordat het KeyStore-mechanisme van dit apparaat niet goed werkt.]
     <string name="adb_pair_required"><![CDATA[Voer eerst de koppelingsstap uit.]]></string>
     <string name="development_settings"><![CDATA[Opties voor ontwikkelaars]]></string>
     <string name="notification_settings"><![CDATA[Meldingsopties]]></string>
-    <string name="adb_pairing_tutorial_title"><![CDATA[Koppel Shevery aan je apparaat]]></string>
-    <string name="adb_pairing_tutorial_content_notification"><![CDATA[Een melding van Shevery helpt je bij het voltooien van de koppeling.]]></string>
+    <string name="adb_pairing_tutorial_title"><![CDATA[Koppel Shevery aan uw apparaat]]></string>
+    <string name="adb_pairing_tutorial_content_notification"><![CDATA[Een melding van Shevery helpt u bij het voltooien van de koppeling.]]></string>
     <string name="adb_pairing_tutorial_content_steps"><![CDATA[Ga naar "Ontwikkelaarsopties" - "Draadloos foutopsporen". Tik op "Apparaat koppelen met koppelingscode"; er verschijnt dan een zescijferige code.]]></string>
     <string name="adb_pairing_tutorial_content_enter_pairing_code"><![CDATA[Voer de code uit de melding in om het koppelen te voltooien.]]></string>
-    <string name="adb_pairing_tutorial_content_notification_blocked"><![CDATA[Voor het koppelingsproces moet je reageren op een melding van Shevery. Geef Shevery toestemming om meldingen te plaatsen.]]></string>
+    <string name="adb_pairing_tutorial_content_notification_blocked"><![CDATA[Voor het koppelingsproces moet u reageren op een melding van Shevery. Geef Shevery toestemming om meldingen te plaatsen.]]></string>
         <string name="adb_pairing_tutorial_content_miui_2"><![CDATA[Anders is het mogelijk dat u de koppelingscode uit de melding niet kunt invoeren.]]></string>
-    <string name="adb_pairing_tutorial_content_left_is_clickable"><![CDATA[Let op: het linkerdeel van de optie „Draadloos debuggen” is aanklikbaar; als je erop tikt, wordt er een nieuwe pagina geopend. Het is onjuist om alleen de schakelaar aan de rechterkant in te schakelen.]]></string>
+    <string name="adb_pairing_tutorial_content_left_is_clickable"><![CDATA[Let op: het linkerdeel van de optie „Draadloos debuggen” is aanklikbaar; als u erop tikt, wordt er een nieuwe pagina geopend. Het is onjuist om alleen de schakelaar aan de rechterkant in te schakelen.]]></string>
     <string name="adb_pairing_tutorial_content_finish"><![CDATA[Terug naar Shevery en Shevery starten.]]></string>
     <string name="adb_pairing_tutorial_content_network"><![CDATA[Shevery moet toegang hebben tot het lokale netwerk. Dit wordt geregeld door de netwerktoegangsrechten.]]></string>
     <string name="adb_pairing_tutorial_content_network_limation_not_foreground"><![CDATA[Sommige systemen (zoals MIUI) staan niet toe dat apps toegang krijgen tot het netwerk wanneer ze niet zichtbaar zijn, zelfs als de app standaard gebruikmaakt van een voorgronddienst. Schakel op dergelijke systemen de batterijoptimalisatiefuncties voor Shevery uit.]]></string>
     <string name="home_root_title"><![CDATA[Start (voor apparaten met root-toegang)]]></string>
     <string name="home_root_description"><![CDATA[Bovendien kan Shevery automatisch worden gestart bij het opstarten. Als dat niet het geval is, controleer dan of Shevery wordt geblokkeerd door uw systeem of door tools van derden.<br/>Raadpleeg %s voor meer informatie.]]></string>
-    <string name="home_root_description_sui"><![CDATA[Als je Magisk gebruikt, kun je %1$s eens proberen. Voor root-gebruikers zal dit op termijn Shevery vervangen. Let wel: bestaande apps moeten enigszins worden aangepast om %2$s te kunnen gebruiken.]]></string>
-    <string name="home_root_button_start"><![CDATA[Begin]]></string>
+    <string name="home_root_description_sui"><![CDATA[Als u Magisk gebruikt, kunt u %1$s eens proberen. Voor root-gebruikers zal dit op termijn Shevery vervangen. Let wel: bestaande apps moeten enigszins worden aangepast om %2$s te kunnen gebruiken.]]></string>
+    <string name="home_root_button_start"><![CDATA[Starten]]></string>
     <string name="home_root_button_restart"><![CDATA[Opnieuw starten]]></string>
     <string name="home_app_management_title"><![CDATA[Toepassingsbeheer]]></string>
     <string name="home_app_management_view_authorized_apps"><![CDATA[Tik hier om geautoriseerde apps te beheren]]></string>
     <string name="home_app_management_empty"><![CDATA[Apps die Shevery hebben aangevraagd of aangegeven, worden hier weergegeven.]]></string>
     <string name="home_learn_more_title"><![CDATA[Leer Shevery kennen]]></string>
-    <string name="home_learn_more_description"><![CDATA[Ontdek hoe je met Shevery kunt ontwikkelen]]></string>
+    <string name="home_learn_more_description"><![CDATA[Ontdek hoe u met Shevery kunt ontwikkelen]]></string>
     <string name="home_quick_terminal"><![CDATA[Terminal]]></string>
     <string name="home_quick_wireless"><![CDATA[Draadloze ADB]]></string>
     <string name="home_quick_tcp"><![CDATA[TCP-5555]]></string>
@@ -85,39 +85,39 @@ Dit kan komen doordat het KeyStore-mechanisme van dit apparaat niet goed werkt.]
     <string name="home_diagnostics_copy"><![CDATA[Diagnosegegevens kopiëren]]></string>
     <string name="home_diagnostics_copied"><![CDATA[Diagnostische gegevens gekopieerd.]]></string>
     <string name="home_modules_description"><![CDATA[ADB-ondersteunde modules installeren en beheren]]></string>
-    <string name="home_adb_is_limited_title"><![CDATA[Je moet nog een extra stap zetten]]></string>
-    <string name="home_adb_is_limited_description"><![CDATA[De fabrikant van je apparaat heeft de adb-rechten beperkt, waardoor apps die gebruikmaken van Shevery niet goed zullen werken.
+    <string name="home_adb_is_limited_title"><![CDATA[U moet nog een extra stap zetten]]></string>
+    <string name="home_adb_is_limited_description"><![CDATA[De fabrikant van uw apparaat heeft de adb-rechten beperkt, waardoor apps die gebruikmaken van Shevery niet goed zullen werken.
 
-Meestal kan deze beperking worden opgeheven door enkele instellingen aan te passen in „Ontwikkelaarsopties”. Raadpleeg de helpfunctie voor meer informatie over hoe je dit kunt doen.
+Meestal kan deze beperking worden opgeheven door enkele instellingen aan te passen in „Ontwikkelaarsopties”. Raadpleeg de helpfunctie voor meer informatie over hoe u dit kunt doen.
 
-Mogelijk moet je Shevery opnieuw opstarten om de wijzigingen door te voeren.]]></string>
+Mogelijk moet u Shevery opnieuw opstarten om de wijzigingen door te voeren.]]></string>
     <string name="app_management_select_all"><![CDATA[Alles selecteren]]></string>
     <string name="app_management_deselect_all"><![CDATA[Alles deselecteren]]></string>
     <string name="app_management_dialog_adb_is_limited_title"><![CDATA[De bevoegdheden van adb zijn beperkt]]></string>
-    <string name="app_management_dialog_adb_is_limited_message"><![CDATA[Het is zeer waarschijnlijk dat de fabrikant van je apparaat de rechten van adb beperkt.<p>Mogelijk staat er een oplossing voor jouw systeem in <b><a href="%1$s">dit document</a></b>.]]></string>
+    <string name="app_management_dialog_adb_is_limited_message"><![CDATA[Het is zeer waarschijnlijk dat de fabrikant van uw apparaat de rechten van adb beperkt.<p>Mogelijk staat er een oplossing voor jouw systeem in <b><a href="%1$s">dit document</a></b>.]]></string>
     <string name="app_management_item_summary_requires_root"><![CDATA[* Shevery moet als root worden uitgevoerd]]></string>
-    <string name="app_management_loading"><![CDATA[Apps worden geladen…]]></string>
+    <string name="app_management_loading"><![CDATA[Apps worden geladen …]]></string>
     <string name="home_terminal_title"><![CDATA[Gebruik Shevery in terminal-apps]]></string>
     <string name="home_terminal_description"><![CDATA[Voer opdrachten uit via Shevery in de terminal-apps van jouw keuze]]></string>
-    <string name="terminal_tutorial_1"><![CDATA[Sla de bestanden eerst op waar je maar wilt. Je vindt twee bestanden: %1$s en %2$s.]]></string>
+    <string name="terminal_tutorial_1"><![CDATA[Sla de bestanden eerst op waar u maar wilt. U vindt twee bestanden: %1$s en %2$s.]]></string>
     <string name="terminal_tutorial_1_description"><![CDATA[Als er bestanden met dezelfde naam in de geselecteerde map staan, worden deze verwijderd.
 
-De exportfunctie maakt gebruik van SAF (Storage Access Framework). Er is gemeld dat MIUI de werking van SAF verstoort. Als je MIUI gebruikt, moet je het bestand mogelijk uit de apk van Shevery extraheren of het downloaden via GitHub.]]></string>
+De exportfunctie maakt gebruik van SAF (Storage Access Framework). Er is gemeld dat MIUI de werking van SAF verstoort. Als u MIUI gebruikt, moet u het bestand mogelijk uit de apk van Shevery extraheren of het downloaden via GitHub.]]></string>
     <string name="terminal_export_files"><![CDATA[Bestanden exporteren]]></string>
     <string name="terminal_tutorial_2"><![CDATA[Gebruik vervolgens een willekeurige teksteditor om %1$s te openen en te bewerken.]]></string>
-    <string name="terminal_tutorial_2_description"><![CDATA[Als je bijvoorbeeld Shevery in %1$s wilt gebruiken, moet je %2$s vervangen door %3$s (%4$s is de pakketnaam van %1$s).]]></string>
-    <string name="terminal_tutorial_3"><![CDATA[Verplaats de bestanden ten slotte naar een locatie waar je terminal-app toegang toe heeft; je kunt dan %1$s gebruiken om commando’s via Shevery uit te voeren.]]></string>
-    <string name="terminal_tutorial_3_description"><![CDATA[Enkele tips: geef %1$s uitvoerrechten en voeg het toe aan %2$s, dan kun je %1$s direct gebruiken.]]></string>
-    <string name="rish_description"><![CDATA[Met %1$s kun je in elke terminal-app verbinding maken met de door Shevery uitgevoerde shell en hiermee werken.
+    <string name="terminal_tutorial_2_description"><![CDATA[Als u bijvoorbeeld Shevery in %1$s wilt gebruiken, moet u %2$s vervangen door %3$s (%4$s is de pakketnaam van %1$s).]]></string>
+    <string name="terminal_tutorial_3"><![CDATA[Verplaats de bestanden ten slotte naar een locatie waar uw terminal-app toegang toe heeft; u kunt dan %1$s gebruiken om commando’s via Shevery uit te voeren.]]></string>
+    <string name="terminal_tutorial_3_description"><![CDATA[Enkele tips: geef %1$s uitvoerrechten en voeg het toe aan %2$s, dan kunt u %1$s direct gebruiken.]]></string>
+    <string name="rish_description"><![CDATA[Met %1$s kunt u in elke terminal-app verbinding maken met de door Shevery uitgevoerde shell en hiermee werken.
 <p>Voor meer informatie over het gebruik van %1$s: tik hier om het document te bekijken.]]></string>
     <string name="settings_title"><![CDATA[Instellingen]]></string>
     <string name="settings_language"><![CDATA[Taal]]></string>
     <string name="settings_user_interface"><![CDATA[Uiterlijk]]></string>
-    <string name="settings_black_night_theme"><![CDATA[Thema: Zwarte nacht]]></string>
+    <string name="settings_black_night_theme"><![CDATA[Nachtthema]]></string>
     <string name="settings_black_night_theme_summary"><![CDATA[Gebruik het puur zwarte thema als de nachtmodus is ingeschakeld]]></string>
     <string name="settings_startup"><![CDATA[Opstarten]]></string>
     <string name="settings_translation_contributors"><![CDATA[Mede-vertalers]]></string>
-    <string name="settings_translation"><![CDATA[Doe mee aan de vertaling]]></string>
+    <string name="settings_translation"><![CDATA[Help mee met vertalen]]></string>
     <string name="settings_translation_summary"><![CDATA[Help ons %s naar jouw taal te vertalen]]></string>
     <string name="settings_start_on_boot"><![CDATA[Start bij het opstarten via Root]]></string>
     <string name="settings_start_on_boot_summary"><![CDATA[Start Shevery automatisch op bij het opstarten met root-rechten.]]></string>
@@ -127,7 +127,7 @@ De exportfunctie maakt gebruik van SAF (Storage Access Framework). Er is gemeld 
     <string name="settings_start_on_boot_adb_granted"><![CDATA[WRITE_SECURE_SETTINGS toegekend.]]></string>
     <string name="settings_start_on_boot_adb_warning_no_tcp"><![CDATA[TCP-binding (poort 5555) is uitgeschakeld: draadloos debuggen blijft ingeschakeld.]]></string>
     <string name="settings_start_on_boot_adb_missing_permission_title"><![CDATA[Ontbrekende toestemming]]></string>
-    <string name="settings_start_on_boot_adb_not_running"><![CDATA[Shevery draait niet. Start eerst de service en schakel deze instelling daarna in.]]></string>
+    <string name="settings_start_on_boot_adb_not_running"><![CDATA[Shevery is niet actief. Start eerst de service en schakel deze instelling daarna in.]]></string>
     <string name="settings_start_on_boot_adb_grant_failed"><![CDATA[Het automatisch toekennen van de toestemming is mislukt. Voer deze opdracht uit vanaf een computer om de toestemming handmatig toe te kennen:]]></string>
     <string name="settings_start_on_boot_adb_missing_permission_copy"><![CDATA[Kopieeropdracht]]></string>
     <string name="settings_start_on_boot_adb_missing_permission_instruction"><![CDATA[Gebruiksaanwijzing:
@@ -149,7 +149,7 @@ De exportfunctie maakt gebruik van SAF (Storage Access Framework). Er is gemeld 
     <string name="modules_access_mode_full_summary"><![CDATA[Maakt het downloaden van Shell Bridge, acties, services en WebUI mogelijk. Toegang tot het internet via WebView blijft geblokkeerd.]]></string>
     <string name="modules_custom_permissions"><![CDATA[Aangepaste machtigingen]]></string>
     <string name="modules_custom_permissions_summary"><![CDATA[Stel de machtigingen voor elke module afzonderlijk in]]></string>
-    <string name="modules_permission_action"><![CDATA[Actie uitvoeren]]></string>
+    <string name="modules_permission_action"><![CDATA[Uitvoeren toestaan]]></string>
     <string name="modules_permission_action_summary"><![CDATA[Handmatige uitvoering van action.sh toestaan.]]></string>
     <string name="modules_permission_service"><![CDATA[Service starten]]></string>
     <string name="modules_permission_service_summary"><![CDATA[Sta service.sh toe wanneer achtergrondacties ook zijn ingeschakeld.]]></string>
@@ -161,15 +161,15 @@ De exportfunctie maakt gebruik van SAF (Storage Access Framework). Er is gemeld 
     <string name="modules_permission_web_download_summary"><![CDATA[Sta het downloaden van HTTPS-bestanden naar de map WebUI toe, met uitzondering van index.html.]]></string>
     <string name="modules_background_actions"><![CDATA[Achtergrondacties toestaan]]></string>
     <string name="modules_background_actions_summary"><![CDATA[Zorg ervoor dat geïnstalleerde modules ADB-taken op de achtergrond kunnen aanvragen in de modus met volledige toegang]]></string>
-    <string name="modules_background_allowed"><![CDATA[Achtergrond is toegestaan]]></string>
-    <string name="modules_background_blocked"><![CDATA[Achtergrond geblokkeerd]]></string>
+    <string name="modules_background_allowed"><![CDATA[Op achtergrond is toegestaan]]></string>
+    <string name="modules_background_blocked"><![CDATA[Op achtergrond is tegengehouden]]></string>
     <string name="modules_install_zip"><![CDATA[ZIP installeren]]></string>
     <string name="modules_empty_title"><![CDATA[Er zijn geen modules geïnstalleerd]]></string>
     <string name="modules_empty_summary"><![CDATA[ADB-modules maken gebruik van een ZIP-bestand in KernelSU/Magisk-stijl met module.prop, een optionele banner, WebUI, action.sh en service.sh.]]></string>
     <string name="modules_install_success"><![CDATA[%s geïnstalleerd]]></string>
     <string name="modules_install_failed"><![CDATA[Installatie mislukt: %s]]></string>
     <string name="modules_enabled"><![CDATA[Ingeschakeld]]></string>
-    <string name="modules_disabled"><![CDATA[Gehandicapt]]></string>
+    <string name="modules_disabled"><![CDATA[Uitgeschakeld]]></string>
     <string name="modules_enable"><![CDATA[Inschakelen]]></string>
     <string name="modules_disable"><![CDATA[Uitschakelen]]></string>
     <string name="modules_full_trust"><![CDATA[Volledig vertrouwen]]></string>
@@ -177,7 +177,7 @@ De exportfunctie maakt gebruik van SAF (Storage Access Framework). Er is gemeld 
     <string name="modules_untrust"><![CDATA[Onbetrouwbaar]]></string>
     <string name="modules_run_action"><![CDATA[Actie]]></string>
     <string name="modules_run_service"><![CDATA[Dienst]]></string>
-    <string name="modules_running"><![CDATA[Het script van de module wordt uitgevoerd…]]></string>
+    <string name="modules_running"><![CDATA[Het script van de module wordt uitgevoerd …]]></string>
     <string name="modules_open_webui"><![CDATA[WebUI]]></string>
     <string name="modules_webui"><![CDATA[WebUI-modules]]></string>
     <string name="modules_delete"><![CDATA[Verwijderen]]></string>
@@ -208,31 +208,31 @@ De exportfunctie maakt gebruik van SAF (Storage Access Framework). Er is gemeld 
     <string name="modules_tab_installed"><![CDATA[Geïnstalleerd]]></string>
     <string name="modules_tab_catalog"><![CDATA[Catalogus]]></string>
     <string name="modules_check_updates"><![CDATA[Kijk of er updates zijn]]></string>
-    <string name="modules_checking_updates"><![CDATA[Op zoek naar updates…]]></string>
+    <string name="modules_checking_updates"><![CDATA[Op zoek naar updates …]]></string>
     <string name="modules_no_updates"><![CDATA[Alle modules zijn up-to-date]]></string>
     <string name="modules_update_available"><![CDATA[Er is een update beschikbaar: v%s]]></string>
     <string name="modules_update_button"><![CDATA[Update]]></string>
-    <string name="modules_updating"><![CDATA[Module wordt bijgewerkt…]]></string>
+    <string name="modules_updating"><![CDATA[Module wordt bijgewerkt …]]></string>
     <string name="modules_update_success"><![CDATA[Module bijgewerkt naar versie %s]]></string>
     <string name="modules_download_downloads"><![CDATA[Downloaden naar Downloads]]></string>
     <string name="modules_download_install"><![CDATA[Downloaden en installeren]]></string>
-    <string name="modules_downloading"><![CDATA[Bezig met downloaden…]]></string>
+    <string name="modules_downloading"><![CDATA[Bezig met downloaden …]]></string>
     <string name="modules_download_enqueued"><![CDATA[Het downloaden is op de achtergrond gestart]]></string>
-    <string name="modules_search_placeholder"><![CDATA[Zoek in catalogusmodules…]]></string>
+    <string name="modules_search_placeholder"><![CDATA[Zoek in catalogusmodules …]]></string>
     <string name="action_about"><![CDATA[Over]]></string>
     <string name="about_source_code_button"><![CDATA[Broncode]]></string>
     <string name="about_view_source_code"><![CDATA[Bekijk de broncode op %s]]></string>
-    <string name="action_stop"><![CDATA[Houd Shevery tegen]]></string>
+    <string name="action_stop"><![CDATA[Shevery stoppen]]></string>
     <string name="dialog_stop_message"><![CDATA[De Shevery-dienst wordt stopgezet.]]></string>
     <string name="service_already_stopped"><![CDATA[De Shevery-dienst is al stopgezet.]]></string>
     <string name="service_stop_success"><![CDATA[De dienst van Shevery is stopgezet.]]></string>
-    <string name="service_stop_still_running"><![CDATA[de dienst draait nog steeds]]></string>
+    <string name="service_stop_still_running"><![CDATA[de dienst is nog actief]]></string>
     <string name="service_stop_failed"><![CDATA[Shevery kon niet worden gestopt: %1$s]]></string>
     <string name="notification_channel_service_status"><![CDATA[Status van de start van de dienst]]></string>
-    <string name="notification_service_starting"><![CDATA[De Shevery-dienst gaat van start…]]></string>
-    <string name="notification_service_start_failed"><![CDATA[Het opstarten van de Shevery-service is mislukt.]]></string>
+    <string name="notification_service_starting"><![CDATA[De Shevery-dienst is aan het starten …]]></string>
+    <string name="notification_service_start_failed"><![CDATA[Het starten van de Shevery-service is mislukt.]]></string>
     <string name="notification_service_start_no_root"><![CDATA[Het aanvragen van root-rechten is mislukt.]]></string>
-    <string name="notification_working"><![CDATA[Bezig…]]></string>
+    <string name="notification_working"><![CDATA[Bezig …]]></string>
     <string name="notification_channel_adb_pairing"><![CDATA[Draadloos debuggen en koppelen]]></string>
     <string name="notification_adb_pairing_input_paring_code"><![CDATA[Voer de koppelingscode in]]></string>
     <string name="notification_adb_pairing_searching_for_service_title"><![CDATA[Op zoek naar een koppelingsdienst]]></string>
@@ -240,7 +240,7 @@ De exportfunctie maakt gebruik van SAF (Storage Access Framework). Er is gemeld 
     <string name="notification_adb_pairing_stop_searching"><![CDATA[Stop met zoeken]]></string>
     <string name="notification_adb_pairing_working_title"><![CDATA[Koppelen bezig]]></string>
     <string name="notification_adb_pairing_succeed_title"><![CDATA[Koppeling geslaagd]]></string>
-    <string name="notification_adb_pairing_succeed_text"><![CDATA[Je kunt de Shevery-dienst nu starten.]]></string>
+    <string name="notification_adb_pairing_succeed_text"><![CDATA[U kunt de Shevery-dienst nu starten.]]></string>
     <string name="notification_adb_pairing_failed_title"><![CDATA[Het koppelen is mislukt]]></string>
     <string name="notification_adb_pairing_retry"><![CDATA[Opnieuw proberen]]></string>
     <string name="permission_group_label"><![CDATA[Shevery]]></string>
@@ -248,10 +248,10 @@ De exportfunctie maakt gebruik van SAF (Storage Access Framework). Er is gemeld 
     <string name="permission_label"><![CDATA[toegang tot Shevery]]></string>
     <string name="permission_description"><![CDATA[Geef de app toestemming om Shevery te gebruiken.]]></string>
     <string name="permission_warning_template"><![CDATA[Mag <b>%1$s</b> %2$s doen?]]></string>
-    <string name="grant_dialog_button_allow_always"><![CDATA[Neem er ruim de tijd voor]]></string>
-    <string name="grant_dialog_button_deny"><![CDATA["Ontkennen"]]></string>
+    <string name="grant_dialog_button_allow_always"><![CDATA[Altijd toestaan]]></string>
+    <string name="grant_dialog_button_deny"><![CDATA["Tegenhouden"]]></string>
     <string name="starter"><![CDATA[Start]]></string>
-    <string name="starting_root_shell"><![CDATA[Root-shell wordt gestart…]]></string>
+    <string name="starting_root_shell"><![CDATA[Root-shell wordt gestart …]]></string>
     <string name="start_with_root_failed"><![CDATA[De service kan niet worden gestart omdat er geen root-rechten zijn verleend of omdat dit apparaat niet is geroot.]]></string>
     <string name="dialog_cannot_open_browser_title"><![CDATA[De browser kan niet worden gestart]]></string>
     <string name="toast_copied_to_clipboard"><![CDATA[%s
@@ -270,10 +270,10 @@ De exportfunctie maakt gebruik van SAF (Storage Access Framework). Er is gemeld 
     <string name="unsafe_warning_message"><![CDATA[Het inschakelen van deze functie is ONVEILIG. Weet u het zeker?]]></string>
     <string name="dhizuku_mode_title"><![CDATA[Dhizuku-modus]]></string>
     <string name="dhizuku_mode_summary"><![CDATA[Laat Shevery werken door middel van koppeling aan Dhizuku]]></string>
-    <string name="home_dhizuku_title"><![CDATA[Beginnen (via Dhizuku)]]></string>
-    <string name="home_dhizuku_description"><![CDATA[Voor apparaten die door Dhizuku worden beheerd, kun je Shevery rechtstreeks starten met de rechten van de apparaateigenaar.]]></string>
+    <string name="home_dhizuku_title"><![CDATA[Starten (via Dhizuku)]]></string>
+    <string name="home_dhizuku_description"><![CDATA[Voor apparaten die door Dhizuku worden beheerd, kunt u Shevery rechtstreeks starten met de rechten van de apparaateigenaar.]]></string>
     <string name="dhizuku_warning_title"><![CDATA[Waarschuwing: Dhizuku-modus]]></string>
-    <string name="dhizuku_warning_message"><![CDATA[Dhizuku is ontworpen voor de rechten van de apparaateigenaar/beheerder. Sommige shell- en ADB-specifieke opdrachten werken mogelijk niet correct of worden helemaal niet ondersteund wanneer je Shevery via Dhizuku uitvoert. Weet je zeker dat je door wilt gaan?]]></string>
+    <string name="dhizuku_warning_message"><![CDATA[Dhizuku is ontworpen voor de rechten van de apparaateigenaar/beheerder. Sommige shell- en ADB-specifieke opdrachten werken mogelijk niet correct of worden helemaal niet ondersteund wanneer u Shevery via Dhizuku uitvoert. Weet u zeker dat u door wilt gaan?]]></string>
     <string name="settings_tcp_mode"><![CDATA[TCP-modus]]></string>
     <string name="settings_tcp_mode_summary"><![CDATA[Start ADB opnieuw op via TCP-poort 5555, zodat Shevery opnieuw verbinding kan maken zonder afhankelijk te zijn van de wisselende poort voor draadloos debuggen.]]></string>
     <string name="settings_restart_dialog_title"><![CDATA[Opnieuw opstarten vereist]]></string>
@@ -281,20 +281,20 @@ De exportfunctie maakt gebruik van SAF (Storage Access Framework). Er is gemeld 
     <string name="settings_restart_dialog_message_wifi_required"><![CDATA[Voor de eerste herstart is wifi vereist, omdat Shevery verbinding moet maken met de huidige draadloze debug-poort voordat ADB naar poort 5555 wordt omgeschakeld.]]></string>
     <string name="settings_auto_disable_usb_debugging"><![CDATA[USB-foutopsporing automatisch uitschakelen]]></string>
     <string name="settings_auto_disable_usb_debugging_summary"><![CDATA[Schakel USB-foutopsporing uit na het opnieuw opstarten als Shevery niet is geconfigureerd om bij het opstarten te starten]]></string>
-    <string name="settings_service_group"><![CDATA[Onderhoud van diensten]]></string>
+    <string name="settings_service_group"><![CDATA[dienst]]></string>
     <string name="settings_application"><![CDATA[Toepassing]]></string>
     <string name="settings_appearance"><![CDATA[Uiterlijk]]></string>
-    <string name="lab_service_behavior_title"><![CDATA[Dienstverlening]]></string>
-    <string name="lab_keep_alive_title"><![CDATA[De dienst in stand houden]]></string>
+    <string name="lab_service_behavior_title"><![CDATA[Dienst]]></string>
+    <string name="lab_keep_alive_title"><![CDATA[De dienst actief houden]]></string>
     <string name="lab_keep_alive_summary"><![CDATA[Controleer regelmatig of de Shevery-service actief is en start deze indien nodig opnieuw op]]></string>
     <string name="lab_auto_restart_title"><![CDATA[Automatisch opnieuw opstarten bij een crash]]></string>
     <string name="lab_auto_restart_summary"><![CDATA[Probeer de Shevery-service automatisch opnieuw te starten als deze onverwacht vastloopt]]></string>
-    <string name="lab_notify_death_title"><![CDATA[Melding bij onderbreking van de dienstverlening]]></string>
+    <string name="lab_notify_death_title"><![CDATA[Melding bij onderbreking van de dienst]]></string>
     <string name="lab_notify_death_summary"><![CDATA[Geef een melding weer wanneer de Shevery-service onverwacht stopt]]></string>
     <string name="lab_debugging_title"><![CDATA[Foutopsporing]]></string>
     <string name="lab_verbose_logging_title"><![CDATA[Uitgebreide logboekregistratie]]></string>
     <string name="lab_verbose_logging_summary"><![CDATA[Maak gedetailleerde foutopsporingslogboeken aan in Logcat. Schakel deze functie uit in de productieomgeving om de batterij te sparen.]]></string>
-    <string name="notification_channel_watchdog"><![CDATA[Dienst waakhond]]></string>
+    <string name="notification_channel_watchdog"><![CDATA[Dienstwaakhond]]></string>
     <string name="notification_watchdog_title"><![CDATA[Shevery-dienst stopgezet]]></string>
     <string name="notification_watchdog_text"><![CDATA[De Shevery-dienst is onverwacht gestopt.]]></string>
     <string name="watchdog_service_title"><![CDATA[De Shevery-waakhond is actief]]></string>
@@ -304,37 +304,37 @@ De exportfunctie maakt gebruik van SAF (Storage Access Framework). Er is gemeld 
     <string name="notification_control_channel_name"><![CDATA[Shevery-regeling]]></string>
     <string name="notification_startup_channel_name"><![CDATA[Shevery-startup]]></string>
     <string name="notification_startup_title"><![CDATA[Shevery opstellen]]></string>
-    <string name="notification_startup_enabling_wifi"><![CDATA[Wi-Fi-foutopsporing inschakelen…]]></string>
-    <string name="notification_startup_connecting"><![CDATA[Verbinding maken met ADB…]]></string>
+    <string name="notification_startup_enabling_wifi"><![CDATA[Wi-Fi-foutopsporing inschakelen …]]></string>
+    <string name="notification_startup_connecting"><![CDATA[Verbinding maken met ADB …]]></string>
     <string name="notification_startup_started"><![CDATA[Shevery begon.]]></string>
     <string name="notification_startup_failed"><![CDATA[Shevery kon niet worden gestart.]]></string>
     <string name="notification_startup_no_port"><![CDATA[De draadloze debugpoort is niet binnen 15 seconden gevonden.]]></string>
     <string name="notification_startup_no_permission"><![CDATA[Kan niet starten bij het opstarten: een vereiste machtiging is niet verleend. Open Shevery en verleen eerst de machtiging.]]></string>
-    <string name="notification_startup_waiting_unlock"><![CDATA[Wachten tot het ontgrendelen van het apparaat begint…]]></string>
+    <string name="notification_startup_waiting_unlock"><![CDATA[Wachten tot het apparaat ontgrendeld wordt …]]></string>
     <string name="notification_startup_cancel"><![CDATA[Annuleren]]></string>
     <string name="notification_startup_attempt_now"><![CDATA[Probeer het nu]]></string>
-    <string name="wadb_notification_title"><![CDATA[Shevery begint…]]></string>
+    <string name="wadb_notification_title"><![CDATA[Shevery is aan het starten …]]></string>
     <string name="wadb_notification_wifi_required"><![CDATA[Er wordt gewacht op een wifi-verbinding voordat er verder kan worden gegaan]]></string>
     <string name="wadb_notification_retry"><![CDATA[Wachten om het opnieuw te proberen]]></string>
     <string name="wadb_error_title"><![CDATA[Fout bij het opstarten]]></string>
-    <string name="wadb_error_notify_dev"><![CDATA[Tik om Shevery opnieuw op te starten.]]></string>
+    <string name="wadb_error_notify_dev"><![CDATA[Tik om Shevery opnieuw op te starten]]></string>
     <string name="wadb_permission_error_notification_title"><![CDATA[Toegangsfout]]></string>
     <string name="wadb_permission_error_notification_content"><![CDATA[Shevery kon bij het opstarten niet worden gestart. Open Shevery om het probleem te controleren.]]></string>
     <string name="wadb_notification_channel"><![CDATA[ADB-service voor automatisch opstarten]]></string>
     <string name="wadb_notification_attempt_now"><![CDATA[Probeer het nu]]></string>
-    <string name="notification_control_title_running"><![CDATA[Shevery is aan het hardlopen]]></string>
-    <string name="notification_control_title_stopped"><![CDATA[Shevery wordt tegengehouden]]></string>
-    <string name="notification_control_text_running"><![CDATA[Tik om Shevery te openen, of vouw deze melding uit om deze te stoppen.]]></string>
-    <string name="notification_control_text_stopped"><![CDATA[Tik op het scherm om Shevery te openen, of vouw deze melding uit om de app te starten.]]></string>
-    <string name="notification_control_action_start"><![CDATA[Begin]]></string>
-    <string name="notification_control_action_stop"><![CDATA[Stop]]></string>
+    <string name="notification_control_title_running"><![CDATA[Shevery is actief]]></string>
+    <string name="notification_control_title_stopped"><![CDATA[Shevery is gestopt]]></string>
+    <string name="notification_control_text_running"><![CDATA[Tik om te openen of vouw deze melding uit om te stoppen]]></string>
+    <string name="notification_control_text_stopped"><![CDATA[Tik om te openen of vouw deze melding uit om te starten]]></string>
+    <string name="notification_control_action_start"><![CDATA[Starten]]></string>
+    <string name="notification_control_action_stop"><![CDATA[Stoppen]]></string>
     <string name="settings_update_group_title"><![CDATA[Update]]></string>
     <string name="update_settings_title"><![CDATA[Module-updates]]></string>
     <string name="update_settings_catalog"><![CDATA[Modulecatalogus]]></string>
     <string name="update_settings_catalog_enabled"><![CDATA[Catalogus inschakelen]]></string>
     <string name="update_settings_catalog_enabled_summary"><![CDATA[Ontdekte modules uit GitHub-onderwerpen weergeven]]></string>
     <string name="update_settings_frequency"><![CDATA[Updatefrequentie]]></string>
-    <string name="update_settings_frequency_manual"><![CDATA[Handleiding]]></string>
+    <string name="update_settings_frequency_manual"><![CDATA[Handmatig]]></string>
     <string name="update_settings_frequency_daily"><![CDATA[Dagelijks]]></string>
     <string name="update_settings_frequency_weekly"><![CDATA[Wekelijks]]></string>
     <string name="update_settings_install_mode"><![CDATA[Installatiemodus]]></string>
@@ -355,13 +355,13 @@ De exportfunctie maakt gebruik van SAF (Storage Access Framework). Er is gemeld 
     <string name="update_settings_github_pat_delete_summary"><![CDATA[Opgeslagen GitHub-token verwijderen]]></string>
     <string name="shevery_update_check_title"><![CDATA[Controleer of er updates voor Shevery beschikbaar zijn]]></string>
     <string name="shevery_update_check_summary"><![CDATA[Controleer of er nieuwere versies van Shevery Manager beschikbaar zijn]]></string>
-    <string name="shevery_update_checking"><![CDATA[Controleren of er updates voor Shevery zijn…]]></string>
+    <string name="shevery_update_checking"><![CDATA[Controleren of er updates voor Shevery zijn …]]></string>
     <string name="shevery_update_up_to_date"><![CDATA[Shevery is up-to-date (%s)]]></string>
     <string name="shevery_update_available_title"><![CDATA[Er is een nieuwe update voor Shevery beschikbaar!]]></string>
     <string name="shevery_update_available_msg"><![CDATA[Versie %1$s is beschikbaar (huidige versie: %2$s)]]></string>
     <string name="shevery_update_download_apk"><![CDATA[APK downloaden]]></string>
     <string name="shevery_update_view_release"><![CDATA[Bekijk op GitHub]]></string>
-    <string name="shevery_update_channel"><![CDATA[Kanaal bijwerken]]></string>
+    <string name="shevery_update_channel"><![CDATA[Updatekanaal]]></string>
     <string name="shevery_update_channel_summary"><![CDATA[Kies een updatekanaal]]></string>
     <string name="app_update_channel_stable"><![CDATA[Stabiel]]></string>
     <string name="app_update_channel_beta"><![CDATA[Pre-release en bèta]]></string>
@@ -377,17 +377,17 @@ De exportfunctie maakt gebruik van SAF (Storage Access Framework). Er is gemeld 
     <string name="modules_catalog_sort_official"><![CDATA[Officieel]]></string>
     <string name="modules_catalog_install_sources"><![CDATA[Installeren vanuit bronnen]]></string>
     <string name="modules_catalog_install_release"><![CDATA[ZIP-bestand met de release downloaden]]></string>
-    <string name="modules_catalog_install_description"><![CDATA[Kies hoe je deze module wilt installeren:]]></string>
+    <string name="modules_catalog_install_description"><![CDATA[Kies hoe u deze module wilt installeren:]]></string>
     <string name="modules_catalog_install_success"><![CDATA[Module is succesvol geïnstalleerd]]></string>
     <string name="modules_catalog_install_failed"><![CDATA[Installatie mislukt: %s]]></string>
     <string name="modules_catalog_token_required"><![CDATA[GitHub-token vereist]]></string>
     <string name="modules_catalog_token_hint"><![CDATA[GitHub-toegangstoken voor persoonlijk gebruik]]></string>
-    <string name="modules_catalog_token_description"><![CDATA[Je hebt een token nodig om op GitHub naar modules te zoeken. Je kunt er een aanmaken op github.com/settings/tokens]]></string>
+    <string name="modules_catalog_token_description"><![CDATA[U heeft een token nodig om op GitHub naar modules te zoeken. U kunt er een aanmaken op github.com/settings/tokens]]></string>
     <string name="modules_catalog_token_format_warning"><![CDATA[Het token moet beginnen met „ghp_“ of „github_pat_“ en minimaal 30 tekens lang zijn]]></string>
-    <string name="modules_catalog_loading"><![CDATA[Catalogus wordt geladen…]]></string>
+    <string name="modules_catalog_loading"><![CDATA[Catalogus wordt geladen …]]></string>
     <string name="modules_catalog_error"><![CDATA[De catalogus kon niet worden geladen]]></string>
     <string name="modules_catalog_install"><![CDATA[Installeren]]></string>
-    <string name="modules_catalog_installing"><![CDATA[Bezig met installeren…]]></string>
+    <string name="modules_catalog_installing"><![CDATA[Bezig met installeren …]]></string>
     <string name="modules_catalog_view_github"><![CDATA[Bekijk op GitHub]]></string>
     <string name="modules_catalog_skip_token"><![CDATA[Schepen]]></string>
     <string name="modules_catalog_open"><![CDATA[Catalogus openen]]></string>
@@ -406,12 +406,12 @@ De exportfunctie maakt gebruik van SAF (Storage Access Framework). Er is gemeld 
     <string name="restore_summary"><![CDATA[Configuratie en modules importeren vanuit een ZIP-bestand]]></string>
     <string name="settings_sections_title"><![CDATA[Back-ups en overige zaken]]></string>
     <string name="backup_section_title"><![CDATA[Back-ups]]></string>
-    <string name="comput_title"><![CDATA[Reken]]></string>
+    <string name="comput_title"><![CDATA[Uitvoeren]]></string>
     <string name="comput_settings"><![CDATA[Instellingen van de Comput-console]]></string>
     <string name="comput_adb_console"><![CDATA[ADB-computerconsole]]></string>
     <string name="comput_recommand_title"><![CDATA[ReCommand voor Comput]]></string>
     <string name="comput_recommand_summary"><![CDATA[Toon een bevestigingsvenster voordat opdrachten in de Comput-console worden uitgevoerd]]></string>
-    <string name="comput_recommand_confirmation"><![CDATA[Weet je zeker dat je deze ADB-opdracht in Comput wilt uitvoeren?]]></string>
+    <string name="comput_recommand_confirmation"><![CDATA[Weet u zeker dat u deze ADB-opdracht in Comput wilt uitvoeren?]]></string>
     <string name="comput_ai_api_key_empty"><![CDATA[De API-sleutel van Google AI Studio is leeg! Stel deze in via de instellingen van Shevery (instellingen van de Compute Console).]]></string>
     <string name="comput_ai_api_key_title"><![CDATA[API-sleutel van Google AI Studio]]></string>
     <string name="comput_ai_api_key_not_configured"><![CDATA[Niet geconfigureerd (Gemini AI werkt niet)]]></string>
@@ -430,17 +430,17 @@ De exportfunctie maakt gebruik van SAF (Storage Access Framework). Er is gemeld 
     <string name="comput_adb_mode"><![CDATA[adb-modus]]></string>
     <string name="comput_command_label"><![CDATA[Commando]]></string>
     <string name="comput_command_placeholder"><![CDATA[bijv. pm list packages]]></string>
-    <string name="comput_run"><![CDATA[Rennen]]></string>
+    <string name="comput_run"><![CDATA[Uitvoeren]]></string>
     <string name="comput_clear"><![CDATA[Wissen]]></string>
-    <string name="comput_console_cleared"><![CDATA[Console leeggemaakt.]]></string>
+    <string name="comput_console_cleared"><![CDATA[Console leeggemaakt]]></string>
     <string name="comput_console_output"><![CDATA[Console-uitvoer]]></string>
     <string name="comput_output_copied"><![CDATA[Uitvoer naar klembord gekopieerd]]></string>
     <string name="comput_copy_output"><![CDATA[Uitvoer kopiëren]]></string>
     <string name="comput_ask_gemini"><![CDATA[Vraag het aan Gemini]]></string>
-    <string name="comput_executing"><![CDATA[Wordt uitgevoerd: %1$s ...]]></string>
+    <string name="comput_executing"><![CDATA[Wordt uitgevoerd: %1$s …]]></string>
     <string name="comput_adb_translate"><![CDATA[ADB-opdrachtvertalingsmodus actief
 Origineel: %1$s
-Wordt uitgevoerd...]]></string>
+Wordt uitgevoerd …]]></string>
     <string name="comput_command_no_output"><![CDATA[Het commando is uitgevoerd zonder uitvoer.]]></string>
     <string name="comput_exit_code"><![CDATA[[E] Het commando is beëindigd met code %1$d.]]></string>
     <string name="comput_running_macro"><![CDATA[Macro wordt uitgevoerd: %1$s]]></string>
@@ -453,7 +453,7 @@ Klaar voor opdrachten.]]></string>
     <string name="comput_commandium"><![CDATA[Commandium]]></string>
     <string name="comput_commandium_assistant"><![CDATA[Commandium AI-assistent]]></string>
     <string name="comput_commandium_description"><![CDATA[Maak shell-opdrachten aan met behulp van natuurlijke taal. Gemini geeft een onbewerkte, kopieerbare opdracht weer.]]></string>
-    <string name="comput_commandium_label"><![CDATA[Welke opdracht heb je nodig?]]></string>
+    <string name="comput_commandium_label"><![CDATA[Welke opdracht heeft u nodig?]]></string>
     <string name="comput_commandium_placeholder"><![CDATA[bijv. Zoek alle bestanden groter dan 10 MB in /sdcard]]></string>
     <string name="comput_ask_commandium"><![CDATA[Vraag het aan Commandium]]></string>
     <string name="comput_generated_command"><![CDATA[Gegenereerde opdracht:]]></string>
@@ -462,11 +462,11 @@ Klaar voor opdrachten.]]></string>
     <string name="comput_copied_to_clipboard"><![CDATA[Naar het klembord gekopieerd]]></string>
     <string name="comput_copy_command"><![CDATA[Kopieeropdracht]]></string>
     <string name="comput_hero_title"><![CDATA[Shevery-console]]></string>
-    <string name="comput_hero_subtitle"><![CDATA[Krachtige shell-terminal op je apparaat, mogelijk gemaakt door Shizuku.]]></string>
-    <string name="comput_status_ready"><![CDATA[Klaar]]></string>
-    <string name="comput_status_running"><![CDATA[Hardlopen]]></string>
+    <string name="comput_hero_subtitle"><![CDATA[Krachtige shell-terminal op uw apparaat, mogelijk gemaakt door Shizuku.]]></string>
+    <string name="comput_status_ready"><![CDATA[Staat klaar]]></string>
+    <string name="comput_status_running"><![CDATA[Wordt uitgeoerd]]></string>
     <string name="comput_status_error"><![CDATA[Fout]]></string>
-    <string name="comput_console_section"><![CDATA[Troosten]]></string>
+    <string name="comput_console_section"><![CDATA[Section]></string>
     <string name="comput_console_macros"><![CDATA[Macroconsole]]></string>
     <string name="comput_stop"><![CDATA[Stoppen (%1$d)]]></string>
     <string name="comput_record_macro"><![CDATA[Macro opnemen]]></string>
@@ -489,9 +489,9 @@ Klaar voor opdrachten.]]></string>
     <string name="comput_presets_title"><![CDATA[Bibliotheek met voorinstellingen]]></string>
     <string name="comput_presets_subtitle"><![CDATA[Tik op een willekeurige opdracht om deze snel uit te voeren of automatisch in de terminalprompt in te vullen.]]></string>
     <string name="comput_output_label"><![CDATA[Uitvoer]]></string>
-    <string name="comput_search_desc"><![CDATA[Zoekresultaten]]></string>
+    <string name="comput_search_desc"><![CDATA[Zoeken]]></string>
     <string name="comput_search_hint"><![CDATA[Zoekresultaten]]></string>
-    <string name="comput_no_search_results"><![CDATA[Er is geen overeenkomende uitvoer gevonden]]></string>
+    <string name="comput_no_search_results"><![CDATA[Er zijn geen overeenkomende resultaten gevonden]]></string>
     <string name="comput_clear_search_desc"><![CDATA[Zoekresultaten wissen]]></string>
     <string name="comput_close_search_desc"><![CDATA[Zoekresultaten sluiten]]></string>
     <string name="comput_history_desc"><![CDATA[Opdrachtgeschiedenis]]></string>
@@ -510,9 +510,9 @@ Klaar voor opdrachten.]]></string>
     <string name="diagnostics_adb_permission"><![CDATA[Toestemming van de ADB]]></string>
     <string name="diagnostics_authorized_apps"><![CDATA[Goedgekeurde apps]]></string>
     <string name="diagnostics_local_network"><![CDATA[Lokaal netwerk]]></string>
-    <string name="diagnostics_running"><![CDATA[hardlopen]]></string>
+    <string name="diagnostics_running"><![CDATA[wordt uitgevoerd]]></string>
     <string name="diagnostics_stopped"><![CDATA[gestopt]]></string>
-    <string name="diagnostics_granted"><![CDATA[toegekend]]></string>
+    <string name="diagnostics_granted"><![CDATA[toegestaan]]></string>
     <string name="diagnostics_missing"><![CDATA[ontbreekt]]></string>
     <string name="diagnostics_not_required"><![CDATA[niet vereist]]></string>
     <string name="diagnostics_full"><![CDATA[volledig]]></string>
@@ -530,7 +530,7 @@ Klaar voor opdrachten.]]></string>
     <string name="accessibility_manager_lab_group"><![CDATA[Toegankelijkheid]]></string>
     <string name="accessibility_manager_lab_title"><![CDATA[Toegankelijkheidsmanager]]></string>
     <string name="accessibility_manager_lab_summary"><![CDATA[Toegankelijkheidsdiensten beheren en actief houden]]></string>
-    <string name="accessibility_manager_keep_alive_group"><![CDATA[In stand houden]]></string>
+    <string name="accessibility_manager_keep_alive_group"><![CDATA[Actief houden]]></string>
     <string name="accessibility_manager_keep_alive_title"><![CDATA[Gepinde diensten actief houden]]></string>
     <string name="accessibility_manager_keep_alive_summary"><![CDATA[Zet vastgezette toegankelijkheidsdiensten weer in wanneer het systeem of de gebruiker ze uitschakelt]]></string>
     <string name="accessibility_manager_auto_boot_title"><![CDATA[Bij het opstarten starten]]></string>
@@ -577,12 +577,12 @@ Klaar voor opdrachten.]]></string>
     <string name="automation_plugin_method_summary"><![CDATA[Geïntegreerde actie- en statusvoorwaarde-plug-in in Tasker en MacroDroid]]></string>
 
     <!-- Backups, Extras & Classic Nav -->
-    <string name="settings_backups_title"><![CDATA[Backups]]></string>
-    <string name="settings_section_backups_summary"><![CDATA[Backup and restore settings]]></string>
-    <string name="settings_extras_title"><![CDATA[Extras]]></string>
-    <string name="settings_section_extras_summary"><![CDATA[Accessibility, diagnostics, and experiments]]></string>
-    <string name="settings_classic_nav"><![CDATA[Classic navigation bar]]></string>
-    <string name="settings_classic_nav_summary"><![CDATA[Use a fixed bottom bar instead of the floating pill]]></string>
+    <string name="settings_backups_title"><![CDATA[Back-ups]]></string>
+    <string name="settings_section_backups_summary"><![CDATA[Backup en herstelinstellingen]]></string>
+    <string name="settings_extras_title"><![CDATA[Extra\'s]]></string>
+    <string name="settings_section_extras_summary"><![CDATA[Toeankelijkheid, diagnostiek en experimenten]]></string>
+    <string name="settings_classic_nav"><![CDATA[Klassieke navigatiebalk]]></string>
+    <string name="settings_classic_nav_summary"><![CDATA[Vaste naviatiebalk gebrukken in plaats van een gebarenbalk]]></string>
 
     <!-- Home - Automation -->
     <string name="home_automation_title">Bedien Shevery met automatisatie-apps</string>

@@ -7,6 +7,7 @@ import moe.shizuku.manager.ShizukuSettings
 import moe.shizuku.manager.starter.Starter
 import moe.shizuku.manager.utils.EnvironmentUtils
 import moe.shizuku.manager.utils.ShizukuStateMachine
+import rikka.shizuku.Shizuku
 import java.io.IOException
 
 object AdbStarter {
@@ -17,9 +18,15 @@ object AdbStarter {
         host: String = "127.0.0.1",
         port: Int,
         context: Context? = null,
+        force: Boolean = false,
         listener: ((ByteArray) -> Unit)? = null,
         log: ((String) -> Unit)? = null,
     ) {
+        if (!force && Shizuku.pingBinder()) {
+            ShizukuStateMachine.update()
+            log?.invoke("Service is already running.")
+            return
+        }
         ShizukuStateMachine.onStartRequested()
         val key = AdbKey(PreferenceAdbKeyStore(ShizukuSettings.getPreferences()), "shizuku")
         val tcpMode = ShizukuSettings.isTcpMode()

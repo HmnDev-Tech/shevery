@@ -15,6 +15,7 @@
     <string name="home_status_service_not_running">%1$s is not running</string>
     <string name="home_status_service_version">Version %2$s, %1$s</string>
     <string name="home_status_service_version_update"><![CDATA[Version %2$s, %1$s<br>Start again to update to version %3$s]]></string>
+    <string name="home_status_uptime">Uptime: %1$s</string>
 
     <!-- Home - Adb -->
     <string name="home_adb_title"><![CDATA[Start by connecting to a computer]]></string>
@@ -212,6 +213,11 @@ With %1$s, in any terminal app, you can connect to and interact with the shell r
     <string name="modules_empty_summary">ADB modules use a KernelSU/Magisk-style ZIP with module.prop, optional banner, WebUI, action.sh and service.sh.</string>
     <string name="modules_install_success">Installed %s</string>
     <string name="modules_install_failed">Install failed: %s</string>
+    <string name="modules_install_zip_module">Install Module</string>
+    <string name="modules_installing_zip">Installing ZIP module…</string>
+    <string name="modules_zip_unreadable">Unable to read ZIP file</string>
+    <string name="modules_live_log_title">Running %s</string>
+    <string name="modules_live_log_hide">Hide</string>
     <string name="modules_enabled">Enabled</string>
     <string name="modules_disabled">Disabled</string>
     <string name="modules_enable">Enable</string>
@@ -405,6 +411,15 @@ Wi-Fi is required for the first restart because Shevery must connect to the curr
     <string name="lab_revoke_trusted_summary">Remove all per-module trust grants; modules fall back to the access mode rules</string>
     <string name="lab_revoke_trusted_warning_title">Revoke trusted modules?</string>
     <string name="lab_revoke_trusted_warning_message">All modules will lose their trusted status and will be evaluated against the access mode rules again. Continue?</string>
+
+    <!-- Lab Features - Experimental -->
+    <string name="lab_experimental_title">Experimental</string>
+    <string name="lab_exp_haptics_title">Haptic Feedback on Service Change</string>
+    <string name="lab_exp_haptics_summary">Vibrate briefly whenever the Shevery service starts or stops</string>
+    <string name="lab_exp_uptime_title">Show Service Uptime</string>
+    <string name="lab_exp_uptime_summary">Show how long the service has been running under the home status card</string>
+    <string name="lab_exp_keep_screen_title">Keep Screen On While Starting</string>
+    <string name="lab_exp_keep_screen_summary">Prevent the screen from sleeping while the service is starting</string>
 
     <!-- Settings section summaries -->
     <string name="settings_section_startup_summary">Boot start, watchdog, connection</string>

@@ -8,6 +8,9 @@
 package moe.shizuku.manager.module
 
 
+import android.content.ClipData
+import android.content.ClipboardManager
+import android.content.Context
 import android.graphics.BitmapFactory
 import android.widget.Toast
 import androidx.activity.compose.rememberLauncherForActivityResult
@@ -25,7 +28,9 @@ import androidx.compose.animation.fadeOut
 import androidx.compose.animation.shrinkVertically
 import androidx.compose.foundation.ExperimentalFoundationApi
 import androidx.compose.foundation.Image
+import androidx.compose.foundation.background
 import androidx.compose.foundation.combinedClickable
+import androidx.compose.foundation.horizontalScroll
 import androidx.compose.foundation.layout.Arrangement
 import androidx.compose.foundation.layout.Box
 import androidx.compose.foundation.layout.Column
@@ -34,35 +39,52 @@ import androidx.compose.foundation.layout.FlowRow
 import androidx.compose.foundation.layout.PaddingValues
 import androidx.compose.foundation.layout.Row
 import androidx.compose.foundation.layout.Spacer
+import androidx.compose.foundation.layout.WindowInsets
+import androidx.compose.foundation.layout.fillMaxSize
 import androidx.compose.foundation.layout.fillMaxWidth
 import androidx.compose.foundation.layout.height
 import androidx.compose.foundation.layout.padding
 import androidx.compose.foundation.layout.size
+import androidx.compose.foundation.layout.systemBars
+import androidx.compose.foundation.layout.width
+import androidx.compose.foundation.layout.windowInsetsPadding
 import androidx.compose.foundation.lazy.LazyListState
 import androidx.compose.foundation.lazy.items
 import androidx.compose.foundation.lazy.rememberLazyListState
 import androidx.compose.foundation.rememberScrollState
-import androidx.compose.foundation.verticalScroll
 import androidx.compose.foundation.shape.RoundedCornerShape
+import androidx.compose.foundation.text.selection.SelectionContainer
+import androidx.compose.foundation.verticalScroll
 import androidx.compose.material.icons.Icons
 import androidx.compose.material.icons.rounded.Apps
 import androidx.compose.material.icons.rounded.CheckCircle
+import androidx.compose.material.icons.rounded.Close
+import androidx.compose.material.icons.rounded.ContentCopy
+import androidx.compose.material.icons.rounded.PlayArrow
+import androidx.compose.material.icons.rounded.Refresh
+import androidx.compose.material.icons.rounded.Terminal
+import androidx.compose.material.icons.rounded.Warning
 import androidx.compose.material3.AlertDialog
 import androidx.compose.material3.AssistChip
 import androidx.compose.material3.Button
 import androidx.compose.material3.ButtonDefaults
 import androidx.compose.material3.ExperimentalMaterial3Api
+import androidx.compose.material3.ExperimentalMaterial3ExpressiveApi
 import androidx.compose.material3.FilledTonalButton
+import androidx.compose.material3.HorizontalDivider
+import androidx.compose.material3.Icon
+import androidx.compose.material3.IconButton
+import androidx.compose.material3.LinearProgressIndicator
 import androidx.compose.material3.LoadingIndicator
 import androidx.compose.material3.MaterialTheme
 import androidx.compose.material3.OutlinedButton
-import androidx.compose.material3.Icon
 import androidx.compose.material3.Surface
 import androidx.compose.material3.Text
 import androidx.compose.material3.TextButton
 import androidx.compose.runtime.Composable
 import androidx.compose.runtime.LaunchedEffect
 import androidx.compose.runtime.MutableState
+import androidx.compose.runtime.collectAsState
 import androidx.compose.runtime.getValue
 import androidx.compose.runtime.mutableStateOf
 import androidx.compose.runtime.remember
@@ -78,46 +100,26 @@ import androidx.compose.ui.layout.ContentScale
 import androidx.compose.ui.platform.LocalContext
 import androidx.compose.ui.platform.LocalView
 import androidx.compose.ui.res.stringResource
+import androidx.compose.ui.text.font.FontFamily
 import androidx.compose.ui.text.font.FontWeight
 import androidx.compose.ui.text.style.TextOverflow
 import androidx.compose.ui.unit.dp
+import androidx.compose.ui.unit.sp
+import androidx.compose.ui.window.Dialog
+import androidx.compose.ui.window.DialogProperties
 import kotlinx.coroutines.launch
 import moe.shizuku.manager.R
 import moe.shizuku.manager.module.catalog.TokenStore
 import moe.shizuku.manager.module.discovery.ModuleDiscoveryManager
-import moe.shizuku.manager.module.update.ModuleInstaller
 import moe.shizuku.manager.module.update.UpdateChecker
 import moe.shizuku.manager.ui.compose.ExpressiveSwitch
-import moe.shizuku.manager.ui.compose.MonospaceLog
 import moe.shizuku.manager.ui.compose.ShizukuIcon
 import moe.shizuku.manager.ui.compose.ShizukuLazyScaffold
 import moe.shizuku.manager.utils.AiExplainUtil
-import okhttp3.OkHttpClient
-import okhttp3.Request
-import java.util.concurrent.TimeUnit
-
-private suspend fun downloadAndInstallFromUrl(context: android.content.Context, url: String, filename: String): moe.shizuku.manager.module.AdbModule {
-    return kotlinx.coroutines.withContext(kotlinx.coroutines.Dispatchers.IO) {
-        val client = OkHttpClient.Builder()
-            .connectTimeout(15, TimeUnit.SECONDS)
-            .readTimeout(30, TimeUnit.SECONDS)
-            .build()
-        val request = Request.Builder().url(url).build()
-        val response = client.newCall(request).execute()
-        response.use { resp ->
-            if (!resp.isSuccessful) throw Exception("Download failed: ${resp.code}")
-            val cacheDir = java.io.File(context.cacheDir, "module_zips").apply { mkdirs() }
-            val zipFile = java.io.File(cacheDir, filename)
-            resp.body?.byteStream()?.use { input ->
-                zipFile.outputStream().use { output -> input.copyTo(output) }
-            } ?: throw Exception("Empty response body")
-            AdbModuleManager.install(context, android.net.Uri.fromFile(zipFile))
-        }
-    }
-}
 
 private val MODULE_MIME_TYPES = arrayOf(
     "application/zip",
+    "application/x-zip",
     "application/octet-stream",
     "application/x-zip-compressed"
 )
@@ -136,18 +138,31 @@ fun ModulesScreen(
     var modules by modulesState
     var checkingUpdates by remember { mutableStateOf(false) }
     var updatingModuleId by remember { mutableStateOf<String?>(null) }
-    var output by remember { mutableStateOf<Pair<String, String>?>(null) }
     var deleteTarget by remember { mutableStateOf<AdbModule?>(null) }
     var pendingCommand by remember { mutableStateOf<ModuleCommandRequest?>(null) }
     var runningModuleId by remember { mutableStateOf<String?>(null) }
-    var lastRunModule by remember { mutableStateOf<AdbModule?>(null) }
     var aiExplanation by remember { mutableStateOf<String?>(null) }
     var aiLoading by remember { mutableStateOf(false) }
+    val liveOutput by AdbModuleManager.liveOutput.collectAsState()
+    val reloadTick by AdbModuleManager.modulesReloadTick.collectAsState()
+    var liveLogHidden by remember { mutableStateOf(false) }
+
+    LaunchedEffect(liveOutput?.moduleId, liveOutput?.kind, liveOutput?.running) {
+        if (liveOutput?.running == true) {
+            liveLogHidden = false
+            aiExplanation = null
+            aiLoading = false
+        }
+    }
 
     fun reload() {
         scope.launch {
             modules = AdbModuleManager.listModules(context)
         }
+    }
+
+    LaunchedEffect(reloadTick) {
+        modules = AdbModuleManager.listModules(context)
     }
 
     fun checkAllUpdates() {
@@ -188,55 +203,86 @@ fun ModulesScreen(
 
     fun updateModule(module: AdbModule) {
         val info = module.updateInfo ?: return
-        scope.launch {
-            updatingModuleId = module.id
-            Toast.makeText(context, context.getString(R.string.modules_updating), Toast.LENGTH_SHORT).show()
-            val result = if (!info.repoOwner.isNullOrBlank() && !info.repoName.isNullOrBlank()) {
-                ModuleInstaller.getInstance().installModule(
-                    context,
-                    module.id,
-                    info.repoOwner,
-                    info.repoName,
-                    info.subPath
-                )
-            } else if (info.zipUrl.startsWith("http://") || info.zipUrl.startsWith("https://")) {
-                runCatching {
-                    downloadAndInstallFromUrl(context, info.zipUrl, "${module.id}-update-${info.newVersion}.zip")
+        liveLogHidden = false
+        aiExplanation = null
+        aiLoading = false
+        updatingModuleId = module.id
+        if (!info.repoOwner.isNullOrBlank() && !info.repoName.isNullOrBlank()) {
+            AdbModuleManager.launchCatalogInstall(
+                context = context,
+                moduleId = module.id,
+                moduleName = module.name,
+                owner = info.repoOwner,
+                repo = info.repoName,
+                subPath = info.subPath
+            ) { result ->
+                updatingModuleId = null
+                result.onSuccess {
+                    Toast.makeText(
+                        context,
+                        context.getString(R.string.modules_update_success, info.newVersion),
+                        Toast.LENGTH_SHORT
+                    ).show()
+                    reload()
+                }.onFailure {
+                    Toast.makeText(
+                        context,
+                        "Update failed: ${it.message ?: it.javaClass.simpleName}",
+                        Toast.LENGTH_LONG
+                    ).show()
                 }
-            } else {
-                Result.failure(Exception("No valid update source"))
             }
-
-            result.onSuccess {
-                Toast.makeText(
-                    context,
-                    context.getString(R.string.modules_update_success, info.newVersion),
-                    Toast.LENGTH_SHORT
-                ).show()
-                reload()
-            }.onFailure {
-                Toast.makeText(
-                    context,
-                    "Update failed: ${it.message ?: it.javaClass.simpleName}",
-                    Toast.LENGTH_LONG
-                ).show()
+        } else if (info.zipUrl.startsWith("http://") || info.zipUrl.startsWith("https://")) {
+            AdbModuleManager.launchUrlUpdateInstall(
+                context = context,
+                module = module,
+                zipUrl = info.zipUrl,
+                newVersion = info.newVersion
+            ) { result ->
+                updatingModuleId = null
+                result.onSuccess {
+                    Toast.makeText(
+                        context,
+                        context.getString(R.string.modules_update_success, info.newVersion),
+                        Toast.LENGTH_SHORT
+                    ).show()
+                    reload()
+                }.onFailure {
+                    Toast.makeText(
+                        context,
+                        "Update failed: ${it.message ?: it.javaClass.simpleName}",
+                        Toast.LENGTH_LONG
+                    ).show()
+                }
             }
+        } else {
             updatingModuleId = null
+            Toast.makeText(context, "Update failed: No valid update source", Toast.LENGTH_LONG).show()
         }
     }
 
-
-
     fun runModuleAction(module: AdbModule) {
-        lastRunModule = module
-        scope.launch {
-            runningModuleId = module.id
-            output = runCatching {
-                val result = AdbModuleManager.runActionStreaming(module)
-                context.getString(R.string.modules_action_result, result.exitCode) to result.combinedOutput
-            }.getOrElse {
-                context.getString(R.string.modules_action_failed) to (it.message ?: it.javaClass.simpleName)
-            }
+        liveLogHidden = false
+        aiExplanation = null
+        aiLoading = false
+        runningModuleId = module.id
+        AdbModuleManager.launchScriptExecution(
+            module = module,
+            isService = false
+        ) {
+            runningModuleId = null
+        }
+    }
+
+    fun runModuleService(module: AdbModule) {
+        liveLogHidden = false
+        aiExplanation = null
+        aiLoading = false
+        runningModuleId = module.id
+        AdbModuleManager.launchScriptExecution(
+            module = module,
+            isService = true
+        ) {
             runningModuleId = null
         }
     }
@@ -245,10 +291,15 @@ fun ModulesScreen(
         ActivityResultContracts.OpenDocument()
     ) { uri ->
         uri ?: return@rememberLauncherForActivityResult
-        scope.launch {
-            runCatching {
-                AdbModuleManager.install(context, uri)
-            }.onSuccess { module ->
+        liveLogHidden = false
+        aiExplanation = null
+        aiLoading = false
+        AdbModuleManager.launchInstallFromUri(
+            context = context,
+            uri = uri,
+            displayName = uri.lastPathSegment?.substringAfterLast('/') ?: "ZIP Module"
+        ) { result ->
+            result.onSuccess { module ->
                 Toast.makeText(
                     context,
                     context.getString(R.string.modules_install_success, module.name),
@@ -263,10 +314,6 @@ fun ModulesScreen(
                 ).show()
             }
         }
-    }
-
-    LaunchedEffect(Unit) {
-        modules = AdbModuleManager.listModules(context)
     }
 
     if (showCatalog) {
@@ -307,156 +354,125 @@ fun ModulesScreen(
                     )
                     Text(stringResource(R.string.modules_install_zip))
                 }
-        }
-    ) {
-item {
-    AnimatedContent(targetState = modules.isEmpty(), label = "module-empty-state") { empty ->
-        if (empty) {
-            EmptyModulesCard(onInstall = { zipLauncher.launch(MODULE_MIME_TYPES) })
-        }
-    }
-}
-items(modules, key = { it.id }) { module ->
-    ModuleCard(
-        module = module,
-        busy = runningModuleId == module.id,
-        updating = updatingModuleId == module.id,
-        trusted = ModuleSettings.isModuleTrusted(module.id),
-        modifier = Modifier.animateItem(),
-        onToggle = {
-            scope.launch {
-                AdbModuleManager.setEnabled(module, !module.enabled)
-                reload()
             }
-        },
-        onRunAction = {
-            if (ModuleSettings.recommandForAction()) {
-                pendingCommand = ModuleCommandRequest(
-                    module = module,
-                    source = ModuleCommandSource.ACTION,
-                    command = module.actionCommandPreview()
-                )
-            } else {
-                runModuleAction(module)
-            }
-        },
-        onRunService = {
-            scope.launch {
-                runningModuleId = module.id
-                output = runCatching {
-                    val result = AdbModuleManager.runService(module)
-                    context.getString(R.string.modules_service_result, result.exitCode) to result.combinedOutput
-                }.getOrElse {
-                    context.getString(R.string.modules_service_failed) to (it.message ?: it.javaClass.simpleName)
-                }
-                runningModuleId = null
-            }
-        },
-        onOpenWebUi = {
-            onOpenWebUi(module.id)
-        },
-        onCreateShortcut = {
-            onCreateShortcut?.invoke(module) ?: ModuleShortcutHelper.addModuleShortcut(context, module)
-        },
-        onDelete = { deleteTarget = module },
-        onTrustChange = { trusted ->
-            scope.launch {
-                ModuleSettings.setModuleTrusted(module.id, trusted)
-                AdbModuleManager.setEnabled(module, trusted)
-                reload()
-            }
-        },
-        onUpdateModule = { updateModule(module) }
-    )
-}
-    }
-}
-
-    output?.let { (title, text) ->
-        AlertDialog(
-            onDismissRequest = {
-                output = null
-                aiExplanation = null
-                aiLoading = false
-            },
-            title = { Text(title) },
-            text = {
-                Column(
-                    modifier = Modifier
-                        .fillMaxWidth()
-                        .verticalScroll(rememberScrollState())
-                ) {
-                    MonospaceLog(text)
-                    Spacer(modifier = Modifier.height(16.dp))
-                    Text(
-                        text = stringResource(R.string.comput_ai_explanation),
-                        style = MaterialTheme.typography.titleMedium,
-                        color = MaterialTheme.colorScheme.primary
-                    )
-                    Spacer(modifier = Modifier.height(8.dp))
-                    if (aiLoading) {
-                        Box(
-                            modifier = Modifier
-                                .fillMaxWidth()
-                                .padding(16.dp),
-                            contentAlignment = Alignment.Center
-                        ) {
-                            LoadingIndicator(modifier = Modifier.size(32.dp))
-                        }
-                    } else if (aiExplanation != null) {
-                        Text(
-                            text = aiExplanation!!,
-                            style = MaterialTheme.typography.bodyMedium
-                        )
-                    } else {
-                        val apiKey = ModuleSettings.getComputApiKey()
-                        val hasApiKey = apiKey.isNotBlank()
-                        Button(
-                            onClick = {
-                                if (!hasApiKey) {
-            Toast.makeText(context, context.getString(R.string.comput_ai_no_active_toast), Toast.LENGTH_SHORT).show()
-                                } else {
-                                    aiLoading = true
-                                    scope.launch {
-                                        val moduleInfo = lastRunModule?.let { "Module: ${it.name} (${it.id})" } ?: "Unknown Module"
-                                        val scriptName = lastRunModule?.actionScript?.name ?: "action.sh"
-                                        aiExplanation = AiExplainUtil.explainFailure(
-                                            contextStr = "Shevery Android app, running module action script",
-                                            inputDetail = "$moduleInfo, script = $scriptName",
-                                            outputLog = text,
-                                            apiKey = apiKey
-                                        )
-                                        aiLoading = false
-                                    }
-                                }
-                            },
-                            modifier = Modifier.align(Alignment.End)
-                        ) {
-                            Text(stringResource(R.string.comput_ask_gemini))
-                        }
-                        if (!hasApiKey) {
-                            Text(
-            text = stringResource(R.string.comput_ai_no_active_toast),
-                                style = MaterialTheme.typography.bodySmall,
-                                color = MaterialTheme.colorScheme.onSurfaceVariant
-                            )
-                        }
+        ) {
+            item {
+                AnimatedContent(targetState = modules.isEmpty(), label = "module-empty-state") { empty ->
+                    if (empty) {
+                        EmptyModulesCard(onInstall = { zipLauncher.launch(MODULE_MIME_TYPES) })
                     }
                 }
-            },
-            confirmButton = {
-                TextButton(
-                    onClick = {
-                        output = null
-                        aiExplanation = null
+            }
+            items(modules, key = { it.id }) { module ->
+                ModuleCard(
+                    module = module,
+                    busy = runningModuleId == module.id,
+                    updating = updatingModuleId == module.id,
+                    trusted = ModuleSettings.isModuleTrusted(module.id),
+                    modifier = Modifier.animateItem(),
+                    onToggle = {
+                        scope.launch {
+                            AdbModuleManager.setEnabled(module, !module.enabled)
+                            reload()
+                        }
+                    },
+                    onRunAction = {
+                        if (ModuleSettings.recommandForAction()) {
+                            pendingCommand = ModuleCommandRequest(
+                                module = module,
+                                source = ModuleCommandSource.ACTION,
+                                command = module.actionCommandPreview()
+                            )
+                        } else {
+                            runModuleAction(module)
+                        }
+                    },
+                    onRunService = {
+                        runModuleService(module)
+                    },
+                    onOpenWebUi = {
+                        onOpenWebUi(module.id)
+                    },
+                    onCreateShortcut = {
+                        onCreateShortcut?.invoke(module) ?: ModuleShortcutHelper.addModuleShortcut(context, module)
+                    },
+                    onDelete = { deleteTarget = module },
+                    onTrustChange = { trusted ->
+                        scope.launch {
+                            ModuleSettings.setModuleTrusted(module.id, trusted)
+                            AdbModuleManager.setEnabled(module, trusted)
+                            reload()
+                        }
+                    },
+                    onUpdateModule = { updateModule(module) }
+                )
+            }
+        }
+    }
+
+    liveOutput?.takeIf { !liveLogHidden }?.let { live ->
+        ModuleLiveConsoleDialog(
+            live = live,
+            aiExplanation = aiExplanation,
+            aiLoading = aiLoading,
+            onAskAi = {
+                val apiKey = ModuleSettings.getComputApiKey()
+                if (apiKey.isBlank()) {
+                    Toast.makeText(context, context.getString(R.string.comput_ai_no_active_toast), Toast.LENGTH_SHORT).show()
+                } else {
+                    aiLoading = true
+                    scope.launch {
+                        val moduleInfo = "Module: ${live.moduleName} (${live.moduleId})"
+                        val scriptInfo = live.subtitle.ifBlank { live.kind.name }
+                        aiExplanation = AiExplainUtil.explainFailure(
+                            contextStr = "Shevery Android app, module ${live.kind.name.lowercase()}",
+                            inputDetail = "$moduleInfo, target = $scriptInfo",
+                            outputLog = live.text,
+                            apiKey = apiKey
+                        )
                         aiLoading = false
                     }
-                ) {
-                    Text(stringResource(android.R.string.ok))
                 }
             },
-            containerColor = MaterialTheme.colorScheme.surfaceContainerHigh,
-            shape = MaterialTheme.shapes.extraLarge
+            onRunAction = live.module?.takeIf {
+                !live.running &&
+                    live.kind == AdbModuleManager.ConsoleKind.INSTALL &&
+                    live.succeeded &&
+                    it.enabled &&
+                    it.hasAction &&
+                    ModuleSettings.canRunAction(it)
+            }?.let { installedModule ->
+                {
+                    if (ModuleSettings.recommandForAction()) {
+                        AdbModuleManager.clearLiveOutput()
+                        pendingCommand = ModuleCommandRequest(
+                            module = installedModule,
+                            source = ModuleCommandSource.ACTION,
+                            command = installedModule.actionCommandPreview()
+                        )
+                    } else {
+                        runModuleAction(installedModule)
+                    }
+                }
+            },
+            onRerun = live.module?.takeIf {
+                !live.running &&
+                    (live.kind == AdbModuleManager.ConsoleKind.ACTION || live.kind == AdbModuleManager.ConsoleKind.SERVICE)
+            }?.let { targetModule ->
+                {
+                    if (live.kind == AdbModuleManager.ConsoleKind.SERVICE) {
+                        runModuleService(targetModule)
+                    } else {
+                        runModuleAction(targetModule)
+                    }
+                }
+            },
+            onHide = { liveLogHidden = true },
+            onClose = {
+                aiExplanation = null
+                aiLoading = false
+                AdbModuleManager.clearLiveOutput()
+            }
         )
     }
 
@@ -926,6 +942,355 @@ private fun ModuleTabSegment(
                 contentDescription = contentDescription,
                 modifier = Modifier.size(18.dp)
             )
+        }
+    }
+}
+
+@Composable
+fun ModuleLiveConsoleDialog(
+    live: AdbModuleManager.LiveModuleOutput,
+    aiExplanation: String?,
+    aiLoading: Boolean,
+    onAskAi: () -> Unit,
+    onRunAction: (() -> Unit)? = null,
+    onRerun: (() -> Unit)? = null,
+    onHide: () -> Unit,
+    onClose: () -> Unit
+) {
+    val context = LocalContext.current
+    val verticalScroll = rememberScrollState()
+    val horizontalScroll = rememberScrollState()
+    var showAiPanel by remember(live.moduleId, live.kind) { mutableStateOf(false) }
+
+    LaunchedEffect(live.text) {
+        verticalScroll.scrollTo(verticalScroll.maxValue)
+    }
+
+    Dialog(
+        onDismissRequest = {
+            if (live.running) {
+                onHide()
+            } else {
+                onClose()
+            }
+        },
+        properties = DialogProperties(
+            usePlatformDefaultWidth = false,
+            dismissOnClickOutside = false
+        )
+    ) {
+        Surface(
+            modifier = Modifier
+                .fillMaxSize()
+                .windowInsetsPadding(WindowInsets.systemBars)
+                .padding(horizontal = 12.dp, vertical = 12.dp),
+            shape = MaterialTheme.shapes.extraLarge,
+            color = MaterialTheme.colorScheme.surfaceContainerHigh,
+            tonalElevation = 6.dp
+        ) {
+            Column(
+                modifier = Modifier.fillMaxSize()
+            ) {
+                // Top Header Bar (KernelSU Next style)
+                Row(
+                    modifier = Modifier
+                        .fillMaxWidth()
+                        .padding(start = 18.dp, end = 12.dp, top = 16.dp, bottom = 12.dp),
+                    verticalAlignment = Alignment.CenterVertically,
+                    horizontalArrangement = Arrangement.spacedBy(12.dp)
+                ) {
+                    Surface(
+                        modifier = Modifier.size(40.dp),
+                        shape = RoundedCornerShape(12.dp),
+                        color = when {
+                            live.running -> MaterialTheme.colorScheme.primaryContainer
+                            live.succeeded -> MaterialTheme.colorScheme.secondaryContainer
+                            else -> MaterialTheme.colorScheme.errorContainer
+                        }
+                    ) {
+                        Box(contentAlignment = Alignment.Center) {
+                            when {
+                                live.running -> LoadingIndicator(modifier = Modifier.size(22.dp))
+                                live.succeeded -> Icon(
+                                    imageVector = Icons.Rounded.CheckCircle,
+                                    contentDescription = null,
+                                    tint = MaterialTheme.colorScheme.onSecondaryContainer,
+                                    modifier = Modifier.size(22.dp)
+                                )
+                                else -> Icon(
+                                    imageVector = Icons.Rounded.Warning,
+                                    contentDescription = null,
+                                    tint = MaterialTheme.colorScheme.onErrorContainer,
+                                    modifier = Modifier.size(22.dp)
+                                )
+                            }
+                        }
+                    }
+
+                    Column(
+                        modifier = Modifier.weight(1f),
+                        verticalArrangement = Arrangement.spacedBy(2.dp)
+                    ) {
+                        Text(
+                            text = live.moduleName,
+                            style = MaterialTheme.typography.titleMedium,
+                            fontWeight = FontWeight.Bold,
+                            maxLines = 1,
+                            overflow = TextOverflow.Ellipsis
+                        )
+                        val kindLabel = when (live.kind) {
+                            AdbModuleManager.ConsoleKind.INSTALL -> "Flashing / Installing"
+                            AdbModuleManager.ConsoleKind.ACTION -> "Action Script"
+                            AdbModuleManager.ConsoleKind.SERVICE -> "Service Script"
+                        }
+                        val sub = if (live.subtitle.isNotBlank()) "$kindLabel • ${live.subtitle}" else kindLabel
+                        Text(
+                            text = sub,
+                            style = MaterialTheme.typography.bodySmall,
+                            color = MaterialTheme.colorScheme.onSurfaceVariant,
+                            maxLines = 1,
+                            overflow = TextOverflow.Ellipsis
+                        )
+                    }
+
+                    // Status Badge Pill
+                    val badgeContainer = when {
+                        live.running -> MaterialTheme.colorScheme.primaryContainer
+                        live.succeeded -> MaterialTheme.colorScheme.tertiaryContainer
+                        else -> MaterialTheme.colorScheme.errorContainer
+                    }
+                    val badgeContent = when {
+                        live.running -> MaterialTheme.colorScheme.onPrimaryContainer
+                        live.succeeded -> MaterialTheme.colorScheme.onTertiaryContainer
+                        else -> MaterialTheme.colorScheme.onErrorContainer
+                    }
+                    val badgeText = when {
+                        live.running && live.progress != null -> "${(live.progress * 100).toInt().coerceIn(0, 100)}%"
+                        live.running -> "LIVE"
+                        live.succeeded -> if (live.kind == AdbModuleManager.ConsoleKind.INSTALL) "DONE" else "EXIT 0"
+                        else -> "EXIT ${live.exitCode ?: 1}"
+                    }
+                    Surface(
+                        shape = RoundedCornerShape(50),
+                        color = badgeContainer
+                    ) {
+                        Text(
+                            text = badgeText,
+                            modifier = Modifier.padding(horizontal = 10.dp, vertical = 4.dp),
+                            style = MaterialTheme.typography.labelSmall,
+                            fontWeight = FontWeight.Bold,
+                            fontFamily = FontFamily.Monospace,
+                            color = badgeContent
+                        )
+                    }
+
+                    IconButton(
+                        onClick = {
+                            val clipboard = context.getSystemService(Context.CLIPBOARD_SERVICE) as ClipboardManager
+                            clipboard.setPrimaryClip(
+                                ClipData.newPlainText(live.moduleName, live.text)
+                            )
+                            Toast.makeText(
+                                context,
+                                context.getString(R.string.comput_output_copied),
+                                Toast.LENGTH_SHORT
+                            ).show()
+                        }
+                    ) {
+                        Icon(
+                            imageVector = Icons.Rounded.ContentCopy,
+                            contentDescription = stringResource(R.string.modules_recommand_copy),
+                            modifier = Modifier.size(20.dp)
+                        )
+                    }
+                }
+
+                if (live.running) {
+                    val currentProgress = live.progress
+                    if (currentProgress != null) {
+                        LinearProgressIndicator(
+                            progress = { currentProgress.coerceIn(0f, 1f) },
+                            modifier = Modifier
+                                .fillMaxWidth()
+                                .height(3.dp)
+                        )
+                    } else {
+                        LinearProgressIndicator(
+                            modifier = Modifier
+                                .fillMaxWidth()
+                                .height(3.dp)
+                        )
+                    }
+                } else {
+                    HorizontalDivider(color = MaterialTheme.colorScheme.outlineVariant.copy(alpha = 0.4f))
+                }
+
+                // Live Terminal Output Area
+                Surface(
+                    modifier = Modifier
+                        .weight(1f)
+                        .fillMaxWidth()
+                        .padding(horizontal = 12.dp, vertical = 10.dp),
+                    shape = MaterialTheme.shapes.large,
+                    color = Color(0xFF0B0F14)
+                ) {
+                    SelectionContainer {
+                        Column(
+                            modifier = Modifier
+                                .fillMaxSize()
+                                .verticalScroll(verticalScroll)
+                                .horizontalScroll(horizontalScroll)
+                                .padding(14.dp),
+                            verticalArrangement = Arrangement.spacedBy(2.dp)
+                        ) {
+                            val lines = remember(live.text) { live.text.lines() }
+                            lines.forEach { line ->
+                                val lineColor = when {
+                                    line.startsWith("[✓]") || line.trimStart().startsWith("✓") -> Color(0xFF4ADE80)
+                                    line.startsWith("[!]") || line.startsWith("!") -> Color(0xFFF87171)
+                                    line.startsWith("*") -> Color(0xFF93C5FD)
+                                    line.startsWith("$") -> Color(0xFFFBBF24)
+                                    line.startsWith("-") -> Color(0xFFE2E8F0)
+                                    else -> Color(0xFFD1D5DB)
+                                }
+                                Text(
+                                    text = line.ifEmpty { " " },
+                                    fontFamily = FontFamily.Monospace,
+                                    fontSize = 12.5.sp,
+                                    lineHeight = 18.sp,
+                                    color = lineColor
+                                )
+                            }
+                        }
+                    }
+                }
+
+                // Collapsible AI Explanation Section
+                AnimatedVisibility(
+                    visible = showAiPanel || aiLoading || aiExplanation != null,
+                    enter = fadeIn() + expandVertically(),
+                    exit = fadeOut() + shrinkVertically()
+                ) {
+                    Surface(
+                        modifier = Modifier
+                            .fillMaxWidth()
+                            .padding(horizontal = 12.dp, vertical = 4.dp),
+                        shape = MaterialTheme.shapes.large,
+                        color = MaterialTheme.colorScheme.surfaceContainerHighest
+                    ) {
+                        Column(
+                            modifier = Modifier
+                                .fillMaxWidth()
+                                .padding(14.dp),
+                            verticalArrangement = Arrangement.spacedBy(8.dp)
+                        ) {
+                            Text(
+                                text = stringResource(R.string.comput_ai_explanation),
+                                style = MaterialTheme.typography.titleSmall,
+                                fontWeight = FontWeight.SemiBold,
+                                color = MaterialTheme.colorScheme.primary
+                            )
+                            if (aiLoading) {
+                                Row(
+                                    verticalAlignment = Alignment.CenterVertically,
+                                    horizontalArrangement = Arrangement.spacedBy(10.dp)
+                                ) {
+                                    LoadingIndicator(modifier = Modifier.size(22.dp))
+                                    Text(
+                                        text = stringResource(R.string.modules_running),
+                                        style = MaterialTheme.typography.bodySmall,
+                                        color = MaterialTheme.colorScheme.onSurfaceVariant
+                                    )
+                                }
+                            } else if (!aiExplanation.isNullOrBlank()) {
+                                Text(
+                                    text = aiExplanation,
+                                    style = MaterialTheme.typography.bodySmall,
+                                    color = MaterialTheme.colorScheme.onSurface,
+                                    modifier = Modifier
+                                        .fillMaxWidth()
+                                        .height(110.dp)
+                                        .verticalScroll(rememberScrollState())
+                                )
+                            }
+                        }
+                    }
+                }
+
+                HorizontalDivider(color = MaterialTheme.colorScheme.outlineVariant.copy(alpha = 0.4f))
+
+                // Bottom Action Bar
+                Row(
+                    modifier = Modifier
+                        .fillMaxWidth()
+                        .padding(horizontal = 14.dp, vertical = 12.dp),
+                    horizontalArrangement = Arrangement.spacedBy(8.dp),
+                    verticalAlignment = Alignment.CenterVertically
+                ) {
+                    if (live.running) {
+                        Spacer(modifier = Modifier.weight(1f))
+                        FilledTonalButton(onClick = onHide) {
+                            Text(stringResource(R.string.modules_live_log_hide))
+                        }
+                    } else {
+                        OutlinedButton(
+                            onClick = {
+                                showAiPanel = true
+                                onAskAi()
+                            },
+                            enabled = !aiLoading
+                        ) {
+                            Icon(
+                                imageVector = Icons.Rounded.Terminal,
+                                contentDescription = null,
+                                modifier = Modifier
+                                    .padding(end = 6.dp)
+                                    .size(16.dp)
+                            )
+                            Text(stringResource(R.string.comput_ask_gemini))
+                        }
+
+                        Spacer(modifier = Modifier.weight(1f))
+
+                        if (onRerun != null) {
+                            FilledTonalButton(onClick = onRerun) {
+                                Icon(
+                                    imageVector = Icons.Rounded.Refresh,
+                                    contentDescription = null,
+                                    modifier = Modifier
+                                        .padding(end = 6.dp)
+                                        .size(16.dp)
+                                )
+                                Text(stringResource(R.string.home_refresh))
+                            }
+                        }
+
+                        if (onRunAction != null) {
+                            FilledTonalButton(onClick = onRunAction) {
+                                Icon(
+                                    imageVector = Icons.Rounded.PlayArrow,
+                                    contentDescription = null,
+                                    modifier = Modifier
+                                        .padding(end = 6.dp)
+                                        .size(16.dp)
+                                )
+                                Text(stringResource(R.string.modules_run_action))
+                            }
+                        }
+
+                        Button(onClick = onClose) {
+                            Icon(
+                                imageVector = Icons.Rounded.Close,
+                                contentDescription = null,
+                                modifier = Modifier
+                                    .padding(end = 6.dp)
+                                    .size(16.dp)
+                            )
+                            Text(stringResource(R.string.modules_recommand_close))
+                        }
+                    }
+                }
+            }
         }
     }
 }

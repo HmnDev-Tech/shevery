@@ -163,16 +163,24 @@ object WatchdogManager {
         return userStopRequested || ShizukuSettings.getPreferences().getBoolean(KEY_USER_STOP_REQUESTED, false)
     }
 
-    fun attemptRestart(context: Context) {
+    fun attemptRestart(context: Context, force: Boolean = false) {
         val appContext = context.applicationContext
 
         if (isStarterActive) {
             logi("Watchdog: skip restart, starter active")
             return
         }
-        if (isUserStopRequested()) {
-            logi("Watchdog: skip restart, user stop")
-            return
+        if (force) {
+            clearUserStopRequest(appContext)
+        } else {
+            if (Shizuku.pingBinder()) {
+                logd("Watchdog: skip restart, service already running")
+                return
+            }
+            if (isUserStopRequested()) {
+                logi("Watchdog: skip restart, user stop")
+                return
+            }
         }
 
         val lastMode = ShizukuSettings.getLastLaunchMode()
@@ -182,7 +190,7 @@ object WatchdogManager {
         }
 
         val now = SystemClock.elapsedRealtime()
-        if (now - lastRestartAttemptMs < MIN_RESTART_INTERVAL_MS) {
+        if (!force && now - lastRestartAttemptMs < MIN_RESTART_INTERVAL_MS) {
             logd("Watchdog: skip restart, cooldown")
             return
         }
@@ -194,10 +202,14 @@ object WatchdogManager {
 
         CoroutineScope(Dispatchers.IO).launch {
             try {
-                logi("Watchdog restart command (mode: $lastMode)")
+                if (force && Shizuku.pingBinder()) {
+                    stopServerAndWait(appContext, userInitiated = false)
+                    expectingDeath = false
+                }
+                logi("Watchdog restart command (mode: $lastMode, force: $force)")
                 when (lastMode) {
                     LaunchMethod.ROOT -> restartRoot()
-                    LaunchMethod.ADB -> restartAdb(appContext)
+                    LaunchMethod.ADB -> restartAdb(appContext, force)
                     LaunchMethod.DHIZUKU -> restartDhizuku(appContext)
                     else -> logd("Watchdog: unknown mode $lastMode")
                 }
@@ -262,8 +274,12 @@ object WatchdogManager {
         }
     }
 
-    private fun restartAdb(context: Context) {
-        AdbStartWorker.enqueueIfIdle(context.applicationContext)
+    private fun restartAdb(context: Context, force: Boolean = false) {
+        if (force) {
+            AdbStartWorker.enqueue(context.applicationContext)
+        } else {
+            AdbStartWorker.enqueueIfIdle(context.applicationContext)
+        }
     }
 
     private suspend fun restartDhizuku(context: Context) {

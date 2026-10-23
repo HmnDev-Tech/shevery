@@ -45,19 +45,52 @@ Two details matter, and both are easy to get wrong:
 `IPackageManager`:
 
 ```
-PackageInfo     getPackageInfo(String, long, int)         unchanged
-ApplicationInfo getApplicationInfo(String, long, int)     unchanged
+PackageInfo     getPackageInfo(String, long, int)         unchanged on 17; see the flag-width note
+ApplicationInfo getApplicationInfo(String, long, int)     unchanged on 17; see the flag-width note
                 getInstalledPackages(long, int)           ParceledListSlice -> PackageInfoList on 17
                 getInstalledApplications(long, int)       unchanged
 ```
 
 `getInstalledPackages` changed by **return type**. A JVM method descriptor
 includes the return type, so the old descriptor no longer resolves and the call
-fails with `NoSuchMethodError`. Note that `getPackageInfo` and
-`getApplicationInfo` did *not* change.
+fails with `NoSuchMethodError`. `getPackageInfo` and `getApplicationInfo` did
+*not* change in Android 17, but they are not stable across older releases.
+
+### The API 33 flag-width change
+
+Android 13 (API 33) introduced `PackageInfoFlags` and `ApplicationInfoFlags` and
+widened the hidden flags parameter of both methods from `int` to `long`:
+
+```
+API 33+    PackageInfo     getPackageInfo(String, long, int)
+API <= 32  PackageInfo     getPackageInfo(String, int, int)
+API 33+    ApplicationInfo getApplicationInfo(String, long, int)
+API <= 32  ApplicationInfo getApplicationInfo(String, int, int)
+```
+
+`Android17Compat` resolves methods by exact `Class` equality, so a candidate
+list that only contains `(String, long, int)` matches API 33 and later, but
+finds nothing on Android 12L and older. That failure is not local: on such a
+device `getApplicationInfo` returns `null`, `ShizukuService` cannot resolve the
+manager package and exits with `MANAGER_APP_NOT_FOUND` (50); the starter treats
+exit code 50 as "the manager was uninstalled", stops restarting the server, and
+the UI eventually reports that the service did not initialize.
+
+Both methods therefore carry two candidates:
+
+- `(String, long, int)` first, so API 33+ keeps using the modern signature and
+  no narrowing happens there;
+- `(String, int, int)` second, with `flags.toInt()`, for Android 12L and older.
+
+The `int` fallback is only selected after the `long` shape has been rejected by
+reflection, so a device that supports both cannot accidentally take the legacy
+path. The compat layer only passes flag values that fit in 32 bits (`0` plus
+permission bits), so `toInt()` is lossless for those calls; do not reuse the
+fallback for APIs that need the high 32 bits of a 64-bit flag value.
 
 The change is not specific to Android 17: `android15-release` already carries the
-four-argument permission signatures.
+four-argument permission signatures, and the flag-width split above is tied to
+API 33 rather than to any 15/16/17 release.
 
 ## What Android17Compat does
 
