@@ -2,7 +2,7 @@
 
 <div align="center">
 
-[![Stars](https://img.shields.io/github/stars/HmnDev-Tech/shevery?style=for-the-badge&color=yellow)](https://github.com/HmnDev-Tech/shevery/stargazers) [![Forks](https://img.shields.io/github/forks/HmnDev-Tech/shevery?style=for-the-badge&color=orange)](https://github.com/HmnDev-Tech/shevery/network/members) [![Downloads](https://img.shields.io/github/downloads/HmnDev-Tech/shevery/total?style=for-the-badge&color=green)](https://github.com/HmnDev-Tech/shevery/releases) [![Telegram](https://img.shields.io/badge/Telegram-2CA5E0?style=for-the-badge&logo=telegram&logoColor=white)](https://t.me/hmndevtech)
+[![Stars](https://img.shields.io/github/stars/HmnDev-Tech/shevery?style=for-the-badge&color=yellow)](https://github.com/HmnDev-Tech/shevery/stargazers) [![Forks](https://img.shields.io/github/forks/HmnDev-Tech/shevery?style=for-the-badge&color=orange)](https://github.com/HmnDev-Tech/shevery/network/members) [![Downloads](https://img.shields.io/github/downloads/HmnDev-Tech/shevery/total?style=for-the-badge&color=green)](https://github.com/HmnDev-Tech/shevery/releases) [![Build Android APK](https://img.shields.io/github/actions/workflow/status/HmnDev-Tech/shevery/apk-build.yml?branch=main&style=for-the-badge&label=build)](https://github.com/HmnDev-Tech/shevery/actions/workflows/apk-build.yml) [![Telegram](https://img.shields.io/badge/Telegram-2CA5E0?style=for-the-badge&logo=telegram&logoColor=white)](https://t.me/hmndevtech)
 
 </div>
 
@@ -136,6 +136,17 @@ https://github.com/RikkaApps/Shizuku-API#migration-guide-for-existing-applicatio
 
 The `:manager:assembleDebug` task generates a debuggable server. You can attach a debugger to `shizuku_server` to debug the server. Be aware that, in Android Studio, "Run/Debug configurations" - "Always install with package manager" should be checked, so that the server will use the latest code.
 
+### CI builds
+
+Every push to `main`, `dev` and `nightly`, and every pull request, runs the [Build Android APK](https://github.com/HmnDev-Tech/shevery/actions/workflows/apk-build.yml) workflow. Each run **always uploads both artifacts** — there is no debug-or-release choice:
+
+| Artifact | Gradle task | Description |
+| --- | --- | --- |
+| `shevery-debug` | `:manager:assembleDebug` | Debuggable APK for testing; the server can be debugged with an attached debugger |
+| `shevery-release` | `:manager:assembleRelease` | Release APK, signed with the release keystore when the secrets are configured, otherwise it falls back to debug signing |
+
+The release artifact is signature-verified with `apksigner` in every run. Fork pull requests build both variants with a generated keystore, so untrusted code never touches the release signing key.
+
 ## How "Start(via Dhizuku)" works?
 
 * First, you need to start Shevery by PC/OTG or Wireless Debugging.
@@ -170,4 +181,4 @@ Follow this steps:
 > 
 >  Shevery is a **completely free app**. Do not pay any third-party file managers or cloud services to download this application.
 
-### For fresh builds/CI of Shevery, go to [Actions](https://github.com/HmnDev-Tech/shevery/actions/workflows/apk-build.yml) . But this APKs are unstable and can contain some bugs. If you found bugs on latest CI, you can report about it in Issues.
+### For fresh builds/CI of Shevery, go to [Actions](https://github.com/HmnDev-Tech/shevery/actions/workflows/apk-build.yml) — every run attaches both a `shevery-debug` and a `shevery-release` APK artifact. But this APKs are unstable and can contain some bugs. If you found bugs on latest CI, you can report about it in Issues.

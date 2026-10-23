@@ -6,15 +6,9 @@ on:
   pull_request:
     branches: [ "main", "dev", "nightly" ]
   workflow_dispatch:
-    inputs:
-      build_type:
-        description: 'Build variant'
-        required: false
-        default: 'release'
-        type: choice
-        options:
-          - debug
-          - release
+
+# Every run builds and uploads BOTH artifacts: a debug APK and a release APK.
+# There is no debug-or-release choice - each run always produces the pair.
 
 jobs:
   build:
@@ -38,14 +32,6 @@ jobs:
         run: |
           yes | "$ANDROID_SDK_ROOT/cmdline-tools/latest/bin/sdkmanager" --licenses >/dev/null 2>&1 || true
 
-      - name: Determine build type
-        run: |
-          if [ "${{ github.event.inputs.build_type }}" == "debug" ]; then
-            echo "build_type=debug" >> "$GITHUB_ENV"
-          else
-            echo "build_type=release" >> "$GITHUB_ENV"
-          fi
-
       - name: Configure signing
         if: env.TRUSTED_CONTEXT == 'true'
         env:
@@ -67,27 +53,35 @@ jobs:
           } > signing.properties
 
       - name: Generate random debug keystore
-        if: env.build_type == 'release' && (env.TRUSTED_CONTEXT != 'true' || env.HAS_KEYSTORE != 'true')
+        if: env.TRUSTED_CONTEXT != 'true' || env.HAS_KEYSTORE != 'true'
         run: |
           mkdir -p ~/.config/.android
           keytool -genkeypair -v -keystore ~/.config/.android/debug.keystore \
             -storepass android -alias androiddebugkey -keypass android \
             -dname "CN=Android Debug,O=Android,C=US" -keyalg RSA -keysize 2048 -validity 10000
 
-      - name: Build APK
+      - name: Build debug APK
         run: |
           chmod +x gradlew 2>/dev/null || true
-          ./gradlew :manager:assemble${{ env.build_type == 'release' && 'Release' || 'Debug' }}
+          ./gradlew :manager:assembleDebug
+
+      - name: Build release APK
+        run: ./gradlew :manager:assembleRelease
 
       - name: Verify APK signature
-        if: env.build_type == 'release'
         run: |
           APK=$(ls manager/build/outputs/apk/release/*.apk | head -n1)
           APKSIGNER=$(ls -d "$ANDROID_SDK_ROOT"/build-tools/*/apksigner | sort -V | tail -n1)
           "$APKSIGNER" verify --print-certs "$APK"
 
-      - name: Upload APK Artifact
+      - name: Upload debug APK Artifact
         uses: actions/upload-artifact@v7
         with:
-          name: shevery-${{ env.build_type }}
-          path: manager/build/outputs/apk/${{ env.build_type }}/*.apk
+          name: shevery-debug
+          path: manager/build/outputs/apk/debug/*.apk
+
+      - name: Upload release APK Artifact
+        uses: actions/upload-artifact@v7
+        with:
+          name: shevery-release
+          path: manager/build/outputs/apk/release/*.apk
