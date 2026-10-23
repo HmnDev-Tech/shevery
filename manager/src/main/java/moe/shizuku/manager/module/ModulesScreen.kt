@@ -125,6 +125,7 @@ private val MODULE_MIME_TYPES = arrayOf(
 @Composable
 fun ModulesScreen(
     onOpenWebUi: (String) -> Unit,
+    onCreateShortcut: ((AdbModule) -> Unit)? = null,
     listState: LazyListState = rememberLazyListState(),
     modulesState: MutableState<List<AdbModule>>
 ) {
@@ -354,6 +355,9 @@ items(modules, key = { it.id }) { module ->
         onOpenWebUi = {
             onOpenWebUi(module.id)
         },
+        onCreateShortcut = {
+            onCreateShortcut?.invoke(module) ?: ModuleShortcutHelper.addModuleShortcut(context, module)
+        },
         onDelete = { deleteTarget = module },
         onTrustChange = { trusted ->
             scope.launch {
@@ -560,6 +564,7 @@ private fun ModuleCard(
     onRunAction: () -> Unit,
     onRunService: () -> Unit,
     onOpenWebUi: () -> Unit,
+    onCreateShortcut: () -> Unit,
     onDelete: () -> Unit,
     onTrustChange: (Boolean) -> Unit,
     onUpdateModule: () -> Unit
@@ -682,6 +687,7 @@ private fun ModuleCard(
                         onRunAction = onRunAction,
                         onRunService = onRunService,
                         onOpenWebUi = onOpenWebUi,
+                        onCreateShortcut = onCreateShortcut,
                         onDelete = onDelete,
                         trusted = trusted,
                         showTrustAction = showTrustAction,
@@ -770,6 +776,7 @@ private fun ModuleActions(
     onRunAction: () -> Unit,
     onRunService: () -> Unit,
     onOpenWebUi: () -> Unit,
+    onCreateShortcut: () -> Unit,
     onDelete: () -> Unit,
     onTrustChange: (Boolean) -> Unit
 ) {
@@ -789,6 +796,12 @@ private fun ModuleActions(
             icon = R.drawable.ic_outline_open_in_new_24,
             enabled = !busy && module.hasWebUi,
             onClick = onOpenWebUi
+        )
+        ModuleButton(
+            label = R.string.modules_shortcut,
+            icon = R.drawable.ic_shortcut_24dp,
+            enabled = !busy && module.hasWebUi,
+            onClick = onCreateShortcut
         )
         ModuleButton(
             label = R.string.modules_run_service,
