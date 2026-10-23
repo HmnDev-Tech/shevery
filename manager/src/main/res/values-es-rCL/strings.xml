@@ -9,6 +9,7 @@
     <string name="home_status_service_not_running"><![CDATA[%1$s no se está ejecutando]]></string>
     <string name="home_status_service_version"><![CDATA[Versión %2$s, %1$s]]></string>
     <string name="home_status_service_version_update"><![CDATA[Versión %2$s, %1$s<br/>Reinicie para actualizar a la versión %3$s]]></string>
+    <string name="home_status_uptime"><![CDATA[Tiempo activo: %1$s]]></string>
     <string name="home_adb_title"><![CDATA[Iniciar conectando a un computador]]></string>
     <string name="home_adb_description"><![CDATA[En dispositivos sin root, requiere ADB para iniciar Shevery (necesita conexión a computador). Este proceso debe repetirse al reiniciar el dispositivo. Por favor <b><a href="%1$s">lea la ayuda</a></b>.]]></string>
     <string name="home_adb_button_view_help"><![CDATA[Leer ayuda]]></string>
@@ -656,6 +657,13 @@ Listo.]]></string>
     <string name="lab_revoke_trusted_summary"><![CDATA[Quitar todas las concesiones de confianza por módulo; los módulos volverán a las reglas del modo de acceso]]></string>
     <string name="lab_revoke_trusted_warning_title"><![CDATA[¿Revocar los módulos de confianza?]]></string>
     <string name="lab_revoke_trusted_warning_message"><![CDATA[Todos los módulos perderán su estado de confianza y se evaluarán de nuevo según las reglas del modo de acceso. ¿Continuar?]]></string>
+    <string name="lab_experimental_title"><![CDATA[Experimental]]></string>
+    <string name="lab_exp_haptics_title"><![CDATA[Comentarios hápticos al cambiar el servicio]]></string>
+    <string name="lab_exp_haptics_summary"><![CDATA[Vibrar brevemente cada vez que el servicio de Shevery se inicia o se detiene]]></string>
+    <string name="lab_exp_uptime_title"><![CDATA[Mostrar tiempo activo del servicio]]></string>
+    <string name="lab_exp_uptime_summary"><![CDATA[Mostrar cuánto tiempo lleva en ejecución el servicio bajo la tarjeta de estado]]></string>
+    <string name="lab_exp_keep_screen_title"><![CDATA[Mantener la pantalla encendida al iniciar]]></string>
+    <string name="lab_exp_keep_screen_summary"><![CDATA[Evitar que la pantalla se apague mientras se inicia el servicio]]></string>
     <string name="settings_section_startup_summary"><![CDATA[Inicio en arranque, watchdog, conexión]]></string>
     <string name="settings_section_lab_summary"><![CDATA[Funciones de laboratorio, copia y restauración]]></string>
     <string name="settings_section_appearance_summary"><![CDATA[Idioma, tema oscuro y colores]]></string>

@@ -8,6 +8,7 @@
     <string name="home_status_service_not_running"><![CDATA[%1$s 未运行]]></string>
     <string name="home_status_service_version"><![CDATA[版本 %2$s, %1$s]]></string>
     <string name="home_status_service_version_update"><![CDATA[版本 %2$s, %1$s<br/>重新启动以更新到版本 %3$s]]></string>
+    <string name="home_status_uptime"><![CDATA[运行时间: %1$s]]></string>
     <string name="home_adb_title"><![CDATA[通过连接电脑启动]]></string>
     <string name="home_adb_description"><![CDATA[对于未 Root 的设备，需要使用 ADB 启动 Shevery（需要连接电脑）。每次重新启动设备后都需要重复此过程。请<b><a href="%1$s">阅读帮助文档</a></b>。]]></string>
     <string name="home_adb_button_view_help"><![CDATA[阅读帮助]]></string>
@@ -667,6 +668,13 @@
     <string name="lab_revoke_trusted_summary"><![CDATA[移除所有模块的信任授权，模块将重新按访问模式规则进行评估]]></string>
     <string name="lab_revoke_trusted_warning_title"><![CDATA[撤销已信任的模块？]]></string>
     <string name="lab_revoke_trusted_warning_message"><![CDATA[所有模块都将失去信任状态，并重新按访问模式规则进行评估。是否继续？]]></string>
+    <string name="lab_experimental_title"><![CDATA[实验性功能]]></string>
+    <string name="lab_exp_haptics_title"><![CDATA[服务状态变化触感反馈]]></string>
+    <string name="lab_exp_haptics_summary"><![CDATA[Shevery 服务启动或停止时短暂振动]]></string>
+    <string name="lab_exp_uptime_title"><![CDATA[显示服务运行时长]]></string>
+    <string name="lab_exp_uptime_summary"><![CDATA[在首页状态卡片下显示服务已运行的时间]]></string>
+    <string name="lab_exp_keep_screen_title"><![CDATA[启动时保持屏幕常亮]]></string>
+    <string name="lab_exp_keep_screen_summary"><![CDATA[服务启动期间阻止屏幕熄灭]]></string>
 
     <!-- Module Catalog -->
     <string name="modules_catalog_empty_retry"><![CDATA[重试]]></string>

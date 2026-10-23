@@ -8,14 +8,19 @@
 package moe.shizuku.manager.home
 
 import android.Manifest
+import android.app.Activity
 import android.content.ClipData
 import android.content.ClipboardManager
+import android.content.Context
+import android.content.ContextWrapper
 import android.content.Intent
 import android.content.pm.PackageManager
 import android.os.Build
 import android.os.Bundle
+import android.os.SystemClock
 import android.net.Uri
 import android.view.Menu
+import android.view.WindowManager
 import android.widget.Toast
 import androidx.activity.compose.BackHandler
 import androidx.activity.compose.setContent
@@ -108,6 +113,7 @@ import androidx.compose.foundation.pager.rememberPagerState
 import moe.shizuku.manager.ui.compose.scrollMotionBlur
 import androidx.compose.ui.graphics.vector.ImageVector
 import androidx.compose.ui.platform.LocalContext
+import androidx.compose.ui.platform.LocalView
 import androidx.compose.ui.res.stringResource
 import androidx.compose.ui.text.font.FontWeight
 import androidx.compose.ui.text.style.TextOverflow
@@ -1200,6 +1206,7 @@ private fun HomeScreen(
     val status = serviceResource?.data ?: ServiceStatus()
     val grantedCount = grantedResource?.data ?: 0
     val running = serverState == ShizukuStateMachine.State.RUNNING || status.isRunning
+    val starting = serverState == ShizukuStateMachine.State.STARTING
     val adbPermission = status.permission
     val canUseWirelessAdb by produceState(
         initialValue = Build.VERSION.SDK_INT >= Build.VERSION_CODES.R || ShizukuSettings.isTcpMode(),
@@ -1217,6 +1224,50 @@ private fun HomeScreen(
     val watchdogEnabled = ModuleSettings.isWatchdogEnabled()
     val tcpMode = ShizukuSettings.isTcpMode()
     val launchMode = ShizukuSettings.getLastLaunchMode()
+
+    // Experimental (Extras > Experimental): opt-in service feedback. Prefs are
+    // read at composition time so toggling them in Settings applies on the next
+    // recomposition without restarting the app.
+    val hapticsEnabled = ModuleSettings.isServiceStateHapticsEnabled()
+    val view = LocalView.current
+    var previousRunning by remember { mutableStateOf<Boolean?>(null) }
+    LaunchedEffect(running) {
+        if (hapticsEnabled && previousRunning != null && previousRunning != running) {
+            view.performHapticFeedback(android.view.HapticFeedbackConstants.CONFIRM)
+        }
+        previousRunning = running
+    }
+
+    val keepScreenOnStarting = ModuleSettings.isKeepScreenOnWhileStarting()
+    LaunchedEffect(starting, keepScreenOnStarting) {
+        var ctx: Context? = context
+        while (ctx is ContextWrapper && ctx !is Activity) {
+            ctx = ctx.baseContext
+        }
+        val window = (ctx as? Activity)?.window ?: return@LaunchedEffect
+        if (starting && keepScreenOnStarting) {
+            window.addFlags(WindowManager.LayoutParams.FLAG_KEEP_SCREEN_ON)
+        } else {
+            window.clearFlags(WindowManager.LayoutParams.FLAG_KEEP_SCREEN_ON)
+        }
+    }
+
+    val showUptime = ModuleSettings.isServiceUptimeShown()
+    var runningSince by remember { mutableStateOf<Long?>(null) }
+    LaunchedEffect(running) {
+        runningSince = if (running) SystemClock.elapsedRealtime() else null
+    }
+    val uptimeNow by produceState(initialValue = 0L, key1 = running) {
+        while (true) {
+            value = SystemClock.elapsedRealtime()
+            delay(30_000L)
+        }
+    }
+    val uptimeText = if (showUptime && running && runningSince != null) {
+        formatServiceUptime(uptimeNow - runningSince!!)
+    } else {
+        null
+    }
     val diagnostics = remember(status, grantedCount, localNetworkPermissionState, isRooted, watchdogEnabled, dhizukuEnabled, tcpMode, launchMode) {
         buildDiagnostics(context, status, grantedCount, localNetworkPermissionState, isRooted, watchdogEnabled, dhizukuEnabled, tcpMode, launchMode)
     }
@@ -1283,7 +1334,8 @@ private fun HomeScreen(
                     onStartWirelessAdb = onStartWirelessAdb,
                     onStartDhizuku = onStartDhizuku,
                     onManageApps = onManageApps,
-                    onStop = onStop
+                    onStop = onStop,
+                    uptime = uptimeText
                 )
             }
 
@@ -1454,7 +1506,8 @@ private fun StatusHero(
     onStartWirelessAdb: () -> Unit,
     onStartDhizuku: () -> Unit,
     onManageApps: () -> Unit,
-    onStop: () -> Unit
+    onStop: () -> Unit,
+    uptime: String? = null
 ) {
     val context = LocalContext.current
     val title = if (running) {
@@ -1518,6 +1571,17 @@ private fun StatusHero(
                     if (summary.isNotBlank()) {
                         Text(
                             text = summary,
+                            style = MaterialTheme.typography.bodyMedium,
+                            color = if (running) {
+                                MaterialTheme.colorScheme.onPrimaryContainer.copy(alpha = 0.75f)
+                            } else {
+                                MaterialTheme.colorScheme.onSurfaceVariant
+                            }
+                        )
+                    }
+                    if (!uptime.isNullOrEmpty()) {
+                        Text(
+                            text = stringResource(R.string.home_status_uptime, uptime),
                             style = MaterialTheme.typography.bodyMedium,
                             color = if (running) {
                                 MaterialTheme.colorScheme.onPrimaryContainer.copy(alpha = 0.75f)
@@ -2236,6 +2300,18 @@ private fun ButtonIcon(@DrawableRes icon: Int) {
             .padding(end = 8.dp)
             .size(18.dp)
     )
+}
+
+private fun formatServiceUptime(millis: Long): String {
+    val totalSeconds = (millis / 1000L).coerceAtLeast(0L)
+    val hours = totalSeconds / 3600L
+    val minutes = (totalSeconds % 3600L) / 60L
+    val seconds = totalSeconds % 60L
+    return when {
+        hours > 0 -> "${hours}h ${minutes}m"
+        minutes > 0 -> "${minutes}m"
+        else -> "${seconds}s"
+    }
 }
 
 private fun buildServiceSummary(context: android.content.Context, status: ServiceStatus): String {

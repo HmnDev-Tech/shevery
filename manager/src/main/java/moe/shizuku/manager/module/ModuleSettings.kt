@@ -34,6 +34,11 @@ object ModuleSettings {
     private const val KEY_COMPAT_STUB = "shizuku_compat_stub"
     private const val KEY_WIFI_REASSERT = "shizuku_wifi_adb_reassert"
 
+    // Experimental (Extras > Experimental) — new experimental toggles.
+    private const val KEY_EXP_SERVICE_HAPTICS = "exp_service_state_haptics"
+    private const val KEY_EXP_SHOW_UPTIME = "exp_show_service_uptime"
+    private const val KEY_EXP_KEEP_SCREEN_STARTING = "exp_keep_screen_on_starting"
+
 
     enum class AccessMode(
         val value: String,
@@ -302,6 +307,33 @@ object ModuleSettings {
 
     fun setWifiReassertEnabled(value: Boolean) {
         ShizukuSettings.getPreferences().edit().putBoolean(KEY_WIFI_REASSERT, value).apply()
+    }
+
+    // Experimental (Extras > Experimental). New opt-in behaviors shipped behind
+    // flags so they can mature before becoming regular settings; all default off.
+
+    fun isServiceStateHapticsEnabled(): Boolean {
+        return ShizukuSettings.getPreferences().getBoolean(KEY_EXP_SERVICE_HAPTICS, false)
+    }
+
+    fun setServiceStateHapticsEnabled(value: Boolean) {
+        ShizukuSettings.getPreferences().edit().putBoolean(KEY_EXP_SERVICE_HAPTICS, value).apply()
+    }
+
+    fun isServiceUptimeShown(): Boolean {
+        return ShizukuSettings.getPreferences().getBoolean(KEY_EXP_SHOW_UPTIME, false)
+    }
+
+    fun setServiceUptimeShown(value: Boolean) {
+        ShizukuSettings.getPreferences().edit().putBoolean(KEY_EXP_SHOW_UPTIME, value).apply()
+    }
+
+    fun isKeepScreenOnWhileStarting(): Boolean {
+        return ShizukuSettings.getPreferences().getBoolean(KEY_EXP_KEEP_SCREEN_STARTING, false)
+    }
+
+    fun setKeepScreenOnWhileStarting(value: Boolean) {
+        ShizukuSettings.getPreferences().edit().putBoolean(KEY_EXP_KEEP_SCREEN_STARTING, value).apply()
     }
 
     // Comput Settings
