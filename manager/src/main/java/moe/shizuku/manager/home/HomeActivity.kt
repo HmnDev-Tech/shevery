@@ -17,7 +17,6 @@ import android.content.Intent
 import android.content.pm.PackageManager
 import android.os.Build
 import android.os.Bundle
-import android.os.SystemClock
 import android.net.Uri
 import android.view.Menu
 import android.view.WindowManager
@@ -285,6 +284,52 @@ abstract class HomeActivity : AppActivity() {
             var showWadbNotEnabledDialog by rememberSaveable { mutableStateOf(false) }
             var showAdbDiscoveryDialog by rememberSaveable { mutableStateOf(false) }
             var showAdbPairDialog by rememberSaveable { mutableStateOf(false) }
+
+            // Experimental (Extras > Experimental): observed at activity scope so
+            // the features work no matter which tab is visible. A Home-tab-scoped
+            // implementation missed transitions whenever the home page was not
+            // composed, which made the settings behave like dead switches.
+            val serviceRunning = serverState == ShizukuStateMachine.State.RUNNING ||
+                serviceResource?.data?.isRunning == true
+            val serviceStarting = serverState == ShizukuStateMachine.State.STARTING
+            val experimentalHaptics = ModuleSettings.isServiceStateHapticsEnabled()
+            val keepScreenOnWhileStarting = ModuleSettings.isKeepScreenOnWhileStarting()
+            val activityView = LocalView.current
+            val activityContext = LocalContext.current
+
+            var wasServiceRunning by remember { mutableStateOf<Boolean?>(null) }
+            LaunchedEffect(serviceRunning) {
+                if (wasServiceRunning != null && wasServiceRunning != serviceRunning && experimentalHaptics) {
+                    // CONFIRM only exists since API 30 and is silently ignored on
+                    // older devices, so fall back to CONTEXT_CLICK (API 23) instead
+                    // of doing nothing on Android 7-10.
+                    val feedback = if (Build.VERSION.SDK_INT >= Build.VERSION_CODES.R) {
+                        android.view.HapticFeedbackConstants.CONFIRM
+                    } else {
+                        android.view.HapticFeedbackConstants.CONTEXT_CLICK
+                    }
+                    activityView.performHapticFeedback(feedback)
+                }
+                wasServiceRunning = serviceRunning
+            }
+
+            DisposableEffect(serviceStarting, keepScreenOnWhileStarting) {
+                var ctx: Context? = activityContext
+                while (ctx is ContextWrapper && ctx !is Activity) {
+                    ctx = ctx.baseContext
+                }
+                val window = (ctx as? Activity)?.window
+                if (serviceStarting && keepScreenOnWhileStarting) {
+                    window?.addFlags(WindowManager.LayoutParams.FLAG_KEEP_SCREEN_ON)
+                } else {
+                    window?.clearFlags(WindowManager.LayoutParams.FLAG_KEEP_SCREEN_ON)
+                }
+                onDispose {
+                    // Never leave the flag stuck: leaving this composition or
+                    // finishing the activity must restore normal screen behavior.
+                    window?.clearFlags(WindowManager.LayoutParams.FLAG_KEEP_SCREEN_ON)
+                }
+            }
 
             LaunchedEffect(serviceResource?.status, serviceResource?.data?.uid) {
                 val status = serviceResource?.data ?: return@LaunchedEffect
@@ -1206,7 +1251,6 @@ private fun HomeScreen(
     val status = serviceResource?.data ?: ServiceStatus()
     val grantedCount = grantedResource?.data ?: 0
     val running = serverState == ShizukuStateMachine.State.RUNNING || status.isRunning
-    val starting = serverState == ShizukuStateMachine.State.STARTING
     val adbPermission = status.permission
     val canUseWirelessAdb by produceState(
         initialValue = Build.VERSION.SDK_INT >= Build.VERSION_CODES.R || ShizukuSettings.isTcpMode(),
@@ -1225,46 +1269,25 @@ private fun HomeScreen(
     val tcpMode = ShizukuSettings.isTcpMode()
     val launchMode = ShizukuSettings.getLastLaunchMode()
 
-    // Experimental (Extras > Experimental): opt-in service feedback. Prefs are
-    // read at composition time so toggling them in Settings applies on the next
-    // recomposition without restarting the app.
-    val hapticsEnabled = ModuleSettings.isServiceStateHapticsEnabled()
-    val view = LocalView.current
-    var previousRunning by remember { mutableStateOf<Boolean?>(null) }
-    LaunchedEffect(running) {
-        if (hapticsEnabled && previousRunning != null && previousRunning != running) {
-            view.performHapticFeedback(android.view.HapticFeedbackConstants.CONFIRM)
-        }
-        previousRunning = running
-    }
-
-    val keepScreenOnStarting = ModuleSettings.isKeepScreenOnWhileStarting()
-    LaunchedEffect(starting, keepScreenOnStarting) {
-        var ctx: Context? = context
-        while (ctx is ContextWrapper && ctx !is Activity) {
-            ctx = ctx.baseContext
-        }
-        val window = (ctx as? Activity)?.window ?: return@LaunchedEffect
-        if (starting && keepScreenOnStarting) {
-            window.addFlags(WindowManager.LayoutParams.FLAG_KEEP_SCREEN_ON)
-        } else {
-            window.clearFlags(WindowManager.LayoutParams.FLAG_KEEP_SCREEN_ON)
-        }
-    }
-
+    // Experimental (Extras > Experimental): uptime itself is recorded by the
+    // process-scoped [ServiceUptime] tracker (backed by the state machine, so it
+    // survives tab switches); this block only polls it for display while the
+    // home tab is visible. One-second ticks keep values like "45s" moving
+    // instead of appearing frozen behind a 30s refresh.
     val showUptime = ModuleSettings.isServiceUptimeShown()
-    var runningSince by remember { mutableStateOf<Long?>(null) }
-    LaunchedEffect(running) {
-        runningSince = if (running) SystemClock.elapsedRealtime() else null
-    }
-    val uptimeNow by produceState(initialValue = 0L, key1 = running) {
+    val uptimeNow by produceState(
+        initialValue = ServiceUptime.uptimeMs(),
+        key1 = running,
+        key2 = showUptime
+    ) {
+        if (!showUptime || !running) return@produceState
         while (true) {
-            value = SystemClock.elapsedRealtime()
-            delay(30_000L)
+            value = ServiceUptime.uptimeMs()
+            delay(1_000L)
         }
     }
-    val uptimeText = if (showUptime && running && runningSince != null) {
-        formatServiceUptime(uptimeNow - runningSince!!)
+    val uptimeText = if (showUptime && running && ServiceUptime.sinceMs != 0L) {
+        formatServiceUptime(uptimeNow)
     } else {
         null
     }
