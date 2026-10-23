@@ -35,15 +35,15 @@ export const PROJECT_FACTS = [
   },
   {
     term: "current release",
-    value: "14.4.0",
-    detail: "versionCode 44, published 2026-10-17. Built from api_version_name 14.4.0.",
+    value: "14.5.0",
+    detail: "versionCode 45, published 2026-10-23. Built from api_version_name 14.5.0.",
   },
 ]
 
 export const RECENT_CHANGES: ChangeCard[] = [
   {
-    title: "14.4: per-app Shizuku privileges, About drill-in screens, agent chat history",
-    body: "Tapping an app in Application Management opens a detail screen with a Shizuku Privileges group — access switch, session-only grant and one switch per dangerous permission granted or revoked through Shizuku. Settings -> About now drills into a Contributors and Credits screen and a Recommendations screen, and the Comput agent persists chat history so a previous conversation can be continued. Server version bumped to 14.4 (versionCode 44).",
+    title: "14.5: per-app Shizuku privileges, About drill-in screens, agent chat history",
+    body: "Tapping an app in Application Management opens a detail screen with a Shizuku Privileges group — access switch, session-only grant and one switch per dangerous permission granted or revoked through Shizuku. Settings -> About now drills into a Contributors and Credits screen and a Recommendations screen, and the Comput agent persists chat history so a previous conversation can be continued. Server version bumped to 14.5 (versionCode 45).",
     commits: [
       { label: "feb7ebaa", url: "https://github.com/HmnDev-Tech/shevery/commit/feb7ebaa" },
       { label: "953fa7f1", url: "https://github.com/HmnDev-Tech/shevery/commit/953fa7f1" },

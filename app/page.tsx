@@ -192,7 +192,7 @@ export default function SheveryHomePage() {
           </dl>
         </section>
 
-        {/* SECTION 01: WHAT CHANGED IN 14.3 AND 14.4 */}
+        {/* SECTION 01: WHAT CHANGED IN 14.5 */}
         <section id="changes" aria-labelledby="changes-title" className="py-16 lg:py-24">
           <div className="mx-auto max-w-7xl px-4 sm:px-6">
             <header className="mb-10 grid grid-cols-1 gap-6 lg:mb-14 lg:grid-cols-12 lg:gap-8">
@@ -202,13 +202,13 @@ export default function SheveryHomePage() {
                   id="changes-title"
                   className="text-3xl leading-tight font-bold tracking-tight text-balance sm:text-5xl"
                 >
-                  What changed in 14.3 and 14.4
+                  What changed in 14.5
                 </h2>
               </div>
               <div className="max-w-[68ch] text-lg leading-relaxed text-on-surface-variant text-pretty lg:col-span-8">
                 <p>
-                  Shevery 14.4.0 (<code className="font-mono text-on-surface">versionCode 44</code>)
-                  was published on 17 October 2026. Summarised directly from the repository commits
+                  Shevery 14.5.0 (<code className="font-mono text-on-surface">versionCode 45</code>)
+                  was published on 23 October 2026. Summarised directly from the repository commits
                   and pull requests; each card links to the source diff.
                 </p>
               </div>
