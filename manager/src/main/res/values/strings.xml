@@ -228,7 +228,11 @@ With %1$s, in any terminal app, you can connect to and interact with the shell r
     <string name="modules_run_service">Service</string>
     <string name="modules_running">Running module script…</string>
     <string name="modules_open_webui">WebUI</string>
+    <string name="modules_shortcut">Shortcut</string>
+    <string name="modules_shortcut_added">Shortcut added to home screen</string>
+    <string name="modules_shortcut_not_supported">Adding shortcuts is not supported by your launcher</string>
     <string name="modules_webui">Module WebUI</string>
+    <string name="modules_webui_not_found">Module or WebUI not found</string>
     <string name="modules_delete">Delete</string>
     <string name="modules_delete_title">Delete module?</string>
     <string name="modules_delete_message">%s will be removed from Shevery module storage.</string>

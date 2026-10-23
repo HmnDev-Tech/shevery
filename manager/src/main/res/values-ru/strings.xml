@@ -196,7 +196,11 @@
     <string name="modules_run_service"><![CDATA[Услуга]]></string>
     <string name="modules_running"><![CDATA[Выполняется скрипт модуля…]]></string>
     <string name="modules_open_webui"><![CDATA[веб-интерфейс]]></string>
+    <string name="modules_shortcut"><![CDATA[Ярлык]]></string>
+    <string name="modules_shortcut_added"><![CDATA[Ярлык добавлен на главный экран]]></string>
+    <string name="modules_shortcut_not_supported"><![CDATA[Добавление ярлыков не поддерживается лаунчером]]></string>
     <string name="modules_webui"><![CDATA[WebUI модуля]]></string>
+    <string name="modules_webui_not_found"><![CDATA[Модуль или WebUI не найден]]></string>
     <string name="modules_delete"><![CDATA[Удалить]]></string>
     <string name="modules_delete_title"><![CDATA[Удалить модуль?]]></string>
     <string name="modules_delete_message"><![CDATA[%s будет удален из хранилища модулей Shevery.]]></string>

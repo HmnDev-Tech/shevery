@@ -2,6 +2,7 @@ package moe.shizuku.manager.module
 
 import android.annotation.SuppressLint
 import android.os.Bundle
+import android.widget.Toast
 import android.webkit.CookieManager
 import android.webkit.WebSettings
 import android.webkit.WebResourceRequest
@@ -10,6 +11,7 @@ import android.webkit.WebViewClient
 import androidx.activity.compose.setContent
 import androidx.compose.foundation.layout.padding
 import androidx.compose.ui.viewinterop.AndroidView
+import moe.shizuku.manager.R
 import moe.shizuku.manager.app.AppActivity
 import moe.shizuku.manager.ui.compose.ShizukuExpressiveTheme
 import moe.shizuku.manager.ui.compose.ShizukuScaffold
@@ -31,10 +33,12 @@ class ModuleWebViewActivity : AppActivity() {
     override fun onCreate(savedInstanceState: Bundle?) {
         super.onCreate(savedInstanceState)
 
-        val moduleId = intent.getStringExtra(EXTRA_MODULE_ID).orEmpty()
+        val moduleId = intent.getStringExtra(EXTRA_MODULE_ID)
+            ?: intent.data?.lastPathSegment.orEmpty()
         val module = AdbModuleManager.readModule(AdbModuleManager.modulesRoot(this).resolve(moduleId))
         val index = module?.webRoot?.resolve("index.html")
         if (module == null || index?.isFile != true) {
+            Toast.makeText(this, R.string.modules_webui_not_found, Toast.LENGTH_SHORT).show()
             finish()
             return
         }

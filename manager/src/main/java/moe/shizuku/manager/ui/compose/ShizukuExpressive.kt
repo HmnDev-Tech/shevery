@@ -56,6 +56,7 @@ import androidx.compose.material.icons.Icons
 import androidx.compose.material.icons.automirrored.rounded.ArrowBack
 import androidx.compose.material.icons.automirrored.rounded.HelpOutline
 import androidx.compose.material.icons.automirrored.rounded.OpenInNew
+import androidx.compose.material.icons.automirrored.rounded.Shortcut
 import androidx.compose.material.icons.rounded.AdminPanelSettings
 import androidx.compose.material.icons.rounded.Apps
 import androidx.compose.material.icons.rounded.Backup
@@ -875,6 +876,7 @@ private fun roundedIconFor(@DrawableRes icon: Int): ImageVector? {
         R.drawable.ic_outline_light_mode_24 -> Icons.Rounded.LightMode
         R.drawable.ic_outline_notifications_active_24 -> Icons.Rounded.NotificationsActive
         R.drawable.ic_outline_open_in_new_24 -> Icons.AutoMirrored.Rounded.OpenInNew
+        R.drawable.ic_shortcut_24dp -> Icons.AutoMirrored.Rounded.Shortcut
         R.drawable.ic_outline_play_arrow_24,
         R.drawable.ic_server_start_24dp -> Icons.Rounded.PlayArrow
         R.drawable.ic_content_copy_24 -> Icons.Rounded.ContentCopy
