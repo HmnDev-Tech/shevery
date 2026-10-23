@@ -111,7 +111,7 @@ La función de exportación usa SAF (Storage Access Framework). En MIUI, SAF pue
     <string name="settings_start_on_boot"><![CDATA[Iniciar al arrancar]]></string>
     <string name="settings_start_on_boot_summary"><![CDATA[Shevery se iniciará automáticamente al encender el dispositivo tras ejecutarse con éxito.]]></string>
     <string name="settings_use_system_color"><![CDATA[Usar colores del sistema]]></string>
-    <string name="modules_title"><![CDATA[Módulos ADB]]></string>
+    <string name="modules_title"><![CDATA[Módulos]]></string>
     <string name="modules_settings_title"><![CDATA[Módulos]]></string>
     <string name="modules_settings_summary"><![CDATA[Instale módulos ZIP y ejecute sus acciones mediante el servidor ADB/root de Shevery]]></string>
     <string name="modules_header_summary"><![CDATA[%1$d instalados, %2$d activados]]></string>

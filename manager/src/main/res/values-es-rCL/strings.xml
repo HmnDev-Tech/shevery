@@ -102,7 +102,7 @@ Nota: antes de Android 11 requiere computador.]]></string>
     <string name="settings_start_on_boot"><![CDATA[Iniciar al encender]]></string>
     <string name="settings_start_on_boot_summary"><![CDATA[Shevery iniciará automáticamente al encender el dispositivo.]]></string>
     <string name="settings_use_system_color"><![CDATA[Usar colores del sistema]]></string>
-    <string name="modules_title"><![CDATA[Módulos ADB]]></string>
+    <string name="modules_title"><![CDATA[Módulos]]></string>
     <string name="modules_settings_title"><![CDATA[Módulos]]></string>
     <string name="modules_settings_summary"><![CDATA[Instale módulos ZIP y ejecute sus acciones mediante Shevery]]></string>
     <string name="modules_header_summary"><![CDATA[%1$d instalados, %2$d activados]]></string>
