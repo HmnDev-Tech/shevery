@@ -17,7 +17,7 @@
     <string name="home_adb_title"><![CDATA[Begin met aansluiten op een computer]]></string>
     <string name="home_adb_description"><![CDATA[Bij toestellen zonder root-toegang moet u adb gebruiken om Shevery te starten (hiervoor is een verbinding met een computer nodig). Dit proces moet elke keer dat het toestel opnieuw wordt opgestart, worden herhaald. Lees alstublieft <b><a href="%1$s">de help</a></b>.]]></string>
     <string name="home_adb_button_view_help"><![CDATA[Lees de help-pagina]]></string>
-    <string name="home_adb_button_view_command"><![CDATA[Commando ‘Bekijken’]]></string>
+    <string name="home_adb_button_view_command"><![CDATA[Commando weergeven]]></string>
     <string name="home_adb_dialog_view_command_notice"><![CDATA[Er zijn nog enkele andere zaken waarmee u rekening moet houden; wees er zeker van dat u de helptekst gelezen heeft.]]></string>
     <string name="home_adb_dialog_view_command_copy_button"><![CDATA[Kopiëren]]></string>
     <string name="home_adb_dialog_view_command_button_send"><![CDATA[Verzenden]]></string>
@@ -36,8 +36,8 @@
 
 Let op: schakel ‘Ontwikkelaarsopties’ of ‘USB-foutopsporen’ niet uit, anders wordt Shevery gestopt.]]></string>
     <string name="dialog_adb_discovery_message_toggle_wireless_debugging"><![CDATA[Probeer "Draadloos foutopsporen" eens uit te schakelen en weer in te schakelen als het blijft zoeken.]]></string>
-    <string name="dialog_adb_port"><![CDATA[Haven]]></string>
-    <string name="dialog_adb_invalid_port"><![CDATA[Port is een geheel getal tussen 1 en 65535.]]></string>
+    <string name="dialog_adb_port"><![CDATA[Poort]]></string>
+    <string name="dialog_adb_invalid_port"><![CDATA[Poort is een geheel getal tussen 1 en 65535.]]></string>
     <string name="adb_pairing"><![CDATA[Koppelen]]></string>
     <string name="dialog_adb_pairing_title"><![CDATA[Koppelen met apparaat]]></string>
     <string name="dialog_adb_pairing_discovery"><![CDATA[Op zoek naar een koppelingsdienst]]></string>
@@ -113,7 +113,7 @@ De exportfunctie maakt gebruik van SAF (Storage Access Framework). Er is gemeld 
     <string name="settings_title"><![CDATA[Instellingen]]></string>
     <string name="settings_language"><![CDATA[Taal]]></string>
     <string name="settings_user_interface"><![CDATA[Uiterlijk]]></string>
-    <string name="settings_black_night_theme"><![CDATA[Nachtthema]]></string>
+    <string name="settings_black_night_theme"><![CDATA[Zwart als nachtthema]]></string>
     <string name="settings_black_night_theme_summary"><![CDATA[Gebruik het puur zwarte thema als de nachtmodus is ingeschakeld]]></string>
     <string name="settings_startup"><![CDATA[Opstarten]]></string>
     <string name="settings_translation_contributors"><![CDATA[Mede-vertalers]]></string>
@@ -174,7 +174,7 @@ De exportfunctie maakt gebruik van SAF (Storage Access Framework). Er is gemeld 
     <string name="modules_disable"><![CDATA[Uitschakelen]]></string>
     <string name="modules_full_trust"><![CDATA[Volledig vertrouwen]]></string>
     <string name="modules_trust"><![CDATA[Vertrouwen]]></string>
-    <string name="modules_untrust"><![CDATA[Onbetrouwbaar]]></string>
+    <string name="modules_untrust"><![CDATA[Niet langer vertrouwen]]></string>
     <string name="modules_run_action"><![CDATA[Actie]]></string>
     <string name="modules_run_service"><![CDATA[Dienst]]></string>
     <string name="modules_running"><![CDATA[Het script van de module wordt uitgevoerd …]]></string>
@@ -186,7 +186,7 @@ De exportfunctie maakt gebruik van SAF (Storage Access Framework). Er is gemeld 
     <string name="modules_action_result"><![CDATA[Actie voltooid: afsluiten %d]]></string>
     <string name="modules_action_failed"><![CDATA[De actie is mislukt]]></string>
     <string name="modules_service_result"><![CDATA[Service voltooid: afsluiten %d]]></string>
-    <string name="modules_service_failed"><![CDATA[De dienst is mislukt]]></string>
+    <string name="modules_service_failed"><![CDATA[Er is iets misgegaan met de dienst]]></string>
     <string name="modules_recommand_title"><![CDATA[Opnieuw Commando]]></string>
     <string name="modules_recommand_source">%1$s / %2$s</string>
     <string name="modules_recommand_expand"><![CDATA[Uitvouwen]]></string>
@@ -473,7 +473,7 @@ Klaar voor opdrachten.]]></string>
     <string name="comput_recording_active"><![CDATA[Opname actief. Voer opdrachten uit via de hoofdinvoer om ze aan deze macro toe te voegen.]]></string>
     <string name="comput_saved_macros"><![CDATA[Opgeslagen macro\'s]]></string>
         <string name="comput_delete"><![CDATA[Verwijderen]]></string>
-    <string name="comput_recommand_confirmation_title"><![CDATA[Bevestiging van ReCommand]]></string>
+    <string name="comput_recommand_confirmation_title"><![CDATA[Bevestig ReCommand]]></string>
     <string name="comput_execute"><![CDATA[Uitvoeren]]></string>
     <string name="comput_cancel"><![CDATA[Annuleren]]></string>
     <string name="comput_save_macro"><![CDATA[Macro opslaan]]></string>
@@ -490,7 +490,7 @@ Klaar voor opdrachten.]]></string>
     <string name="comput_presets_subtitle"><![CDATA[Tik op een willekeurige opdracht om deze snel uit te voeren of automatisch in de terminalprompt in te vullen.]]></string>
     <string name="comput_output_label"><![CDATA[Uitvoer]]></string>
     <string name="comput_search_desc"><![CDATA[Zoeken]]></string>
-    <string name="comput_search_hint"><![CDATA[Zoekresultaten]]></string>
+    <string name="comput_search_hint"><![CDATA[Zoeken in uitvoer]]></string>
     <string name="comput_no_search_results"><![CDATA[Er zijn geen overeenkomende resultaten gevonden]]></string>
     <string name="comput_clear_search_desc"><![CDATA[Zoekresultaten wissen]]></string>
     <string name="comput_close_search_desc"><![CDATA[Zoekresultaten sluiten]]></string>
@@ -540,7 +540,7 @@ Klaar voor opdrachten.]]></string>
     <string name="accessibility_manager_services_empty"><![CDATA[Er zijn geen geïnstalleerde toegankelijkheidsdiensten gevonden.]]></string>
     <string name="accessibility_manager_service_no_description"><![CDATA[Er is geen beschrijving door de dienst verstrekt.]]></string>
     <string name="accessibility_manager_write_failed"><![CDATA[Het bijwerken van de toegankelijkheidsdiensten is mislukt. Controleer of Shevery actief is en de juiste machtigingen heeft.]]></string>
-    <string name="accessibility_manager_pin"><![CDATA[Pin-service om actief te houden]]></string>
+    <string name="accessibility_manager_pin"><![CDATA[Pin service om actief te houden]]></string>
     <string name="accessibility_manager_unpin"><![CDATA[Service losmaken]]></string>
     <string name="accessibility_daemon_channel_name"><![CDATA[Toegankelijkheid: keep-alive]]></string>
     <string name="accessibility_daemon_notification_title"><![CDATA[Toegankelijkheid keep-alive actief]]></string>
@@ -572,7 +572,7 @@ Klaar voor opdrachten.]]></string>
     <string name="automation_action_start"><![CDATA[Server starten]]></string>
     <string name="automation_action_stop"><![CDATA[Server stoppen]]></string>
     <string name="automation_action_restart"><![CDATA[Server herstarten]]></string>
-    <string name="automation_action_toggle"><![CDATA[Server wisselen]]></string>
+    <string name="automation_action_toggle"><![CDATA[Server omschakelen]]></string>
     <string name="automation_plugin_method_title"><![CDATA[Tasker / Locale plug-in]]></string>
     <string name="automation_plugin_method_summary"><![CDATA[Geïntegreerde actie- en statusvoorwaarde-plug-in in Tasker en MacroDroid]]></string>
 
@@ -582,12 +582,12 @@ Klaar voor opdrachten.]]></string>
     <string name="settings_extras_title"><![CDATA[Extra\'s]]></string>
     <string name="settings_section_extras_summary"><![CDATA[Toeankelijkheid, diagnostiek en experimenten]]></string>
     <string name="settings_classic_nav"><![CDATA[Klassieke navigatiebalk]]></string>
-    <string name="settings_classic_nav_summary"><![CDATA[Vaste naviatiebalk gebrukken in plaats van een gebarenbalk]]></string>
+    <string name="settings_classic_nav_summary"><![CDATA[Vaste naviatiebalk gebruiken in plaats van een gebarenbalk]]></string>
 
     <!-- Home - Automation -->
     <string name="home_automation_title">Bedien Shevery met automatisatie-apps</string>
     <string name="home_automation_description">Apps zoals Tasker en MacroDroid kunnen intents verzenden om Shevery automatisch te starten, stoppen, herstarten of om te schakelen.</string>
-    <string name="home_automation_button_view_intents">Intents bekijken</string>
+    <string name="home_automation_button_view_intents">Intents weergeven</string>
     <string name="home_automation_bottom_sheet_intents">Automatisatie-intents</string>
     <string name="home_automation_bottom_sheet_description">Configureer intents in Tasker of MacroDroid, of voer de opdracht rechtstreeks uit vanuit Termux / ADB. Tik om te kopiëren.</string>
     <string name="home_automation_connectors_disabled_warning">Connectors zijn momenteel uitgeschakeld. Schakel ze in via Instellingen → Automatisering om binnenkomende broadcast-intents toe te staan.</string>
