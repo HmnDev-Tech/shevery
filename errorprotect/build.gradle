@@ -3,7 +3,7 @@ plugins {
 }
 
 android {
-    namespace 'rikka.shizuku.nightdog'
+    namespace 'rikka.shizuku.errorprotect'
     buildFeatures {
         buildConfig false
     }

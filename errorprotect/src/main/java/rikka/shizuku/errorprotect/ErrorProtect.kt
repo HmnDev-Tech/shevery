@@ -1,4 +1,4 @@
-package rikka.shizuku.nightdog
+package rikka.shizuku.errorprotect
 
 import android.os.Handler
 import android.os.HandlerThread
@@ -13,9 +13,9 @@ import java.util.concurrent.atomic.AtomicBoolean
 import java.util.concurrent.atomic.AtomicInteger
 import java.util.concurrent.atomic.AtomicLong
 
-object NightDog {
+object ErrorProtect {
 
-    private const val TAG = "NightDog"
+    private const val TAG = "ErrorProtect"
 
     const val DEFAULT_TIMEOUT_MS = 60_000L
     const val DEFAULT_POLL_INTERVAL_MS = 60_000L
@@ -73,7 +73,7 @@ object NightDog {
             this.lastBeatTime.set(now)
             this.beatCount.set(0L)
 
-            val thread = HandlerThread("nightdog").apply {
+            val thread = HandlerThread("errorprotect").apply {
                 isDaemon = true
                 start()
             }

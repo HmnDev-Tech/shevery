@@ -53,7 +53,7 @@ import rikka.hidden.compat.UserManagerApis;
 import rikka.parcelablelist.ParcelableListSlice;
 import rikka.rish.RishConfig;
 import rikka.shizuku.ShizukuApiConstants;
-import rikka.shizuku.nightdog.NightDog;
+import rikka.shizuku.errorprotect.ErrorProtect;
 import rikka.shizuku.server.api.IContentProviderUtils;
 import rikka.shizuku.server.util.Android17Compat;
 import rikka.shizuku.server.util.HandlerUtil;
@@ -134,8 +134,8 @@ public class ShizukuService extends Service<ShizukuUserServiceManager, ShizukuCl
 
         BinderSender.register(this);
 
-        if (configManager.getNightDogEnabled()) {
-            applyNightDogState(true);
+        if (configManager.getErrorProtectEnabled()) {
+            applyErrorProtectState(true);
         }
 
         mainHandler.post(() -> {
@@ -144,22 +144,22 @@ public class ShizukuService extends Service<ShizukuUserServiceManager, ShizukuCl
         });
     }
 
-    private void applyNightDogState(boolean enabled) {
+    private void applyErrorProtectState(boolean enabled) {
         if (heartbeatRunnable != null) {
             mainHandler.removeCallbacks(heartbeatRunnable);
             heartbeatRunnable = null;
         }
 
         if (enabled) {
-            if (!NightDog.isStarted()) {
-                LOGGER.i("Starting NightDog watchdog...");
-                NightDog.start(
-                        NightDog.DEFAULT_TIMEOUT_MS,
-                        NightDog.DEFAULT_POLL_INTERVAL_MS,
-                        new NightDog.Listener() {
+            if (!ErrorProtect.isStarted()) {
+                LOGGER.i("Starting ErrorProtect watchdog...");
+                ErrorProtect.start(
+                        ErrorProtect.DEFAULT_TIMEOUT_MS,
+                        ErrorProtect.DEFAULT_POLL_INTERVAL_MS,
+                        new ErrorProtect.Listener() {
                             @Override
                             public void onServiceRecovered(@NonNull String name) {
-                                LOGGER.i("NightDog: system service '%s' recovered, refreshing bindings", name);
+                                LOGGER.i("ErrorProtect: system service '%s' recovered, refreshing bindings", name);
                                 Android17Compat.invalidate(name);
                                 mainHandler.post(() -> {
                                     if (Context.ACTIVITY_SERVICE.equals(name)) {
@@ -176,28 +176,28 @@ public class ShizukuService extends Service<ShizukuUserServiceManager, ShizukuCl
 
                             @Override
                             public void onFatalFault(@NonNull String reason) {
-                                LOGGER.e("NightDog detected fatal fault (%s), terminating server for recovery", reason);
+                                LOGGER.e("ErrorProtect detected fatal fault (%s), terminating server for recovery", reason);
                             }
                         }
                 );
-                LOGGER.i("NightDog watchdog started");
+                LOGGER.i("ErrorProtect watchdog started");
             }
 
             Runnable heartbeat = new Runnable() {
                 @Override
                 public void run() {
-                    if (!NightDog.isStarted()) return;
-                    NightDog.beat();
+                    if (!ErrorProtect.isStarted()) return;
+                    ErrorProtect.beat();
                     mainHandler.postDelayed(this, HEARTBEAT_INTERVAL_MS);
                 }
             };
             heartbeatRunnable = heartbeat;
-            NightDog.beat();
+            ErrorProtect.beat();
             mainHandler.postDelayed(heartbeat, HEARTBEAT_INTERVAL_MS);
         } else {
-            if (NightDog.isStarted()) {
-                NightDog.stop();
-                LOGGER.i("NightDog watchdog stopped");
+            if (ErrorProtect.isStarted()) {
+                ErrorProtect.stop();
+                LOGGER.i("ErrorProtect watchdog stopped");
             }
         }
     }
@@ -252,7 +252,7 @@ public class ShizukuService extends Service<ShizukuUserServiceManager, ShizukuCl
             mainHandler.removeCallbacks(heartbeatRunnable);
             heartbeatRunnable = null;
         }
-        NightDog.stop();
+        ErrorProtect.stop();
         System.exit(0);
     }
 
@@ -540,26 +540,26 @@ public class ShizukuService extends Service<ShizukuUserServiceManager, ShizukuCl
             reply.writeNoException();
             result.writeToParcel(reply, android.os.Parcelable.PARCELABLE_WRITE_RETURN_VALUE);
             return true;
-        } else if (code == ServerConstants.BINDER_TRANSACTION_setNightDogEnabled) {
+        } else if (code == ServerConstants.BINDER_TRANSACTION_setErrorProtectEnabled) {
             if (UserHandleCompat.getAppId(Binder.getCallingUid()) != managerAppId) {
                 reply.writeException(new SecurityException("Permission denied"));
                 return true;
             }
             data.enforceInterface(ShizukuApiConstants.BINDER_DESCRIPTOR);
             boolean enabled = data.readInt() != 0;
-            LOGGER.i("setNightDogEnabled: %s", Boolean.toString(enabled));
-            configManager.setNightDogEnabled(enabled);
-            applyNightDogState(enabled);
+            LOGGER.i("setErrorProtectEnabled: %s", Boolean.toString(enabled));
+            configManager.setErrorProtectEnabled(enabled);
+            applyErrorProtectState(enabled);
             reply.writeNoException();
             return true;
-        } else if (code == ServerConstants.BINDER_TRANSACTION_getNightDogEnabled) {
+        } else if (code == ServerConstants.BINDER_TRANSACTION_getErrorProtectEnabled) {
             if (UserHandleCompat.getAppId(Binder.getCallingUid()) != managerAppId) {
                 reply.writeException(new SecurityException("Permission denied"));
                 return true;
             }
             data.enforceInterface(ShizukuApiConstants.BINDER_DESCRIPTOR);
             reply.writeNoException();
-            reply.writeInt(configManager.getNightDogEnabled() ? 1 : 0);
+            reply.writeInt(configManager.getErrorProtectEnabled() ? 1 : 0);
             return true;
         }
         return super.onTransact(code, data, reply, flags);

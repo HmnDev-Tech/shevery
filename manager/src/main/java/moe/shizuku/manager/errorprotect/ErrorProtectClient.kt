@@ -1,4 +1,4 @@
-package moe.shizuku.manager.nightdog
+package moe.shizuku.manager.errorprotect
 
 import android.os.IBinder
 import android.os.Parcel
@@ -9,10 +9,10 @@ import rikka.shizuku.Shizuku
 import rikka.shizuku.ShizukuApiConstants
 import rikka.shizuku.server.ServerConstants
 
-object NightDogClient {
+object ErrorProtectClient {
 
-    private const val KEY_NIGHTDOG_ENABLED = "shizuku_error_protect"
-    private const val KEY_NIGHTDOG_PENDING_SYNC = "nightdog_pending_sync"
+    private const val KEY_ERROR_PROTECT_ENABLED = "shizuku_error_protect"
+    private const val KEY_ERROR_PROTECT_PENDING_SYNC = "errorprotect_pending_sync"
 
     private val initialized = AtomicBoolean(false)
 
@@ -39,8 +39,8 @@ object NightDogClient {
         } catch (_: Throwable) {
             null
         }
-        val cached = prefs?.getBoolean(KEY_NIGHTDOG_ENABLED, true) ?: true
-        val pendingSync = prefs?.getBoolean(KEY_NIGHTDOG_PENDING_SYNC, false) ?: false
+        val cached = prefs?.getBoolean(KEY_ERROR_PROTECT_ENABLED, true) ?: true
+        val pendingSync = prefs?.getBoolean(KEY_ERROR_PROTECT_PENDING_SYNC, false) ?: false
 
         val binder = Shizuku.getBinder()
         if (binder == null || !binder.pingBinder()) {
@@ -48,14 +48,14 @@ object NightDogClient {
         }
 
         if (pendingSync && sendSetEnabledTransaction(binder, cached)) {
-            prefs?.edit()?.putBoolean(KEY_NIGHTDOG_PENDING_SYNC, false)?.apply()
+            prefs?.edit()?.putBoolean(KEY_ERROR_PROTECT_PENDING_SYNC, false)?.apply()
             return cached
         }
 
         val remoteEnabled = sendGetEnabledTransaction(binder) ?: return cached
         prefs?.edit()
-            ?.putBoolean(KEY_NIGHTDOG_ENABLED, remoteEnabled)
-            ?.putBoolean(KEY_NIGHTDOG_PENDING_SYNC, false)
+            ?.putBoolean(KEY_ERROR_PROTECT_ENABLED, remoteEnabled)
+            ?.putBoolean(KEY_ERROR_PROTECT_PENDING_SYNC, false)
             ?.apply()
         return remoteEnabled
     }
@@ -75,8 +75,8 @@ object NightDogClient {
         }
 
         prefs?.edit()
-            ?.putBoolean(KEY_NIGHTDOG_ENABLED, enabled)
-            ?.putBoolean(KEY_NIGHTDOG_PENDING_SYNC, !appliedToServer)
+            ?.putBoolean(KEY_ERROR_PROTECT_ENABLED, enabled)
+            ?.putBoolean(KEY_ERROR_PROTECT_PENDING_SYNC, !appliedToServer)
             ?.apply()
 
         return appliedToServer
@@ -91,15 +91,15 @@ object NightDogClient {
         val binder = Shizuku.getBinder()
         if (binder == null || !binder.pingBinder()) return
 
-        val pendingSync = prefs.getBoolean(KEY_NIGHTDOG_PENDING_SYNC, false)
+        val pendingSync = prefs.getBoolean(KEY_ERROR_PROTECT_PENDING_SYNC, false)
         if (pendingSync) {
-            val desired = prefs.getBoolean(KEY_NIGHTDOG_ENABLED, true)
+            val desired = prefs.getBoolean(KEY_ERROR_PROTECT_ENABLED, true)
             if (sendSetEnabledTransaction(binder, desired)) {
-                prefs.edit().putBoolean(KEY_NIGHTDOG_PENDING_SYNC, false).apply()
+                prefs.edit().putBoolean(KEY_ERROR_PROTECT_PENDING_SYNC, false).apply()
             }
         } else {
             val remoteEnabled = sendGetEnabledTransaction(binder) ?: return
-            prefs.edit().putBoolean(KEY_NIGHTDOG_ENABLED, remoteEnabled).apply()
+            prefs.edit().putBoolean(KEY_ERROR_PROTECT_ENABLED, remoteEnabled).apply()
         }
     }
 
@@ -108,12 +108,12 @@ object NightDogClient {
         val reply = Parcel.obtain()
         return try {
             data.writeInterfaceToken(ShizukuApiConstants.BINDER_DESCRIPTOR)
-            val ok = binder.transact(ServerConstants.BINDER_TRANSACTION_getNightDogEnabled, data, reply, 0)
+            val ok = binder.transact(ServerConstants.BINDER_TRANSACTION_getErrorProtectEnabled, data, reply, 0)
             if (!ok) return null
             reply.readException()
             reply.readInt() != 0
         } catch (t: Throwable) {
-            LOGGER.w(t, "NightDogClient: getNightDogEnabled failed")
+            LOGGER.w(t, "ErrorProtectClient: getErrorProtectEnabled failed")
             null
         } finally {
             data.recycle()
@@ -127,12 +127,12 @@ object NightDogClient {
         return try {
             data.writeInterfaceToken(ShizukuApiConstants.BINDER_DESCRIPTOR)
             data.writeInt(if (enabled) 1 else 0)
-            val ok = binder.transact(ServerConstants.BINDER_TRANSACTION_setNightDogEnabled, data, reply, 0)
+            val ok = binder.transact(ServerConstants.BINDER_TRANSACTION_setErrorProtectEnabled, data, reply, 0)
             if (!ok) return false
             reply.readException()
             true
         } catch (t: Throwable) {
-            LOGGER.w(t, "NightDogClient: setNightDogEnabled(%s) failed", enabled.toString())
+            LOGGER.w(t, "ErrorProtectClient: setErrorProtectEnabled(%s) failed", enabled.toString())
             false
         } finally {
             data.recycle()

@@ -34,7 +34,7 @@
 - [ADB Modules 发布指南](docs/github-catalog.md)
 - [Shizuku Connectors API](docs/shizuku-connectors.md)
 - [Android 17 兼容性](docs/android-17-compatibility.md)
-- [NightDog 看门狗与启动器恢复](docs/nightdog.md)
+- [ErrorProtect 看门狗与启动器恢复](docs/errorprotect.md)
 
 ## 背景
 

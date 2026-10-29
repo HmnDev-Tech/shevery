@@ -17,8 +17,8 @@ public class ShizukuConfig {
     @SerializedName("packages")
     public List<PackageEntry> packages = new ArrayList<>();
 
-    @SerializedName("nightdog_enabled")
-    public boolean nightDogEnabled = true;
+    @SerializedName("errorprotect_enabled")
+    public boolean errorProtectEnabled = true;
 
     public static class PackageEntry extends ConfigPackageEntry {
 

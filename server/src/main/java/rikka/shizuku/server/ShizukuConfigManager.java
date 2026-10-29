@@ -253,15 +253,15 @@ public class ShizukuConfigManager extends ConfigManager {
         }
     }
 
-    public synchronized boolean getNightDogEnabled() {
-        return config.nightDogEnabled;
+    public synchronized boolean getErrorProtectEnabled() {
+        return config.errorProtectEnabled;
     }
 
-    public synchronized void setNightDogEnabled(boolean enabled) {
-        if (config.nightDogEnabled == enabled) {
+    public synchronized void setErrorProtectEnabled(boolean enabled) {
+        if (config.errorProtectEnabled == enabled) {
             return;
         }
-        config.nightDogEnabled = enabled;
+        config.errorProtectEnabled = enabled;
         HandlerKt.getWorkerHandler().removeCallbacks(mWriteRunner);
         HandlerKt.getWorkerHandler().post(mWriteRunner);
     }
