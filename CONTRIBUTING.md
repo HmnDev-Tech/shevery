@@ -2,6 +2,8 @@
 
 Thank you for contributing to the Shevery repository. Please follow these guidelines to ensure a smooth review process.
 
+By participating in this project you agree to abide by our [Code of Conduct](CODE_OF_CONDUCT.md).
+
 ## Issue Reporting
 - **Use Templates:** Use the provided GitHub Issue templates and fill them out completely.
 - **Search for Duplicates:** Search open and closed issues before posting. An automated bot flags similar issues.
