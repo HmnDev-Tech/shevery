@@ -11,11 +11,11 @@ import kotlinx.coroutines.suspendCancellableCoroutine
 import kotlinx.coroutines.withTimeoutOrNull
 import moe.shizuku.manager.ShizukuSettings
 import moe.shizuku.manager.ShizukuSettings.LaunchMethod
+import moe.shizuku.manager.errorprotect.ErrorProtectClient
 import moe.shizuku.manager.ktx.logd
 import moe.shizuku.manager.ktx.logi
 import moe.shizuku.manager.ktx.logw
 import moe.shizuku.manager.module.ModuleSettings
-import moe.shizuku.manager.nightdog.NightDogClient
 import moe.shizuku.manager.starter.Starter
 import moe.shizuku.manager.utils.ShizukuStateMachine
 import moe.shizuku.manager.worker.AdbStartWorker
@@ -23,13 +23,13 @@ import rikka.shizuku.Shizuku
 import java.util.concurrent.atomic.AtomicBoolean
 
 /**
- * Client-side companion to NightDog (rikka.shizuku.nightdog.NightDog) and the
+ * Client-side companion to ErrorProtect (rikka.shizuku.errorprotect.ErrorProtect) and the
  * native starter supervisor (starter.cpp):
  * - Server-side hang detection, system-service rebinding, and process recovery
- *   are handled inside shizuku_server by NightDog and respawned within 5s by
+ *   are handled inside shizuku_server by ErrorProtect and respawned within 5s by
  *   the detached native starter supervisor.
- * - NightDogClient synchronizes the enabled state with shizuku_server over
- *   Binder IPC (BINDER_TRANSACTION_setNightDogEnabled / getNightDogEnabled).
+ * - ErrorProtectClient synchronizes the enabled state with shizuku_server over
+ *   Binder IPC (BINDER_TRANSACTION_setErrorProtectEnabled / getErrorProtectEnabled).
  * - If the binder dies and is not recovered by the native starter supervisor
  *   within [SUPERVISOR_RECOVERY_GRACE_MS], this manager issues a fallback
  *   restart for the last launch mode (root / adb / dhizuku).
@@ -79,18 +79,18 @@ object WatchdogManager {
     fun init(context: Context) {
         val appContext = context.applicationContext
         ModuleSettings.migrateLegacyWatchdogPrefs()
-        NightDogClient.init()
+        ErrorProtectClient.init()
         if (initialized) return
         initialized = true
 
         userStopRequested = ShizukuSettings.getPreferences().getBoolean(KEY_USER_STOP_REQUESTED, false)
 
-        logi("Watchdog init (NightDog + native supervisor)")
+        logi("Watchdog init (ErrorProtect + native supervisor)")
 
         Shizuku.addBinderReceivedListenerSticky {
             expectingDeath = false
             setUserStopRequested(false)
-            NightDogClient.syncWithServer()
+            ErrorProtectClient.syncWithServer()
         }
 
         Shizuku.addBinderDeadListener {
@@ -98,7 +98,7 @@ object WatchdogManager {
         }
     }
 
-    fun isEnabled(): Boolean = NightDogClient.isEnabled()
+    fun isEnabled(): Boolean = ErrorProtectClient.isEnabled()
 
     fun isExpectingDeathActive(): Boolean {
         if (isStarterActive) return true
@@ -110,9 +110,9 @@ object WatchdogManager {
 
     fun shouldRunService(): Boolean = isEnabled() && !isUserStopRequested()
 
-    /** Syncs desired NightDog state with shizuku_server. */
+    /** Syncs desired ErrorProtect state with shizuku_server. */
     fun reconcileService(context: Context) {
-        NightDogClient.setEnabled(ModuleSettings.isWatchdogEnabled())
+        ErrorProtectClient.setEnabled(ModuleSettings.isWatchdogEnabled())
     }
 
     private fun onServiceDied(context: Context) {

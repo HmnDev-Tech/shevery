@@ -43,7 +43,7 @@ Upstream project reference: <https://github.com/RikkaApps/Shizuku>
 - [ADB Modules publishing & GitHub Catalog guide](docs/github-catalog.md)
 - [Shizuku Connectors API](docs/shizuku-connectors.md)
 - [Android 17 Compatibility](docs/android-17-compatibility.md)
-- [NightDog Watchdog & Starter Recovery](docs/nightdog.md)
+- [ErrorProtect Watchdog & Starter Recovery](docs/errorprotect.md)
 
 ## Background
 

@@ -185,7 +185,7 @@ dependencies {
     implementation project(':provider')
     implementation project(':common')
     implementation project(':tasker')
-    compileOnly project(':nightdog')
+    compileOnly project(':errorprotect')
 
     implementation libs.hidden.compat
     compileOnly libs.hidden.stub

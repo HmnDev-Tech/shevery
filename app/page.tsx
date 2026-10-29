@@ -348,7 +348,7 @@ export default function SheveryHomePage() {
               </div>
               <div className="max-w-[68ch] text-lg leading-relaxed text-on-surface-variant text-pretty lg:col-span-8">
                 <p>
-                  Shevery runs two separate watchdog loops ported from NightDog: one inside{" "}
+                  Shevery runs two separate watchdog loops: one inside{" "}
                   <code className="font-mono text-on-surface">shizuku_server</code> (
                   <code className="font-mono text-on-surface">Watchdog.java</code>) and one in the
                   manager (<code className="font-mono text-on-surface">WatchdogManager.kt</code>).
