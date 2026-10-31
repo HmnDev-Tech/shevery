@@ -21,11 +21,11 @@ import java.util.LinkedHashSet;
 import java.util.List;
 import java.util.Set;
 
-import com.hamondev.shevery.api.ClientPermissions;
+import moe.shizuku.common.util.InstalledPackagesCompat;
 import rikka.hidden.compat.PackageManagerApis;
 import rikka.hidden.compat.UserManagerApis;
 import rikka.shizuku.server.ktx.HandlerKt;
-import moe.shizuku.common.util.InstalledPackagesCompat;
+import rikka.shizuku.server.util.Android17Compat;
 
 public class ShizukuConfigManager extends ConfigManager {
 
@@ -150,19 +150,19 @@ public class ShizukuConfigManager extends ConfigManager {
             for (PackageInfo pi : InstalledPackagesCompat.getInstalledPackagesNoThrow(PackageManager.GET_PERMISSIONS, userId)) {
                 if (pi == null
                         || pi.applicationInfo == null
-                        || pi.requestedPermissions == null) {
+                        || ServerConstants.SHIZUKU_STUB_APPLICATION_ID.equals(pi.packageName)) {
+                    continue;
+                }
+
+                String targetPermission = ServerConstants.resolveClientPermission(pi.requestedPermissions);
+                if (targetPermission == null) {
                     continue;
                 }
 
                 int uid = pi.applicationInfo.uid;
-                int clientFlags = SheveryClients.CACHE.put(uid, pi.packageName, pi.requestedPermissions);
-                if (!ClientPermissions.isClient(clientFlags)) {
-                    continue;
-                }
-
                 boolean allowed;
                 try {
-                    allowed = SheveryClients.isGrantedForUid(clientFlags, uid);
+                    allowed = Android17Compat.checkPermission(targetPermission, uid) == PackageManager.PERMISSION_GRANTED;
                 } catch (Throwable e) {
                     LOGGER.w("checkPermission");
                     continue;

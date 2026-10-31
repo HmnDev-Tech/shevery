@@ -66,7 +66,17 @@ object StealthApkGenerator {
     const val TEMPLATE_APP_NAME = "System Toolkit"
     const val STEALTH_LABEL_PLACEHOLDER = "SheveryStealthLabelPlaceholder32"
 
-    private const val TASKER_SUFFIX = ".tasker"
+        private const val TASKER_SUFFIX = ".tasker"
+    private val PRESERVED_SUFFIXES_ASCII = arrayOf(
+        ".tasker".toByteArray(Charsets.US_ASCII),
+        ".api".toByteArray(Charsets.US_ASCII),
+        ".permission.PRIVILEGED_API".toByteArray(Charsets.US_ASCII)
+    )
+    private val PRESERVED_SUFFIXES_UTF16 = arrayOf(
+        ".tasker".toByteArray(Charsets.UTF_16LE),
+        ".api".toByteArray(Charsets.UTF_16LE),
+        ".permission.PRIVILEGED_API".toByteArray(Charsets.UTF_16LE)
+    )
     private const val APK_SIG_BLOCK_V2_ID = 0x7109871a
     private const val VERITY_PADDING_BLOCK_ID = 0x42726577
     private const val SIG_RSA_PKCS1_V1_5_WITH_SHA256 = 0x0103
@@ -684,11 +694,18 @@ object StealthApkGenerator {
         var i = indexOf(data, old, 0)
         if (i < 0) return data
         val out = data.copyOf()
+        val preservedList = if (skipFollowedBy.contentEquals(TASKER_SUFFIX.toByteArray(Charsets.UTF_16LE))) {
+            PRESERVED_SUFFIXES_UTF16
+        } else {
+            PRESERVED_SUFFIXES_ASCII
+        }
         while (i >= 0) {
             val afterIdx = i + old.size
-            val isSkipped = skipFollowedBy.isNotEmpty() &&
-                afterIdx + skipFollowedBy.size <= out.size &&
-                matchesAt(out, skipFollowedBy, afterIdx)
+            val isSkipped = preservedList.any { suffix ->
+                suffix.isNotEmpty() &&
+                    afterIdx + suffix.size <= out.size &&
+                    matchesAt(out, suffix, afterIdx)
+            }
             if (!isSkipped) {
                 repl.copyInto(out, i)
             }

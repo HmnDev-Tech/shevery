@@ -11,9 +11,6 @@
         android:icon="@android:drawable/ic_secure"
         android:label="@string/permission_group_label" />
 
-    <!-- The stub is the sole owner of the legacy Shizuku permission. Shevery itself
-         uses com.hamondev.shevery.permission.API (shevery-api) and does not declare
-         API_V23, so legacy Shizuku clients are authorized through this stub. -->
     <permission
         android:name="moe.shizuku.manager.permission.API_V23"
         android:description="@string/permission_description"
@@ -21,6 +18,17 @@
         android:label="@string/permission_label"
         android:permissionGroup="moe.shizuku.manager.permission-group.API"
         android:protectionLevel="dangerous" />
+
+    <permission
+        android:name="moe.shizuku.manager.permission.API"
+        android:description="@string/permission_description"
+        android:icon="@android:drawable/ic_secure"
+        android:label="@string/permission_label"
+        android:permissionGroup="moe.shizuku.manager.permission-group.API"
+        android:protectionLevel="dangerous" />
+
+    <uses-permission android:name="moe.shizuku.manager.permission.API_V23" />
+    <uses-permission android:name="com.hamondev.shevery.permission.PRIVILEGED_API" />
 
     <application
         android:label="@string/app_name"
@@ -53,6 +61,13 @@
                 <action android:name="moe.shizuku.manager.intent.action.REQUEST_BINDER" />
             </intent-filter>
         </receiver>
+
+        <provider
+            android:name="moe.shizuku.privileged.api.ForwardShizukuProvider"
+            android:authorities="moe.shizuku.privileged.api.shizuku;moe.shizuku.privileged.api.connector"
+            android:directBootAware="true"
+            android:enabled="true"
+            android:exported="true" />
 
     </application>
 

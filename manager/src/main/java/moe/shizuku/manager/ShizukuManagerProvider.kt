@@ -4,6 +4,8 @@ import android.os.Binder
 import android.os.Bundle
 import android.util.Log
 import androidx.core.os.bundleOf
+import com.hamondev.shevery.api.SheveryApiConstants
+import com.hamondev.shevery.api.SheveryPrivilege
 import moe.shizuku.api.BinderContainer
 import moe.shizuku.manager.utils.Logger.LOGGER
 import rikka.shizuku.Shizuku
@@ -16,9 +18,10 @@ import java.util.concurrent.TimeUnit
 class ShizukuManagerProvider : ShizukuProvider() {
 
     companion object {
-        private const val EXTRA_BINDER = "moe.shizuku.privileged.api.intent.extra.BINDER"
-        private const val EXTRA_BINDER_SHEVERY = "com.hamondev.shevery.intent.extra.BINDER"
-        private const val METHOD_SEND_USER_SERVICE = "sendUserService"
+        private const val EXTRA_BINDER = SheveryApiConstants.LEGACY_EXTRA_BINDER
+        private const val EXTRA_BINDER_SHEVERY = SheveryApiConstants.EXTRA_BINDER
+        private const val METHOD_SEND_USER_SERVICE = SheveryApiConstants.METHOD_SEND_USER_SERVICE
+        private const val METHOD_REQUEST_BINDER = SheveryApiConstants.METHOD_REQUEST_BINDER
     }
 
     override fun onCreate(): Boolean {
@@ -27,14 +30,26 @@ class ShizukuManagerProvider : ShizukuProvider() {
     }
 
     override fun call(method: String, arg: String?, extras: Bundle?): Bundle? {
+        if (method == METHOD_REQUEST_BINDER) {
+            val activeBinder = SheveryPrivilege.getBinder() ?: Shizuku.getBinder()
+            return if (activeBinder != null && activeBinder.pingBinder()) {
+                val container = BinderContainer(activeBinder)
+                Bundle().apply {
+                    putParcelable(EXTRA_BINDER_SHEVERY, container)
+                    putParcelable(EXTRA_BINDER, container)
+                }
+            } else {
+                null
+            }
+        }
         if (extras == null) return null
 
         return when (method) {
             METHOD_SEND_BINDER -> {
                 try {
                     extras.classLoader = BinderContainer::class.java.classLoader
-                    val container = extras.getParcelable<BinderContainer>(EXTRA_BINDER)
-                        ?: extras.getParcelable<BinderContainer>(EXTRA_BINDER_SHEVERY)
+                    val container = extras.getParcelable<BinderContainer>(EXTRA_BINDER_SHEVERY)
+                        ?: extras.getParcelable<BinderContainer>(EXTRA_BINDER)
                     val newBinder = container?.binder
                     if (newBinder != null) {
                         // Accept if no living binder OR if this is a new replacement binder from a restarted server
@@ -45,6 +60,7 @@ class ShizukuManagerProvider : ShizukuProvider() {
                             LOGGER.i("Received new/replacement Shizuku server binder in manager provider")
                             val pkg = context?.packageName ?: BuildConfig.APPLICATION_ID
                             Shizuku.onBinderReceived(newBinder, pkg)
+                            SheveryPrivilege.onBinderReceived(newBinder, pkg)
                         } else {
                             LOGGER.d("sendBinder ignored: identical living binder already registered")
                         }
@@ -132,4 +148,3 @@ class ShizukuManagerProvider : ShizukuProvider() {
     }
 }
 }
-

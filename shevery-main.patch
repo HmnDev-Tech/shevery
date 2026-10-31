@@ -1,0 +1,1117 @@
+diff --git a/.gitmodules b/.gitmodules
+index 1848be7..d64e8b3 100644
+--- a/.gitmodules
++++ b/.gitmodules
+@@ -1,4 +1,4 @@
+ [submodule "api"]
+ 	path = api
+-	url = https://github.com/RikkaApps/Shizuku-API.git
+-	branch = master
++	url = https://github.com/HmnDev-Tech/shevery-api.git
++	branch = main
+diff --git a/manager/src/main/AndroidManifest.xml b/manager/src/main/AndroidManifest.xml
+index 313b0f3..fab8945 100644
+--- a/manager/src/main/AndroidManifest.xml
++++ b/manager/src/main/AndroidManifest.xml
+@@ -61,17 +61,20 @@
+         android:label="@string/permission_group_label" />
+ 
+     <permission
+-        android:name="moe.shizuku.manager.permission.MANAGER"
++        android:name="com.hamondev.shevery.permission.MANAGER"
+         android:protectionLevel="signature" />
+-    <uses-permission android:name="moe.shizuku.manager.permission.MANAGER" />
++    <uses-permission android:name="com.hamondev.shevery.permission.MANAGER" />
+ 
++    <!-- Native Shevery Privilege API permission (API_V23 is offloaded to Shizuku Stub) -->
+     <permission
+-        android:name="moe.shizuku.manager.permission.API_V23"
++        android:name="com.hamondev.shevery.permission.PRIVILEGED_API"
+         android:description="@string/permission_description"
+         android:icon="@drawable/ic_system_icon"
+         android:label="@string/permission_label"
+         android:permissionGroup="com.hamondev.shevery.permission-group.API"
+         android:protectionLevel="dangerous" />
++    <uses-permission
++        android:name="com.hamondev.shevery.permission.PRIVILEGED_API" />
+     <uses-permission
+         android:name="moe.shizuku.manager.permission.API_V23" />
+ 
+@@ -202,8 +205,7 @@
+             android:theme="@style/GrantPermissions">
+             <intent-filter>
+                 <action android:name="${applicationId}.intent.action.REQUEST_PERMISSION" />
+-                <action android:name="moe.shizuku.privileged.api.intent.action.REQUEST_PERMISSION" />
+-                <action android:name="moe.shizuku.manager.intent.action.REQUEST_PERMISSION" />
++                <action android:name="com.hamondev.shevery.intent.action.REQUEST_PERMISSION" />
+ 
+                 <!-- Dhizuku compatibility actions -->
+                 <action android:name="${applicationId}.action.request.permission" />
+@@ -256,7 +258,7 @@
+             android:name=".dhizuku.DhizukuService"
+             android:enabled="true"
+             android:exported="true"
+-            android:permission="moe.shizuku.manager.permission.API_V23" />
++            android:permission="com.hamondev.shevery.permission.PRIVILEGED_API" />
+ 
+         <service
+             android:name=".settings.UsbDebuggingHideService"
+@@ -355,15 +357,15 @@
+             android:exported="true"
+             tools:ignore="ExportedReceiver">
+             <intent-filter>
+-                <action android:name="rikka.shizuku.intent.action.REQUEST_BINDER" />
++                <action android:name="com.hamondev.shevery.intent.action.REQUEST_BINDER" />
+                 <action android:name="${applicationId}.intent.action.REQUEST_BINDER" />
+-                <action android:name="moe.shizuku.privileged.api.intent.action.REQUEST_BINDER" />
++                <action android:name="rikka.shizuku.intent.action.REQUEST_BINDER" />
+             </intent-filter>
+         </receiver>
+ 
+         <provider
+             android:name=".ShizukuManagerProvider"
+-            android:authorities="${applicationId}.shizuku;moe.shizuku.privileged.api.shizuku"
++            android:authorities="${applicationId}.shevery;${applicationId}.shizuku"
+             android:directBootAware="true"
+             android:enabled="true"
+             android:exported="true"
+@@ -372,7 +374,7 @@
+ 
+         <provider
+             android:name=".connector.ShizukuConnectorProvider"
+-            android:authorities="${applicationId}.connector;moe.shizuku.privileged.api.connector"
++            android:authorities="${applicationId}.connector"
+             android:exported="true" />
+ 
+         <provider
+diff --git a/manager/src/main/java/moe/shizuku/manager/Manifest.java b/manager/src/main/java/moe/shizuku/manager/Manifest.java
+index 0cd09d7..2674895 100644
+--- a/manager/src/main/java/moe/shizuku/manager/Manifest.java
++++ b/manager/src/main/java/moe/shizuku/manager/Manifest.java
+@@ -1,9 +1,13 @@
+ package moe.shizuku.manager;
+ 
++import com.hamondev.shevery.api.SheveryApiConstants;
++
+ public class Manifest {
+ 
+     public static class permission {
+ 
+-        public static final String API_V23 = "moe.shizuku.manager.permission.API_V23";
++        public static final String PRIVILEGED_API = SheveryApiConstants.PERMISSION_PRIVILEGED_API;
++        public static final String MANAGER = SheveryApiConstants.PERMISSION_MANAGER;
++        public static final String API_V23 = SheveryApiConstants.LEGACY_SHIZUKU_PERMISSION;
+     }
+ }
+diff --git a/manager/src/main/java/moe/shizuku/manager/ShizukuManagerProvider.kt b/manager/src/main/java/moe/shizuku/manager/ShizukuManagerProvider.kt
+index d72f116..016b810 100644
+--- a/manager/src/main/java/moe/shizuku/manager/ShizukuManagerProvider.kt
++++ b/manager/src/main/java/moe/shizuku/manager/ShizukuManagerProvider.kt
+@@ -4,6 +4,8 @@ import android.os.Binder
+ import android.os.Bundle
+ import android.util.Log
+ import androidx.core.os.bundleOf
++import com.hamondev.shevery.api.SheveryApiConstants
++import com.hamondev.shevery.api.SheveryPrivilege
+ import moe.shizuku.api.BinderContainer
+ import moe.shizuku.manager.utils.Logger.LOGGER
+ import rikka.shizuku.Shizuku
+@@ -16,9 +18,10 @@ import java.util.concurrent.TimeUnit
+ class ShizukuManagerProvider : ShizukuProvider() {
+ 
+     companion object {
+-        private const val EXTRA_BINDER = "moe.shizuku.privileged.api.intent.extra.BINDER"
+-        private const val EXTRA_BINDER_SHEVERY = "com.hamondev.shevery.intent.extra.BINDER"
+-        private const val METHOD_SEND_USER_SERVICE = "sendUserService"
++        private const val EXTRA_BINDER = SheveryApiConstants.LEGACY_EXTRA_BINDER
++        private const val EXTRA_BINDER_SHEVERY = SheveryApiConstants.EXTRA_BINDER
++        private const val METHOD_SEND_USER_SERVICE = SheveryApiConstants.METHOD_SEND_USER_SERVICE
++        private const val METHOD_REQUEST_BINDER = SheveryApiConstants.METHOD_REQUEST_BINDER
+     }
+ 
+     override fun onCreate(): Boolean {
+@@ -27,14 +30,26 @@ class ShizukuManagerProvider : ShizukuProvider() {
+     }
+ 
+     override fun call(method: String, arg: String?, extras: Bundle?): Bundle? {
++        if (method == METHOD_REQUEST_BINDER) {
++            val activeBinder = SheveryPrivilege.getBinder() ?: Shizuku.getBinder()
++            return if (activeBinder != null && activeBinder.pingBinder()) {
++                val container = BinderContainer(activeBinder)
++                Bundle().apply {
++                    putParcelable(EXTRA_BINDER_SHEVERY, container)
++                    putParcelable(EXTRA_BINDER, container)
++                }
++            } else {
++                null
++            }
++        }
+         if (extras == null) return null
+ 
+         return when (method) {
+             METHOD_SEND_BINDER -> {
+                 try {
+                     extras.classLoader = BinderContainer::class.java.classLoader
+-                    val container = extras.getParcelable<BinderContainer>(EXTRA_BINDER)
+-                        ?: extras.getParcelable<BinderContainer>(EXTRA_BINDER_SHEVERY)
++                    val container = extras.getParcelable<BinderContainer>(EXTRA_BINDER_SHEVERY)
++                        ?: extras.getParcelable<BinderContainer>(EXTRA_BINDER)
+                     val newBinder = container?.binder
+                     if (newBinder != null) {
+                         // Accept if no living binder OR if this is a new replacement binder from a restarted server
+@@ -45,6 +60,7 @@ class ShizukuManagerProvider : ShizukuProvider() {
+                             LOGGER.i("Received new/replacement Shizuku server binder in manager provider")
+                             val pkg = context?.packageName ?: BuildConfig.APPLICATION_ID
+                             Shizuku.onBinderReceived(newBinder, pkg)
++                            SheveryPrivilege.onBinderReceived(newBinder, pkg)
+                         } else {
+                             LOGGER.d("sendBinder ignored: identical living binder already registered")
+                         }
+@@ -132,4 +148,3 @@ class ShizukuManagerProvider : ShizukuProvider() {
+     }
+ }
+ }
+-
+diff --git a/manager/src/main/java/moe/shizuku/manager/authorization/AuthorizationManager.kt b/manager/src/main/java/moe/shizuku/manager/authorization/AuthorizationManager.kt
+index 767c48d..abfbae6 100644
+--- a/manager/src/main/java/moe/shizuku/manager/authorization/AuthorizationManager.kt
++++ b/manager/src/main/java/moe/shizuku/manager/authorization/AuthorizationManager.kt
+@@ -3,14 +3,16 @@ package moe.shizuku.manager.authorization
+ import android.content.pm.PackageInfo
+ import android.content.pm.PackageManager
+ import android.os.Parcel
++import com.hamondev.shevery.api.SheveryApiConstants
+ import moe.shizuku.manager.BuildConfig
+ import moe.shizuku.manager.Manifest
++import moe.shizuku.manager.compat.StubManager
+ import moe.shizuku.manager.utils.Logger.LOGGER
+ import moe.shizuku.manager.utils.ShizukuSystemApis
+-import rikka.shizuku.server.ServerConstants
+ import rikka.parcelablelist.ParcelableListSlice
+ import rikka.shizuku.Shizuku
+-import java.util.*
++import rikka.shizuku.server.ServerConstants
++import java.util.ArrayList
+ 
+ object AuthorizationManager {
+ 
+@@ -38,6 +40,24 @@ object AuthorizationManager {
+         }
+     }
+ 
++    fun resolvePackagePermission(pi: PackageInfo?): String? {
++        val perms = pi?.requestedPermissions ?: return null
++        if (perms.contains(Manifest.permission.PRIVILEGED_API)) {
++            return Manifest.permission.PRIVILEGED_API
++        }
++        if (perms.contains(Manifest.permission.API_V23)) {
++            return Manifest.permission.API_V23
++        }
++        return null
++    }
++
++    private fun resolveTargetPermission(packageName: String, userId: Int): String {
++        val pi = runCatching {
++            ShizukuSystemApis.getPackageInfo(packageName, PackageManager.GET_PERMISSIONS.toLong(), userId)
++        }.getOrNull()
++        return resolvePackagePermission(pi) ?: Manifest.permission.PRIVILEGED_API
++    }
++
+     fun getPackages(): List<PackageInfo> {
+         val packages: MutableList<PackageInfo> = ArrayList()
+         if (Shizuku.isPreV11() || (Shizuku.getVersion() == 11 && Shizuku.getServerPatchVersion() < 3)) {
+@@ -51,8 +71,13 @@ object AuthorizationManager {
+             }
+             for (pi in allPackages) {
+                 if (BuildConfig.APPLICATION_ID == pi.packageName) continue
+-                if (pi.applicationInfo?.metaData?.getBoolean("moe.shizuku.client.V3_SUPPORT") != true) continue
+-                if (pi.requestedPermissions?.contains(Manifest.permission.API_V23) != true) continue
++                if (StubManager.STUB_PACKAGE == pi.packageName) continue
++                val metaData = pi.applicationInfo?.metaData
++                val isSheveryClient = metaData?.getBoolean(SheveryApiConstants.META_DATA_CLIENT_SUPPORT) == true
++                        || pi.requestedPermissions?.contains(Manifest.permission.PRIVILEGED_API) == true
++                val isLegacyShizukuClient = metaData?.getBoolean(SheveryApiConstants.LEGACY_META_DATA_CLIENT_SUPPORT) == true
++                        && pi.requestedPermissions?.contains(Manifest.permission.API_V23) == true
++                if (!isSheveryClient && !isLegacyShizukuClient) continue
+ 
+                 packages.add(pi)
+             }
+@@ -80,7 +105,9 @@ object AuthorizationManager {
+     fun granted(packageName: String, uid: Int): Boolean {
+         if (sessionGrantedUids.contains(uid)) return true
+         return if (Shizuku.isPreV11()) {
+-            ShizukuSystemApis.checkPermission(Manifest.permission.API_V23, packageName, uid / 100000) == PackageManager.PERMISSION_GRANTED
++            val userId = uid / 100000
++            val targetPerm = resolveTargetPermission(packageName, userId)
++            ShizukuSystemApis.checkPermission(targetPerm, packageName, userId) == PackageManager.PERMISSION_GRANTED
+         } else {
+             (Shizuku.getFlagsForUid(uid, MASK_PERMISSION) and FLAG_ALLOWED) == FLAG_ALLOWED
+         }
+@@ -89,7 +116,9 @@ object AuthorizationManager {
+     fun grant(packageName: String, uid: Int) {
+         sessionGrantedUids.remove(uid)
+         if (Shizuku.isPreV11()) {
+-            ShizukuSystemApis.grantRuntimePermission(packageName, Manifest.permission.API_V23, uid / 100000)
++            val userId = uid / 100000
++            val targetPerm = resolveTargetPermission(packageName, userId)
++            ShizukuSystemApis.grantRuntimePermission(packageName, targetPerm, userId)
+         } else {
+             Shizuku.updateFlagsForUid(uid, MASK_PERMISSION, FLAG_ALLOWED)
+         }
+@@ -98,7 +127,9 @@ object AuthorizationManager {
+     fun revoke(packageName: String, uid: Int) {
+         sessionGrantedUids.remove(uid)
+         if (Shizuku.isPreV11()) {
+-            ShizukuSystemApis.revokeRuntimePermission(packageName, Manifest.permission.API_V23, uid / 100000)
++            val userId = uid / 100000
++            val targetPerm = resolveTargetPermission(packageName, userId)
++            ShizukuSystemApis.revokeRuntimePermission(packageName, targetPerm, userId)
+         } else {
+             Shizuku.updateFlagsForUid(uid, MASK_PERMISSION, 0)
+         }
+diff --git a/manager/src/main/java/moe/shizuku/manager/home/HomeViewModel.kt b/manager/src/main/java/moe/shizuku/manager/home/HomeViewModel.kt
+index c4a64dd..821ce81 100644
+--- a/manager/src/main/java/moe/shizuku/manager/home/HomeViewModel.kt
++++ b/manager/src/main/java/moe/shizuku/manager/home/HomeViewModel.kt
+@@ -59,9 +59,7 @@ class HomeViewModel : ViewModel() {
+         val permissionTest =
+             Shizuku.checkRemotePermission("android.permission.GRANT_RUNTIME_PERMISSIONS") == PackageManager.PERMISSION_GRANTED
+ 
+-
+-
+-        ShizukuSystemApis.checkPermission(Manifest.permission.API_V23, BuildConfig.APPLICATION_ID, 0)
++        ShizukuSystemApis.checkPermission(Manifest.permission.PRIVILEGED_API, BuildConfig.APPLICATION_ID, 0)
+         return ServiceStatus(uid, apiVersion, patchVersion, seContext, permissionTest)
+     }
+ 
+diff --git a/manager/src/main/java/moe/shizuku/manager/stealth/StealthApkGenerator.kt b/manager/src/main/java/moe/shizuku/manager/stealth/StealthApkGenerator.kt
+index 4f67742..2898270 100644
+--- a/manager/src/main/java/moe/shizuku/manager/stealth/StealthApkGenerator.kt
++++ b/manager/src/main/java/moe/shizuku/manager/stealth/StealthApkGenerator.kt
+@@ -66,7 +66,17 @@ object StealthApkGenerator {
+     const val TEMPLATE_APP_NAME = "System Toolkit"
+     const val STEALTH_LABEL_PLACEHOLDER = "SheveryStealthLabelPlaceholder32"
+ 
+-    private const val TASKER_SUFFIX = ".tasker"
++        private const val TASKER_SUFFIX = ".tasker"
++    private val PRESERVED_SUFFIXES_ASCII = arrayOf(
++        ".tasker".toByteArray(Charsets.US_ASCII),
++        ".api".toByteArray(Charsets.US_ASCII),
++        ".permission.PRIVILEGED_API".toByteArray(Charsets.US_ASCII)
++    )
++    private val PRESERVED_SUFFIXES_UTF16 = arrayOf(
++        ".tasker".toByteArray(Charsets.UTF_16LE),
++        ".api".toByteArray(Charsets.UTF_16LE),
++        ".permission.PRIVILEGED_API".toByteArray(Charsets.UTF_16LE)
++    )
+     private const val APK_SIG_BLOCK_V2_ID = 0x7109871a
+     private const val VERITY_PADDING_BLOCK_ID = 0x42726577
+     private const val SIG_RSA_PKCS1_V1_5_WITH_SHA256 = 0x0103
+@@ -684,11 +694,18 @@ object StealthApkGenerator {
+         var i = indexOf(data, old, 0)
+         if (i < 0) return data
+         val out = data.copyOf()
++        val preservedList = if (skipFollowedBy.contentEquals(TASKER_SUFFIX.toByteArray(Charsets.UTF_16LE))) {
++            PRESERVED_SUFFIXES_UTF16
++        } else {
++            PRESERVED_SUFFIXES_ASCII
++        }
+         while (i >= 0) {
+             val afterIdx = i + old.size
+-            val isSkipped = skipFollowedBy.isNotEmpty() &&
+-                afterIdx + skipFollowedBy.size <= out.size &&
+-                matchesAt(out, skipFollowedBy, afterIdx)
++            val isSkipped = preservedList.any { suffix ->
++                suffix.isNotEmpty() &&
++                    afterIdx + suffix.size <= out.size &&
++                    matchesAt(out, suffix, afterIdx)
++            }
+             if (!isSkipped) {
+                 repl.copyInto(out, i)
+             }
+diff --git a/server/src/main/java/rikka/shizuku/server/BinderSender.kt b/server/src/main/java/rikka/shizuku/server/BinderSender.kt
+index 6b1a2b7..fdd46ba 100644
+--- a/server/src/main/java/rikka/shizuku/server/BinderSender.kt
++++ b/server/src/main/java/rikka/shizuku/server/BinderSender.kt
+@@ -17,16 +17,33 @@ import rikka.hidden.compat.adapter.UidObserverAdapter
+ import rikka.shizuku.server.util.Android17Compat
+ import rikka.shizuku.server.util.Logger
+ import rikka.shizuku.server.util.UserHandleCompat
++import java.util.concurrent.ConcurrentHashMap
+ 
+ object BinderSender {
+ 
+     private val logger = Logger("BinderSender")
+ 
+-    private const val PERMISSION_MANAGER = "moe.shizuku.manager.permission.MANAGER"
+-    private const val PERMISSION = "moe.shizuku.manager.permission.API_V23"
++    private data class PackageDispatchEntry(
++        val packageName: String,
++        val managerPermission: String?,
++        val isNativeSheveryClient: Boolean,
++        val isLegacyShizukuStubClient: Boolean
++    )
++
++    private val uidDispatchCache = ConcurrentHashMap<Int, List<PackageDispatchEntry>>()
+ 
+     private var shizukuService: ShizukuService? = null
+ 
++    @JvmStatic
++    fun invalidateCache() {
++        uidDispatchCache.clear()
++    }
++
++    @JvmStatic
++    fun invalidateUid(uid: Int) {
++        uidDispatchCache.remove(uid)
++    }
++
+     private class ProcessObserver : ProcessObserverAdapter() {
+ 
+         @Throws(RemoteException::class)
+@@ -142,41 +159,83 @@ object BinderSender {
+         }
+     }
+ 
+-    @Throws(RemoteException::class)
+-    private fun sendBinder(uid: Int, pid: Int) {
+-        val service = shizukuService ?: return
++    private fun resolveDispatchEntries(uid: Int, userId: Int): List<PackageDispatchEntry> {
++        uidDispatchCache[uid]?.let { return it }
++
+         val packages = PackageManagerApis.getPackagesForUidNoThrow(uid)
+         if (packages.isEmpty()) {
+-            return
++            return emptyList()
+         }
+ 
+-        logger.d("sendBinder to uid %d: packages=%s", uid, TextUtils.join(", ", packages))
+-
+-        val userId = UserHandleCompat.getUserId(uid)
+-        var sentManager = false
++        val entries = ArrayList<PackageDispatchEntry>(packages.size)
+         for (packageName in packages) {
++            if (packageName == ServerConstants.SHIZUKU_STUB_APPLICATION_ID) {
++                continue
++            }
+             val packageInfo = Android17Compat.getPackageInfo(
+                 packageName,
+                 PackageManager.GET_PERMISSIONS.toLong(),
+                 userId
+             )
+             val requestedPermissions = packageInfo?.requestedPermissions ?: continue
++            val managerPerm = ServerConstants.resolveManagerPermission(requestedPermissions)
++            val isNativeShevery = ServerConstants.hasSheveryPermission(requestedPermissions)
++            val isLegacyShizuku = !isNativeShevery && ServerConstants.hasLegacyShizukuPermission(requestedPermissions)
++
++            if (managerPerm != null || isNativeShevery || isLegacyShizuku) {
++                entries.add(
++                    PackageDispatchEntry(
++                        packageName = packageName,
++                        managerPermission = managerPerm,
++                        isNativeSheveryClient = isNativeShevery,
++                        isLegacyShizukuStubClient = isLegacyShizuku
++                    )
++                )
++            }
++        }
+ 
+-            if (requestedPermissions.contains(PERMISSION_MANAGER)) {
++        uidDispatchCache[uid] = entries
++        return entries
++    }
++
++    @Throws(RemoteException::class)
++    private fun sendBinder(uid: Int, pid: Int) {
++        val service = shizukuService ?: return
++        val userId = UserHandleCompat.getUserId(uid)
++        val entries = resolveDispatchEntries(uid, userId)
++        if (entries.isEmpty()) {
++            return
++        }
++
++        logger.d(
++            "sendBinder to uid %d: packages=%s",
++            uid,
++            TextUtils.join(", ", entries.map { it.packageName })
++        )
++
++        var sentManager = false
++        for (entry in entries) {
++            val managerPerm = entry.managerPermission
++            if (managerPerm != null && !sentManager) {
+                 val granted = if (pid == -1) {
+-                    Android17Compat.checkPermission(PERMISSION_MANAGER, uid) == PackageManager.PERMISSION_GRANTED
++                    Android17Compat.checkPermission(managerPerm, uid) == PackageManager.PERMISSION_GRANTED
+                 } else {
+-                    ActivityManagerApis.checkPermission(PERMISSION_MANAGER, pid, uid) == PackageManager.PERMISSION_GRANTED
++                    ActivityManagerApis.checkPermission(managerPerm, pid, uid) == PackageManager.PERMISSION_GRANTED
+                 }
+ 
+-                if (granted && !sentManager) {
++                if (granted) {
+                     ShizukuService.sendBinderToManager(service, userId)
+                     sentManager = true
++                    continue
+                 }
+             }
+ 
+-            if (requestedPermissions.contains(PERMISSION)) {
+-                ShizukuService.sendBinderToUserApp(service, packageName, userId)
++            if (entry.isNativeSheveryClient) {
++                // Fast native Shevery Privilege API path
++                ShizukuService.sendBinderToUserAppAsync(service, entry.packageName, userId, true)
++            } else if (entry.isLegacyShizukuStubClient && ShizukuService.isShizukuStubActive(userId)) {
++                // Legacy API_V23 path offloaded via Shizuku Stub
++                ShizukuService.sendBinderToUserAppAsync(service, entry.packageName, userId, false)
+             }
+         }
+     }
+@@ -184,6 +243,7 @@ object BinderSender {
+     @JvmStatic
+     fun register(shizukuService: ShizukuService) {
+         this.shizukuService = shizukuService
++        invalidateCache()
+         ProcessObserver.clear()
+         if (Build.VERSION.SDK_INT >= Build.VERSION_CODES.O) {
+             UidObserver.clear()
+diff --git a/server/src/main/java/rikka/shizuku/server/ServerConstants.java b/server/src/main/java/rikka/shizuku/server/ServerConstants.java
+index cd91967..32b3dfd 100644
+--- a/server/src/main/java/rikka/shizuku/server/ServerConstants.java
++++ b/server/src/main/java/rikka/shizuku/server/ServerConstants.java
+@@ -1,14 +1,75 @@
+ package rikka.shizuku.server;
+ 
++import androidx.annotation.Nullable;
++
++import com.hamondev.shevery.api.SheveryApiConstants;
++
++import kotlin.collections.ArraysKt;
++
+ public class ServerConstants {
+ 
+     public static final int MANAGER_APP_NOT_FOUND = 50;
+ 
+-    public static final String PERMISSION = "moe.shizuku.manager.permission.API_V23";
+-    public static final String MANAGER_APPLICATION_ID = "com.hamondev.shevery";
++    public static final String MANAGER_APPLICATION_ID = SheveryApiConstants.MANAGER_APPLICATION_ID;
++    public static final String SHIZUKU_STUB_APPLICATION_ID = SheveryApiConstants.SHIZUKU_STUB_APPLICATION_ID;
++
++    // Primary Shevery Privilege API permissions
++    public static final String PERMISSION = SheveryApiConstants.PERMISSION_PRIVILEGED_API;
++    public static final String PERMISSION_MANAGER = SheveryApiConstants.PERMISSION_MANAGER;
++
++    // Legacy Shizuku permissions (isolated to Shizuku Stub moe.shizuku.privileged.api)
++    public static final String LEGACY_SHIZUKU_PERMISSION = SheveryApiConstants.LEGACY_SHIZUKU_PERMISSION;
++    public static final String LEGACY_PERMISSION_MANAGER = SheveryApiConstants.LEGACY_SHIZUKU_MANAGER_PERMISSION;
++
+     public static final String REQUEST_PERMISSION_ACTION = MANAGER_APPLICATION_ID + ".intent.action.REQUEST_PERMISSION";
+ 
++    public static final String SHEVERY_PROVIDER_SUFFIX = SheveryApiConstants.PROVIDER_SUFFIX;
++    public static final String SHIZUKU_PROVIDER_SUFFIX = SheveryApiConstants.LEGACY_PROVIDER_SUFFIX;
++
++    public static final String EXTRA_BINDER_SHEVERY = SheveryApiConstants.EXTRA_BINDER;
++    public static final String EXTRA_BINDER_SHIZUKU = SheveryApiConstants.LEGACY_EXTRA_BINDER;
++
++    public static final String META_DATA_SHEVERY_CLIENT = SheveryApiConstants.META_DATA_CLIENT_SUPPORT;
++    public static final String META_DATA_SHIZUKU_CLIENT = SheveryApiConstants.LEGACY_META_DATA_CLIENT_SUPPORT;
++
+     public static final int BINDER_TRANSACTION_getApplications = 10001;
+     public static final int BINDER_TRANSACTION_setErrorProtectEnabled = 10002;
+     public static final int BINDER_TRANSACTION_getErrorProtectEnabled = 10003;
++
++    public static boolean hasSheveryPermission(@Nullable String[] requestedPermissions) {
++        return requestedPermissions != null && ArraysKt.contains(requestedPermissions, PERMISSION);
++    }
++
++    public static boolean hasLegacyShizukuPermission(@Nullable String[] requestedPermissions) {
++        return requestedPermissions != null && ArraysKt.contains(requestedPermissions, LEGACY_SHIZUKU_PERMISSION);
++    }
++
++    public static boolean hasAnyClientPermission(@Nullable String[] requestedPermissions) {
++        return hasSheveryPermission(requestedPermissions) || hasLegacyShizukuPermission(requestedPermissions);
++    }
++
++    @Nullable
++    public static String resolveClientPermission(@Nullable String[] requestedPermissions) {
++        if (hasSheveryPermission(requestedPermissions)) {
++            return PERMISSION;
++        }
++        if (hasLegacyShizukuPermission(requestedPermissions)) {
++            return LEGACY_SHIZUKU_PERMISSION;
++        }
++        return null;
++    }
++
++    @Nullable
++    public static String resolveManagerPermission(@Nullable String[] requestedPermissions) {
++        if (requestedPermissions == null) {
++            return null;
++        }
++        if (ArraysKt.contains(requestedPermissions, PERMISSION_MANAGER)) {
++            return PERMISSION_MANAGER;
++        }
++        if (ArraysKt.contains(requestedPermissions, LEGACY_PERMISSION_MANAGER)) {
++            return LEGACY_PERMISSION_MANAGER;
++        }
++        return null;
++    }
+ }
+diff --git a/server/src/main/java/rikka/shizuku/server/ShizukuConfigManager.java b/server/src/main/java/rikka/shizuku/server/ShizukuConfigManager.java
+index 6f8d852..4483a66 100644
+--- a/server/src/main/java/rikka/shizuku/server/ShizukuConfigManager.java
++++ b/server/src/main/java/rikka/shizuku/server/ShizukuConfigManager.java
+@@ -1,7 +1,5 @@
+ package rikka.shizuku.server;
+ 
+-import static rikka.shizuku.server.ServerConstants.PERMISSION;
+-
+ import android.content.pm.PackageInfo;
+ import android.content.pm.PackageManager;
+ import android.os.Build;
+@@ -23,12 +21,11 @@ import java.util.LinkedHashSet;
+ import java.util.List;
+ import java.util.Set;
+ 
+-import kotlin.collections.ArraysKt;
++import moe.shizuku.common.util.InstalledPackagesCompat;
+ import rikka.hidden.compat.PackageManagerApis;
+ import rikka.hidden.compat.UserManagerApis;
+ import rikka.shizuku.server.ktx.HandlerKt;
+ import rikka.shizuku.server.util.Android17Compat;
+-import moe.shizuku.common.util.InstalledPackagesCompat;
+ 
+ public class ShizukuConfigManager extends ConfigManager {
+ 
+@@ -153,15 +150,19 @@ public class ShizukuConfigManager extends ConfigManager {
+             for (PackageInfo pi : InstalledPackagesCompat.getInstalledPackagesNoThrow(PackageManager.GET_PERMISSIONS, userId)) {
+                 if (pi == null
+                         || pi.applicationInfo == null
+-                        || pi.requestedPermissions == null
+-                        || !ArraysKt.contains(pi.requestedPermissions, PERMISSION)) {
++                        || ServerConstants.SHIZUKU_STUB_APPLICATION_ID.equals(pi.packageName)) {
++                    continue;
++                }
++
++                String targetPermission = ServerConstants.resolveClientPermission(pi.requestedPermissions);
++                if (targetPermission == null) {
+                     continue;
+                 }
+ 
+                 int uid = pi.applicationInfo.uid;
+                 boolean allowed;
+                 try {
+-                    allowed = Android17Compat.checkPermission(PERMISSION, uid) == PackageManager.PERMISSION_GRANTED;
++                    allowed = Android17Compat.checkPermission(targetPermission, uid) == PackageManager.PERMISSION_GRANTED;
+                 } catch (Throwable e) {
+                     LOGGER.w("checkPermission");
+                     continue;
+diff --git a/server/src/main/java/rikka/shizuku/server/ShizukuService.java b/server/src/main/java/rikka/shizuku/server/ShizukuService.java
+index 8fd3c6b..95dc68b 100644
+--- a/server/src/main/java/rikka/shizuku/server/ShizukuService.java
++++ b/server/src/main/java/rikka/shizuku/server/ShizukuService.java
+@@ -39,6 +39,8 @@ import androidx.annotation.Nullable;
+ import java.util.ArrayList;
+ import java.util.List;
+ import java.util.Objects;
++import java.util.concurrent.ExecutorService;
++import java.util.concurrent.Executors;
+ 
+ import kotlin.collections.ArraysKt;
+ import moe.shizuku.api.BinderContainer;
+@@ -63,6 +65,11 @@ public class ShizukuService extends Service<ShizukuUserServiceManager, ShizukuCl
+ 
+     private static final String TAG = "Shizuku";
+     private static final long HEARTBEAT_INTERVAL_MS = 5_000L;
++    private static final ExecutorService BINDER_DISPATCH_EXECUTOR = Executors.newCachedThreadPool(r -> {
++        Thread t = new Thread(r, "shevery-binder-dispatch");
++        t.setDaemon(true);
++        return t;
++    });
+ 
+     public static void main(String[] args) {
+         try {
+@@ -222,11 +229,22 @@ public class ShizukuService extends Service<ShizukuUserServiceManager, ShizukuCl
+         return UserHandleCompat.getAppId(callingUid) == managerAppId;
+     }
+ 
++    public static boolean isShizukuStubActive(int userId) {
++        return Android17Compat.getApplicationInfo(ServerConstants.SHIZUKU_STUB_APPLICATION_ID, 0, userId) != null;
++    }
++
+     private int checkCallingPermission() {
+         try {
+-            return ActivityManagerApis.checkPermission(ServerConstants.PERMISSION,
+-                    Binder.getCallingPid(),
+-                    Binder.getCallingUid());
++            int pid = Binder.getCallingPid();
++            int uid = Binder.getCallingUid();
++            if (ActivityManagerApis.checkPermission(ServerConstants.PERMISSION, pid, uid) == PackageManager.PERMISSION_GRANTED) {
++                return PackageManager.PERMISSION_GRANTED;
++            }
++            int userId = UserHandleCompat.getUserId(uid);
++            if (isShizukuStubActive(userId)) {
++                return ActivityManagerApis.checkPermission(ServerConstants.LEGACY_SHIZUKU_PERMISSION, pid, uid);
++            }
++            return PackageManager.PERMISSION_DENIED;
+         } catch (Throwable tr) {
+             LOGGER.w(tr, "checkCallingPermission");
+             return PackageManager.PERMISSION_DENIED;
+@@ -395,17 +413,20 @@ public class ShizukuService extends Service<ShizukuUserServiceManager, ShizukuCl
+ 
+         if (!onetime && allowed) {
+             int userId = UserHandleCompat.getUserId(requestUid);
++            BinderSender.invalidateUid(requestUid);
+ 
+             for (String packageName : PackageManagerApis.getPackagesForUidNoThrow(requestUid)) {
+                 PackageInfo pi = Android17Compat.getPackageInfo(packageName, PackageManager.GET_PERMISSIONS, userId);
+-                if (pi == null || pi.requestedPermissions == null || !ArraysKt.contains(pi.requestedPermissions, PERMISSION)) {
++                if (pi == null) continue;
++                String targetPermission = ServerConstants.resolveClientPermission(pi.requestedPermissions);
++                if (targetPermission == null) {
+                     continue;
+                 }
+ 
+                 if (allowed) {
+-                    Android17Compat.grantRuntimePermission(packageName, PERMISSION, userId);
++                    Android17Compat.grantRuntimePermission(packageName, targetPermission, userId);
+                 } else {
+-                    Android17Compat.revokeRuntimePermission(packageName, PERMISSION, userId);
++                    Android17Compat.revokeRuntimePermission(packageName, targetPermission, userId);
+                 }
+             }
+         }
+@@ -421,12 +442,14 @@ public class ShizukuService extends Service<ShizukuUserServiceManager, ShizukuCl
+             int userId = UserHandleCompat.getUserId(uid);
+             for (String packageName : PackageManagerApis.getPackagesForUidNoThrow(uid)) {
+                 PackageInfo pi = Android17Compat.getPackageInfo(packageName, PackageManager.GET_PERMISSIONS, userId);
+-                if (pi == null || pi.requestedPermissions == null || !ArraysKt.contains(pi.requestedPermissions, PERMISSION)) {
++                if (pi == null) continue;
++                String targetPermission = ServerConstants.resolveClientPermission(pi.requestedPermissions);
++                if (targetPermission == null) {
+                     continue;
+                 }
+ 
+                 try {
+-                    if (Android17Compat.checkPermission(PERMISSION, packageName, userId) == PackageManager.PERMISSION_GRANTED) {
++                    if (Android17Compat.checkPermission(targetPermission, packageName, userId) == PackageManager.PERMISSION_GRANTED) {
+                         return ConfigManager.FLAG_ALLOWED;
+                     }
+                 } catch (Throwable e) {
+@@ -469,16 +492,19 @@ public class ShizukuService extends Service<ShizukuUserServiceManager, ShizukuCl
+                 }
+             }
+ 
++            BinderSender.invalidateUid(uid);
+             for (String packageName : PackageManagerApis.getPackagesForUidNoThrow(uid)) {
+                 PackageInfo pi = Android17Compat.getPackageInfo(packageName, PackageManager.GET_PERMISSIONS, userId);
+-                if (pi == null || pi.requestedPermissions == null || !ArraysKt.contains(pi.requestedPermissions, PERMISSION)) {
++                if (pi == null) continue;
++                String targetPermission = ServerConstants.resolveClientPermission(pi.requestedPermissions);
++                if (targetPermission == null) {
+                     continue;
+                 }
+ 
+                 if (allowed) {
+-                    Android17Compat.grantRuntimePermission(packageName, PERMISSION, userId);
++                    Android17Compat.grantRuntimePermission(packageName, targetPermission, userId);
+                 } else {
+-                    Android17Compat.revokeRuntimePermission(packageName, PERMISSION, userId);
++                    Android17Compat.revokeRuntimePermission(packageName, targetPermission, userId);
+                 }
+             }
+         }
+@@ -500,8 +526,10 @@ public class ShizukuService extends Service<ShizukuUserServiceManager, ShizukuCl
+         }
+ 
+         for (int user : users) {
++            boolean stubActive = isShizukuStubActive(user);
+             for (PackageInfo pi : InstalledPackagesCompat.getInstalledPackagesNoThrow(PackageManager.GET_META_DATA | PackageManager.GET_PERMISSIONS, user)) {
+                 if (Objects.equals(MANAGER_APPLICATION_ID, pi.packageName)) continue;
++                if (Objects.equals(ServerConstants.SHIZUKU_STUB_APPLICATION_ID, pi.packageName)) continue;
+                 if (pi.applicationInfo == null) continue;
+ 
+                 int uid = pi.applicationInfo.uid;
+@@ -515,10 +543,12 @@ public class ShizukuService extends Service<ShizukuUserServiceManager, ShizukuCl
+ 
+                 if (flags != 0) {
+                     list.add(pi);
+-                } else if (pi.applicationInfo.metaData != null
+-                        && pi.applicationInfo.metaData.getBoolean("moe.shizuku.client.V3_SUPPORT", false)
+-                        && pi.requestedPermissions != null
+-                        && ArraysKt.contains(pi.requestedPermissions, PERMISSION)) {
++                } else if (ServerConstants.hasSheveryPermission(pi.requestedPermissions)) {
++                    list.add(pi);
++                } else if (stubActive
++                        && pi.applicationInfo.metaData != null
++                        && pi.applicationInfo.metaData.getBoolean(ServerConstants.META_DATA_SHIZUKU_CLIENT, false)
++                        && ServerConstants.hasLegacyShizukuPermission(pi.requestedPermissions)) {
+                     list.add(pi);
+                 }
+             }
+@@ -573,15 +603,19 @@ public class ShizukuService extends Service<ShizukuUserServiceManager, ShizukuCl
+ 
+     private static void sendBinderToClient(Binder binder, int userId) {
+         try {
++            boolean stubActive = isShizukuStubActive(userId);
+             for (PackageInfo pi : InstalledPackagesCompat.getInstalledPackagesNoThrow(PackageManager.GET_PERMISSIONS, userId)) {
+                 if (pi == null || pi.requestedPermissions == null)
+                     continue;
+ 
+-                if (Objects.equals(MANAGER_APPLICATION_ID, pi.packageName))
++                if (Objects.equals(MANAGER_APPLICATION_ID, pi.packageName)
++                        || Objects.equals(ServerConstants.SHIZUKU_STUB_APPLICATION_ID, pi.packageName))
+                     continue;
+ 
+-                if (ArraysKt.contains(pi.requestedPermissions, PERMISSION)) {
+-                    sendBinderToUserApp(binder, pi.packageName, userId);
++                if (ServerConstants.hasSheveryPermission(pi.requestedPermissions)) {
++                    sendBinderToUserAppAsync(binder, pi.packageName, userId, true);
++                } else if (stubActive && ServerConstants.hasLegacyShizukuPermission(pi.requestedPermissions)) {
++                    sendBinderToUserAppAsync(binder, pi.packageName, userId, false);
+                 }
+             }
+         } catch (Throwable tr) {
+@@ -604,7 +638,7 @@ public class ShizukuService extends Service<ShizukuUserServiceManager, ShizukuCl
+             LOGGER.d("Manager app not installed in user %d, skipping binder dispatch", userId);
+             return;
+         }
+-        sendBinderToUserApp(binder, MANAGER_APPLICATION_ID, userId);
++        sendBinderToUserApp(binder, MANAGER_APPLICATION_ID, userId, true, true);
+     }
+ 
+     @Deprecated
+@@ -612,78 +646,102 @@ public class ShizukuService extends Service<ShizukuUserServiceManager, ShizukuCl
+         sendBinderToManager(binder, userId);
+     }
+ 
+-    static void sendBinderToUserApp(Binder binder, String packageName, int userId) {
+-        sendBinderToUserApp(binder, packageName, userId, true);
++    static void sendBinderToUserAppAsync(Binder binder, String packageName, int userId, boolean preferSheveryProvider) {
++        BINDER_DISPATCH_EXECUTOR.execute(() -> sendBinderToUserApp(binder, packageName, userId, true, preferSheveryProvider));
+     }
+ 
+-    private static final long[] NULL_PROVIDER_RETRY_BACKOFF_MS = {250L, 500L, 1000L, 1500L};
++    static void sendBinderToUserApp(Binder binder, String packageName, int userId) {
++        sendBinderToUserApp(binder, packageName, userId, true, true);
++    }
+ 
+     static void sendBinderToUserApp(Binder binder, String packageName, int userId, boolean retry) {
+-        try {
+-            DeviceIdleControllerApis.addPowerSaveTempWhitelistApp(packageName, 30 * 1000, userId,
+-                    316, "shell");
+-            LOGGER.v("Add %d:%s to power save temp whitelist for 30s", userId, packageName);
+-        } catch (Throwable tr) {
+-            LOGGER.e(tr, "Failed to add %d:%s to power save temp whitelist", userId, packageName);
++        sendBinderToUserApp(binder, packageName, userId, retry, true);
++    }
++
++    private static final long[] FAST_PROVIDER_RETRY_BACKOFF_MS = {50L, 150L, 400L};
++
++    static void sendBinderToUserApp(Binder binder, String packageName, int userId, boolean retry, boolean preferSheveryProvider) {
++        if (!Objects.equals(MANAGER_APPLICATION_ID, packageName)) {
++            try {
++                DeviceIdleControllerApis.addPowerSaveTempWhitelistApp(packageName, 30 * 1000, userId,
++                        316, "shell");
++            } catch (Throwable tr) {
++                LOGGER.w(tr, "Failed to add %d:%s to power save temp whitelist", userId, packageName);
++            }
+         }
+ 
+-        String name = packageName + ".shizuku";
++        String primarySuffix = preferSheveryProvider
++                ? ServerConstants.SHEVERY_PROVIDER_SUFFIX
++                : ServerConstants.SHIZUKU_PROVIDER_SUFFIX;
++        String fallbackSuffix = preferSheveryProvider
++                ? ServerConstants.SHIZUKU_PROVIDER_SUFFIX
++                : ServerConstants.SHEVERY_PROVIDER_SUFFIX;
++
++        if (trySendBinderViaAuthority(binder, packageName, packageName + primarySuffix, userId, retry, false)) {
++            return;
++        }
++        trySendBinderViaAuthority(binder, packageName, packageName + fallbackSuffix, userId, retry, true);
++    }
++
++    private static boolean trySendBinderViaAuthority(
++            Binder binder,
++            String packageName,
++            String authority,
++            int userId,
++            boolean retry,
++            boolean isFallback
++    ) {
+         IContentProvider provider = null;
+         IBinder token = null;
+ 
+         try {
++            int maxAttempts = isFallback ? FAST_PROVIDER_RETRY_BACKOFF_MS.length : 1;
+             for (int attempt = 0; ; attempt++) {
+-                provider = ActivityManagerApis.getContentProviderExternal(name, userId, token, name);
++                provider = ActivityManagerApis.getContentProviderExternal(authority, userId, token, authority);
+                 if (provider != null) {
+                     break;
+                 }
+-                if (attempt >= NULL_PROVIDER_RETRY_BACKOFF_MS.length) {
+-                    Log.e(TAG, "Failed to get content provider for " + name + " (user " + userId + ")");
+-                    LOGGER.e("provider is null %s %d (gave up after %d attempts)", name, userId, attempt + 1);
+-                    return;
++                if (attempt >= maxAttempts) {
++                    if (isFallback) {
++                        LOGGER.w("provider is null %s %d", authority, userId);
++                    }
++                    return false;
+                 }
+-                long backoff = NULL_PROVIDER_RETRY_BACKOFF_MS[attempt];
+-                LOGGER.w("provider is null %s %d, retrying in %dms (attempt %d/%d)",
+-                        name, userId, backoff, attempt + 1, NULL_PROVIDER_RETRY_BACKOFF_MS.length + 1);
+-                Thread.sleep(backoff);
++                Thread.sleep(FAST_PROVIDER_RETRY_BACKOFF_MS[attempt]);
+             }
++
+             boolean isAlive = provider.asBinder().pingBinder();
+             if (!isAlive) {
+-                Log.e(TAG, "Provider is dead: " + name + " (user " + userId + ")");
+-                LOGGER.e("provider is dead %s %d", name, userId);
+-
+-                if (retry) {
++                LOGGER.e("provider is dead %s %d", authority, userId);
++                if (retry && isFallback) {
+                     ActivityManagerApis.forceStopPackageNoThrow(packageName, userId);
+-                    LOGGER.e("kill %s in user %d and try again", packageName, userId);
+-                    Thread.sleep(1000);
+-                    sendBinderToUserApp(binder, packageName, userId, false);
++                    Thread.sleep(250);
++                    return trySendBinderViaAuthority(binder, packageName, authority, userId, false, true);
+                 }
+-                return;
+-            }
+-
+-            if (!retry) {
+-                LOGGER.e("retry works");
++                return false;
+             }
+ 
++            BinderContainer container = new BinderContainer(binder);
+             Bundle extra = new Bundle();
+-            extra.putParcelable("moe.shizuku.privileged.api.intent.extra.BINDER", new BinderContainer(binder));
++            extra.putParcelable(ServerConstants.EXTRA_BINDER_SHEVERY, container);
++            extra.putParcelable(ServerConstants.EXTRA_BINDER_SHIZUKU, container);
+ 
+-            Bundle reply = IContentProviderUtils.callCompat(provider, null, name, "sendBinder", null, extra);
++            Bundle reply = IContentProviderUtils.callCompat(provider, null, authority, "sendBinder", null, extra);
+             if (reply != null) {
+                 if (Objects.equals(MANAGER_APPLICATION_ID, packageName)) {
+-                    Log.i(TAG, "Dispatched server binder to manager (" + packageName + ")");
++                    Log.i(TAG, "Dispatched server binder to manager (" + authority + ")");
+                 }
+-                LOGGER.i("send binder to user app %s in user %d", packageName, userId);
+-            } else {
+-                LOGGER.w("failed to send binder to user app %s in user %d", packageName, userId);
++                LOGGER.i("send binder to %s via %s in user %d", packageName, authority, userId);
++                return true;
+             }
++            return false;
+         } catch (Throwable tr) {
+-            Log.e(TAG, "Failed to send binder to " + packageName + " (userId " + userId + ")", tr);
+-            LOGGER.e(tr, "failed send binder to user app %s in user %d", packageName, userId);
++            LOGGER.w(tr, "failed send binder to %s via %s in user %d", packageName, authority, userId);
++            return false;
+         } finally {
+             if (provider != null) {
+                 try {
+-                    ActivityManagerApis.removeContentProviderExternal(name, token);
++                    ActivityManagerApis.removeContentProviderExternal(authority, token);
+                 } catch (Throwable tr) {
+                     LOGGER.w(tr, "removeContentProviderExternal");
+                 }
+diff --git a/stub/src/shizuku/AndroidManifest.xml b/stub/src/shizuku/AndroidManifest.xml
+index 2d0ec03..64926d0 100644
+--- a/stub/src/shizuku/AndroidManifest.xml
++++ b/stub/src/shizuku/AndroidManifest.xml
+@@ -19,6 +19,17 @@
+         android:permissionGroup="moe.shizuku.manager.permission-group.API"
+         android:protectionLevel="dangerous" />
+ 
++    <permission
++        android:name="moe.shizuku.manager.permission.API"
++        android:description="@string/permission_description"
++        android:icon="@android:drawable/ic_secure"
++        android:label="@string/permission_label"
++        android:permissionGroup="moe.shizuku.manager.permission-group.API"
++        android:protectionLevel="dangerous" />
++
++    <uses-permission android:name="moe.shizuku.manager.permission.API_V23" />
++    <uses-permission android:name="com.hamondev.shevery.permission.PRIVILEGED_API" />
++
+     <application
+         android:label="@string/app_name"
+         android:icon="@android:drawable/ic_secure"
+@@ -51,6 +62,13 @@
+             </intent-filter>
+         </receiver>
+ 
++        <provider
++            android:name="moe.shizuku.privileged.api.ForwardShizukuProvider"
++            android:authorities="moe.shizuku.privileged.api.shizuku;moe.shizuku.privileged.api.connector"
++            android:directBootAware="true"
++            android:enabled="true"
++            android:exported="true" />
++
+     </application>
+ 
+ </manifest>
+\ No newline at end of file
+diff --git a/stub/src/shizuku/java/moe/shizuku/privileged/api/ForwardActivity.java b/stub/src/shizuku/java/moe/shizuku/privileged/api/ForwardActivity.java
+index 076ed8e..f4dc8db 100644
+--- a/stub/src/shizuku/java/moe/shizuku/privileged/api/ForwardActivity.java
++++ b/stub/src/shizuku/java/moe/shizuku/privileged/api/ForwardActivity.java
+@@ -3,7 +3,6 @@ package moe.shizuku.privileged.api;
+ import android.app.Activity;
+ import android.content.Intent;
+ import android.net.Uri;
+-import android.os.Build;
+ import android.os.Bundle;
+ 
+ public class ForwardActivity extends Activity {
+@@ -11,6 +10,9 @@ public class ForwardActivity extends Activity {
+     public static final String SHEVERY_PACKAGE = "com.hamondev.shevery";
+     public static final String PERMISSION_ACTIVITY = "moe.shizuku.manager.authorization.RequestPermissionActivity";
+     public static final String LEGACY_ACTIVITY = "moe.shizuku.manager.legacy.LegacyIsNotSupportedActivity";
++    public static final String EXTRA_PERMISSION_CHANNEL = "com.hamondev.shevery.intent.extra.PERMISSION_CHANNEL";
++    public static final String EXTRA_REQUESTED_PERMISSION = "com.hamondev.shevery.intent.extra.REQUESTED_PERMISSION";
++    public static final String LEGACY_API_V23 = "moe.shizuku.manager.permission.API_V23";
+ 
+     @Override
+     protected void onCreate(Bundle savedInstanceState) {
+@@ -32,6 +34,9 @@ public class ForwardActivity extends Activity {
+                 forward.putExtras(original.getExtras());
+             }
+ 
++            forward.putExtra(EXTRA_PERMISSION_CHANNEL, "shizuku_stub");
++            forward.putExtra(EXTRA_REQUESTED_PERMISSION, LEGACY_API_V23);
++
+             String callingPackage = getCallingPackage();
+             int uid = -1;
+             try {
+diff --git a/stub/src/shizuku/java/moe/shizuku/privileged/api/ForwardReceiver.java b/stub/src/shizuku/java/moe/shizuku/privileged/api/ForwardReceiver.java
+index da9a226..bb71fd3 100644
+--- a/stub/src/shizuku/java/moe/shizuku/privileged/api/ForwardReceiver.java
++++ b/stub/src/shizuku/java/moe/shizuku/privileged/api/ForwardReceiver.java
+@@ -10,6 +10,8 @@ public class ForwardReceiver extends BroadcastReceiver {
+ 
+     public static final String SHEVERY_PACKAGE = "com.hamondev.shevery";
+     public static final String SHEVERY_RECEIVER = "moe.shizuku.manager.receiver.ShizukuReceiver";
++    public static final String EXTRA_PERMISSION_CHANNEL = "com.hamondev.shevery.intent.extra.PERMISSION_CHANNEL";
++    public static final String EXTRA_REQUESTED_PERMISSION = "com.hamondev.shevery.intent.extra.REQUESTED_PERMISSION";
+ 
+     @Override
+     public void onReceive(Context context, Intent intent) {
+@@ -21,6 +23,8 @@ public class ForwardReceiver extends BroadcastReceiver {
+             Intent forward = new Intent(intent);
+             forward.setPackage(SHEVERY_PACKAGE);
+             forward.setComponent(new ComponentName(SHEVERY_PACKAGE, SHEVERY_RECEIVER));
++            forward.putExtra(EXTRA_PERMISSION_CHANNEL, "shizuku_stub");
++            forward.putExtra(EXTRA_REQUESTED_PERMISSION, "moe.shizuku.manager.permission.API_V23");
+ 
+             context.sendBroadcast(forward);
+         } catch (Throwable ignored) {
+diff --git a/stub/src/shizuku/java/moe/shizuku/privileged/api/ForwardShizukuProvider.java b/stub/src/shizuku/java/moe/shizuku/privileged/api/ForwardShizukuProvider.java
+new file mode 100644
+index 0000000..9cf2f21
+--- /dev/null
++++ b/stub/src/shizuku/java/moe/shizuku/privileged/api/ForwardShizukuProvider.java
+@@ -0,0 +1,94 @@
++package moe.shizuku.privileged.api;
++
++import android.content.ContentProvider;
++import android.content.ContentValues;
++import android.content.Context;
++import android.database.Cursor;
++import android.net.Uri;
++import android.os.Build;
++import android.os.Bundle;
++
++/**
++ * Compatibility ContentProvider inside the Shizuku Stub ({@code moe.shizuku.privileged.api}).
++ * <p>
++ * Offloads legacy {@code moe.shizuku.privileged.api.shizuku} and
++ * {@code moe.shizuku.privileged.api.connector} provider authorities from the main Shevery
++ * APK and forwards binder/connector requests to {@code com.hamondev.shevery}.
++ */
++public class ForwardShizukuProvider extends ContentProvider {
++
++    public static final String SHEVERY_PACKAGE = "com.hamondev.shevery";
++    public static final String SHEVERY_PROVIDER_AUTHORITY = SHEVERY_PACKAGE + ".shevery";
++    public static final String SHEVERY_LEGACY_PROVIDER_AUTHORITY = SHEVERY_PACKAGE + ".shizuku";
++    public static final String SHEVERY_CONNECTOR_AUTHORITY = SHEVERY_PACKAGE + ".connector";
++
++    @Override
++    public boolean onCreate() {
++        return true;
++    }
++
++    @Override
++    public Bundle call(String method, String arg, Bundle extras) {
++        Context context = getContext();
++        if (context == null) {
++            return null;
++        }
++        Bundle forwardExtras = extras != null ? new Bundle(extras) : new Bundle();
++        forwardExtras.putString("com.hamondev.shevery.intent.extra.PERMISSION_CHANNEL", "shizuku_stub");
++        forwardExtras.putString("com.hamondev.shevery.intent.extra.REQUESTED_PERMISSION", "moe.shizuku.manager.permission.API_V23");
++
++        String[] targetAuthorities = new String[]{
++                SHEVERY_PROVIDER_AUTHORITY,
++                SHEVERY_LEGACY_PROVIDER_AUTHORITY
++        };
++        for (String authority : targetAuthorities) {
++            try {
++                Bundle result;
++                if (Build.VERSION.SDK_INT >= Build.VERSION_CODES.Q) {
++                    result = context.getContentResolver().call(Uri.parse("content://" + authority), method, arg, forwardExtras);
++                } else {
++                    result = context.getContentResolver().call(authority, method, arg, forwardExtras);
++                }
++                if (result != null) {
++                    return result;
++                }
++            } catch (Throwable ignored) {
++            }
++        }
++        return null;
++    }
++
++    @Override
++    public Cursor query(Uri uri, String[] projection, String selection, String[] selectionArgs, String sortOrder) {
++        Context context = getContext();
++        if (context == null) {
++            return null;
++        }
++        try {
++            Uri targetUri = Uri.parse("content://" + SHEVERY_CONNECTOR_AUTHORITY);
++            return context.getContentResolver().query(targetUri, projection, selection, selectionArgs, sortOrder);
++        } catch (Throwable ignored) {
++            return null;
++        }
++    }
++
++    @Override
++    public String getType(Uri uri) {
++        return null;
++    }
++
++    @Override
++    public Uri insert(Uri uri, ContentValues values) {
++        return null;
++    }
++
++    @Override
++    public int delete(Uri uri, String selection, String[] selectionArgs) {
++        return 0;
++    }
++
++    @Override
++    public int update(Uri uri, ContentValues values, String selection, String[] selectionArgs) {
++        return 0;
++    }
++}

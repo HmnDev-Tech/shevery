@@ -12,6 +12,7 @@ import static rikka.shizuku.ShizukuApiConstants.BIND_APPLICATION_SHOULD_SHOW_REQ
 import static rikka.shizuku.ShizukuApiConstants.REQUEST_PERMISSION_REPLY_ALLOWED;
 import static rikka.shizuku.ShizukuApiConstants.REQUEST_PERMISSION_REPLY_IS_ONETIME;
 import static rikka.shizuku.server.ServerConstants.MANAGER_APPLICATION_ID;
+import static rikka.shizuku.server.ServerConstants.PERMISSION;
 
 import android.content.ComponentName;
 import android.content.Context;
@@ -38,13 +39,15 @@ import androidx.annotation.Nullable;
 import java.util.ArrayList;
 import java.util.List;
 import java.util.Objects;
+import java.util.concurrent.ExecutorService;
+import java.util.concurrent.Executors;
 
+import kotlin.collections.ArraysKt;
 import moe.shizuku.api.BinderContainer;
 import moe.shizuku.common.util.BuildUtils;
 import moe.shizuku.common.util.InstalledPackagesCompat;
 import moe.shizuku.common.util.OsUtils;
 import moe.shizuku.server.IShizukuApplication;
-import com.hamondev.shevery.api.ClientPermissions;
 import rikka.hidden.compat.ActivityManagerApis;
 import rikka.hidden.compat.DeviceIdleControllerApis;
 import rikka.hidden.compat.PackageManagerApis;
@@ -62,6 +65,11 @@ public class ShizukuService extends Service<ShizukuUserServiceManager, ShizukuCl
 
     private static final String TAG = "Shizuku";
     private static final long HEARTBEAT_INTERVAL_MS = 5_000L;
+    private static final ExecutorService BINDER_DISPATCH_EXECUTOR = Executors.newCachedThreadPool(r -> {
+        Thread t = new Thread(r, "shevery-binder-dispatch");
+        t.setDaemon(true);
+        return t;
+    });
 
     public static void main(String[] args) {
         try {
@@ -221,8 +229,26 @@ public class ShizukuService extends Service<ShizukuUserServiceManager, ShizukuCl
         return UserHandleCompat.getAppId(callingUid) == managerAppId;
     }
 
+    public static boolean isShizukuStubActive(int userId) {
+        return Android17Compat.getApplicationInfo(ServerConstants.SHIZUKU_STUB_APPLICATION_ID, 0, userId) != null;
+    }
+
     private int checkCallingPermission() {
-        return SheveryClients.checkCallingPermission(Binder.getCallingPid(), Binder.getCallingUid());
+        try {
+            int pid = Binder.getCallingPid();
+            int uid = Binder.getCallingUid();
+            if (ActivityManagerApis.checkPermission(ServerConstants.PERMISSION, pid, uid) == PackageManager.PERMISSION_GRANTED) {
+                return PackageManager.PERMISSION_GRANTED;
+            }
+            int userId = UserHandleCompat.getUserId(uid);
+            if (isShizukuStubActive(userId)) {
+                return ActivityManagerApis.checkPermission(ServerConstants.LEGACY_SHIZUKU_PERMISSION, pid, uid);
+            }
+            return PackageManager.PERMISSION_DENIED;
+        } catch (Throwable tr) {
+            LOGGER.w(tr, "checkCallingPermission");
+            return PackageManager.PERMISSION_DENIED;
+        }
     }
 
     @Override
@@ -386,8 +412,22 @@ public class ShizukuService extends Service<ShizukuUserServiceManager, ShizukuCl
         }
 
         if (!onetime && allowed) {
+            int userId = UserHandleCompat.getUserId(requestUid);
+            BinderSender.invalidateUid(requestUid);
+
             for (String packageName : PackageManagerApis.getPackagesForUidNoThrow(requestUid)) {
-                SheveryClients.setGranted(packageName, requestUid, true);
+                PackageInfo pi = Android17Compat.getPackageInfo(packageName, PackageManager.GET_PERMISSIONS, userId);
+                if (pi == null) continue;
+                String targetPermission = ServerConstants.resolveClientPermission(pi.requestedPermissions);
+                if (targetPermission == null) {
+                    continue;
+                }
+
+                if (allowed) {
+                    Android17Compat.grantRuntimePermission(packageName, targetPermission, userId);
+                } else {
+                    Android17Compat.revokeRuntimePermission(packageName, targetPermission, userId);
+                }
             }
         }
     }
@@ -399,9 +439,21 @@ public class ShizukuService extends Service<ShizukuUserServiceManager, ShizukuCl
         }
 
         if (allowRuntimePermission && (mask & ConfigManager.MASK_PERMISSION) != 0) {
+            int userId = UserHandleCompat.getUserId(uid);
             for (String packageName : PackageManagerApis.getPackagesForUidNoThrow(uid)) {
-                if (SheveryClients.isGranted(packageName, uid)) {
-                    return ConfigManager.FLAG_ALLOWED;
+                PackageInfo pi = Android17Compat.getPackageInfo(packageName, PackageManager.GET_PERMISSIONS, userId);
+                if (pi == null) continue;
+                String targetPermission = ServerConstants.resolveClientPermission(pi.requestedPermissions);
+                if (targetPermission == null) {
+                    continue;
+                }
+
+                try {
+                    if (Android17Compat.checkPermission(targetPermission, packageName, userId) == PackageManager.PERMISSION_GRANTED) {
+                        return ConfigManager.FLAG_ALLOWED;
+                    }
+                } catch (Throwable e) {
+                    LOGGER.w("getFlagsForUid");
                 }
             }
         }
@@ -424,6 +476,8 @@ public class ShizukuService extends Service<ShizukuUserServiceManager, ShizukuCl
             return;
         }
 
+        int userId = UserHandleCompat.getUserId(uid);
+
         if ((mask & ConfigManager.MASK_PERMISSION) != 0) {
             boolean allowed = (value & ConfigManager.FLAG_ALLOWED) != 0;
 
@@ -438,8 +492,20 @@ public class ShizukuService extends Service<ShizukuUserServiceManager, ShizukuCl
                 }
             }
 
+            BinderSender.invalidateUid(uid);
             for (String packageName : PackageManagerApis.getPackagesForUidNoThrow(uid)) {
-                SheveryClients.setGranted(packageName, uid, allowed);
+                PackageInfo pi = Android17Compat.getPackageInfo(packageName, PackageManager.GET_PERMISSIONS, userId);
+                if (pi == null) continue;
+                String targetPermission = ServerConstants.resolveClientPermission(pi.requestedPermissions);
+                if (targetPermission == null) {
+                    continue;
+                }
+
+                if (allowed) {
+                    Android17Compat.grantRuntimePermission(packageName, targetPermission, userId);
+                } else {
+                    Android17Compat.revokeRuntimePermission(packageName, targetPermission, userId);
+                }
             }
         }
 
@@ -460,12 +526,13 @@ public class ShizukuService extends Service<ShizukuUserServiceManager, ShizukuCl
         }
 
         for (int user : users) {
+            boolean stubActive = isShizukuStubActive(user);
             for (PackageInfo pi : InstalledPackagesCompat.getInstalledPackagesNoThrow(PackageManager.GET_META_DATA | PackageManager.GET_PERMISSIONS, user)) {
                 if (Objects.equals(MANAGER_APPLICATION_ID, pi.packageName)) continue;
+                if (Objects.equals(ServerConstants.SHIZUKU_STUB_APPLICATION_ID, pi.packageName)) continue;
                 if (pi.applicationInfo == null) continue;
 
                 int uid = pi.applicationInfo.uid;
-                int clientFlags = SheveryClients.CACHE.put(uid, pi.packageName, pi.requestedPermissions);
                 int flags = 0;
                 ShizukuConfig.PackageEntry entry = (ShizukuConfig.PackageEntry) configManager.find(uid);
                 if (entry != null) {
@@ -476,9 +543,12 @@ public class ShizukuService extends Service<ShizukuUserServiceManager, ShizukuCl
 
                 if (flags != 0) {
                     list.add(pi);
-                } else if (pi.applicationInfo.metaData != null
-                        && pi.applicationInfo.metaData.getBoolean("moe.shizuku.client.V3_SUPPORT", false)
-                        && ClientPermissions.isClient(clientFlags)) {
+                } else if (ServerConstants.hasSheveryPermission(pi.requestedPermissions)) {
+                    list.add(pi);
+                } else if (stubActive
+                        && pi.applicationInfo.metaData != null
+                        && pi.applicationInfo.metaData.getBoolean(ServerConstants.META_DATA_SHIZUKU_CLIENT, false)
+                        && ServerConstants.hasLegacyShizukuPermission(pi.requestedPermissions)) {
                     list.add(pi);
                 }
             }
@@ -533,19 +603,19 @@ public class ShizukuService extends Service<ShizukuUserServiceManager, ShizukuCl
 
     private static void sendBinderToClient(Binder binder, int userId) {
         try {
+            boolean stubActive = isShizukuStubActive(userId);
             for (PackageInfo pi : InstalledPackagesCompat.getInstalledPackagesNoThrow(PackageManager.GET_PERMISSIONS, userId)) {
                 if (pi == null || pi.requestedPermissions == null)
                     continue;
 
-                if (Objects.equals(MANAGER_APPLICATION_ID, pi.packageName))
+                if (Objects.equals(MANAGER_APPLICATION_ID, pi.packageName)
+                        || Objects.equals(ServerConstants.SHIZUKU_STUB_APPLICATION_ID, pi.packageName))
                     continue;
 
-                int uid = pi.applicationInfo != null ? pi.applicationInfo.uid : -1;
-                int clientFlags = uid != -1
-                        ? SheveryClients.CACHE.put(uid, pi.packageName, pi.requestedPermissions)
-                        : ClientPermissions.classify(pi.requestedPermissions);
-                if (ClientPermissions.isClient(clientFlags)) {
-                    sendBinderToUserApp(binder, pi.packageName, userId);
+                if (ServerConstants.hasSheveryPermission(pi.requestedPermissions)) {
+                    sendBinderToUserAppAsync(binder, pi.packageName, userId, true);
+                } else if (stubActive && ServerConstants.hasLegacyShizukuPermission(pi.requestedPermissions)) {
+                    sendBinderToUserAppAsync(binder, pi.packageName, userId, false);
                 }
             }
         } catch (Throwable tr) {
@@ -568,7 +638,7 @@ public class ShizukuService extends Service<ShizukuUserServiceManager, ShizukuCl
             LOGGER.d("Manager app not installed in user %d, skipping binder dispatch", userId);
             return;
         }
-        sendBinderToUserApp(binder, MANAGER_APPLICATION_ID, userId);
+        sendBinderToUserApp(binder, MANAGER_APPLICATION_ID, userId, true, true);
     }
 
     @Deprecated
@@ -576,78 +646,102 @@ public class ShizukuService extends Service<ShizukuUserServiceManager, ShizukuCl
         sendBinderToManager(binder, userId);
     }
 
-    static void sendBinderToUserApp(Binder binder, String packageName, int userId) {
-        sendBinderToUserApp(binder, packageName, userId, true);
+    static void sendBinderToUserAppAsync(Binder binder, String packageName, int userId, boolean preferSheveryProvider) {
+        BINDER_DISPATCH_EXECUTOR.execute(() -> sendBinderToUserApp(binder, packageName, userId, true, preferSheveryProvider));
     }
 
-    private static final long[] NULL_PROVIDER_RETRY_BACKOFF_MS = {250L, 500L, 1000L, 1500L};
+    static void sendBinderToUserApp(Binder binder, String packageName, int userId) {
+        sendBinderToUserApp(binder, packageName, userId, true, true);
+    }
 
     static void sendBinderToUserApp(Binder binder, String packageName, int userId, boolean retry) {
-        try {
-            DeviceIdleControllerApis.addPowerSaveTempWhitelistApp(packageName, 30 * 1000, userId,
-                    316, "shell");
-            LOGGER.v("Add %d:%s to power save temp whitelist for 30s", userId, packageName);
-        } catch (Throwable tr) {
-            LOGGER.e(tr, "Failed to add %d:%s to power save temp whitelist", userId, packageName);
+        sendBinderToUserApp(binder, packageName, userId, retry, true);
+    }
+
+    private static final long[] FAST_PROVIDER_RETRY_BACKOFF_MS = {50L, 150L, 400L};
+
+    static void sendBinderToUserApp(Binder binder, String packageName, int userId, boolean retry, boolean preferSheveryProvider) {
+        if (!Objects.equals(MANAGER_APPLICATION_ID, packageName)) {
+            try {
+                DeviceIdleControllerApis.addPowerSaveTempWhitelistApp(packageName, 30 * 1000, userId,
+                        316, "shell");
+            } catch (Throwable tr) {
+                LOGGER.w(tr, "Failed to add %d:%s to power save temp whitelist", userId, packageName);
+            }
         }
 
-        String name = packageName + ".shizuku";
+        String primarySuffix = preferSheveryProvider
+                ? ServerConstants.SHEVERY_PROVIDER_SUFFIX
+                : ServerConstants.SHIZUKU_PROVIDER_SUFFIX;
+        String fallbackSuffix = preferSheveryProvider
+                ? ServerConstants.SHIZUKU_PROVIDER_SUFFIX
+                : ServerConstants.SHEVERY_PROVIDER_SUFFIX;
+
+        if (trySendBinderViaAuthority(binder, packageName, packageName + primarySuffix, userId, retry, false)) {
+            return;
+        }
+        trySendBinderViaAuthority(binder, packageName, packageName + fallbackSuffix, userId, retry, true);
+    }
+
+    private static boolean trySendBinderViaAuthority(
+            Binder binder,
+            String packageName,
+            String authority,
+            int userId,
+            boolean retry,
+            boolean isFallback
+    ) {
         IContentProvider provider = null;
         IBinder token = null;
 
         try {
+            int maxAttempts = isFallback ? FAST_PROVIDER_RETRY_BACKOFF_MS.length : 1;
             for (int attempt = 0; ; attempt++) {
-                provider = ActivityManagerApis.getContentProviderExternal(name, userId, token, name);
+                provider = ActivityManagerApis.getContentProviderExternal(authority, userId, token, authority);
                 if (provider != null) {
                     break;
                 }
-                if (attempt >= NULL_PROVIDER_RETRY_BACKOFF_MS.length) {
-                    Log.e(TAG, "Failed to get content provider for " + name + " (user " + userId + ")");
-                    LOGGER.e("provider is null %s %d (gave up after %d attempts)", name, userId, attempt + 1);
-                    return;
+                if (attempt >= maxAttempts) {
+                    if (isFallback) {
+                        LOGGER.w("provider is null %s %d", authority, userId);
+                    }
+                    return false;
                 }
-                long backoff = NULL_PROVIDER_RETRY_BACKOFF_MS[attempt];
-                LOGGER.w("provider is null %s %d, retrying in %dms (attempt %d/%d)",
-                        name, userId, backoff, attempt + 1, NULL_PROVIDER_RETRY_BACKOFF_MS.length + 1);
-                Thread.sleep(backoff);
+                Thread.sleep(FAST_PROVIDER_RETRY_BACKOFF_MS[attempt]);
             }
+
             boolean isAlive = provider.asBinder().pingBinder();
             if (!isAlive) {
-                Log.e(TAG, "Provider is dead: " + name + " (user " + userId + ")");
-                LOGGER.e("provider is dead %s %d", name, userId);
-
-                if (retry) {
+                LOGGER.e("provider is dead %s %d", authority, userId);
+                if (retry && isFallback) {
                     ActivityManagerApis.forceStopPackageNoThrow(packageName, userId);
-                    LOGGER.e("kill %s in user %d and try again", packageName, userId);
-                    Thread.sleep(1000);
-                    sendBinderToUserApp(binder, packageName, userId, false);
+                    Thread.sleep(250);
+                    return trySendBinderViaAuthority(binder, packageName, authority, userId, false, true);
                 }
-                return;
+                return false;
             }
 
-            if (!retry) {
-                LOGGER.e("retry works");
-            }
-
+            BinderContainer container = new BinderContainer(binder);
             Bundle extra = new Bundle();
-            extra.putParcelable("moe.shizuku.privileged.api.intent.extra.BINDER", new BinderContainer(binder));
+            extra.putParcelable(ServerConstants.EXTRA_BINDER_SHEVERY, container);
+            extra.putParcelable(ServerConstants.EXTRA_BINDER_SHIZUKU, container);
 
-            Bundle reply = IContentProviderUtils.callCompat(provider, null, name, "sendBinder", null, extra);
+            Bundle reply = IContentProviderUtils.callCompat(provider, null, authority, "sendBinder", null, extra);
             if (reply != null) {
                 if (Objects.equals(MANAGER_APPLICATION_ID, packageName)) {
-                    Log.i(TAG, "Dispatched server binder to manager (" + packageName + ")");
+                    Log.i(TAG, "Dispatched server binder to manager (" + authority + ")");
                 }
-                LOGGER.i("send binder to user app %s in user %d", packageName, userId);
-            } else {
-                LOGGER.w("failed to send binder to user app %s in user %d", packageName, userId);
+                LOGGER.i("send binder to %s via %s in user %d", packageName, authority, userId);
+                return true;
             }
+            return false;
         } catch (Throwable tr) {
-            Log.e(TAG, "Failed to send binder to " + packageName + " (userId " + userId + ")", tr);
-            LOGGER.e(tr, "failed send binder to user app %s in user %d", packageName, userId);
+            LOGGER.w(tr, "failed send binder to %s via %s in user %d", packageName, authority, userId);
+            return false;
         } finally {
             if (provider != null) {
                 try {
-                    ActivityManagerApis.removeContentProviderExternal(name, token);
+                    ActivityManagerApis.removeContentProviderExternal(authority, token);
                 } catch (Throwable tr) {
                     LOGGER.w(tr, "removeContentProviderExternal");
                 }
