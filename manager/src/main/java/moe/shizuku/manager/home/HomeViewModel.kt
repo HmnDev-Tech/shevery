@@ -11,12 +11,9 @@ import kotlinx.coroutines.launch
 import kotlinx.coroutines.flow.SharingStarted
 import kotlinx.coroutines.flow.StateFlow
 import kotlinx.coroutines.flow.stateIn
-import moe.shizuku.manager.BuildConfig
-import moe.shizuku.manager.Manifest
 import moe.shizuku.manager.model.ServiceStatus
 import moe.shizuku.manager.utils.Logger.LOGGER
 import moe.shizuku.manager.utils.ShizukuStateMachine
-import moe.shizuku.manager.utils.ShizukuSystemApis
 import rikka.lifecycle.Resource
 import rikka.shizuku.Shizuku
 
@@ -59,9 +56,6 @@ class HomeViewModel : ViewModel() {
         val permissionTest =
             Shizuku.checkRemotePermission("android.permission.GRANT_RUNTIME_PERMISSIONS") == PackageManager.PERMISSION_GRANTED
 
-
-
-        ShizukuSystemApis.checkPermission(Manifest.permission.API_V23, BuildConfig.APPLICATION_ID, 0)
         return ServiceStatus(uid, apiVersion, patchVersion, seContext, permissionTest)
     }
 

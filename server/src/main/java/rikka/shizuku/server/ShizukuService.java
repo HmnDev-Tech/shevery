@@ -12,7 +12,6 @@ import static rikka.shizuku.ShizukuApiConstants.BIND_APPLICATION_SHOULD_SHOW_REQ
 import static rikka.shizuku.ShizukuApiConstants.REQUEST_PERMISSION_REPLY_ALLOWED;
 import static rikka.shizuku.ShizukuApiConstants.REQUEST_PERMISSION_REPLY_IS_ONETIME;
 import static rikka.shizuku.server.ServerConstants.MANAGER_APPLICATION_ID;
-import static rikka.shizuku.server.ServerConstants.PERMISSION;
 
 import android.content.ComponentName;
 import android.content.Context;
@@ -40,12 +39,12 @@ import java.util.ArrayList;
 import java.util.List;
 import java.util.Objects;
 
-import kotlin.collections.ArraysKt;
 import moe.shizuku.api.BinderContainer;
 import moe.shizuku.common.util.BuildUtils;
 import moe.shizuku.common.util.InstalledPackagesCompat;
 import moe.shizuku.common.util.OsUtils;
 import moe.shizuku.server.IShizukuApplication;
+import com.hamondev.shevery.api.ClientPermissions;
 import rikka.hidden.compat.ActivityManagerApis;
 import rikka.hidden.compat.DeviceIdleControllerApis;
 import rikka.hidden.compat.PackageManagerApis;
@@ -223,14 +222,7 @@ public class ShizukuService extends Service<ShizukuUserServiceManager, ShizukuCl
     }
 
     private int checkCallingPermission() {
-        try {
-            return ActivityManagerApis.checkPermission(ServerConstants.PERMISSION,
-                    Binder.getCallingPid(),
-                    Binder.getCallingUid());
-        } catch (Throwable tr) {
-            LOGGER.w(tr, "checkCallingPermission");
-            return PackageManager.PERMISSION_DENIED;
-        }
+        return SheveryClients.checkCallingPermission(Binder.getCallingPid(), Binder.getCallingUid());
     }
 
     @Override
@@ -394,19 +386,8 @@ public class ShizukuService extends Service<ShizukuUserServiceManager, ShizukuCl
         }
 
         if (!onetime && allowed) {
-            int userId = UserHandleCompat.getUserId(requestUid);
-
             for (String packageName : PackageManagerApis.getPackagesForUidNoThrow(requestUid)) {
-                PackageInfo pi = Android17Compat.getPackageInfo(packageName, PackageManager.GET_PERMISSIONS, userId);
-                if (pi == null || pi.requestedPermissions == null || !ArraysKt.contains(pi.requestedPermissions, PERMISSION)) {
-                    continue;
-                }
-
-                if (allowed) {
-                    Android17Compat.grantRuntimePermission(packageName, PERMISSION, userId);
-                } else {
-                    Android17Compat.revokeRuntimePermission(packageName, PERMISSION, userId);
-                }
+                SheveryClients.setGranted(packageName, requestUid, true);
             }
         }
     }
@@ -418,19 +399,9 @@ public class ShizukuService extends Service<ShizukuUserServiceManager, ShizukuCl
         }
 
         if (allowRuntimePermission && (mask & ConfigManager.MASK_PERMISSION) != 0) {
-            int userId = UserHandleCompat.getUserId(uid);
             for (String packageName : PackageManagerApis.getPackagesForUidNoThrow(uid)) {
-                PackageInfo pi = Android17Compat.getPackageInfo(packageName, PackageManager.GET_PERMISSIONS, userId);
-                if (pi == null || pi.requestedPermissions == null || !ArraysKt.contains(pi.requestedPermissions, PERMISSION)) {
-                    continue;
-                }
-
-                try {
-                    if (Android17Compat.checkPermission(PERMISSION, packageName, userId) == PackageManager.PERMISSION_GRANTED) {
-                        return ConfigManager.FLAG_ALLOWED;
-                    }
-                } catch (Throwable e) {
-                    LOGGER.w("getFlagsForUid");
+                if (SheveryClients.isGranted(packageName, uid)) {
+                    return ConfigManager.FLAG_ALLOWED;
                 }
             }
         }
@@ -453,8 +424,6 @@ public class ShizukuService extends Service<ShizukuUserServiceManager, ShizukuCl
             return;
         }
 
-        int userId = UserHandleCompat.getUserId(uid);
-
         if ((mask & ConfigManager.MASK_PERMISSION) != 0) {
             boolean allowed = (value & ConfigManager.FLAG_ALLOWED) != 0;
 
@@ -470,16 +439,7 @@ public class ShizukuService extends Service<ShizukuUserServiceManager, ShizukuCl
             }
 
             for (String packageName : PackageManagerApis.getPackagesForUidNoThrow(uid)) {
-                PackageInfo pi = Android17Compat.getPackageInfo(packageName, PackageManager.GET_PERMISSIONS, userId);
-                if (pi == null || pi.requestedPermissions == null || !ArraysKt.contains(pi.requestedPermissions, PERMISSION)) {
-                    continue;
-                }
-
-                if (allowed) {
-                    Android17Compat.grantRuntimePermission(packageName, PERMISSION, userId);
-                } else {
-                    Android17Compat.revokeRuntimePermission(packageName, PERMISSION, userId);
-                }
+                SheveryClients.setGranted(packageName, uid, allowed);
             }
         }
 
@@ -505,6 +465,7 @@ public class ShizukuService extends Service<ShizukuUserServiceManager, ShizukuCl
                 if (pi.applicationInfo == null) continue;
 
                 int uid = pi.applicationInfo.uid;
+                int clientFlags = SheveryClients.CACHE.put(uid, pi.packageName, pi.requestedPermissions);
                 int flags = 0;
                 ShizukuConfig.PackageEntry entry = (ShizukuConfig.PackageEntry) configManager.find(uid);
                 if (entry != null) {
@@ -517,8 +478,7 @@ public class ShizukuService extends Service<ShizukuUserServiceManager, ShizukuCl
                     list.add(pi);
                 } else if (pi.applicationInfo.metaData != null
                         && pi.applicationInfo.metaData.getBoolean("moe.shizuku.client.V3_SUPPORT", false)
-                        && pi.requestedPermissions != null
-                        && ArraysKt.contains(pi.requestedPermissions, PERMISSION)) {
+                        && ClientPermissions.isClient(clientFlags)) {
                     list.add(pi);
                 }
             }
@@ -580,7 +540,11 @@ public class ShizukuService extends Service<ShizukuUserServiceManager, ShizukuCl
                 if (Objects.equals(MANAGER_APPLICATION_ID, pi.packageName))
                     continue;
 
-                if (ArraysKt.contains(pi.requestedPermissions, PERMISSION)) {
+                int uid = pi.applicationInfo != null ? pi.applicationInfo.uid : -1;
+                int clientFlags = uid != -1
+                        ? SheveryClients.CACHE.put(uid, pi.packageName, pi.requestedPermissions)
+                        : ClientPermissions.classify(pi.requestedPermissions);
+                if (ClientPermissions.isClient(clientFlags)) {
                     sendBinderToUserApp(binder, pi.packageName, userId);
                 }
             }

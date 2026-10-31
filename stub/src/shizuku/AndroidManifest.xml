@@ -11,6 +11,9 @@
         android:icon="@android:drawable/ic_secure"
         android:label="@string/permission_group_label" />
 
+    <!-- The stub is the sole owner of the legacy Shizuku permission. Shevery itself
+         uses com.hamondev.shevery.permission.API (shevery-api) and does not declare
+         API_V23, so legacy Shizuku clients are authorized through this stub. -->
     <permission
         android:name="moe.shizuku.manager.permission.API_V23"
         android:description="@string/permission_description"

@@ -1,16 +1,10 @@
 package moe.shizuku.manager.authorization
 
 import android.content.pm.PackageInfo
-import android.content.pm.PackageManager
 import android.os.Parcel
-import moe.shizuku.manager.BuildConfig
-import moe.shizuku.manager.Manifest
-import moe.shizuku.manager.utils.Logger.LOGGER
-import moe.shizuku.manager.utils.ShizukuSystemApis
 import rikka.shizuku.server.ServerConstants
 import rikka.parcelablelist.ParcelableListSlice
 import rikka.shizuku.Shizuku
-import java.util.*
 
 object AuthorizationManager {
 
@@ -38,29 +32,12 @@ object AuthorizationManager {
         }
     }
 
-    fun getPackages(): List<PackageInfo> {
-        val packages: MutableList<PackageInfo> = ArrayList()
-        if (Shizuku.isPreV11() || (Shizuku.getVersion() == 11 && Shizuku.getServerPatchVersion() < 3)) {
-            val allPackages: MutableList<PackageInfo> = ArrayList()
-            for (user in ShizukuSystemApis.getUsers(useCache = false)) {
-                try {
-                    allPackages.addAll(ShizukuSystemApis.getInstalledPackages((PackageManager.GET_META_DATA or PackageManager.GET_PERMISSIONS).toLong(), user.id))
-                } catch (e: Throwable) {
-                    LOGGER.w(e, "getInstalledPackages")
-                }
-            }
-            for (pi in allPackages) {
-                if (BuildConfig.APPLICATION_ID == pi.packageName) continue
-                if (pi.applicationInfo?.metaData?.getBoolean("moe.shizuku.client.V3_SUPPORT") != true) continue
-                if (pi.requestedPermissions?.contains(Manifest.permission.API_V23) != true) continue
-
-                packages.add(pi)
-            }
-        } else {
-            packages.addAll(getApplications(-1))
-        }
-        return packages
-    }
+    /**
+     * Client applications, resolved by the bundled server through the Shevery API
+     * (native `com.hamondev.shevery.permission.API` clients and legacy clients served by the
+     * Shizuku stub). The manager never inspects the legacy permission itself.
+     */
+    fun getPackages(): List<PackageInfo> = getApplications(-1)
 
     // Tracks UIDs granted for this session only (one-time)
     private val sessionGrantedUids = java.util.concurrent.ConcurrentHashMap.newKeySet<Int>()
@@ -79,28 +56,16 @@ object AuthorizationManager {
 
     fun granted(packageName: String, uid: Int): Boolean {
         if (sessionGrantedUids.contains(uid)) return true
-        return if (Shizuku.isPreV11()) {
-            ShizukuSystemApis.checkPermission(Manifest.permission.API_V23, packageName, uid / 100000) == PackageManager.PERMISSION_GRANTED
-        } else {
-            (Shizuku.getFlagsForUid(uid, MASK_PERMISSION) and FLAG_ALLOWED) == FLAG_ALLOWED
-        }
+        return (Shizuku.getFlagsForUid(uid, MASK_PERMISSION) and FLAG_ALLOWED) == FLAG_ALLOWED
     }
 
     fun grant(packageName: String, uid: Int) {
         sessionGrantedUids.remove(uid)
-        if (Shizuku.isPreV11()) {
-            ShizukuSystemApis.grantRuntimePermission(packageName, Manifest.permission.API_V23, uid / 100000)
-        } else {
-            Shizuku.updateFlagsForUid(uid, MASK_PERMISSION, FLAG_ALLOWED)
-        }
+        Shizuku.updateFlagsForUid(uid, MASK_PERMISSION, FLAG_ALLOWED)
     }
 
     fun revoke(packageName: String, uid: Int) {
         sessionGrantedUids.remove(uid)
-        if (Shizuku.isPreV11()) {
-            ShizukuSystemApis.revokeRuntimePermission(packageName, Manifest.permission.API_V23, uid / 100000)
-        } else {
-            Shizuku.updateFlagsForUid(uid, MASK_PERMISSION, 0)
-        }
+        Shizuku.updateFlagsForUid(uid, MASK_PERMISSION, 0)
     }
 }

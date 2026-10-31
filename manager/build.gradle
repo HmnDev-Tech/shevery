@@ -184,6 +184,7 @@ dependencies {
     implementation project(':api')
     implementation project(':provider')
     implementation project(':common')
+    implementation project(':shevery-api')
     implementation project(':tasker')
     compileOnly project(':errorprotect')
 

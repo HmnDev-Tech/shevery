@@ -10,6 +10,8 @@ import android.os.Build
 import android.os.RemoteException
 import android.text.TextUtils
 import androidx.annotation.RequiresApi
+import com.hamondev.shevery.api.ClientPermissions
+import com.hamondev.shevery.api.SheveryApi
 import rikka.hidden.compat.ActivityManagerApis
 import rikka.hidden.compat.PackageManagerApis
 import rikka.hidden.compat.adapter.ProcessObserverAdapter
@@ -22,8 +24,7 @@ object BinderSender {
 
     private val logger = Logger("BinderSender")
 
-    private const val PERMISSION_MANAGER = "moe.shizuku.manager.permission.MANAGER"
-    private const val PERMISSION = "moe.shizuku.manager.permission.API_V23"
+    private const val PERMISSION_MANAGER = SheveryApi.PERMISSION_MANAGER
 
     private var shizukuService: ShizukuService? = null
 
@@ -107,6 +108,8 @@ object BinderSender {
 
         override fun onUidGone(uid: Int, disabled: Boolean) {
             logger.d("onUidGone: uid=%d, disabled=%s", uid, disabled.toString())
+            // Updates and uninstalls always stop the uid first, so this keeps the cache exact.
+            SheveryClients.CACHE.invalidateUid(uid)
             uidGone(uid)
         }
 
@@ -155,14 +158,10 @@ object BinderSender {
         val userId = UserHandleCompat.getUserId(uid)
         var sentManager = false
         for (packageName in packages) {
-            val packageInfo = Android17Compat.getPackageInfo(
-                packageName,
-                PackageManager.GET_PERMISSIONS.toLong(),
-                userId
-            )
-            val requestedPermissions = packageInfo?.requestedPermissions ?: continue
+            val flags = SheveryClients.flags(uid, packageName)
+            if (flags == ClientPermissions.NONE) continue
 
-            if (requestedPermissions.contains(PERMISSION_MANAGER)) {
+            if (ClientPermissions.has(flags, ClientPermissions.MANAGER)) {
                 val granted = if (pid == -1) {
                     Android17Compat.checkPermission(PERMISSION_MANAGER, uid) == PackageManager.PERMISSION_GRANTED
                 } else {
@@ -175,7 +174,7 @@ object BinderSender {
                 }
             }
 
-            if (requestedPermissions.contains(PERMISSION)) {
+            if (ClientPermissions.isClient(flags)) {
                 ShizukuService.sendBinderToUserApp(service, packageName, userId)
             }
         }

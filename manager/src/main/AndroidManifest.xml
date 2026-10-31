@@ -65,15 +65,20 @@
         android:protectionLevel="signature" />
     <uses-permission android:name="moe.shizuku.manager.permission.MANAGER" />
 
+    <!-- Native Shevery API permission (see shevery-api). The legacy Shizuku
+         permission moe.shizuku.manager.permission.API_V23 is declared only by the
+         Shizuku stub APK; Shevery neither declares nor requests it. -->
     <permission
-        android:name="moe.shizuku.manager.permission.API_V23"
+        android:name="com.hamondev.shevery.permission.API"
         android:description="@string/permission_description"
         android:icon="@drawable/ic_system_icon"
         android:label="@string/permission_label"
         android:permissionGroup="com.hamondev.shevery.permission-group.API"
         android:protectionLevel="dangerous" />
+    <!-- Merged in from the Shizuku-API :provider library; stripped on purpose. -->
     <uses-permission
-        android:name="moe.shizuku.manager.permission.API_V23" />
+        android:name="moe.shizuku.manager.permission.API_V23"
+        tools:node="remove" />
 
     <permission
         android:name="${applicationId}.DYNAMIC_RECEIVER_NOT_EXPORTED_PERMISSION"
@@ -256,7 +261,7 @@
             android:name=".dhizuku.DhizukuService"
             android:enabled="true"
             android:exported="true"
-            android:permission="moe.shizuku.manager.permission.API_V23" />
+            android:permission="com.hamondev.shevery.permission.API" />
 
         <service
             android:name=".settings.UsbDebuggingHideService"

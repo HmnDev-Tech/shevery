@@ -23,6 +23,7 @@ dependencies {
     implementation project(':rish')
     implementation project(':server-shared')
     implementation project(':errorprotect')
+    api project(':shevery-api')
     implementation libs.hidden.compat
     compileOnly libs.hidden.stub
 }
