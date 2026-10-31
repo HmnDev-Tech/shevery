@@ -92,7 +92,8 @@ public final class SheveryPrivilege {
         @Override
         public boolean equals(Object o) {
             if (this == o) return true;
-            if (!(o instanceof ListenerEntry<?> that)) return false;
+            if (!(o instanceof ListenerEntry)) return false;
+            ListenerEntry<?> that = (ListenerEntry<?>) o;
             return Objects.equals(listener, that.listener) && Objects.equals(handler, that.handler);
         }
 
