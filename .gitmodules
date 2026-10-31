@@ -1,4 +1,4 @@
 [submodule "api"]
 	path = api
-	url = https://github.com/HmnDev-Tech/shevery-api.git
+	url = https://github.com/HmnDev-Tech/Shevery-API.git
 	branch = main
