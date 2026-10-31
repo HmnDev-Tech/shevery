@@ -1,4 +1,4 @@
 [submodule "api"]
 	path = api
-	url = https://github.com/RikkaApps/Shizuku-API.git
-	branch = master
+	url = https://github.com/HmnDev-Tech/Shevery-API.git
+	branch = main

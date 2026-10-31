@@ -17,15 +17,32 @@ import rikka.hidden.compat.adapter.UidObserverAdapter
 import rikka.shizuku.server.util.Android17Compat
 import rikka.shizuku.server.util.Logger
 import rikka.shizuku.server.util.UserHandleCompat
+import java.util.concurrent.ConcurrentHashMap
 
 object BinderSender {
 
     private val logger = Logger("BinderSender")
 
-    private const val PERMISSION_MANAGER = "moe.shizuku.manager.permission.MANAGER"
-    private const val PERMISSION = "moe.shizuku.manager.permission.API_V23"
+    private data class PackageDispatchEntry(
+        val packageName: String,
+        val managerPermission: String?,
+        val isNativeSheveryClient: Boolean,
+        val isLegacyShizukuStubClient: Boolean
+    )
+
+    private val uidDispatchCache = ConcurrentHashMap<Int, List<PackageDispatchEntry>>()
 
     private var shizukuService: ShizukuService? = null
+
+    @JvmStatic
+    fun invalidateCache() {
+        uidDispatchCache.clear()
+    }
+
+    @JvmStatic
+    fun invalidateUid(uid: Int) {
+        uidDispatchCache.remove(uid)
+    }
 
     private class ProcessObserver : ProcessObserverAdapter() {
 
@@ -142,41 +159,83 @@ object BinderSender {
         }
     }
 
-    @Throws(RemoteException::class)
-    private fun sendBinder(uid: Int, pid: Int) {
-        val service = shizukuService ?: return
+    private fun resolveDispatchEntries(uid: Int, userId: Int): List<PackageDispatchEntry> {
+        uidDispatchCache[uid]?.let { return it }
+
         val packages = PackageManagerApis.getPackagesForUidNoThrow(uid)
         if (packages.isEmpty()) {
-            return
+            return emptyList()
         }
 
-        logger.d("sendBinder to uid %d: packages=%s", uid, TextUtils.join(", ", packages))
-
-        val userId = UserHandleCompat.getUserId(uid)
-        var sentManager = false
+        val entries = ArrayList<PackageDispatchEntry>(packages.size)
         for (packageName in packages) {
+            if (packageName == ServerConstants.SHIZUKU_STUB_APPLICATION_ID) {
+                continue
+            }
             val packageInfo = Android17Compat.getPackageInfo(
                 packageName,
                 PackageManager.GET_PERMISSIONS.toLong(),
                 userId
             )
             val requestedPermissions = packageInfo?.requestedPermissions ?: continue
+            val managerPerm = ServerConstants.resolveManagerPermission(requestedPermissions)
+            val isNativeShevery = ServerConstants.hasSheveryPermission(requestedPermissions)
+            val isLegacyShizuku = !isNativeShevery && ServerConstants.hasLegacyShizukuPermission(requestedPermissions)
 
-            if (requestedPermissions.contains(PERMISSION_MANAGER)) {
+            if (managerPerm != null || isNativeShevery || isLegacyShizuku) {
+                entries.add(
+                    PackageDispatchEntry(
+                        packageName = packageName,
+                        managerPermission = managerPerm,
+                        isNativeSheveryClient = isNativeShevery,
+                        isLegacyShizukuStubClient = isLegacyShizuku
+                    )
+                )
+            }
+        }
+
+        uidDispatchCache[uid] = entries
+        return entries
+    }
+
+    @Throws(RemoteException::class)
+    private fun sendBinder(uid: Int, pid: Int) {
+        val service = shizukuService ?: return
+        val userId = UserHandleCompat.getUserId(uid)
+        val entries = resolveDispatchEntries(uid, userId)
+        if (entries.isEmpty()) {
+            return
+        }
+
+        logger.d(
+            "sendBinder to uid %d: packages=%s",
+            uid,
+            TextUtils.join(", ", entries.map { it.packageName })
+        )
+
+        var sentManager = false
+        for (entry in entries) {
+            val managerPerm = entry.managerPermission
+            if (managerPerm != null && !sentManager) {
                 val granted = if (pid == -1) {
-                    Android17Compat.checkPermission(PERMISSION_MANAGER, uid) == PackageManager.PERMISSION_GRANTED
+                    Android17Compat.checkPermission(managerPerm, uid) == PackageManager.PERMISSION_GRANTED
                 } else {
-                    ActivityManagerApis.checkPermission(PERMISSION_MANAGER, pid, uid) == PackageManager.PERMISSION_GRANTED
+                    ActivityManagerApis.checkPermission(managerPerm, pid, uid) == PackageManager.PERMISSION_GRANTED
                 }
 
-                if (granted && !sentManager) {
+                if (granted) {
                     ShizukuService.sendBinderToManager(service, userId)
                     sentManager = true
+                    continue
                 }
             }
 
-            if (requestedPermissions.contains(PERMISSION)) {
-                ShizukuService.sendBinderToUserApp(service, packageName, userId)
+            if (entry.isNativeSheveryClient) {
+                // Fast native Shevery Privilege API path
+                ShizukuService.sendBinderToUserAppAsync(service, entry.packageName, userId, true)
+            } else if (entry.isLegacyShizukuStubClient && ShizukuService.isShizukuStubActive(userId)) {
+                // Legacy API_V23 path offloaded via Shizuku Stub
+                ShizukuService.sendBinderToUserAppAsync(service, entry.packageName, userId, false)
             }
         }
     }
@@ -184,6 +243,7 @@ object BinderSender {
     @JvmStatic
     fun register(shizukuService: ShizukuService) {
         this.shizukuService = shizukuService
+        invalidateCache()
         ProcessObserver.clear()
         if (Build.VERSION.SDK_INT >= Build.VERSION_CODES.O) {
             UidObserver.clear()

@@ -59,9 +59,7 @@ class HomeViewModel : ViewModel() {
         val permissionTest =
             Shizuku.checkRemotePermission("android.permission.GRANT_RUNTIME_PERMISSIONS") == PackageManager.PERMISSION_GRANTED
 
-
-
-        ShizukuSystemApis.checkPermission(Manifest.permission.API_V23, BuildConfig.APPLICATION_ID, 0)
+        ShizukuSystemApis.checkPermission(Manifest.permission.PRIVILEGED_API, BuildConfig.APPLICATION_ID, 0)
         return ServiceStatus(uid, apiVersion, patchVersion, seContext, permissionTest)
     }
 

@@ -82,3 +82,11 @@ project(':provider').projectDir = file("$root${File.separator}provider")
 
 include ':server-shared'
 project(':server-shared').projectDir = file("$root${File.separator}server-shared")
+
+// Native Shevery API (https://github.com/HmnDev-Tech/shevery-api), vendored as a subtree.
+def sheveryApiRoot = "shevery-api"
+if (props.getProperty("sheveryApi.useLocal") == "true" && props.getProperty("sheveryApi.dir") != null) {
+    sheveryApiRoot = props.getProperty("sheveryApi.dir")
+}
+include ':shevery-api'
+project(':shevery-api').projectDir = file("$sheveryApiRoot${File.separator}api")

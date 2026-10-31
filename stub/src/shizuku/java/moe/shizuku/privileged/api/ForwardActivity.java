@@ -3,7 +3,6 @@ package moe.shizuku.privileged.api;
 import android.app.Activity;
 import android.content.Intent;
 import android.net.Uri;
-import android.os.Build;
 import android.os.Bundle;
 
 public class ForwardActivity extends Activity {
@@ -11,6 +10,9 @@ public class ForwardActivity extends Activity {
     public static final String SHEVERY_PACKAGE = "com.hamondev.shevery";
     public static final String PERMISSION_ACTIVITY = "moe.shizuku.manager.authorization.RequestPermissionActivity";
     public static final String LEGACY_ACTIVITY = "moe.shizuku.manager.legacy.LegacyIsNotSupportedActivity";
+    public static final String EXTRA_PERMISSION_CHANNEL = "com.hamondev.shevery.intent.extra.PERMISSION_CHANNEL";
+    public static final String EXTRA_REQUESTED_PERMISSION = "com.hamondev.shevery.intent.extra.REQUESTED_PERMISSION";
+    public static final String LEGACY_API_V23 = "moe.shizuku.manager.permission.API_V23";
 
     @Override
     protected void onCreate(Bundle savedInstanceState) {
@@ -31,6 +33,9 @@ public class ForwardActivity extends Activity {
             if (original.getExtras() != null) {
                 forward.putExtras(original.getExtras());
             }
+
+            forward.putExtra(EXTRA_PERMISSION_CHANNEL, "shizuku_stub");
+            forward.putExtra(EXTRA_REQUESTED_PERMISSION, LEGACY_API_V23);
 
             String callingPackage = getCallingPackage();
             int uid = -1;

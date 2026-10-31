@@ -1,7 +1,5 @@
 package rikka.shizuku.server;
 
-import static rikka.shizuku.server.ServerConstants.PERMISSION;
-
 import android.content.pm.PackageInfo;
 import android.content.pm.PackageManager;
 import android.os.Build;
@@ -23,12 +21,11 @@ import java.util.LinkedHashSet;
 import java.util.List;
 import java.util.Set;
 
-import kotlin.collections.ArraysKt;
+import moe.shizuku.common.util.InstalledPackagesCompat;
 import rikka.hidden.compat.PackageManagerApis;
 import rikka.hidden.compat.UserManagerApis;
 import rikka.shizuku.server.ktx.HandlerKt;
 import rikka.shizuku.server.util.Android17Compat;
-import moe.shizuku.common.util.InstalledPackagesCompat;
 
 public class ShizukuConfigManager extends ConfigManager {
 
@@ -153,15 +150,19 @@ public class ShizukuConfigManager extends ConfigManager {
             for (PackageInfo pi : InstalledPackagesCompat.getInstalledPackagesNoThrow(PackageManager.GET_PERMISSIONS, userId)) {
                 if (pi == null
                         || pi.applicationInfo == null
-                        || pi.requestedPermissions == null
-                        || !ArraysKt.contains(pi.requestedPermissions, PERMISSION)) {
+                        || ServerConstants.SHIZUKU_STUB_APPLICATION_ID.equals(pi.packageName)) {
+                    continue;
+                }
+
+                String targetPermission = ServerConstants.resolveClientPermission(pi.requestedPermissions);
+                if (targetPermission == null) {
                     continue;
                 }
 
                 int uid = pi.applicationInfo.uid;
                 boolean allowed;
                 try {
-                    allowed = Android17Compat.checkPermission(PERMISSION, uid) == PackageManager.PERMISSION_GRANTED;
+                    allowed = Android17Compat.checkPermission(targetPermission, uid) == PackageManager.PERMISSION_GRANTED;
                 } catch (Throwable e) {
                     LOGGER.w("checkPermission");
                     continue;

@@ -83,7 +83,7 @@ Used by the `rish` / shell path (`ShellBinderRequestHandler`, `ShizukuReceiverSt
 
 ### Binder delivery
 
-- `moe.shizuku.api.action.BINDER_RECEIVED` (broadcast by `ShizukuProvider`, extra `moe.shizuku.privileged.api.intent.extra.BINDER`) — how API clients receive the binder. Permission `moe.shizuku.manager.permission.API_V23`.
+- `moe.shizuku.api.action.BINDER_RECEIVED` (broadcast by `ShizukuProvider`, extra `moe.shizuku.privileged.api.intent.extra.BINDER`) — how API clients receive the binder. Native clients request `com.hamondev.shevery.permission.API` (declared by Shevery, see [shevery-api](../shevery-api/README.md)); legacy Shizuku clients request `moe.shizuku.manager.permission.API_V23`, which is declared only by the Shizuku stub APK (`moe.shizuku.privileged.api`).
 
 ### Accessibility manager shortcut
 
