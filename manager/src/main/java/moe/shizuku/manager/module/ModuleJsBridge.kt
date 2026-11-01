@@ -2,6 +2,7 @@ package moe.shizuku.manager.module
 
 import android.os.ParcelFileDescriptor
 import android.webkit.JavascriptInterface
+import com.hamondev.shevery.api.SheveryPrivilege
 import moe.shizuku.server.IShizukuService
 import org.json.JSONObject
 import rikka.shizuku.Shizuku
@@ -175,7 +176,7 @@ class ModuleJsBridge(
             }
         }
 
-        val binder = Shizuku.getBinder() ?: return shellError("Shizuku service is not running.")
+        val binder = SheveryPrivilege.getBinder() ?: Shizuku.getBinder() ?: return shellError("Shevery service is not running.")
 
         val result = JSONObject()
         return try {
@@ -187,13 +188,20 @@ class ModuleJsBridge(
                 appendLine("export PATH=\"/data/local/tmp/shevery/bin:/product/bin:/apex/com.android.runtime/bin:/apex/com.android.art/bin:/system_ext/bin:/system/bin:/system/xbin:/odm/bin:/vendor/bin:/vendor/xbin:/sbin:/data/adb/apatch:/data/adb/ksu/bin:\$PATH\"")
                 appendLine("ui_print() { echo \"\$@\"; }")
                 appendLine("""adb() {
+    while [ ${'$'}# -gt 0 ]; do
+        case "${'$'}1" in
+            -s|-H|-P|-L) shift 2 ;;
+            -d|-e) shift 1 ;;
+            *) break ;;
+        esac
+    done
     case "${'$'}1" in
         shell)
             shift
             if [ ${'$'}# -eq 0 ]; then
                 sh
             else
-                "${'$'}@"
+                eval "${'$'}*"
             fi
             ;;
         devices)
@@ -210,11 +218,23 @@ class ModuleJsBridge(
         wait-for-device)
             return 0
             ;;
+        push|pull)
+            shift
+            cp -r "${'$'}@"
+            ;;
+        install)
+            shift
+            pm install "${'$'}@"
+            ;;
+        uninstall)
+            shift
+            pm uninstall "${'$'}@"
+            ;;
         *)
             if [ ${'$'}# -eq 0 ]; then
                 sh
             else
-                "${'$'}@"
+                eval "${'$'}*"
             fi
             ;;
     esac
@@ -264,8 +284,8 @@ export -f adb 2>/dev/null || true""")
                 try { stderrPfd.close() } catch (ignore: Exception) {}
                 EXIT_TIMEOUT
             }
-            stdoutThread.join(1000)
-            stderrThread.join(1000)
+            stdoutThread.join(3000)
+            stderrThread.join(3000)
 
             result.apply {
                 put("ok", finished && exitCode == 0)
