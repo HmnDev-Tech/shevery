@@ -64,9 +64,7 @@ class ModuleWebViewActivity : AppActivity() {
             val trusted = ModuleSettings.isModuleTrusted(module.id)
             val webNetworkAllowed = ModuleSettings.canUseWebNetwork(module)
             val exposeBridge = module.enabled &&
-                ModuleSettings.canExposeWebBridge(module) &&
-                (module.declaresShellBridge || trusted) &&
-                (!webNetworkAllowed || trusted)
+                ModuleSettings.canExposeWebBridge(module)
 
             ShizukuExpressiveTheme {
                 ShizukuScaffold(
@@ -102,7 +100,12 @@ class ModuleWebViewActivity : AppActivity() {
                                         }
                                     )
                                     addJavascriptInterface(bridge, "Shizuku")
+                                    addJavascriptInterface(bridge, "shizuku")
                                     addJavascriptInterface(bridge, "Shevery")
+                                    addJavascriptInterface(bridge, "shevery")
+                                    addJavascriptInterface(bridge, "ksu")
+                                    addJavascriptInterface(bridge, "Axeron")
+                                    addJavascriptInterface(bridge, "axeron")
                                 }
                                 loadUrl(indexUrl)
                             }
