@@ -370,6 +370,9 @@ abstract class HomeActivity : AppActivity() {
             var settingsTargetSection by remember {
                 mutableStateOf(if (isTargetAutomation) SettingsSection.AUTOMATION else null)
             }
+            var settingsTargetNav by remember {
+                mutableStateOf<moe.shizuku.manager.settings.SettingsNav?>(null)
+            }
 
             DisposableEffect(Unit) {
                 onNavigateAutomationSettings = {
@@ -653,6 +656,10 @@ abstract class HomeActivity : AppActivity() {
                                         settingsTargetSection = SettingsSection.AUTOMATION
                                         selectedTab = 3
                                     },
+                                    onOpenCompatStubs = {
+                                        settingsTargetNav = moe.shizuku.manager.settings.SettingsNav.CompatStubs
+                                        selectedTab = 3
+                                    },
                                     listState = homeListState
                                 )
                                 1 -> moe.shizuku.manager.module.ModulesScreen(onOpenWebUi = {
@@ -668,7 +675,9 @@ abstract class HomeActivity : AppActivity() {
                                 3 -> moe.shizuku.manager.settings.SettingsScreen(
                                     listState = settingsListState,
                                     targetSection = settingsTargetSection,
-                                    onTargetSectionConsumed = { settingsTargetSection = null }
+                                    onTargetSectionConsumed = { settingsTargetSection = null },
+                                    targetNav = settingsTargetNav,
+                                    onTargetNavConsumed = { settingsTargetNav = null }
                                 )
                             }
                                 }
@@ -1245,6 +1254,7 @@ private fun HomeScreen(
     onStartDhizuku: () -> Unit,
     dhizukuEnabled: Boolean,
     onOpenAutomationSettings: () -> Unit = {},
+    onOpenCompatStubs: () -> Unit = {},
     listState: LazyListState = rememberLazyListState()
 ) {
     val context = LocalContext.current
@@ -1418,6 +1428,25 @@ private fun HomeScreen(
                     onPairWirelessAdb = onPairWirelessAdb,
                     onOpenWirelessGuide = onOpenWirelessGuide
                 )
+            }
+
+            item {
+                HomeCard(
+                    icon = R.drawable.ic_warning_24,
+                    title = stringResource(R.string.home_shizuku_deprecated_banner_title),
+                    body = stringResource(R.string.home_shizuku_deprecated_banner_body)
+                ) {
+                    HomeButtons(
+                        listOf(
+                            HomeButtonSpec(
+                                label = R.string.home_shizuku_deprecated_banner_button,
+                                icon = R.drawable.ic_system_icon,
+                                primary = true,
+                                onClick = onOpenCompatStubs
+                            )
+                        )
+                    )
+                }
             }
 
             if (running && !adbPermission) {

@@ -1030,4 +1030,9 @@ Wi-Fi is required for the first restart because Shevery must connect to the curr
     <string name="notification_auth_invalid_message">Make sure the token in your intent matches the one in Shevery Settings.</string>
     <string name="notification_connectors_disabled_title">Automation connectors disabled</string>
     <string name="notification_connectors_disabled_message">An automation intent was blocked because Shevery connectors are disabled in Settings. Tap to enable.</string>
+
+    <!-- Compatibility Stub notice on Home -->
+    <string name="home_shizuku_deprecated_banner_title">Shizuku API is Deprecated</string>
+    <string name="home_shizuku_deprecated_banner_body">Shevery now uses native Shevery API. To support legacy applications requiring Shizuku, use Compatibility Stubs to bridge permissions and APIs to Shevery.</string>
+    <string name="home_shizuku_deprecated_banner_button">Compatibility Stubs</string>
 </resources>
