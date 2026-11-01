@@ -43,6 +43,7 @@ import androidx.compose.foundation.layout.WindowInsets
 import androidx.compose.foundation.layout.fillMaxSize
 import androidx.compose.foundation.layout.fillMaxWidth
 import androidx.compose.foundation.layout.height
+import androidx.compose.foundation.layout.heightIn
 import androidx.compose.foundation.layout.padding
 import androidx.compose.foundation.layout.size
 import androidx.compose.foundation.layout.systemBars
@@ -1220,73 +1221,119 @@ fun ModuleLiveConsoleDialog(
                 HorizontalDivider(color = MaterialTheme.colorScheme.outlineVariant.copy(alpha = 0.4f))
 
                 // Bottom Action Bar
-                Row(
+                Column(
                     modifier = Modifier
                         .fillMaxWidth()
-                        .padding(horizontal = 14.dp, vertical = 12.dp),
-                    horizontalArrangement = Arrangement.spacedBy(8.dp),
-                    verticalAlignment = Alignment.CenterVertically
+                        .padding(horizontal = 14.dp, vertical = 10.dp),
+                    verticalArrangement = Arrangement.spacedBy(8.dp)
                 ) {
                     if (live.running) {
-                        Spacer(modifier = Modifier.weight(1f))
-                        FilledTonalButton(onClick = onHide) {
-                            Text(stringResource(R.string.modules_live_log_hide))
+                        Row(
+                            modifier = Modifier.fillMaxWidth(),
+                            horizontalArrangement = Arrangement.End,
+                            verticalAlignment = Alignment.CenterVertically
+                        ) {
+                            FilledTonalButton(
+                                onClick = onHide,
+                                modifier = Modifier.heightIn(min = 36.dp, max = 42.dp),
+                                contentPadding = PaddingValues(horizontal = 14.dp, vertical = 6.dp)
+                            ) {
+                                Text(
+                                    text = stringResource(R.string.modules_live_log_hide),
+                                    maxLines = 1,
+                                    style = MaterialTheme.typography.labelLarge
+                                )
+                            }
                         }
                     } else {
-                        OutlinedButton(
-                            onClick = {
-                                showAiPanel = true
-                                onAskAi()
-                            },
-                            enabled = !aiLoading
+                        FlowRow(
+                            modifier = Modifier.fillMaxWidth(),
+                            horizontalArrangement = Arrangement.spacedBy(8.dp, Alignment.End),
+                            verticalArrangement = Arrangement.spacedBy(8.dp)
                         ) {
-                            Icon(
-                                imageVector = Icons.Rounded.Terminal,
-                                contentDescription = null,
-                                modifier = Modifier
-                                    .padding(end = 6.dp)
-                                    .size(16.dp)
-                            )
-                            Text(stringResource(R.string.comput_ask_gemini))
-                        }
-
-                        Spacer(modifier = Modifier.weight(1f))
-
-                        if (onRerun != null) {
-                            FilledTonalButton(onClick = onRerun) {
+                            OutlinedButton(
+                                onClick = {
+                                    showAiPanel = true
+                                    onAskAi()
+                                },
+                                enabled = !aiLoading,
+                                modifier = Modifier.heightIn(min = 36.dp, max = 42.dp),
+                                contentPadding = PaddingValues(horizontal = 12.dp, vertical = 6.dp)
+                            ) {
                                 Icon(
-                                    imageVector = Icons.Rounded.Refresh,
+                                    imageVector = Icons.Rounded.Terminal,
                                     contentDescription = null,
                                     modifier = Modifier
                                         .padding(end = 6.dp)
                                         .size(16.dp)
                                 )
-                                Text(stringResource(R.string.home_refresh))
+                                Text(
+                                    text = stringResource(R.string.comput_ask_gemini),
+                                    maxLines = 1,
+                                    style = MaterialTheme.typography.labelLarge
+                                )
                             }
-                        }
 
-                        if (onRunAction != null) {
-                            FilledTonalButton(onClick = onRunAction) {
+                            if (onRerun != null) {
+                                FilledTonalButton(
+                                    onClick = onRerun,
+                                    modifier = Modifier.heightIn(min = 36.dp, max = 42.dp),
+                                    contentPadding = PaddingValues(horizontal = 12.dp, vertical = 6.dp)
+                                ) {
+                                    Icon(
+                                        imageVector = Icons.Rounded.Refresh,
+                                        contentDescription = null,
+                                        modifier = Modifier
+                                            .padding(end = 6.dp)
+                                            .size(16.dp)
+                                    )
+                                    Text(
+                                        text = stringResource(R.string.home_refresh),
+                                        maxLines = 1,
+                                        style = MaterialTheme.typography.labelLarge
+                                    )
+                                }
+                            }
+
+                            if (onRunAction != null) {
+                                FilledTonalButton(
+                                    onClick = onRunAction,
+                                    modifier = Modifier.heightIn(min = 36.dp, max = 42.dp),
+                                    contentPadding = PaddingValues(horizontal = 12.dp, vertical = 6.dp)
+                                ) {
+                                    Icon(
+                                        imageVector = Icons.Rounded.PlayArrow,
+                                        contentDescription = null,
+                                        modifier = Modifier
+                                            .padding(end = 6.dp)
+                                            .size(16.dp)
+                                    )
+                                    Text(
+                                        text = stringResource(R.string.modules_run_action),
+                                        maxLines = 1,
+                                        style = MaterialTheme.typography.labelLarge
+                                    )
+                                }
+                            }
+
+                            Button(
+                                onClick = onClose,
+                                modifier = Modifier.heightIn(min = 36.dp, max = 42.dp),
+                                contentPadding = PaddingValues(horizontal = 14.dp, vertical = 6.dp)
+                            ) {
                                 Icon(
-                                    imageVector = Icons.Rounded.PlayArrow,
+                                    imageVector = Icons.Rounded.Close,
                                     contentDescription = null,
                                     modifier = Modifier
                                         .padding(end = 6.dp)
                                         .size(16.dp)
                                 )
-                                Text(stringResource(R.string.modules_run_action))
+                                Text(
+                                    text = stringResource(R.string.modules_recommand_close),
+                                    maxLines = 1,
+                                    style = MaterialTheme.typography.labelLarge
+                                )
                             }
-                        }
-
-                        Button(onClick = onClose) {
-                            Icon(
-                                imageVector = Icons.Rounded.Close,
-                                contentDescription = null,
-                                modifier = Modifier
-                                    .padding(end = 6.dp)
-                                    .size(16.dp)
-                            )
-                            Text(stringResource(R.string.modules_recommand_close))
                         }
                     }
                 }
