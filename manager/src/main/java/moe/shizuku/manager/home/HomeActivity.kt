@@ -1301,9 +1301,6 @@ private fun HomeScreen(
     } else {
         null
     }
-    val diagnostics = remember(status, grantedCount, localNetworkPermissionState, isRooted, watchdogEnabled, dhizukuEnabled, tcpMode, launchMode) {
-        buildDiagnostics(context, status, grantedCount, localNetworkPermissionState, isRooted, watchdogEnabled, dhizukuEnabled, tcpMode, launchMode)
-    }
     val scope = rememberCoroutineScope()
     var isRefreshing by remember { mutableStateOf(false) }
     var showAutomationSheet by remember { mutableStateOf(false) }
@@ -1511,13 +1508,6 @@ private fun HomeScreen(
             item {
                 AutomationCard(
                     onViewIntents = { showAutomationSheet = true }
-                )
-            }
-
-            item {
-                DiagnosticsCard(
-                    diagnostics = diagnostics,
-                    onCopyDiagnostics = onCopyDiagnostics
                 )
             }
         }
