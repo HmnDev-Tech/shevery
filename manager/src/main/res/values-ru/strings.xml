@@ -665,4 +665,13 @@
     <string name="notification_auth_invalid_message">Убедитесь, что токен в интенте совпадает с токеном в настройках Shevery.</string>
     <string name="notification_connectors_disabled_title">Коннекторы автоматизации отключены</string>
     <string name="notification_connectors_disabled_message">Интент автоматизации заблокирован, так как коннекторы Shevery отключены в Настройках. Нажмите, чтобы включить.</string>
+
+    <!-- Compatibility Stubs -->
+    <string name="settings_compat_stubs_title">Compatibility Stubs</string>
+    <string name="settings_compat_stubs_summary">Управление заглушками-мостами Shizuku и Dhizuku для совместимости со сторонними приложениями</string>
+
+    <!-- Compatibility Stub notice on Home -->
+    <string name="home_shizuku_deprecated_banner_title">Shizuku API больше не используется</string>
+    <string name="home_shizuku_deprecated_banner_body">Shevery перешёл на нативный Shevery API. Для поддержки приложений, работающих через Shizuku, используйте Compatibility Stubs — заглушки перенаправят привилегии и разрешения в Shevery.</string>
+    <string name="home_shizuku_deprecated_banner_button">Compatibility Stubs</string>
 </resources>
