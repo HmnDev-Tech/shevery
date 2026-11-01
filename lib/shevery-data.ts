@@ -35,12 +35,21 @@ export const PROJECT_FACTS = [
   },
   {
     term: "current release",
-    value: "14.6.1",
-    detail: "versionCode 47, published 2026-11-01. Built from api_version_name 14.6.1.",
+    value: "14.6.2",
+    detail: "versionCode 48, published 2026-11-01. Built from api_version_name 14.6.2.",
   },
 ]
 
 export const RECENT_CHANGES: ChangeCard[] = [
+  {
+    title: "14.6.2: hotfix for RequestPermissionActivity immediate finish on rish/Termux (#349)",
+    body: "Shevery 14.6.2 (versionCode 48) resolves issue #349: RequestPermissionActivity was calling finish() immediately (~47ms) when getLaunchedFromUid() reflection returned -1 (hidden API blocked on some ROMs), discarding the valid client UID from the intent. Fix preserves the intent UID when the system-identified caller UID is unavailable, and correctly passes pid/requestCode to dispatchPermissionConfirmationResult for server-initiated rish sessions.",
+    commits: [
+      { label: "14.6.2", url: "https://github.com/HmnDev-Tech/shevery" },
+    ],
+    span: "lg:col-span-12",
+    variant: "primary",
+  },
   {
     title: "14.6.1: hotfix for client binder dispatch storm and System UI freeze (#348)",
     body: "Shevery 14.6.1 (versionCode 47) resolves issue #348: prevents background app launch storms on server startup by strictly verifying running process state before dispatching binders, bounding the dispatch executor, and eliminating force-stop loops.",

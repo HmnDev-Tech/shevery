@@ -272,12 +272,24 @@ class RequestPermissionActivity : AppActivity() {
             if (dhizukuListener != null) break
         }
 
-        val pid = if (extrasTrusted) intent.getIntExtra("pid", -1) else -1
-        val requestCode = if (extrasTrusted) intent.getIntExtra("requestCode", -1) else -1
+        // When the caller is trusted OR when getLaunchedFromUid() failed (callerUid == -1) but
+        // the intent carries a valid app uid (server-initiated rish request), we still need the
+        // pid/requestCode from the intent so dispatchPermissionConfirmationResult can reply.
+        val serverInitiated = callerUid <= 0 && uid > 0
+        val pid = if (extrasTrusted || serverInitiated) intent.getIntExtra("pid", -1) else -1
+        val requestCode = if (extrasTrusted || serverInitiated) intent.getIntExtra("requestCode", -1) else -1
 
         if (!extrasTrusted) {
-            uid = callerUid
-            callingPkg = callerPackage
+            // Only replace uid/package with the system-identified caller when we have a real
+            // positive uid. If getLaunchedFromUid() failed (e.g. hidden-API reflection returned
+            // null/0 on this ROM), callerUid is -1 and we must NOT discard the uid the Shevery
+            // server placed in the intent — the server is the only entity that starts this
+            // activity (it is not exported to arbitrary apps) and it already supplied the
+            // correct client uid via the "uid" extra.
+            if (callerUid > 0) {
+                uid = callerUid
+                callingPkg = callerPackage
+            }
             dhizukuListener = null
         }
 
