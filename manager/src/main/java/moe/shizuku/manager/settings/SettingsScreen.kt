@@ -181,7 +181,7 @@ enum class SettingsSection(
     ),
 }
 
-private sealed interface SettingsNav {
+sealed interface SettingsNav {
     data object Hub : SettingsNav
     data class Section(val section: SettingsSection) : SettingsNav
     data object UpdateSettings : SettingsNav
@@ -197,7 +197,9 @@ private sealed interface SettingsNav {
 fun SettingsScreen(
     listState: LazyListState = rememberLazyListState(),
     targetSection: SettingsSection? = null,
-    onTargetSectionConsumed: (() -> Unit)? = null
+    onTargetSectionConsumed: (() -> Unit)? = null,
+    targetNav: SettingsNav? = null,
+    onTargetNavConsumed: (() -> Unit)? = null
 ) {
     val context = LocalContext.current
     val activity = context as? Activity
@@ -356,12 +358,15 @@ fun SettingsScreen(
     var recreateTick by remember { mutableIntStateOf(0) }
     var nav by remember {
         mutableStateOf<SettingsNav>(
-            if (targetSection != null) SettingsNav.Section(targetSection) else SettingsNav.Hub
+            targetNav ?: (if (targetSection != null) SettingsNav.Section(targetSection) else SettingsNav.Hub)
         )
     }
 
-    LaunchedEffect(targetSection) {
-        if (targetSection != null) {
+    LaunchedEffect(targetSection, targetNav) {
+        if (targetNav != null) {
+            nav = targetNav
+            onTargetNavConsumed?.invoke()
+        } else if (targetSection != null) {
             nav = SettingsNav.Section(targetSection)
             onTargetSectionConsumed?.invoke()
         }
