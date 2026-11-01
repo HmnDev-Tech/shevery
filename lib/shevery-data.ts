@@ -35,12 +35,21 @@ export const PROJECT_FACTS = [
   },
   {
     term: "current release",
-    value: "14.5.0",
-    detail: "versionCode 45, published 2026-10-23. Built from api_version_name 14.5.0.",
+    value: "14.6.0",
+    detail: "versionCode 46, published 2026-11-01. Built from api_version_name 14.6.0.",
   },
 ]
 
 export const RECENT_CHANGES: ChangeCard[] = [
+  {
+    title: "14.6: native Shevery API, ADB modules support, Compatibility Stubs notice",
+    body: "Shevery 14.6 bumps server patch version to 6 (14.6.0, versionCode 46). Features full native ADB CLI translation in the Shevery server, complete ADB module Actions & WebUI support, and Shizuku deprecation warning with direct Compatibility Stubs navigation.",
+    commits: [
+      { label: "14.6.0", url: "https://github.com/HmnDev-Tech/shevery" },
+    ],
+    span: "lg:col-span-12",
+    variant: "primary",
+  },
   {
     title: "14.5: per-app Shizuku privileges, About drill-in screens, agent chat history",
     body: "Tapping an app in Application Management opens a detail screen with a Shizuku Privileges group — access switch, session-only grant and one switch per dangerous permission granted or revoked through Shizuku. Settings -> About now drills into a Contributors and Credits screen and a Recommendations screen, and the Comput agent persists chat history so a previous conversation can be continued. Server version bumped to 14.5 (versionCode 45).",
