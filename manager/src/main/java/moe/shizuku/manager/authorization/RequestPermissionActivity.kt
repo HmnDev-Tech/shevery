@@ -272,10 +272,12 @@ class RequestPermissionActivity : AppActivity() {
             if (dhizukuListener != null) break
         }
 
-        val pid = if (extrasTrusted) intent.getIntExtra("pid", -1) else -1
-        val requestCode = if (extrasTrusted) intent.getIntExtra("requestCode", -1) else -1
+        val callerUnknown = callerUid <= 0
+        val keepIntentExtras = extrasTrusted || callerUnknown
+        val pid = if (keepIntentExtras) intent.getIntExtra("pid", -1) else -1
+        val requestCode = if (keepIntentExtras) intent.getIntExtra("requestCode", -1) else -1
 
-        if (!extrasTrusted) {
+        if (!extrasTrusted && !callerUnknown) {
             uid = callerUid
             callingPkg = callerPackage
             dhizukuListener = null
