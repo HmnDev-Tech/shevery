@@ -92,18 +92,17 @@ class ModuleWebViewActivity : AppActivity() {
                                     assetLoader
                                 )
                                 if (exposeBridge) {
-                                    addJavascriptInterface(
-                                        ModuleJsBridge(
-                                            module,
-                                            webView = this,
-                                            commandReviewer = { request ->
-                                                runBlocking {
-                                                    confirmCommand(request)
-                                                }
+                                    val bridge = ModuleJsBridge(
+                                        module,
+                                        webView = this,
+                                        commandReviewer = { request ->
+                                            runBlocking {
+                                                confirmCommand(request)
                                             }
-                                        ),
-                                        "Shizuku"
+                                        }
                                     )
+                                    addJavascriptInterface(bridge, "Shizuku")
+                                    addJavascriptInterface(bridge, "Shevery")
                                 }
                                 loadUrl(indexUrl)
                             }

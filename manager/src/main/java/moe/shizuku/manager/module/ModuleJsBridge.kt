@@ -96,6 +96,15 @@ class ModuleJsBridge(
     }
 
     @JavascriptInterface
+    fun run(command: String): String = exec(command)
+
+    @JavascriptInterface
+    fun shell(command: String): String = exec(command)
+
+    @JavascriptInterface
+    fun execute(command: String): String = exec(command)
+
+    @JavascriptInterface
     fun execWithOptions(command: String, optionsJson: String): String {
         if (!isOriginValid()) return shellError("Permission denied: Origin mismatch.")
         return try {
@@ -171,12 +180,53 @@ class ModuleJsBridge(
         val result = JSONObject()
         return try {
             val service = IShizukuService.Stub.asInterface(binder)
+            AdbModuleManager.ensureAdbShim(service)
             val env = buildEnvironment(mode, options.extraEnv)
             val cwd = resolveModuleDirectory(options.cwd)
+            val wrappedCommand = buildString {
+                appendLine("export PATH=\"/data/local/tmp/shevery/bin:/product/bin:/apex/com.android.runtime/bin:/apex/com.android.art/bin:/system_ext/bin:/system/bin:/system/xbin:/odm/bin:/vendor/bin:/vendor/xbin:/sbin:/data/adb/apatch:/data/adb/ksu/bin:\$PATH\"")
+                appendLine("ui_print() { echo \"\$@\"; }")
+                appendLine("""adb() {
+    case "${'$'}1" in
+        shell)
+            shift
+            if [ ${'$'}# -eq 0 ]; then
+                sh
+            else
+                "${'$'}@"
+            fi
+            ;;
+        devices)
+            echo "List of devices attached"
+            echo "shevery-device	device"
+            ;;
+        version)
+            echo "Android Debug Bridge version 1.0.41"
+            echo "Version shevery-adb-shim"
+            ;;
+        get-state|get-serialno)
+            echo "shevery-device"
+            ;;
+        wait-for-device)
+            return 0
+            ;;
+        *)
+            if [ ${'$'}# -eq 0 ]; then
+                sh
+            else
+                "${'$'}@"
+            fi
+            ;;
+    esac
+}
+export -f adb 2>/dev/null || true""")
+                appendLine("cd \"${cwd.absolutePath}\" 2>/dev/null || true")
+                append(command)
+            }
             val remote = service.newProcess(
-                arrayOf("sh", "-c", command),
+                arrayOf("sh", "-c", wrappedCommand),
                 env,
-                cwd.absolutePath
+                "/data/local/tmp"
             )
 
             val stdoutPfd = remote.getInputStream()
@@ -244,7 +294,7 @@ class ModuleJsBridge(
             "AXERONVER" to "1.0.0",
             "MODPATH" to module.directory.absolutePath,
             "ARCH" to (android.os.Build.SUPPORTED_ABIS.firstOrNull() ?: "arm64-v8a"),
-            "PATH" to "/product/bin:/apex/com.android.runtime/bin:/apex/com.android.art/bin:/system_ext/bin:/system/bin:/system/xbin:/odm/bin:/vendor/bin:/vendor/xbin:/sbin:/data/adb/apatch:/data/adb/ksu/bin"
+            "PATH" to "/data/local/tmp/shevery/bin:/product/bin:/apex/com.android.runtime/bin:/apex/com.android.art/bin:/system_ext/bin:/system/bin:/system/xbin:/odm/bin:/vendor/bin:/vendor/xbin:/sbin:/data/adb/apatch:/data/adb/ksu/bin"
         )
         extraEnv.forEach { (key, value) -> env[key] = value }
         return env.map { (key, value) -> "$key=$value" }.toTypedArray()

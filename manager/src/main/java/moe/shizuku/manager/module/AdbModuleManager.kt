@@ -643,6 +643,7 @@ object AdbModuleManager {
 
         val binder = Shizuku.getBinder() ?: error("Shevery service is not running.")
         val service = IShizukuService.Stub.asInterface(binder)
+        ensureAdbShim(service)
         val env = arrayOf(
             "MODDIR=${module.directory.absolutePath}",
             "MODPATH=${module.directory.absolutePath}",
@@ -651,10 +652,48 @@ object AdbModuleManager {
             "SHIZUKU_MODULE_MODE=${ModuleSettings.getAccessMode().value}",
             "SHIZUKU_MODULE_TRUSTED=${if (ModuleSettings.isModuleTrusted(module.id)) "1" else "0"}",
             "SHIZUKU_MODULE_BACKGROUND=${if (ModuleSettings.canRunBackground(module)) "1" else "0"}",
-            "ARCH=$arch"
+            "AXERON=true",
+            "AXERONVER=1.0.0",
+            "ARCH=$arch",
+            "PATH=/data/local/tmp/shevery/bin:/product/bin:/apex/com.android.runtime/bin:/apex/com.android.art/bin:/system_ext/bin:/system/bin:/system/xbin:/odm/bin:/vendor/bin:/vendor/xbin:/sbin:/data/adb/apatch:/data/adb/ksu/bin"
         )
         val wrappedScript = buildString {
+            appendLine("export PATH=\"/data/local/tmp/shevery/bin:/product/bin:/apex/com.android.runtime/bin:/apex/com.android.art/bin:/system_ext/bin:/system/bin:/system/xbin:/odm/bin:/vendor/bin:/vendor/xbin:/sbin:/data/adb/apatch:/data/adb/ksu/bin:\$PATH\"")
             appendLine("ui_print() { echo \"\$@\"; }")
+            appendLine("""adb() {
+    case "${'$'}1" in
+        shell)
+            shift
+            if [ ${'$'}# -eq 0 ]; then
+                sh
+            else
+                "${'$'}@"
+            fi
+            ;;
+        devices)
+            echo "List of devices attached"
+            echo "shevery-device	device"
+            ;;
+        version)
+            echo "Android Debug Bridge version 1.0.41"
+            echo "Version shevery-adb-shim"
+            ;;
+        get-state|get-serialno)
+            echo "shevery-device"
+            ;;
+        wait-for-device)
+            return 0
+            ;;
+        *)
+            if [ ${'$'}# -eq 0 ]; then
+                sh
+            else
+                "${'$'}@"
+            fi
+            ;;
+    esac
+}
+export -f adb 2>/dev/null || true""")
             appendLine("cd \"\$MODDIR\" 2>/dev/null || true")
             append(scriptContent)
         }
@@ -1135,6 +1174,54 @@ object AdbModuleManager {
             } else {
                 tail.toString()
             }
+        }
+    }
+
+    fun ensureAdbShim(service: IShizukuService) {
+        runCatching {
+            val shimScript = """
+                mkdir -p /data/local/tmp/shevery/bin 2>/dev/null
+                cat << 'EOF' > /data/local/tmp/shevery/bin/adb
+#!/system/bin/sh
+case "${'$'}1" in
+    shell)
+        shift
+        if [ ${'$'}# -eq 0 ]; then
+            exec /system/bin/sh
+        else
+            exec "${'$'}@"
+        fi
+        ;;
+    devices)
+        echo "List of devices attached"
+        echo "shevery-device	device"
+        exit 0
+        ;;
+    version)
+        echo "Android Debug Bridge version 1.0.41"
+        echo "Version shevery-adb-shim"
+        exit 0
+        ;;
+    get-state|get-serialno)
+        echo "shevery-device"
+        exit 0
+        ;;
+    wait-for-device)
+        exit 0
+        ;;
+    *)
+        if [ ${'$'}# -eq 0 ]; then
+            exec /system/bin/sh
+        else
+            exec "${'$'}@"
+        fi
+        ;;
+esac
+EOF
+                chmod 0755 /data/local/tmp/shevery/bin/adb 2>/dev/null
+            """.trimIndent()
+            val proc = service.newProcess(arrayOf("sh", "-c", shimScript), null, "/data/local/tmp")
+            proc?.waitForTimeout(5, TimeUnit.SECONDS.name)
         }
     }
 }
