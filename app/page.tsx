@@ -207,7 +207,7 @@ export default function SheveryHomePage() {
               </div>
               <div className="max-w-[68ch] text-lg leading-relaxed text-on-surface-variant text-pretty lg:col-span-8">
                 <p>
-                  Shevery 14.6.0 (<code className="font-mono text-on-surface">versionCode 46</code>)
+                  Shevery 14.6.1 (<code className="font-mono text-on-surface">versionCode 47</code>)
                   was published on 1 November 2026. Summarised directly from the repository commits
                   and pull requests; each card links to the source diff.
                 </p>

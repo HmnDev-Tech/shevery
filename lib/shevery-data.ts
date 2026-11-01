@@ -35,12 +35,21 @@ export const PROJECT_FACTS = [
   },
   {
     term: "current release",
-    value: "14.6.0",
-    detail: "versionCode 46, published 2026-11-01. Built from api_version_name 14.6.0.",
+    value: "14.6.1",
+    detail: "versionCode 47, published 2026-11-01. Built from api_version_name 14.6.1.",
   },
 ]
 
 export const RECENT_CHANGES: ChangeCard[] = [
+  {
+    title: "14.6.1: hotfix for client binder dispatch storm and System UI freeze (#348)",
+    body: "Shevery 14.6.1 (versionCode 47) resolves issue #348: prevents background app launch storms on server startup by strictly verifying running process state before dispatching binders, bounding the dispatch executor, and eliminating force-stop loops.",
+    commits: [
+      { label: "14.6.1", url: "https://github.com/HmnDev-Tech/shevery" },
+    ],
+    span: "lg:col-span-12",
+    variant: "primary",
+  },
   {
     title: "14.6: native Shevery API, ADB modules support, Compatibility Stubs notice",
     body: "Shevery 14.6 bumps server patch version to 6 (14.6.0, versionCode 46). Features full native ADB CLI translation in the Shevery server, complete ADB module Actions & WebUI support, and Shizuku deprecation warning with direct Compatibility Stubs navigation.",
@@ -48,7 +57,7 @@ export const RECENT_CHANGES: ChangeCard[] = [
       { label: "14.6.0", url: "https://github.com/HmnDev-Tech/shevery" },
     ],
     span: "lg:col-span-12",
-    variant: "primary",
+    variant: "tonal",
   },
   {
     title: "14.5: per-app Shizuku privileges, About drill-in screens, agent chat history",

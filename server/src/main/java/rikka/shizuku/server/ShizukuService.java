@@ -65,7 +65,7 @@ public class ShizukuService extends Service<ShizukuUserServiceManager, ShizukuCl
 
     private static final String TAG = "Shizuku";
     private static final long HEARTBEAT_INTERVAL_MS = 5_000L;
-    private static final ExecutorService BINDER_DISPATCH_EXECUTOR = Executors.newCachedThreadPool(r -> {
+    private static final ExecutorService BINDER_DISPATCH_EXECUTOR = Executors.newFixedThreadPool(4, r -> {
         Thread t = new Thread(r, "shevery-binder-dispatch");
         t.setDaemon(true);
         return t;
@@ -595,6 +595,19 @@ public class ShizukuService extends Service<ShizukuUserServiceManager, ShizukuCl
         return super.onTransact(code, data, reply, flags);
     }
 
+    private static boolean isPackageRunning(String packageName, int userId) {
+        try {
+            int state = ActivityManagerApis.getPackageProcessState(packageName, userId, "shell");
+            // In Android/AOSP, process states:
+            // 0..19: Active / running / cached process in memory
+            // 20+: PROCESS_STATE_NONEXISTENT (does not exist)
+            // < 0: PROCESS_STATE_UNKNOWN
+            return state >= 0 && state < 20;
+        } catch (Throwable tr) {
+            return false;
+        }
+    }
+
     void sendBinderToClient() {
         for (int userId : UserManagerApis.getUserIdsNoThrow()) {
             sendBinderToClient(this, userId);
@@ -612,9 +625,21 @@ public class ShizukuService extends Service<ShizukuUserServiceManager, ShizukuCl
                         || Objects.equals(ServerConstants.SHIZUKU_STUB_APPLICATION_ID, pi.packageName))
                     continue;
 
-                if (ServerConstants.hasSheveryPermission(pi.requestedPermissions)) {
+                boolean isShevery = ServerConstants.hasSheveryPermission(pi.requestedPermissions);
+                boolean isLegacy = stubActive && ServerConstants.hasLegacyShizukuPermission(pi.requestedPermissions);
+                if (!isShevery && !isLegacy) {
+                    continue;
+                }
+
+                // Strictly avoid waking up inactive or stopped applications on server startup (issue #348).
+                // Any application launched by the user later receives the binder on-demand via BinderSender.
+                if (!isPackageRunning(pi.packageName, userId)) {
+                    continue;
+                }
+
+                if (isShevery) {
                     sendBinderToUserAppAsync(binder, pi.packageName, userId, true);
-                } else if (stubActive && ServerConstants.hasLegacyShizukuPermission(pi.requestedPermissions)) {
+                } else {
                     sendBinderToUserAppAsync(binder, pi.packageName, userId, false);
                 }
             }
@@ -713,11 +738,6 @@ public class ShizukuService extends Service<ShizukuUserServiceManager, ShizukuCl
             boolean isAlive = provider.asBinder().pingBinder();
             if (!isAlive) {
                 LOGGER.e("provider is dead %s %d", authority, userId);
-                if (retry && isFallback) {
-                    ActivityManagerApis.forceStopPackageNoThrow(packageName, userId);
-                    Thread.sleep(250);
-                    return trySendBinderViaAuthority(binder, packageName, authority, userId, false, true);
-                }
                 return false;
             }
 
