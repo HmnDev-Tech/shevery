@@ -259,6 +259,10 @@ class ModuleInstaller private constructor() {
 
                 val body = dlResp.body ?: return null
                 val totalBytes = body.contentLength().takeIf { it > 0L } ?: zipAsset.size
+                if (totalBytes > MAX_MODULE_ZIP_BYTES) {
+                    onLog("! Release ZIP is too large (${formatBytes(totalBytes)})")
+                    return null
+                }
                 body.byteStream().use { input ->
                     zipFile.outputStream().use { output ->
                         val buffer = ByteArray(8192)
@@ -269,6 +273,9 @@ class ModuleInstaller private constructor() {
                             if (read <= 0) break
                             output.write(buffer, 0, read)
                             downloaded += read
+                            if (downloaded > MAX_MODULE_ZIP_BYTES) {
+                                throw IllegalStateException("Release ZIP exceeded the size limit")
+                            }
                             if (totalBytes > 0L) {
                                 val pct = ((downloaded * 100L) / totalBytes).toInt().coerceIn(0, 100)
                                 onProgress(0.10f + (pct / 100f) * 0.65f)
@@ -315,6 +322,7 @@ class ModuleInstaller private constructor() {
 
     companion object {
         private const val TAG = "ModuleInstaller"
+        private const val MAX_MODULE_ZIP_BYTES = 64L * 1024L * 1024L
 
         @Volatile
         private var instance: ModuleInstaller? = null

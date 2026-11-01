@@ -2,7 +2,10 @@ package moe.shizuku.manager.dhizuku
 
 import android.app.admin.DevicePolicyManager
 import android.content.Context
+import android.content.pm.PackageManager
+import android.os.Binder
 import android.os.Build
+import android.os.Process
 import android.os.SystemProperties
 import android.provider.Settings
 import android.util.Log
@@ -14,7 +17,66 @@ class DhizukuService(private val context: Context) : IDhizukuService.Stub() {
         private const val TAG = "DhizukuService"
     }
 
+    /**
+     * Only our own process, privileged UIDs and the device/profile owner (the Dhizuku
+     * server) may drive this service. The manifest permission alone is not enough:
+     * PRIVILEGED_API is a normal runtime permission any app can ask the user to grant.
+     */
+    private fun isTrustedCaller(): Boolean {
+        val uid = Binder.getCallingUid()
+        if (uid == Process.myUid() || uid < Process.FIRST_APPLICATION_UID) return true
+        return try {
+            val packages = context.packageManager.getPackagesForUid(uid).orEmpty()
+            val dpm = context.getSystemService(Context.DEVICE_POLICY_SERVICE) as? DevicePolicyManager
+            if (dpm != null && packages.any {
+                    dpm.isDeviceOwnerApp(it) || dpm.isProfileOwnerApp(it)
+                }
+            ) {
+                return true
+            }
+            // The Dhizuku forwarder stub is built here and signed with our key.
+            val forwarder = packages.firstOrNull { it == "com.rosan.dhizuku" }
+            if (forwarder != null && isSignedByUs(forwarder)) {
+                return true
+            }
+            false
+        } catch (_: Throwable) {
+            false
+        }
+    }
+
+    private fun isSignedByUs(packageName: String): Boolean {
+        return try {
+            val api28 = Build.VERSION.SDK_INT >= Build.VERSION_CODES.P
+            val flags = if (api28) {
+                PackageManager.GET_SIGNING_CERTIFICATES
+            } else {
+                @Suppress("DEPRECATION")
+                PackageManager.GET_SIGNATURES
+            }
+            fun certs(name: String): Set<String> {
+                val info = context.packageManager.getPackageInfo(name, flags)
+                val signatures = if (api28) {
+                    info.signingInfo?.apkContentsSigners
+                } else {
+                    @Suppress("DEPRECATION")
+                    info.signatures
+                }
+                return signatures?.map { it.toCharsString() }?.toSet().orEmpty()
+            }
+            val theirs = certs(packageName)
+            val ours = certs(context.packageName)
+            theirs.isNotEmpty() && theirs == ours
+        } catch (_: Throwable) {
+            false
+        }
+    }
+
     override fun runCommand(command: String?) {
+        if (!isTrustedCaller()) {
+            Log.w(TAG, "Rejected runCommand from uid ${Binder.getCallingUid()}")
+            return
+        }
         command?.let {
             try {
                 Log.d(TAG, "Executing command: $it")
@@ -54,6 +116,10 @@ class DhizukuService(private val context: Context) : IDhizukuService.Stub() {
     }
 
     override fun enableAdb(): Boolean {
+        if (!isTrustedCaller()) {
+            Log.w(TAG, "Rejected enableAdb from uid ${Binder.getCallingUid()}")
+            return false
+        }
         return try {
             val dpm = context.getSystemService(Context.DEVICE_POLICY_SERVICE) as DevicePolicyManager
             val admins = dpm.activeAdmins

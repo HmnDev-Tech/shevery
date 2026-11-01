@@ -191,6 +191,7 @@ dependencies {
     implementation libs.hidden.compat
     compileOnly libs.hidden.stub
 
+    implementation 'androidx.webkit:webkit:1.11.0'
     implementation platform('androidx.compose:compose-bom:2026.06.01')
     implementation 'androidx.compose.animation:animation'
     implementation 'androidx.compose.foundation:foundation'

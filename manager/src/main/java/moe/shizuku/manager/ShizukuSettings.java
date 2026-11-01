@@ -22,6 +22,11 @@ import static java.lang.annotation.RetentionPolicy.SOURCE;
 public class ShizukuSettings {
 
     public static final String NAME = "settings";
+    /**
+     * The connector token lives in its own preference file so Android auto-backup and
+     * device transfer (which only include settings.xml) never carry the secret.
+     */
+    public static final String AUTH_PREFS = "shevery_auth";
     public static final String NIGHT_MODE = "night_mode";
     public static final String LANGUAGE = "language";
     public static final String KEEP_START_ON_BOOT = "start_on_boot";
@@ -34,6 +39,7 @@ public class ShizukuSettings {
 
 
     private static SharedPreferences sPreferences;
+    private static Context sAppContext;
 
     public static SharedPreferences getPreferences() {
         if (sPreferences == null) {
@@ -67,10 +73,19 @@ public class ShizukuSettings {
     }
 
     public static void initialize(Context context) {
+        sAppContext = context.getApplicationContext();
         if (sPreferences == null) {
             sPreferences = getSettingsStorageContext(context)
                     .getSharedPreferences(NAME, Context.MODE_PRIVATE);
         }
+    }
+
+    private static SharedPreferences getAuthPreferences() {
+        if (sAppContext == null) {
+            return new EmptySharedPreferencesImpl();
+        }
+        return getSettingsStorageContext(sAppContext)
+                .getSharedPreferences(AUTH_PREFS, Context.MODE_PRIVATE);
     }
 
     @IntDef({
@@ -228,17 +243,28 @@ public class ShizukuSettings {
     public static final String AUTH_TOKEN = "auth_token";
 
     public static String getAuthToken() {
-        String token = getPreferences().getString(AUTH_TOKEN, null);
+        SharedPreferences auth = getAuthPreferences();
+        String token = auth.getString(AUTH_TOKEN, null);
         if (token == null || token.isEmpty()) {
-            token = generateAuthToken();
+            // Migrate a token stored by older builds inside settings.xml.
+            token = getPreferences().getString(AUTH_TOKEN, null);
+            if (token == null || token.isEmpty()) {
+                token = newAuthToken();
+            }
+            auth.edit().putString(AUTH_TOKEN, token).apply();
+            getPreferences().edit().remove(AUTH_TOKEN).apply();
         }
         return token;
     }
 
     public static String generateAuthToken() {
-        String token = java.util.UUID.randomUUID().toString().replace("-", "").substring(0, 24);
-        getPreferences().edit().putString(AUTH_TOKEN, token).apply();
+        String token = newAuthToken();
+        getAuthPreferences().edit().putString(AUTH_TOKEN, token).apply();
         return token;
+    }
+
+    private static String newAuthToken() {
+        return java.util.UUID.randomUUID().toString().replace("-", "").substring(0, 24);
     }
 
 }

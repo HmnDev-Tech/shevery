@@ -17,6 +17,8 @@ import okhttp3.Request
  */
 object AppUpdateDownloader {
 
+    private const val MAX_APK_BYTES = 300L * 1024L * 1024L
+
     private val client = OkHttpClient.Builder()
         .connectTimeout(15, TimeUnit.SECONDS)
         .readTimeout(60, TimeUnit.SECONDS) // per-chunk timeout — the APK streams;60s is plenty between chunks
@@ -42,6 +44,9 @@ object AppUpdateDownloader {
                 }
                 val body = response.body ?: throw IOException("Empty response body")
                 val total = body.contentLength().takeIf { it > 0 }
+                if (total != null && total > MAX_APK_BYTES) {
+                    throw IOException("Update APK is too large: $total bytes")
+                }
                 body.byteStream().use { input ->
                     targetFile.outputStream().use { output ->
                         val buffer = ByteArray(64 * 1024)
@@ -49,8 +54,11 @@ object AppUpdateDownloader {
                         while (true) {
                             val n = input.read(buffer)
                             if (n < 0) break
-                            output.write(buffer, 0, n)
                             read += n
+                            if (read > MAX_APK_BYTES) {
+                                throw IOException("Update APK exceeded the size limit")
+                            }
+                            output.write(buffer, 0, n)
                             onProgress(read, total)
                         }
                         output.flush()

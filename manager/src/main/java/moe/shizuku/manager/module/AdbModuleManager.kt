@@ -7,6 +7,7 @@ import moe.shizuku.server.IShizukuService
 import rikka.shizuku.Shizuku
 import java.io.BufferedInputStream
 import java.io.File
+import java.security.MessageDigest
 import java.util.Locale
 import java.util.concurrent.TimeUnit
 import java.util.zip.ZipFile
@@ -83,13 +84,13 @@ object AdbModuleManager {
 
     fun modulesRoot(context: Context): File {
         val filesDir = context.filesDir
+        // Shell (uid 2000) must be able to traverse to the modules directory, but it
+        // must not be able to list the rest of the app's private storage.
         filesDir.parentFile?.apply {
-            setReadable(true, false)
             setExecutable(true, false)
         }
         filesDir.apply {
             mkdirs()
-            setReadable(true, false)
             setExecutable(true, false)
         }
         return File(filesDir, MODULES_DIR).apply {
@@ -163,6 +164,8 @@ object AdbModuleManager {
                     val modulesDir = modulesRoot(context)
                     val target = File(modulesDir, id)
                     val staging = File(modulesDir, ".$id.installing")
+                    val wasTrusted = ModuleSettings.isModuleTrusted(id)
+                    val previousFingerprint = if (wasTrusted) moduleFingerprint(target) else null
                     staging.deleteRecursively()
                     staging.mkdirs()
                     onLog("- Preparing staging directory .${id}.installing...")
@@ -218,9 +221,26 @@ object AdbModuleManager {
 
                     onLog("- Setting executable permissions (chmod 0755) on scripts...")
                     markScriptsExecutable(staging, props["action"])
+                    val newFingerprint = moduleFingerprint(staging)
                     onLog("- Moving module into ${target.absolutePath}...")
-                    target.deleteRecursively()
-                    check(staging.renameTo(target)) { "Unable to move module into storage." }
+                    // Atomic-ish swap: keep the old tree until the new one is in place.
+                    val backup = File(modulesDir, ".$id.old")
+                    backup.deleteRecursively()
+                    if (target.exists()) {
+                        check(target.renameTo(backup)) { "Unable to move the existing module aside." }
+                    }
+                    if (!staging.renameTo(target)) {
+                        if (backup.exists()) backup.renameTo(target)
+                        error("Unable to move module into storage.")
+                    }
+                    backup.deleteRecursively()
+                    if (wasTrusted && previousFingerprint != null &&
+                        newFingerprint != null && previousFingerprint != newFingerprint
+                    ) {
+                        // Trust belongs to the content the user approved, never to an id.
+                        ModuleSettings.setModuleTrusted(id, false)
+                        onLog("- Module content changed; Full Trust revoked.")
+                    }
                     markScriptsExecutable(target, props["action"])
                     onProgress(1.0f)
                     readModule(target) ?: error("Installed module is unreadable.")
@@ -882,6 +902,37 @@ object AdbModuleManager {
 
     fun clearLiveOutput() {
         _liveOutput.value = null
+    }
+
+    /**
+     * Stable digest of the module payload. Used to revoke Full Trust when an update
+     * replaces a trusted module with different content.
+     */
+    private fun moduleFingerprint(directory: File): String? {
+        if (!directory.isDirectory) return null
+        return try {
+            val digest = MessageDigest.getInstance("SHA-256")
+            val files = directory.walkTopDown()
+                .filter { it.isFile && it.name != DISABLE_FILE && it.name != ".source.prop" }
+                .sortedBy { it.relativeTo(directory).invariantSeparatorsPath }
+            for (file in files) {
+                val relative = file.relativeTo(directory).invariantSeparatorsPath
+                digest.update(relative.toByteArray(Charsets.UTF_8))
+                digest.update(0)
+                BufferedInputStream(file.inputStream()).use { input ->
+                    val buffer = ByteArray(8192)
+                    while (true) {
+                        val read = input.read(buffer)
+                        if (read <= 0) break
+                        digest.update(buffer, 0, read)
+                    }
+                }
+                digest.update(0)
+            }
+            digest.digest().joinToString("") { "%02x".format(it) }
+        } catch (_: Exception) {
+            null
+        }
     }
 
     fun readModule(directory: File): AdbModule? {

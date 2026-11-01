@@ -44,10 +44,12 @@ class PluginReceiver : BroadcastReceiver() {
             return
         }
 
-        if (isDirectAction(intent.action)) {
+        if (isDirectAction(intent.action) || intent.action == PluginContract.ACTION_FIRE_SETTING) {
             val expectedToken = getAuthToken(context)
             val providedToken = intent.getStringExtra(PluginContract.EXTRA_AUTH)
-            if (expectedToken.isNotEmpty() && providedToken != expectedToken) {
+                ?: intent.getBundleExtra(PluginContract.EXTRA_BUNDLE)
+                    ?.getString(PluginContract.EXTRA_AUTH)
+            if (expectedToken.isEmpty() || providedToken != expectedToken) {
                 Log.w(TAG, "Rejected intent ${intent.action}: invalid or missing auth token")
                 val isMissing = providedToken.isNullOrEmpty()
                 val titleRes = if (isMissing) {
@@ -89,17 +91,7 @@ class PluginReceiver : BroadcastReceiver() {
         else -> false
     }
 
-    private fun getAuthToken(context: Context): String {
-        return runCatching {
-            val storageContext = if (Build.VERSION.SDK_INT >= Build.VERSION_CODES.N) {
-                context.createDeviceProtectedStorageContext()
-            } else {
-                context
-            }
-            storageContext.getSharedPreferences("settings", Context.MODE_PRIVATE)
-                .getString(PluginContract.KEY_AUTH_TOKEN, "") ?: ""
-        }.getOrDefault("")
-    }
+    private fun getAuthToken(context: Context): String = readAuthToken(context)
 
     private fun isConnectorEnabled(context: Context): Boolean {
         return runCatching {
@@ -285,6 +277,55 @@ class PluginReceiver : BroadcastReceiver() {
     companion object {
         private const val TAG = "SheveryPluginReceiver"
         private const val RESTART_WAIT_MS = 10_000L
+        private const val AUTH_PREFS = "shevery_auth"
         private val isRestarting = AtomicBoolean(false)
+
+        private fun authPreferences(context: Context): android.content.SharedPreferences {
+            val storage = if (Build.VERSION.SDK_INT >= Build.VERSION_CODES.N) {
+                context.createDeviceProtectedStorageContext()
+            } else {
+                context
+            }
+            return storage.getSharedPreferences(AUTH_PREFS, Context.MODE_PRIVATE)
+        }
+
+        /** Reads the connector token without creating one; empty means "not configured". */
+        fun readAuthToken(context: Context): String {
+            val token = runCatching {
+                authPreferences(context).getString(PluginContract.KEY_AUTH_TOKEN, "")
+            }.getOrDefault("")
+            if (!token.isNullOrEmpty()) return token
+
+            // Migrate the token from the legacy settings.xml (pre-rotation builds).
+            val legacy = runCatching {
+                val storage = if (Build.VERSION.SDK_INT >= Build.VERSION_CODES.N) {
+                    context.createDeviceProtectedStorageContext()
+                } else {
+                    context
+                }
+                storage.getSharedPreferences("settings", Context.MODE_PRIVATE)
+                    .getString(PluginContract.KEY_AUTH_TOKEN, "")
+            }.getOrDefault("")
+            if (!legacy.isNullOrEmpty()) {
+                authPreferences(context).edit()
+                    .putString(PluginContract.KEY_AUTH_TOKEN, legacy)
+                    .apply()
+                return legacy
+            }
+            return ""
+        }
+
+        /** Used when the user configures a Tasker action; the token is persisted in the bundle. */
+        fun readOrCreateAuthToken(context: Context): String {
+            val existing = readAuthToken(context)
+            if (existing.isNotEmpty()) return existing
+            val token = java.util.UUID.randomUUID().toString()
+                .replace("-", "")
+                .substring(0, 24)
+            authPreferences(context).edit()
+                .putString(PluginContract.KEY_AUTH_TOKEN, token)
+                .apply()
+            return token
+        }
     }
 }

@@ -182,7 +182,7 @@ The `window.Shizuku` object can be exposed to module-local offline WebUI so page
 - access mode is **Full access**, or **Custom** with WebUI shell bridge enabled;
 - WebView internet is off.
 
-Full Trust modules bypass the `usesShellBridge=true`, WebUI bridge, WebView internet, ReCommand, Action, Service, background, and WebUI download policy gates. Path traversal, process timeout, output caps, and download size caps still apply.
+Full Trust modules bypass the `usesShellBridge=true`, WebUI bridge, WebView internet, Action, Service, background, and WebUI download policy gates. ReCommand still applies to WebUI shell execution regardless of trust. Path traversal, process timeout, output caps, and download size caps still apply. Trust is bound to the installed content: replacing a trusted module with a different payload revokes Full Trust.
 
 #### Module Info
 
@@ -230,7 +230,7 @@ Rules:
 - `execWithOptions().timeoutSeconds` is clamped to `1..600` seconds.
 - `stdin` is limited to 64 KB.
 - stdout/stderr return only the last 64 KB per stream, but the process streams are still drained to avoid deadlocks.
-- `cwd` must stay inside the module directory.
+- `cwd` must stay inside the module directory and is used as the process working directory. When omitted, the module directory is used.
 - extra env keys must match `[A-Za-z_][A-Za-z0-9_]*`.
 
 If the module is disabled, missing `usesShellBridge=true`, or blocked by Safe/Custom policy, shell calls return JSON with `ok: false`, `exitCode: -1`, and the error text in `stderr`. Full Trust modules do not require `usesShellBridge=true`.
@@ -245,7 +245,6 @@ Trusted modules:
 - can run background Service without the global background toggle;
 - can expose `window.Shizuku` without `usesShellBridge=true`;
 - can use WebView internet while the bridge is exposed;
-- skip ReCommand prompts;
 - can use `download()` even when global WebUI download is blocked;
 - can overwrite WebUI entry files through `download()`.
 
