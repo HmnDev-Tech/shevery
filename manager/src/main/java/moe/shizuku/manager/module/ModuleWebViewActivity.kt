@@ -1,16 +1,19 @@
 package moe.shizuku.manager.module
 
 import android.annotation.SuppressLint
+import android.net.Uri
 import android.os.Bundle
 import android.widget.Toast
 import android.webkit.CookieManager
-import android.webkit.WebSettings
 import android.webkit.WebResourceRequest
+import android.webkit.WebResourceResponse
+import android.webkit.WebSettings
 import android.webkit.WebView
 import android.webkit.WebViewClient
 import androidx.activity.compose.setContent
 import androidx.compose.foundation.layout.padding
 import androidx.compose.ui.viewinterop.AndroidView
+import androidx.webkit.WebViewAssetLoader
 import moe.shizuku.manager.R
 import moe.shizuku.manager.app.AppActivity
 import moe.shizuku.manager.ui.compose.ShizukuExpressiveTheme
@@ -35,13 +38,27 @@ class ModuleWebViewActivity : AppActivity() {
 
         val moduleId = intent.getStringExtra(EXTRA_MODULE_ID)
             ?: intent.data?.lastPathSegment.orEmpty()
-        val module = AdbModuleManager.readModule(AdbModuleManager.modulesRoot(this).resolve(moduleId))
+        val modulesRoot = AdbModuleManager.modulesRoot(this)
+        val module = AdbModuleManager.readModule(modulesRoot.resolve(moduleId))
         val index = module?.webRoot?.resolve("index.html")
         if (module == null || index?.isFile != true) {
             Toast.makeText(this, R.string.modules_webui_not_found, Toast.LENGTH_SHORT).show()
             finish()
             return
         }
+
+        // Serve module files from a real HTTPS origin instead of file://. This makes
+        // ES module imports same-origin (issue #120) without enabling universal file
+        // access, and keeps the bridge origin check meaningful.
+        val assetLoader = WebViewAssetLoader.Builder()
+            .addPathHandler(
+                "/modules/${module.id}/",
+                WebViewAssetLoader.InternalStoragePathHandler(this, module.directory)
+            )
+            .build()
+        val indexRelative = index.relativeTo(module.directory).invariantSeparatorsPath
+        val indexUrl = "https://appassets.androidplatform.net/modules/${module.id}/" +
+            indexRelative.split('/').joinToString("/") { Uri.encode(it) ?: it }
 
         setContent {
             val trusted = ModuleSettings.isModuleTrusted(module.id)
@@ -61,15 +78,19 @@ class ModuleWebViewActivity : AppActivity() {
                             WebView(context).apply {
                                 settings.javaScriptEnabled = true
                                 settings.domStorageEnabled = true
-                                settings.allowFileAccess = true
+                                settings.allowFileAccess = false
                                 settings.allowContentAccess = false
-                                settings.allowFileAccessFromFileURLs = trusted
-                                settings.allowUniversalAccessFromFileURLs = trusted
-                                settings.blockNetworkLoads = !webNetworkAllowed
+                                settings.allowFileAccessFromFileURLs = false
+                                settings.allowUniversalAccessFromFileURLs = false
+                                settings.blockNetworkLoads = false
                                 settings.cacheMode = WebSettings.LOAD_DEFAULT
                                 settings.mixedContentMode = WebSettings.MIXED_CONTENT_NEVER_ALLOW
                                 CookieManager.getInstance().setAcceptThirdPartyCookies(this, false)
-                                webViewClient = LocalModuleWebViewClient(module, webNetworkAllowed)
+                                webViewClient = LocalModuleWebViewClient(
+                                    module,
+                                    webNetworkAllowed,
+                                    assetLoader
+                                )
                                 if (exposeBridge) {
                                     addJavascriptInterface(
                                         ModuleJsBridge(
@@ -84,7 +105,7 @@ class ModuleWebViewActivity : AppActivity() {
                                         "Shizuku"
                                     )
                                 }
-                                loadUrl(index.toURI().toString())
+                                loadUrl(indexUrl)
                             }
                         },
                         modifier = androidx.compose.ui.Modifier
@@ -144,12 +165,38 @@ class ModuleWebViewActivity : AppActivity() {
 
     private class LocalModuleWebViewClient(
         private val module: AdbModule,
-        private val webNetworkAllowed: Boolean
+        private val webNetworkAllowed: Boolean,
+        private val assetLoader: WebViewAssetLoader
     ) : WebViewClient() {
+
+        override fun shouldInterceptRequest(
+            view: WebView,
+            request: WebResourceRequest
+        ): WebResourceResponse? {
+            val url = request.url
+            if (url.host == "appassets.androidplatform.net") {
+                return assetLoader.shouldInterceptRequest(url)
+            }
+            if (!webNetworkAllowed) {
+                // Hard network block for untrusted modules, including iframes and fetch().
+                return WebResourceResponse(
+                    "text/plain",
+                    "utf-8",
+                    403,
+                    "Forbidden",
+                    emptyMap(),
+                    java.io.ByteArrayInputStream(ByteArray(0))
+                )
+            }
+            return null
+        }
 
         override fun shouldOverrideUrlLoading(view: WebView, request: WebResourceRequest): Boolean {
             val uri = request.url
             val scheme = uri.scheme?.lowercase()
+            if (scheme == "https" && uri.host == "appassets.androidplatform.net") {
+                return false
+            }
             if (scheme == "http" || scheme == "https") {
                 try {
                     val intent = android.content.Intent(android.content.Intent.ACTION_VIEW, uri).apply {
@@ -161,19 +208,8 @@ class ModuleWebViewActivity : AppActivity() {
                 }
                 return true
             }
-            if (scheme == "file") {
-                return !isInsideWebRoot(uri.path.orEmpty())
-            }
+            // file:, content:, intent:, javascript: and everything else stays inside.
             return true
-        }
-
-        private fun isInsideWebRoot(path: String): Boolean {
-            val root = module.webRoot ?: return false
-            return runCatching {
-                val rootPath = root.canonicalPath
-                val targetPath = File(path).canonicalPath
-                targetPath == rootPath || targetPath.startsWith(rootPath + File.separator)
-            }.getOrDefault(false)
         }
     }
 

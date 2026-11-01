@@ -400,7 +400,7 @@ fun ModulesScreen(
                     onTrustChange = { trusted ->
                         scope.launch {
                             ModuleSettings.setModuleTrusted(module.id, trusted)
-                            AdbModuleManager.setEnabled(module, trusted)
+                            // Trust controls permissions, not the enabled/disabled switch.
                             reload()
                         }
                     },

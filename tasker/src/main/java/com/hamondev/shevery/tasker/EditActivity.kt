@@ -139,6 +139,9 @@ class EditActivity : ComponentActivity() {
         }
         val resultBundle = Bundle().apply {
             putString(PluginContract.EXTRA_STRING_JSON, json)
+            // Tasker stores this bundle and replays it on FIRE_SETTING. Without the
+            // token any app could send an explicit FIRE intent and control the server.
+            putString(PluginContract.EXTRA_AUTH, PluginReceiver.readOrCreateAuthToken(this@EditActivity))
         }
         val resultIntent = Intent().apply {
             putExtra(PluginContract.EXTRA_BUNDLE, resultBundle)

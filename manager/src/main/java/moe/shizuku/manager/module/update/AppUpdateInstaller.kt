@@ -6,6 +6,8 @@ import android.content.Context
 import android.content.Intent
 import android.content.IntentFilter
 import android.content.pm.PackageInstaller
+import android.content.pm.PackageInfo
+import android.content.pm.PackageManager
 import android.os.Build
 import android.os.Process
 import androidx.core.content.ContextCompat
@@ -51,6 +53,12 @@ object AppUpdateInstaller {
     suspend fun install(context: Context, apkFile: File): Result = withContext(Dispatchers.IO) {
         val appContext = context.applicationContext ?: context
         val pm = appContext.packageManager
+        if (!isSignedBySameKey(pm, appContext.packageName, apkFile)) {
+            return@withContext Result.Failed(
+                null,
+                "Update APK is not signed by the key that signed the installed app."
+            )
+        }
         val sessionId: Int
         try {
             val params = PackageInstaller.SessionParams(
@@ -81,6 +89,41 @@ object AppUpdateInstaller {
             return@withContext Result.Failed(null, e.message ?: e.javaClass.simpleName)
         }
         awaitStatus(appContext, sessionId)
+    }
+
+    private fun isSignedBySameKey(
+        pm: PackageManager,
+        installedPackage: String,
+        apkFile: File
+    ): Boolean {
+        if (!apkFile.isFile || apkFile.length() == 0L) return false
+        return try {
+            val api28 = Build.VERSION.SDK_INT >= Build.VERSION_CODES.P
+            val flags = if (api28) {
+                PackageManager.GET_SIGNING_CERTIFICATES
+            } else {
+                @Suppress("DEPRECATION")
+                PackageManager.GET_SIGNATURES
+            }
+            val archive = pm.getPackageArchiveInfo(apkFile.absolutePath, flags) ?: return false
+            if (archive.packageName != installedPackage) return false
+            val installed = pm.getPackageInfo(installedPackage, flags)
+            val expected = signatureSet(installed, api28)
+            val actual = signatureSet(archive, api28)
+            expected.isNotEmpty() && expected == actual
+        } catch (_: Exception) {
+            false
+        }
+    }
+
+    private fun signatureSet(info: PackageInfo, api28: Boolean): Set<String> {
+        val signatures = if (api28) {
+            info.signingInfo?.apkContentsSigners
+        } else {
+            @Suppress("DEPRECATION")
+            info.signatures
+        }
+        return signatures?.map { it.toCharsString() }?.toSet().orEmpty()
     }
 
     /** The broadcast is targeted at our own package so no other receiver can race us. */

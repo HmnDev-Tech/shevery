@@ -32,15 +32,27 @@ class ModuleJsBridge(
         }
         val currentUrl = url ?: return false
         val uri = android.net.Uri.parse(currentUrl)
-        if (uri.scheme?.lowercase() != "file") {
+        if (uri.scheme?.lowercase() != "https") {
             return false
         }
-        val cleanUrl = uri.path ?: return false
-        val root = module.webRoot ?: return false
+        // WebUI is served through WebViewAssetLoader from this exact origin. Anything
+        // else (including remote iframes in a network-enabled module) is rejected.
+        if (uri.host != "appassets.androidplatform.net") {
+            return false
+        }
+        val segments = uri.pathSegments
+        if (segments.size < 2 || segments[0] != "modules" || segments[1] != module.id) {
+            return false
+        }
+        val relative = segments.drop(2).joinToString("/")
         return try {
-            val rootPath = root.canonicalPath
-            val filePath = File(cleanUrl).canonicalPath
-            filePath == rootPath || filePath.startsWith(rootPath + File.separator)
+            val root = module.directory.canonicalFile.toPath()
+            val target = if (relative.isEmpty()) {
+                root
+            } else {
+                File(module.directory, relative).canonicalFile.toPath()
+            }
+            target.startsWith(root)
         } catch (e: Exception) {
             false
         }
@@ -164,7 +176,7 @@ class ModuleJsBridge(
             val remote = service.newProcess(
                 arrayOf("sh", "-c", command),
                 env,
-                "/data/local/tmp"
+                cwd.absolutePath
             )
 
             val stdoutPfd = remote.getInputStream()

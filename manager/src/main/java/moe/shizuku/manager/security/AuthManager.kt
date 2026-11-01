@@ -171,9 +171,9 @@ object AuthManager : Application.ActivityLifecycleCallbacks {
         onResult: (Boolean) -> Unit
     ) {
         if (!canAuthenticate(activity)) {
-            // If device cannot authenticate (no lock screen set), allow gracefully
-            markAuthenticated()
-            onResult(true)
+            // Fail closed: a protected action must not become a no-op just because the
+            // device has no lock screen / biometric enrolled.
+            onResult(false)
             return
         }
 

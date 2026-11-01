@@ -2,8 +2,11 @@ package moe.shizuku.manager.authorization
 
 import android.content.Intent
 import android.content.pm.ApplicationInfo
+import android.content.pm.PackageInfo
 import android.content.pm.PackageManager
+import android.os.Build
 import android.os.Bundle
+import android.os.Process
 import androidx.activity.compose.BackHandler
 import androidx.activity.compose.setContent
 import androidx.compose.foundation.Image
@@ -58,77 +61,61 @@ class RequestPermissionActivity : AppActivity() {
         }
     }
 
+    private var callerTrusted = false
+
+    private fun launchedFromUid(): Int {
+        return runCatching {
+            android.app.Activity::class.java.getMethod("getLaunchedFromUid").invoke(this) as? Int
+        }.getOrNull() ?: -1
+    }
+
+    private fun launchedFromPackage(): String? {
+        return runCatching {
+            android.app.Activity::class.java.getMethod("getLaunchedFromPackage").invoke(this) as? String
+        }.getOrNull()
+    }
+
+    /**
+     * Both forwarder stubs (moe.shizuku.privileged.api and com.rosan.dhizuku) are built
+     * from this repository and signed with the manager key. Only those signed stubs may
+     * relay a client UID/package, because the forwarder itself is the launch caller.
+     */
+    private fun isTrustedForwarder(packageName: String): Boolean {
+        if (packageName != "moe.shizuku.privileged.api" && packageName != "com.rosan.dhizuku") {
+            return false
+        }
+        return try {
+            val api28 = Build.VERSION.SDK_INT >= Build.VERSION_CODES.P
+            val flags = if (api28) {
+                PackageManager.GET_SIGNING_CERTIFICATES
+            } else {
+                @Suppress("DEPRECATION")
+                PackageManager.GET_SIGNATURES
+            }
+            val theirs = packageManager.getPackageInfo(packageName, flags)
+            val ours = packageManager.getPackageInfo(this.packageName, flags)
+            signatureSet(theirs, api28).isNotEmpty() &&
+                signatureSet(theirs, api28) == signatureSet(ours, api28)
+        } catch (_: Throwable) {
+            false
+        }
+    }
+
+    private fun signatureSet(info: PackageInfo, api28: Boolean): Set<String> {
+        val signatures = if (api28) {
+            info.signingInfo?.apkContentsSigners
+        } else {
+            @Suppress("DEPRECATION")
+            info.signatures
+        }
+        return signatures?.map { it.toCharsString() }?.toSet().orEmpty()
+    }
+
     private fun checkSelfPermission(): Boolean {
         if (DeviceOwnerManager.isOwner(this)) {
             return true
         }
-        if (!Shizuku.isPreV11()) {
-            return true
-        }
-
-        val permission = try {
-            Shizuku.checkRemotePermission("android.permission.GRANT_RUNTIME_PERMISSIONS") == PackageManager.PERMISSION_GRANTED
-        } catch (_: Throwable) {
-            false
-        }
-        if (permission) return true
-
-        setContent {
-            ShizukuExpressiveTheme {
-                AlertDialog(
-                    onDismissRequest = { finish() },
-                    icon = {
-                        Icon(
-                            painter = painterResource(R.drawable.ic_system_icon),
-                            contentDescription = null,
-                            modifier = Modifier.size(36.dp),
-                            tint = MaterialTheme.colorScheme.primary
-                        )
-                    },
-                    title = {
-                        Text(
-                            text = "${stringResource(R.string.app_name)}: ${stringResource(R.string.app_management_dialog_adb_is_limited_title)}",
-                            style = MaterialTheme.typography.titleLarge,
-                            fontWeight = FontWeight.Bold,
-                            textAlign = TextAlign.Center
-                        )
-                    },
-                    text = {
-                        Text(
-                            text = htmlToPlainText(
-                                getString(
-                                    R.string.app_management_dialog_adb_is_limited_message,
-                                    Helps.ADB.get()
-                                )
-                            ),
-                            style = MaterialTheme.typography.bodyMedium,
-                            color = MaterialTheme.colorScheme.onSurfaceVariant,
-                            textAlign = TextAlign.Center
-                        )
-                    },
-                    confirmButton = {
-                        Button(onClick = { finish() }) {
-                            Text(stringResource(android.R.string.ok))
-                        }
-                    },
-                    dismissButton = {
-                        OutlinedButton(
-                            onClick = {
-                                CustomTabsHelper.launchUrlOrCopy(
-                                    this@RequestPermissionActivity,
-                                    Helps.ADB.get()
-                                )
-                            }
-                        ) {
-                            Text(stringResource(R.string.home_adb_button_view_help))
-                        }
-                    },
-                    containerColor = MaterialTheme.colorScheme.surfaceContainerHigh,
-                    shape = MaterialTheme.shapes.extraLarge
-                )
-            }
-        }
-        return false
+        return callerTrusted
     }
 
     private var binderListener: Shizuku.OnBinderReceivedListener? = null
@@ -159,6 +146,41 @@ class RequestPermissionActivity : AppActivity() {
             intent.extras,
             intent.getBundleExtra("bundle")
         )
+
+        val myUid = Process.myUid()
+        val launchedUid = launchedFromUid()
+        val launchedPackage = launchedFromPackage() ?: callingPackage
+        val callerUid = when {
+            launchedUid > 0 -> launchedUid
+            !launchedPackage.isNullOrEmpty() -> runCatching {
+                packageManager.getPackageUid(launchedPackage, 0)
+            }.getOrDefault(-1)
+            else -> -1
+        }
+        val callerPackage = launchedPackage
+            ?: if (callerUid > 0) {
+                runCatching { packageManager.getPackagesForUid(callerUid)?.firstOrNull() }.getOrNull()
+            } else {
+                null
+            }
+        val callerIsOwner = callerPackage?.let { pkg ->
+            runCatching {
+                val dpm = getSystemService(android.app.admin.DevicePolicyManager::class.java)
+                dpm?.isDeviceOwnerApp(pkg) == true || dpm?.isProfileOwnerApp(pkg) == true
+            }.getOrDefault(false)
+        } ?: false
+        val callerIsDhizuku = callerPackage == "com.rosan.dhizuku" &&
+            (callerIsOwner || isTrustedForwarder(callerPackage.orEmpty()))
+        val callerIsForwarder = callerIsDhizuku || isTrustedForwarder(callerPackage ?: "")
+        // Only the Shizuku server, Dhizuku, system/root and our own process may supply
+        // client identity through the intent. Any other app is identified by the system.
+        val extrasTrusted = callerUid > 0 && (
+            callerUid == myUid ||
+                callerUid < Process.FIRST_APPLICATION_UID ||
+                callerIsForwarder ||
+                callerIsOwner
+            )
+        callerTrusted = extrasTrusted
 
         var uid = intent.getIntExtra("uid", -1)
         if (uid == -1) uid = intent.getIntExtra("client_uid", -1)
@@ -250,8 +272,14 @@ class RequestPermissionActivity : AppActivity() {
             if (dhizukuListener != null) break
         }
 
-        val pid = intent.getIntExtra("pid", -1)
-        val requestCode = intent.getIntExtra("requestCode", -1)
+        val pid = if (extrasTrusted) intent.getIntExtra("pid", -1) else -1
+        val requestCode = if (extrasTrusted) intent.getIntExtra("requestCode", -1) else -1
+
+        if (!extrasTrusted) {
+            uid = callerUid
+            callingPkg = callerPackage
+            dhizukuListener = null
+        }
 
         if (uid == -1) {
             LOGGER.w("RequestPermissionActivity: No valid UID passed in intent, finishing")
@@ -259,8 +287,7 @@ class RequestPermissionActivity : AppActivity() {
             return
         }
 
-        @Suppress("DEPRECATION")
-        var ai: ApplicationInfo? = intent.getParcelableExtra("applicationInfo")
+        var ai: ApplicationInfo? = null
         if (ai == null && !callingPkg.isNullOrEmpty()) {
             ai = kotlin.runCatching {
                 packageManager.getApplicationInfo(callingPkg, 0)
@@ -283,7 +310,8 @@ class RequestPermissionActivity : AppActivity() {
             }
         }
 
-        val isDhizuku = dhizukuListener != null || intent.action?.contains("dhizuku", ignoreCase = true) == true
+        val isDhizuku = dhizukuListener != null ||
+            (callerIsDhizuku && intent.action?.contains("dhizuku", ignoreCase = true) == true)
         val isOwner = DeviceOwnerManager.isOwner(this)
 
         if (isDhizuku && DhizukuAuthManager.isGranted(this, uid)) {
@@ -359,6 +387,7 @@ class RequestPermissionActivity : AppActivity() {
     ) {
         if (!isDhizuku && !checkSelfPermission()) {
             setShizukuResult(uid, pid, requestCode, allowed = false, onetime = true)
+            finish()
             return
         }
 
