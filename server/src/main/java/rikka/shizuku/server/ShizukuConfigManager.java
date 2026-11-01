@@ -121,6 +121,12 @@ public class ShizukuConfigManager extends ConfigManager {
                 continue;
             }
 
+            if (entry.packages.isEmpty()) {
+                entry.packages.addAll(packages);
+                changed = true;
+                continue;
+            }
+
             boolean packagesChanged = true;
 
             for (String packageName : entry.packages) {
@@ -171,8 +177,15 @@ public class ShizukuConfigManager extends ConfigManager {
                 List<String> packages = new ArrayList<>();
                 packages.add(pi.packageName);
 
-                updateLocked(uid, packages, ConfigManager.MASK_PERMISSION, allowed ? ConfigManager.FLAG_ALLOWED : 0);
-                changed = true;
+                // CRITICAL: NEVER revoke an existing grant during startup reconciliation.
+                // Shevery manages client app grants internally via Application Management (shizuku.json).
+                // checkPermission returns PERMISSION_DENIED for standard third-party apps because
+                // PRIVILEGED_API is a signature-level permission.
+                // Only grant if the system permission is actually held (e.g. system signature app).
+                if (allowed) {
+                    updateLocked(uid, packages, ConfigManager.MASK_PERMISSION, ConfigManager.FLAG_ALLOWED);
+                    changed = true;
+                }
             }
         }
 
@@ -182,14 +195,8 @@ public class ShizukuConfigManager extends ConfigManager {
     }
 
     private void scheduleWriteLocked() {
-        if (Build.VERSION.SDK_INT >= Build.VERSION_CODES.Q) {
-            if (HandlerKt.getWorkerHandler().hasCallbacks(mWriteRunner)) {
-                return;
-            }
-        } else {
-            HandlerKt.getWorkerHandler().removeCallbacks(mWriteRunner);
-        }
-        HandlerKt.getWorkerHandler().postDelayed(mWriteRunner, WRITE_DELAY);
+        HandlerKt.getWorkerHandler().removeCallbacks(mWriteRunner);
+        HandlerKt.getWorkerHandler().post(mWriteRunner);
     }
 
     private ShizukuConfig.PackageEntry findLocked(int uid) {
