@@ -962,4 +962,39 @@
     <string name="settings_stealth_action_save"><![CDATA[保存]]></string>
     <string name="settings_stealth_saved"><![CDATA[隐身 APK 已保存到下载目录：%1$s]]></string>
     <string name="settings_stealth_save_failed"><![CDATA[无法保存隐身 APK（需要 Android 10+）]]></string>
+
+    <!-- App detail (per-app privileges) -->
+    <string name="app_detail_privileges_title"><![CDATA[Shizuku 权限]]></string>
+    <string name="app_detail_shizuku_access"><![CDATA[Shizuku 访问权限]]></string>
+    <string name="app_detail_state_allowed"><![CDATA[已允许]]></string>
+    <string name="app_detail_state_denied"><![CDATA[已拒绝]]></string>
+    <string name="app_detail_session_only"><![CDATA[仅本次会话访问]]></string>
+    <string name="app_detail_session_only_summary"><![CDATA[仅在本次会话中授予，关闭此开关即可设为永久。]]></string>
+    <string name="app_detail_runtime_permissions"><![CDATA[运行时权限]]></string>
+    <string name="app_detail_runtime_permissions_empty"><![CDATA[此应用未声明任何运行时权限]]></string>
+    <string name="app_detail_info_title"><![CDATA[应用信息]]></string>
+    <string name="app_detail_package"><![CDATA[包名]]></string>
+    <string name="app_detail_version"><![CDATA[版本]]></string>
+    <string name="app_detail_version_unknown"><![CDATA[未知]]></string>
+    <string name="app_detail_uid"><![CDATA[UID]]></string>
+
+    <!-- ADB modules - install & shortcut -->
+    <string name="modules_install_zip_module"><![CDATA[安装模块]]></string>
+    <string name="modules_installing_zip"><![CDATA[正在安装 ZIP 模块…]]></string>
+    <string name="modules_zip_unreadable"><![CDATA[无法读取 ZIP 文件]]></string>
+    <string name="modules_live_log_title"><![CDATA[正在运行 %s]]></string>
+    <string name="modules_live_log_hide"><![CDATA[隐藏]]></string>
+    <string name="modules_shortcut"><![CDATA[快捷方式]]></string>
+    <string name="modules_shortcut_added"><![CDATA[快捷方式已添加到主屏幕]]></string>
+    <string name="modules_shortcut_not_supported"><![CDATA[您的桌面启动器不支持添加快捷方式]]></string>
+    <string name="modules_webui_not_found"><![CDATA[未找到模块或 WebUI]]></string>
+
+    <!-- Comput Agent - Chat history -->
+    <string name="comput_agent_history"><![CDATA[聊天记录]]></string>
+    <string name="comput_agent_history_empty"><![CDATA[暂无聊天记录，运行智能体以开始。]]></string>
+    <string name="comput_agent_new_chat"><![CDATA[新建聊天]]></string>
+    <string name="comput_agent_delete_chat"><![CDATA[删除聊天]]></string>
+    <string name="comput_agent_messages_count"><![CDATA[%1$d 条消息]]></string>
+    <string name="comput_agent_role_user"><![CDATA[你]]></string>
+    <string name="comput_agent_role_agent"><![CDATA[智能体]]></string>
 </resources>
