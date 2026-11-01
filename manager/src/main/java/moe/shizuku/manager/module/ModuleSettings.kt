@@ -78,7 +78,7 @@ object ModuleSettings {
 
     fun getAccessMode(): AccessMode {
         return AccessMode.fromValue(
-            ShizukuSettings.getPreferences().getString(KEY_ACCESS_MODE, AccessMode.SAFE.value)
+            ShizukuSettings.getPreferences().getString(KEY_ACCESS_MODE, AccessMode.FULL.value)
         )
     }
 
@@ -124,7 +124,7 @@ object ModuleSettings {
     }
 
     fun canRunAction(module: AdbModule): Boolean {
-        return isModuleTrusted(module.id) || canRunAction()
+        return module.enabled && (isModuleTrusted(module.id) || canRunAction() || getAccessMode() != AccessMode.SAFE)
     }
 
     fun canRunService(): Boolean {
@@ -136,7 +136,7 @@ object ModuleSettings {
     }
 
     fun canRunService(module: AdbModule): Boolean {
-        return isModuleTrusted(module.id) || canRunService()
+        return module.enabled && (isModuleTrusted(module.id) || canRunService() || getAccessMode() != AccessMode.SAFE)
     }
 
     fun canExposeWebBridge(): Boolean {
@@ -148,7 +148,7 @@ object ModuleSettings {
     }
 
     fun canExposeWebBridge(module: AdbModule): Boolean {
-        return isModuleTrusted(module.id) || canExposeWebBridge()
+        return module.enabled && (isModuleTrusted(module.id) || canExposeWebBridge() || getAccessMode() != AccessMode.SAFE)
     }
 
     fun canUseWebNetwork(): Boolean {
@@ -202,7 +202,7 @@ object ModuleSettings {
     }
 
     fun recommandForWebUi(): Boolean {
-        return ShizukuSettings.getPreferences().getBoolean(KEY_RECOMMAND_WEBUI, true)
+        return ShizukuSettings.getPreferences().getBoolean(KEY_RECOMMAND_WEBUI, false)
     }
 
     fun setRecommandForWebUi(value: Boolean) {
@@ -210,7 +210,7 @@ object ModuleSettings {
     }
 
     fun recommandForAction(): Boolean {
-        return ShizukuSettings.getPreferences().getBoolean(KEY_RECOMMAND_ACTION, true)
+        return ShizukuSettings.getPreferences().getBoolean(KEY_RECOMMAND_ACTION, false)
     }
 
     fun setRecommandForAction(value: Boolean) {
