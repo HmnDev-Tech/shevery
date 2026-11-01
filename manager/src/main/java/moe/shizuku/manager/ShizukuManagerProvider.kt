@@ -73,7 +73,7 @@ class ShizukuManagerProvider : ShizukuProvider() {
         val ctx = context ?: return false
         return try {
             if (isTrustedForwarder(uid, ctx)) return true
-            if (ctx.checkCallingPermission(android.Manifest.permission.INTERACT_ACROSS_USERS_FULL) ==
+            if (ctx.checkCallingPermission("android.permission.INTERACT_ACROSS_USERS_FULL") ==
                 PackageManager.PERMISSION_GRANTED
             ) {
                 return true
