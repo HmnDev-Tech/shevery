@@ -645,9 +645,18 @@ object AdbModuleManager {
         val binder = SheveryPrivilege.getBinder() ?: Shizuku.getBinder() ?: error("Shevery service is not running.")
         val service = IShizukuService.Stub.asInterface(binder)
         ensureAdbShim(service)
+        val shellModuleDir = File("/data/local/tmp/shevery/modules/${module.id}")
+        runCatching {
+            shellModuleDir.mkdirs()
+            module.directory.copyRecursively(shellModuleDir, overwrite = true)
+            shellModuleDir.walkTopDown().forEach {
+                it.setReadable(true, false)
+                it.setExecutable(true, false)
+            }
+        }
         val env = arrayOf(
-            "MODDIR=${module.directory.absolutePath}",
-            "MODPATH=${module.directory.absolutePath}",
+            "MODDIR=${shellModuleDir.absolutePath}",
+            "MODPATH=${shellModuleDir.absolutePath}",
             "ASH_STANDALONE=1",
             "SHIZUKU_MODULE_ID=${module.id}",
             "SHIZUKU_MODULE_MODE=${ModuleSettings.getAccessMode().value}",
@@ -854,6 +863,9 @@ export -f adb 2>/dev/null || true""")
             stdout = stdout.takeLast(MAX_OUTPUT_CHARS),
             stderr = stderr.takeLast(MAX_OUTPUT_CHARS)
         )
+        runCatching {
+            shellModuleDir.copyRecursively(module.directory, overwrite = true)
+        }
         writeLastLog(logFile, module, script, result, finished)
         return result
     }
