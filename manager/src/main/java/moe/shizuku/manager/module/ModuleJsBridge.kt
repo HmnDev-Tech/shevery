@@ -224,9 +224,6 @@ class ModuleJsBridge(
             }
             stdoutThread.join(3000)
             stderrThread.join(3000)
-            runCatching {
-                shellModuleDir.copyRecursively(module.directory, overwrite = true)
-            }
 
             result.apply {
                 put("ok", finished && exitCode == 0)
