@@ -3,6 +3,7 @@ package moe.shizuku.manager.module
 import android.content.Context
 import android.net.Uri
 import android.os.ParcelFileDescriptor
+import com.hamondev.shevery.api.SheveryPrivilege
 import moe.shizuku.server.IShizukuService
 import rikka.shizuku.Shizuku
 import java.io.BufferedInputStream
@@ -641,7 +642,7 @@ object AdbModuleManager {
             )
         }
 
-        val binder = Shizuku.getBinder() ?: error("Shevery service is not running.")
+        val binder = SheveryPrivilege.getBinder() ?: Shizuku.getBinder() ?: error("Shevery service is not running.")
         val service = IShizukuService.Stub.asInterface(binder)
         ensureAdbShim(service)
         val env = arrayOf(
@@ -661,13 +662,20 @@ object AdbModuleManager {
             appendLine("export PATH=\"/data/local/tmp/shevery/bin:/product/bin:/apex/com.android.runtime/bin:/apex/com.android.art/bin:/system_ext/bin:/system/bin:/system/xbin:/odm/bin:/vendor/bin:/vendor/xbin:/sbin:/data/adb/apatch:/data/adb/ksu/bin:\$PATH\"")
             appendLine("ui_print() { echo \"\$@\"; }")
             appendLine("""adb() {
+    while [ ${'$'}# -gt 0 ]; do
+        case "${'$'}1" in
+            -s|-H|-P|-L) shift 2 ;;
+            -d|-e) shift 1 ;;
+            *) break ;;
+        esac
+    done
     case "${'$'}1" in
         shell)
             shift
             if [ ${'$'}# -eq 0 ]; then
                 sh
             else
-                "${'$'}@"
+                eval "${'$'}*"
             fi
             ;;
         devices)
@@ -684,11 +692,23 @@ object AdbModuleManager {
         wait-for-device)
             return 0
             ;;
+        push|pull)
+            shift
+            cp -r "${'$'}@"
+            ;;
+        install)
+            shift
+            pm install "${'$'}@"
+            ;;
+        uninstall)
+            shift
+            pm uninstall "${'$'}@"
+            ;;
         *)
             if [ ${'$'}# -eq 0 ]; then
                 sh
             else
-                "${'$'}@"
+                eval "${'$'}*"
             fi
             ;;
     esac
@@ -793,8 +813,8 @@ export -f adb 2>/dev/null || true""")
             try { stderrPfd.close() } catch (ignore: Exception) {}
             124
         }
-        stdoutThread.join(1000)
-        stderrThread.join(1000)
+        stdoutThread.join(3000)
+        stderrThread.join(3000)
 
         if (live) {
             val footer = buildString {
@@ -1183,13 +1203,20 @@ export -f adb 2>/dev/null || true""")
                 mkdir -p /data/local/tmp/shevery/bin 2>/dev/null
                 cat << 'EOF' > /data/local/tmp/shevery/bin/adb
 #!/system/bin/sh
+while [ ${'$'}# -gt 0 ]; do
+    case "${'$'}1" in
+        -s|-H|-P|-L) shift 2 ;;
+        -d|-e) shift 1 ;;
+        *) break ;;
+    esac
+done
 case "${'$'}1" in
     shell)
         shift
         if [ ${'$'}# -eq 0 ]; then
             exec /system/bin/sh
         else
-            exec "${'$'}@"
+            eval "${'$'}*"
         fi
         ;;
     devices)
@@ -1209,11 +1236,23 @@ case "${'$'}1" in
     wait-for-device)
         exit 0
         ;;
+    push|pull)
+        shift
+        exec cp -r "${'$'}@"
+        ;;
+    install)
+        shift
+        exec pm install "${'$'}@"
+        ;;
+    uninstall)
+        shift
+        exec pm uninstall "${'$'}@"
+        ;;
     *)
         if [ ${'$'}# -eq 0 ]; then
             exec /system/bin/sh
         else
-            exec "${'$'}@"
+            eval "${'$'}*"
         fi
         ;;
 esac
