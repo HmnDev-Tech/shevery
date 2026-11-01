@@ -645,18 +645,9 @@ object AdbModuleManager {
         val binder = SheveryPrivilege.getBinder() ?: Shizuku.getBinder() ?: error("Shevery service is not running.")
         val service = IShizukuService.Stub.asInterface(binder)
         ensureAdbShim(service)
-        val shellModuleDir = File("/data/local/tmp/shevery/modules/${module.id}")
-        runCatching {
-            shellModuleDir.mkdirs()
-            module.directory.copyRecursively(shellModuleDir, overwrite = true)
-            shellModuleDir.walkTopDown().forEach {
-                it.setReadable(true, false)
-                it.setExecutable(true, false)
-            }
-        }
         val env = arrayOf(
-            "MODDIR=${shellModuleDir.absolutePath}",
-            "MODPATH=${shellModuleDir.absolutePath}",
+            "MODDIR=${module.directory.absolutePath}",
+            "MODPATH=${module.directory.absolutePath}",
             "ASH_STANDALONE=1",
             "SHIZUKU_MODULE_ID=${module.id}",
             "SHIZUKU_MODULE_MODE=${ModuleSettings.getAccessMode().value}",
@@ -670,61 +661,8 @@ object AdbModuleManager {
         val wrappedScript = buildString {
             appendLine("export PATH=\"/data/local/tmp/shevery/bin:/product/bin:/apex/com.android.runtime/bin:/apex/com.android.art/bin:/system_ext/bin:/system/bin:/system/xbin:/odm/bin:/vendor/bin:/vendor/xbin:/sbin:/data/adb/apatch:/data/adb/ksu/bin:\$PATH\"")
             appendLine("ui_print() { echo \"\$@\"; }")
-            appendLine("""adb() {
-    while [ ${'$'}# -gt 0 ]; do
-        case "${'$'}1" in
-            -s|-H|-P|-L) shift 2 ;;
-            -d|-e) shift 1 ;;
-            *) break ;;
-        esac
-    done
-    case "${'$'}1" in
-        shell)
-            shift
-            if [ ${'$'}# -eq 0 ]; then
-                sh
-            else
-                eval "${'$'}*"
-            fi
-            ;;
-        devices)
-            echo "List of devices attached"
-            echo "shevery-device	device"
-            ;;
-        version)
-            echo "Android Debug Bridge version 1.0.41"
-            echo "Version shevery-adb-shim"
-            ;;
-        get-state|get-serialno)
-            echo "shevery-device"
-            ;;
-        wait-for-device)
-            return 0
-            ;;
-        push|pull)
-            shift
-            cp -r "${'$'}@"
-            ;;
-        install)
-            shift
-            pm install "${'$'}@"
-            ;;
-        uninstall)
-            shift
-            pm uninstall "${'$'}@"
-            ;;
-        *)
-            if [ ${'$'}# -eq 0 ]; then
-                sh
-            else
-                eval "${'$'}*"
-            fi
-            ;;
-    esac
-}
-export -f adb 2>/dev/null || true""")
-            appendLine("cd \"\$MODDIR\" 2>/dev/null || true")
-            append(scriptContent)
+            appendLine("cd \"\$MODDIR\" 2>/dev/null || cd /data/local/tmp 2>/dev/null || true")
+            appendLine(scriptContent)
         }
         val remote = service.newProcess(
             arrayOf("sh", "-c", wrappedScript),
@@ -863,9 +801,6 @@ export -f adb 2>/dev/null || true""")
             stdout = stdout.takeLast(MAX_OUTPUT_CHARS),
             stderr = stderr.takeLast(MAX_OUTPUT_CHARS)
         )
-        runCatching {
-            shellModuleDir.copyRecursively(module.directory, overwrite = true)
-        }
         writeLastLog(logFile, module, script, result, finished)
         return result
     }
