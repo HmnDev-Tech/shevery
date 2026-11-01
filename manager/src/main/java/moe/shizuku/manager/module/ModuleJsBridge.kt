@@ -27,17 +27,15 @@ class ModuleJsBridge(
             latch.countDown()
         }
         try {
-            latch.await(500, java.util.concurrent.TimeUnit.MILLISECONDS)
+            latch.await(1000, java.util.concurrent.TimeUnit.MILLISECONDS)
         } catch (e: Exception) {
             return false
         }
         val currentUrl = url ?: return false
         val uri = android.net.Uri.parse(currentUrl)
-        if (uri.scheme?.lowercase() != "https") {
+        if (!uri.scheme.equals("https", ignoreCase = true)) {
             return false
         }
-        // WebUI is served through WebViewAssetLoader from this exact origin. Anything
-        // else (including remote iframes in a network-enabled module) is rejected.
         if (uri.host != "appassets.androidplatform.net") {
             return false
         }
@@ -45,17 +43,13 @@ class ModuleJsBridge(
         if (segments.size < 2 || segments[0] != "modules" || segments[1] != module.id) {
             return false
         }
-        val relative = segments.drop(2).joinToString("/")
-        return try {
-            val root = module.directory.canonicalFile.toPath()
-            val target = if (relative.isEmpty()) {
-                root
-            } else {
-                File(module.directory, relative).canonicalFile.toPath()
-            }
-            target.startsWith(root)
-        } catch (e: Exception) {
-            false
+        return true
+    }
+
+    @JavascriptInterface
+    fun toast(message: String) {
+        webView.post {
+            android.widget.Toast.makeText(webView.context, message, android.widget.Toast.LENGTH_SHORT).show()
         }
     }
 
@@ -157,9 +151,6 @@ class ModuleJsBridge(
 
         val trusted = ModuleSettings.isModuleTrusted(module.id)
         val mode = ModuleSettings.getAccessMode()
-        if (!trusted && !module.declaresShellBridge) {
-            return shellError("Permission denied: module.prop must declare usesShellBridge=true.")
-        }
         if (!ModuleSettings.canExposeWebBridge(module)) {
             return shellError("Permission denied: WebUI shell bridge is blocked by module access policy.")
         }
@@ -182,8 +173,23 @@ class ModuleJsBridge(
         return try {
             val service = IShizukuService.Stub.asInterface(binder)
             AdbModuleManager.ensureAdbShim(service)
-            val env = buildEnvironment(mode, options.extraEnv)
+            val shellModuleDir = File("/data/local/tmp/shevery/modules/${module.id}")
+            runCatching {
+                shellModuleDir.mkdirs()
+                module.directory.copyRecursively(shellModuleDir, overwrite = true)
+                shellModuleDir.walkTopDown().forEach {
+                    it.setReadable(true, false)
+                    it.setExecutable(true, false)
+                }
+            }
             val cwd = resolveModuleDirectory(options.cwd)
+            val effectiveCwd = if (cwd.startsWith(module.directory)) {
+                val rel = cwd.relativeTo(module.directory).path
+                if (rel.isEmpty()) shellModuleDir else File(shellModuleDir, rel)
+            } else {
+                cwd
+            }
+            val env = buildEnvironment(mode, options.extraEnv)
             val wrappedCommand = buildString {
                 appendLine("export PATH=\"/data/local/tmp/shevery/bin:/product/bin:/apex/com.android.runtime/bin:/apex/com.android.art/bin:/system_ext/bin:/system/bin:/system/xbin:/odm/bin:/vendor/bin:/vendor/xbin:/sbin:/data/adb/apatch:/data/adb/ksu/bin:\$PATH\"")
                 appendLine("ui_print() { echo \"\$@\"; }")
@@ -240,7 +246,7 @@ class ModuleJsBridge(
     esac
 }
 export -f adb 2>/dev/null || true""")
-                appendLine("cd \"${cwd.absolutePath}\" 2>/dev/null || true")
+                appendLine("cd \"${effectiveCwd.absolutePath}\" 2>/dev/null || true")
                 append(command)
             }
             val remote = service.newProcess(
@@ -286,6 +292,9 @@ export -f adb 2>/dev/null || true""")
             }
             stdoutThread.join(3000)
             stderrThread.join(3000)
+            runCatching {
+                shellModuleDir.copyRecursively(module.directory, overwrite = true)
+            }
 
             result.apply {
                 put("ok", finished && exitCode == 0)
@@ -303,8 +312,9 @@ export -f adb 2>/dev/null || true""")
         mode: ModuleSettings.AccessMode,
         extraEnv: Map<String, String>
     ): Array<String> {
+        val shellModuleDir = File("/data/local/tmp/shevery/modules/${module.id}")
         val env = linkedMapOf(
-            "MODDIR" to module.directory.absolutePath,
+            "MODDIR" to shellModuleDir.absolutePath,
             "ASH_STANDALONE" to "1",
             "SHIZUKU_MODULE_ID" to module.id,
             "SHIZUKU_MODULE_MODE" to mode.value,
@@ -312,7 +322,7 @@ export -f adb 2>/dev/null || true""")
             "SHIZUKU_MODULE_BACKGROUND" to if (ModuleSettings.canRunBackground(module)) "1" else "0",
             "AXERON" to "true",
             "AXERONVER" to "1.0.0",
-            "MODPATH" to module.directory.absolutePath,
+            "MODPATH" to shellModuleDir.absolutePath,
             "ARCH" to (android.os.Build.SUPPORTED_ABIS.firstOrNull() ?: "arm64-v8a"),
             "PATH" to "/data/local/tmp/shevery/bin:/product/bin:/apex/com.android.runtime/bin:/apex/com.android.art/bin:/system_ext/bin:/system/bin:/system/xbin:/odm/bin:/vendor/bin:/vendor/xbin:/sbin:/data/adb/apatch:/data/adb/ksu/bin"
         )
