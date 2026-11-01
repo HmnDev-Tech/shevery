@@ -7,7 +7,7 @@ Shevery no longer declares or requests the legacy Shizuku permission
 
 | Component | Permission | Role |
 |-----------|------------|------|
-| Shevery manager (`com.hamondev.shevery`) | `com.hamondev.shevery.permission.API` | Native API, declared by Shevery |
+| Shevery manager (`com.hamondev.shevery`) | `com.hamondev.shevery.permission.PRIVILEGED_API` | Native API, declared by Shevery |
 | Shizuku stub (`moe.shizuku.privileged.api`) | `moe.shizuku.manager.permission.API_V23` | Legacy Shizuku clients — the stub is the only owner |
 
 ## Contents

@@ -75,8 +75,13 @@
         android:protectionLevel="dangerous" />
     <uses-permission
         android:name="com.hamondev.shevery.permission.PRIVILEGED_API" />
+
+    <!-- Legacy Shizuku V23 is owned by the Shizuku stub only. The Shevery-API
+         :provider submodule still requests it, so purge the merged
+         uses-permission from the final APK regardless of the submodule pointer. -->
     <uses-permission
-        android:name="moe.shizuku.manager.permission.API_V23" />
+        android:name="moe.shizuku.manager.permission.API_V23"
+        tools:node="remove" />
 
     <permission
         android:name="${applicationId}.DYNAMIC_RECEIVER_NOT_EXPORTED_PERMISSION"
