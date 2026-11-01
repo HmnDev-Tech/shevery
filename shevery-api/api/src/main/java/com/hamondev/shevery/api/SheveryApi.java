@@ -18,13 +18,13 @@ public final class SheveryApi {
     public static final String MANAGER_PACKAGE = "com.hamondev.shevery";
 
     /** Runtime ("dangerous") permission declared by Shevery for native API clients. */
-    public static final String PERMISSION_API = "com.hamondev.shevery.permission.API";
+    public static final String PERMISSION_API = "com.hamondev.shevery.permission.PRIVILEGED_API";
 
     /** Permission group of {@link #PERMISSION_API}. */
     public static final String PERMISSION_GROUP_API = "com.hamondev.shevery.permission-group.API";
 
     /** Signature permission held by the manager only. */
-    public static final String PERMISSION_MANAGER = "moe.shizuku.manager.permission.MANAGER";
+    public static final String PERMISSION_MANAGER = "com.hamondev.shevery.permission.MANAGER";
 
     /** Linux per-user uid range, identical to {@code UserHandle.PER_USER_RANGE}. */
     public static final int PER_USER_RANGE = 100000;
