@@ -154,7 +154,7 @@ class ModuleJsBridge(
         if (!ModuleSettings.canExposeWebBridge(module)) {
             return shellError("Permission denied: WebUI shell bridge is blocked by module access policy.")
         }
-        if (ModuleSettings.recommandForWebUi()) {
+        if (ModuleSettings.recommandForWebUi() && !trusted) {
             val approved = commandReviewer?.confirmCommand(
                 ModuleCommandRequest(
                     module = module,
@@ -173,81 +173,13 @@ class ModuleJsBridge(
         return try {
             val service = IShizukuService.Stub.asInterface(binder)
             AdbModuleManager.ensureAdbShim(service)
-            val shellModuleDir = File("/data/local/tmp/shevery/modules/${module.id}")
-            runCatching {
-                shellModuleDir.mkdirs()
-                module.directory.copyRecursively(shellModuleDir, overwrite = true)
-                shellModuleDir.walkTopDown().forEach {
-                    it.setReadable(true, false)
-                    it.setExecutable(true, false)
-                }
-            }
             val cwd = resolveModuleDirectory(options.cwd)
-            val effectiveCwd = if (cwd.startsWith(module.directory)) {
-                val rel = cwd.relativeTo(module.directory).path
-                if (rel.isEmpty()) shellModuleDir else File(shellModuleDir, rel)
-            } else {
-                cwd
-            }
             val env = buildEnvironment(mode, options.extraEnv)
             val wrappedCommand = buildString {
                 appendLine("export PATH=\"/data/local/tmp/shevery/bin:/product/bin:/apex/com.android.runtime/bin:/apex/com.android.art/bin:/system_ext/bin:/system/bin:/system/xbin:/odm/bin:/vendor/bin:/vendor/xbin:/sbin:/data/adb/apatch:/data/adb/ksu/bin:\$PATH\"")
                 appendLine("ui_print() { echo \"\$@\"; }")
-                appendLine("""adb() {
-    while [ ${'$'}# -gt 0 ]; do
-        case "${'$'}1" in
-            -s|-H|-P|-L) shift 2 ;;
-            -d|-e) shift 1 ;;
-            *) break ;;
-        esac
-    done
-    case "${'$'}1" in
-        shell)
-            shift
-            if [ ${'$'}# -eq 0 ]; then
-                sh
-            else
-                eval "${'$'}*"
-            fi
-            ;;
-        devices)
-            echo "List of devices attached"
-            echo "shevery-device	device"
-            ;;
-        version)
-            echo "Android Debug Bridge version 1.0.41"
-            echo "Version shevery-adb-shim"
-            ;;
-        get-state|get-serialno)
-            echo "shevery-device"
-            ;;
-        wait-for-device)
-            return 0
-            ;;
-        push|pull)
-            shift
-            cp -r "${'$'}@"
-            ;;
-        install)
-            shift
-            pm install "${'$'}@"
-            ;;
-        uninstall)
-            shift
-            pm uninstall "${'$'}@"
-            ;;
-        *)
-            if [ ${'$'}# -eq 0 ]; then
-                sh
-            else
-                eval "${'$'}*"
-            fi
-            ;;
-    esac
-}
-export -f adb 2>/dev/null || true""")
-                appendLine("cd \"${effectiveCwd.absolutePath}\" 2>/dev/null || true")
-                append(command)
+                appendLine("cd \"${cwd.absolutePath}\" 2>/dev/null || cd /data/local/tmp 2>/dev/null || true")
+                appendLine(command)
             }
             val remote = service.newProcess(
                 arrayOf("sh", "-c", wrappedCommand),
@@ -292,9 +224,6 @@ export -f adb 2>/dev/null || true""")
             }
             stdoutThread.join(3000)
             stderrThread.join(3000)
-            runCatching {
-                shellModuleDir.copyRecursively(module.directory, overwrite = true)
-            }
 
             result.apply {
                 put("ok", finished && exitCode == 0)
@@ -312,9 +241,8 @@ export -f adb 2>/dev/null || true""")
         mode: ModuleSettings.AccessMode,
         extraEnv: Map<String, String>
     ): Array<String> {
-        val shellModuleDir = File("/data/local/tmp/shevery/modules/${module.id}")
         val env = linkedMapOf(
-            "MODDIR" to shellModuleDir.absolutePath,
+            "MODDIR" to module.directory.absolutePath,
             "ASH_STANDALONE" to "1",
             "SHIZUKU_MODULE_ID" to module.id,
             "SHIZUKU_MODULE_MODE" to mode.value,
@@ -322,7 +250,7 @@ export -f adb 2>/dev/null || true""")
             "SHIZUKU_MODULE_BACKGROUND" to if (ModuleSettings.canRunBackground(module)) "1" else "0",
             "AXERON" to "true",
             "AXERONVER" to "1.0.0",
-            "MODPATH" to shellModuleDir.absolutePath,
+            "MODPATH" to module.directory.absolutePath,
             "ARCH" to (android.os.Build.SUPPORTED_ABIS.firstOrNull() ?: "arm64-v8a"),
             "PATH" to "/data/local/tmp/shevery/bin:/product/bin:/apex/com.android.runtime/bin:/apex/com.android.art/bin:/system_ext/bin:/system/bin:/system/xbin:/odm/bin:/vendor/bin:/vendor/xbin:/sbin:/data/adb/apatch:/data/adb/ksu/bin"
         )
