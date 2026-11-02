@@ -233,8 +233,8 @@ object BinderSender {
             if (entry.isNativeSheveryClient) {
                 // Fast native Shevery Privilege API path
                 ShizukuService.sendBinderToUserAppAsync(service, entry.packageName, userId, true)
-            } else if (entry.isLegacyShizukuStubClient && ShizukuService.isShizukuStubActive(userId)) {
-                // Legacy API_V23 path offloaded via Shizuku Stub
+            } else if (entry.isLegacyShizukuStubClient) {
+                // Zero-stub direct dispatch to legacy Shizuku apps
                 ShizukuService.sendBinderToUserAppAsync(service, entry.packageName, userId, false)
             }
         }

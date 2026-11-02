@@ -1,4 +1,5 @@
 [submodule "api"]
 	path = api
-	url = https://github.com/HmnDev-Tech/Shevery-API.git
-	branch = main
+	url = https://github.com/CodexofLost/Shevery-API.git
+	branch = dev
+
