@@ -392,6 +392,7 @@ fun ShizukuScaffold(
     @StringRes navigationContentDescription: Int = R.string.accessibility_navigate_up,
     actions: @Composable RowScope.() -> Unit = {},
     bottomBar: @Composable () -> Unit = {},
+    floatingActionButton: @Composable () -> Unit = {},
     content: @Composable (PaddingValues) -> Unit
 ) {
     if (onNavigateUp != null) {
@@ -408,6 +409,7 @@ fun ShizukuScaffold(
         modifier = modifier,
         contentWindowInsets = WindowInsets(0.dp),
         bottomBar = bottomBar,
+        floatingActionButton = floatingActionButton,
         topBar = {
             TopAppBar(
                 title = {
@@ -446,6 +448,7 @@ fun ShizukuLazyScaffold(
     navigationIcon: Int = R.drawable.ic_arrow_back_24,
     @StringRes navigationContentDescription: Int = R.string.accessibility_navigate_up,
     actions: @Composable RowScope.() -> Unit = {},
+    floatingActionButton: @Composable () -> Unit = {},
     contentPadding: PaddingValues = PaddingValues(start = 16.dp, top = 12.dp, end = 16.dp, bottom = 16.dp),
     bottomInset: Dp = 0.dp,
     verticalArrangement: Arrangement.Vertical = Arrangement.spacedBy(12.dp),
@@ -463,7 +466,8 @@ fun ShizukuLazyScaffold(
         onNavigateUp = onNavigateUp,
         navigationIcon = navigationIcon,
         navigationContentDescription = navigationContentDescription,
-        actions = actions
+        actions = actions,
+        floatingActionButton = floatingActionButton
     ) { innerPadding ->
         val navigationBarPadding = WindowInsets.navigationBars.asPaddingValues()
         val list = @Composable {
