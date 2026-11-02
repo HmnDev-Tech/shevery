@@ -26,6 +26,7 @@ import androidx.compose.ui.draw.clip
 import androidx.compose.ui.res.painterResource
 import androidx.compose.material.icons.Icons
 import androidx.compose.material.icons.rounded.Clear
+import androidx.compose.material.icons.rounded.Label
 import androidx.compose.material.icons.rounded.Search
 import androidx.compose.material3.AlertDialog
 import androidx.compose.ui.semantics.clearAndSetSemantics
@@ -166,6 +167,8 @@ class ApplicationManagementActivity : AppActivity() {
             var searchQuery by rememberSaveable { mutableStateOf("") }
             var selectedFilter by rememberSaveable { mutableStateOf(AppFilter.ALL) }
             var whitelistMode by remember { mutableStateOf(ShizukuSettings.isShizukuWhitelistEnabled()) }
+            var showAddAppDialog by rememberSaveable { mutableStateOf(false) }
+            var addAppPackage by rememberSaveable { mutableStateOf("") }
 
             val appEntries = remember(packages, tick) {
                 packages.mapNotNull { pkg ->
@@ -217,6 +220,12 @@ class ApplicationManagementActivity : AppActivity() {
                             var menuExpanded by remember { mutableStateOf(false) }
 
                             Box {
+                                IconButton(onClick = { showAddAppDialog = true }) {
+                                    ShizukuIcon(
+                                        R.drawable.ic_add_24,
+                                        contentDescription = stringResource(R.string.app_management_add_app)
+                                    )
+                                }
                                 IconButton(onClick = { menuExpanded = true }) {
                                     ShizukuIcon(
                                         R.drawable.ic_more_vert_24,
@@ -488,6 +497,76 @@ class ApplicationManagementActivity : AppActivity() {
                     )
                 }
             }
+
+            if (showAddAppDialog) {
+                AlertDialog(
+                    onDismissRequest = {
+                        showAddAppDialog = false
+                        addAppPackage = ""
+                    },
+                    title = {
+                        Text(
+                            text = stringResource(R.string.app_management_add_app_title),
+                            style = MaterialTheme.typography.headlineSmall,
+                            fontWeight = FontWeight.Bold
+                        )
+                    },
+                    text = {
+                        Column(
+                            modifier = Modifier.fillMaxWidth(),
+                            verticalArrangement = Arrangement.spacedBy(8.dp)
+                        ) {
+                            Text(
+                                text = stringResource(R.string.app_management_add_app_hint),
+                                style = MaterialTheme.typography.bodyMedium,
+                                color = MaterialTheme.colorScheme.onSurfaceVariant
+                            )
+                            TextField(
+                                value = addAppPackage,
+                                onValueChange = { addAppPackage = it },
+                                modifier = Modifier.fillMaxWidth(),
+                                placeholder = { Text(stringResource(R.string.app_management_add_app_hint)) },
+                                leadingIcon = {
+                                    Icon(
+                                        imageVector = Icons.Rounded.Label,
+                                        contentDescription = null,
+                                        tint = MaterialTheme.colorScheme.onSurfaceVariant
+                                    )
+                                },
+                                singleLine = true,
+                                keyboardOptions = androidx.compose.material3.KeyboardOptions(
+                                    capitalization = androidx.compose.ui.text.input.KeyboardCapitalization.None
+                                )
+                            )
+                        }
+                    },
+                    confirmButton = {
+                        Row(horizontalArrangement = Arrangement.spacedBy(8.dp)) {
+                            OutlinedButton(
+                                onClick = {
+                                    applyAddApp(allowed = true, appEntries)
+                                }
+                            ) {
+                                Text(stringResource(R.string.app_management_add_app_allow))
+                            }
+                            OutlinedButton(
+                                onClick = {
+                                    applyAddApp(allowed = false, appEntries)
+                                }
+                            ) {
+                                Text(stringResource(R.string.app_management_add_app_deny))
+                            }
+                        }
+                    },
+                    dismissButton = {
+                        Button(onClick = { showAddAppDialog = false; addAppPackage = "" }) {
+                            Text(stringResource(android.R.string.cancel))
+                        }
+                    },
+                    containerColor = MaterialTheme.colorScheme.surfaceContainerHigh,
+                    shape = MaterialTheme.shapes.extraLarge
+                )
+            }
         }
     }
 
@@ -512,6 +591,60 @@ class ApplicationManagementActivity : AppActivity() {
         }
         permissionTick.intValue++
         viewModel.load(onlyCount = true)
+    }
+
+    private fun applyAddApp(allowed: Boolean, appEntries: List<AppEntry>) {
+        val pkg = addAppPackage.trim()
+        if (pkg.isEmpty()) return
+
+        val uid = runCatching {
+            packageManager.getPackageUid(pkg, 0)
+        }.getOrDefault(-1)
+        if (uid == -1) {
+            Toast.makeText(
+                this,
+                stringResource(R.string.app_management_add_app_invalid),
+                Toast.LENGTH_SHORT
+            ).show()
+            return
+        }
+        val alreadyExists = appEntries.any { it.packageInfo.packageName == pkg }
+        if (alreadyExists) {
+            Toast.makeText(
+                this,
+                stringResource(R.string.app_management_add_app_exists),
+                Toast.LENGTH_SHORT
+            ).show()
+            return
+        }
+
+        try {
+            if (allowed) {
+                AuthorizationManager.grant(pkg, uid)
+            } else {
+                AuthorizationManager.revoke(pkg, uid)
+            }
+            setResult(RESULT_OK)
+            permissionTick.intValue++
+            viewModel.load()
+            Toast.makeText(
+                this,
+                if (allowed) stringResource(R.string.app_management_add_app_added)
+                else stringResource(R.string.app_management_add_app_deny),
+                Toast.LENGTH_SHORT
+            ).show()
+            showAddAppDialog = false
+            addAppPackage = ""
+        } catch (e: SecurityException) {
+            val serverUid = try {
+                Shizuku.getUid()
+            } catch (_: Throwable) {
+                return
+            }
+            if (serverUid != 0) {
+                showAdbLimitedDialog = true
+            }
+        }
     }
 
     override fun onDestroy() {
