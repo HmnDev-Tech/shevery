@@ -173,7 +173,7 @@ class ApplicationManagementActivity : AppActivity() {
             // Defined here so it can capture composable state and call other composables.
             val applyAddApp = { allowed: Boolean ->
                 val pkg = addAppPackage.trim()
-                if (pkg.isEmpty()) return@applyAddApp
+                if (pkg.isEmpty()) return
 
                 val uid = runCatching {
                     packageManager.getPackageUid(pkg, 0)
@@ -184,7 +184,7 @@ class ApplicationManagementActivity : AppActivity() {
                         stringResource(R.string.app_management_add_app_invalid),
                         Toast.LENGTH_SHORT
                     ).show()
-                    return@applyAddApp
+                    return
                 }
                 val alreadyExists = appEntries.any { it.packageInfo.packageName == pkg }
                 if (alreadyExists) {
@@ -193,7 +193,7 @@ class ApplicationManagementActivity : AppActivity() {
                         stringResource(R.string.app_management_add_app_exists),
                         Toast.LENGTH_SHORT
                     ).show()
-                    return@applyAddApp
+                    return
                 }
 
                 try {
@@ -217,7 +217,7 @@ class ApplicationManagementActivity : AppActivity() {
                     val serverUid = try {
                         Shizuku.getUid()
                     } catch (_: Throwable) {
-                        return@applyAddApp
+                        return
                     }
                     if (serverUid != 0) {
                         showAdbLimitedDialog = true
