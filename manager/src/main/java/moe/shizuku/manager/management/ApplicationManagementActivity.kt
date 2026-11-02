@@ -205,7 +205,7 @@ class ApplicationManagementActivity : AppActivity() {
                     packageManager.getPackageUid(pkg, 0)
                 }.getOrElse {
                     runCatching {
-                        ShizukuSystemApis.getPackageInfo(pkg, 0, 0).applicationInfo?.uid ?: -1
+                        ShizukuSystemApis.getPackageInfo(pkg, 0, 0)?.applicationInfo?.uid ?: -1
                     }.getOrDefault(-1)
                 }
                 if (uid == -1) {
