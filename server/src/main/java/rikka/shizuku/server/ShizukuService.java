@@ -242,6 +242,10 @@ public class ShizukuService extends Service<ShizukuUserServiceManager, ShizukuCl
             if (ActivityManagerApis.checkPermission(ServerConstants.PERMISSION, pid, uid) == PackageManager.PERMISSION_GRANTED) {
                 return PackageManager.PERMISSION_GRANTED;
             }
+            ConfigPackageEntry entry = configManager.find(uid);
+            if (entry != null && entry.isAllowed()) {
+                return PackageManager.PERMISSION_GRANTED;
+            }
             int userId = UserHandleCompat.getUserId(uid);
             if (isShizukuStubActive(userId)) {
                 return ActivityManagerApis.checkPermission(ServerConstants.LEGACY_SHIZUKU_PERMISSION, pid, uid);
@@ -555,7 +559,6 @@ public class ShizukuService extends Service<ShizukuUserServiceManager, ShizukuCl
         }
 
         for (int user : users) {
-            boolean stubActive = isShizukuStubActive(user);
             for (PackageInfo pi : InstalledPackagesCompat.getInstalledPackagesNoThrow(PackageManager.GET_META_DATA | PackageManager.GET_PERMISSIONS, user)) {
                 if (Objects.equals(MANAGER_APPLICATION_ID, pi.packageName)) continue;
                 if (Objects.equals(ServerConstants.SHIZUKU_STUB_APPLICATION_ID, pi.packageName)) continue;
@@ -574,10 +577,8 @@ public class ShizukuService extends Service<ShizukuUserServiceManager, ShizukuCl
                     list.add(pi);
                 } else if (ServerConstants.hasSheveryPermission(pi.requestedPermissions)) {
                     list.add(pi);
-                } else if (stubActive
-                        && pi.applicationInfo.metaData != null
-                        && pi.applicationInfo.metaData.getBoolean(ServerConstants.META_DATA_SHIZUKU_CLIENT, false)
-                        && ServerConstants.hasLegacyShizukuPermission(pi.requestedPermissions)) {
+                } else if (ServerConstants.hasLegacyShizukuPermission(pi.requestedPermissions)
+                        || (pi.applicationInfo.metaData != null && pi.applicationInfo.metaData.getBoolean(ServerConstants.META_DATA_SHIZUKU_CLIENT, false))) {
                     list.add(pi);
                 }
             }
@@ -645,7 +646,6 @@ public class ShizukuService extends Service<ShizukuUserServiceManager, ShizukuCl
 
     private static void sendBinderToClient(Binder binder, int userId) {
         try {
-            boolean stubActive = isShizukuStubActive(userId);
             for (PackageInfo pi : InstalledPackagesCompat.getInstalledPackagesNoThrow(PackageManager.GET_PERMISSIONS, userId)) {
                 if (pi == null || pi.requestedPermissions == null)
                     continue;
@@ -655,7 +655,7 @@ public class ShizukuService extends Service<ShizukuUserServiceManager, ShizukuCl
                     continue;
 
                 boolean isShevery = ServerConstants.hasSheveryPermission(pi.requestedPermissions);
-                boolean isLegacy = stubActive && ServerConstants.hasLegacyShizukuPermission(pi.requestedPermissions);
+                boolean isLegacy = ServerConstants.hasLegacyShizukuPermission(pi.requestedPermissions);
                 if (!isShevery && !isLegacy) {
                     continue;
                 }
