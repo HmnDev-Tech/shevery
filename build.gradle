@@ -27,28 +27,7 @@ subprojects {
     }
 }
 
-def apiManifest = file('api/manifest.gradle')
-def localPropsFile = file('local.properties')
-if (localPropsFile.canRead()) {
-    def localProps = new Properties()
-    localProps.load(new FileInputStream(localPropsFile))
-    if (localProps['api.useLocal'] == 'true' && localProps['api.dir']) {
-        def candidate = file("${localProps['api.dir']}/manifest.gradle")
-        if (candidate.exists()) {
-            apiManifest = candidate
-        }
-    }
-}
-if (apiManifest.exists()) {
-    apply from: apiManifest
-} else {
-    ext {
-        api_version_major = 14
-        api_version_minor = 6
-        api_version_patch = 1
-        api_version_name = "${api_version_major}.${api_version_minor}.${api_version_patch}"
-    }
-}
+apply from: 'api/manifest.gradle'
 def gitCommitId = "dev"
 try {
     def commit = 'git rev-parse --short HEAD'.execute([], project.rootDir).text.trim()
