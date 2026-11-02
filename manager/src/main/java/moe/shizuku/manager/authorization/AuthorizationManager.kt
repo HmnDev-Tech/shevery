@@ -165,4 +165,15 @@ object AuthorizationManager {
             Shizuku.updateFlagsForUid(uid, MASK_PERMISSION, 0)
         }
     }
+
+    fun deny(packageName: String, uid: Int) {
+        sessionGrantedUids.remove(uid)
+        if (Shizuku.isPreV11()) {
+            val userId = uid / 100000
+            val targetPerm = resolveTargetPermission(packageName, userId)
+            ShizukuSystemApis.revokeRuntimePermission(packageName, targetPerm, userId)
+        } else {
+            Shizuku.updateFlagsForUid(uid, MASK_PERMISSION, FLAG_DENIED)
+        }
+    }
 }

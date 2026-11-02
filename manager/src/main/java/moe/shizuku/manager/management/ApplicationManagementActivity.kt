@@ -49,10 +49,14 @@ import androidx.compose.material3.TextField
 import androidx.compose.material3.TextFieldDefaults
 import androidx.compose.material3.Card
 import androidx.compose.material3.CardDefaults
+import androidx.compose.material3.ExtendedFloatingActionButton
 import androidx.compose.material3.Switch
 import androidx.compose.foundation.layout.Spacer
 import androidx.compose.foundation.layout.height
 import androidx.compose.foundation.layout.width
+import androidx.compose.foundation.text.KeyboardActions
+import androidx.compose.foundation.text.KeyboardOptions
+import androidx.compose.ui.text.input.ImeAction
 import moe.shizuku.manager.ShizukuSettings
 import androidx.compose.runtime.Composable
 import androidx.compose.runtime.getValue
@@ -199,7 +203,11 @@ class ApplicationManagementActivity : AppActivity() {
 
                 val uid = runCatching {
                     packageManager.getPackageUid(pkg, 0)
-                }.getOrDefault(-1)
+                }.getOrElse {
+                    runCatching {
+                        ShizukuSystemApis.getPackageInfo(pkg, 0, 0)?.applicationInfo?.uid ?: -1
+                    }.getOrDefault(-1)
+                }
                 if (uid == -1) {
                     Toast.makeText(
                         this@ApplicationManagementActivity,
@@ -222,7 +230,7 @@ class ApplicationManagementActivity : AppActivity() {
                     if (allowed) {
                         AuthorizationManager.grant(pkg, uid)
                     } else {
-                        AuthorizationManager.revoke(pkg, uid)
+                        AuthorizationManager.deny(pkg, uid)
                     }
                     setResult(RESULT_OK)
                     permissionTick.intValue++
@@ -271,26 +279,39 @@ class ApplicationManagementActivity : AppActivity() {
                     title = stringResource(R.string.home_app_management_title),
                     onNavigateUp = { finish() },
                     actions = {
-                        if (packages.isNotEmpty()) {
-                            var menuExpanded by remember { mutableStateOf(false) }
+                        IconButton(onClick = { showAddAppDialog = true }) {
+                            ShizukuIcon(
+                                R.drawable.ic_add_24,
+                                contentDescription = stringResource(R.string.app_management_add_app)
+                            )
+                        }
+                        var menuExpanded by remember { mutableStateOf(false) }
 
-                            Box {
-                                IconButton(onClick = { showAddAppDialog = true }) {
-                                    ShizukuIcon(
-                                        R.drawable.ic_add_24,
-                                        contentDescription = stringResource(R.string.app_management_add_app)
-                                    )
-                                }
-                                IconButton(onClick = { menuExpanded = true }) {
-                                    ShizukuIcon(
-                                        R.drawable.ic_more_vert_24,
-                                        contentDescription = stringResource(R.string.accessibility_more_options)
-                                    )
-                                }
-                                DropdownMenu(
-                                    expanded = menuExpanded,
-                                    onDismissRequest = { menuExpanded = false }
-                                ) {
+                        Box {
+                            IconButton(onClick = { menuExpanded = true }) {
+                                ShizukuIcon(
+                                    R.drawable.ic_more_vert_24,
+                                    contentDescription = stringResource(R.string.accessibility_more_options)
+                                )
+                            }
+                            DropdownMenu(
+                                expanded = menuExpanded,
+                                onDismissRequest = { menuExpanded = false }
+                            ) {
+                                DropdownMenuItem(
+                                    text = { Text(stringResource(R.string.app_management_add_app)) },
+                                    leadingIcon = {
+                                        Icon(
+                                            painter = painterResource(R.drawable.ic_add_24),
+                                            contentDescription = null
+                                        )
+                                    },
+                                    onClick = {
+                                        menuExpanded = false
+                                        showAddAppDialog = true
+                                    }
+                                )
+                                if (packages.isNotEmpty()) {
                                     DropdownMenuItem(
                                         text = { Text(stringResource(R.string.app_management_select_all)) },
                                         onClick = {
@@ -318,6 +339,20 @@ class ApplicationManagementActivity : AppActivity() {
                                 }
                             }
                         }
+                    },
+                    floatingActionButton = {
+                        ExtendedFloatingActionButton(
+                            onClick = { showAddAppDialog = true },
+                            icon = {
+                                Icon(
+                                    painter = painterResource(R.drawable.ic_add_24),
+                                    contentDescription = null
+                                )
+                            },
+                            text = { Text(stringResource(R.string.app_management_add_app)) },
+                            containerColor = MaterialTheme.colorScheme.primaryContainer,
+                            contentColor = MaterialTheme.colorScheme.onPrimaryContainer
+                        )
                     }
                 ) {
                     when {
@@ -345,7 +380,20 @@ class ApplicationManagementActivity : AppActivity() {
                                     icon = R.drawable.ic_system_icon,
                                     title = stringResource(R.string.home_app_management_title),
                                     body = stringResource(R.string.home_app_management_empty)
-                                )
+                                ) {
+                                    FilledTonalButton(
+                                        onClick = { showAddAppDialog = true },
+                                        modifier = Modifier.padding(top = 8.dp)
+                                    ) {
+                                        Icon(
+                                            painter = painterResource(R.drawable.ic_add_24),
+                                            contentDescription = null,
+                                            modifier = Modifier.size(18.dp)
+                                        )
+                                        Spacer(Modifier.width(8.dp))
+                                        Text(stringResource(R.string.app_management_add_app))
+                                    }
+                                }
                             }
                         }
                         else -> {
@@ -588,13 +636,19 @@ class ApplicationManagementActivity : AppActivity() {
                                         tint = MaterialTheme.colorScheme.onSurfaceVariant
                                     )
                                 },
-                                singleLine = true
+                                singleLine = true,
+                                keyboardOptions = KeyboardOptions(
+                                    imeAction = ImeAction.Done
+                                ),
+                                keyboardActions = KeyboardActions(
+                                    onDone = { applyAddApp(true) }
+                                )
                             )
                         }
                     },
                     confirmButton = {
                         Row(horizontalArrangement = Arrangement.spacedBy(8.dp)) {
-                            OutlinedButton(
+                            Button(
                                 onClick = {
                                     applyAddApp(true)
                                 }
