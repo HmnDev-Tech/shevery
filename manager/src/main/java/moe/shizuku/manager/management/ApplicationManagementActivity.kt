@@ -192,13 +192,10 @@ class ApplicationManagementActivity : AppActivity() {
                 }
             }
 
-            // Composable handler for adding an app manually from the dialog.
-            // Defined here so it can capture composable state (showAddAppDialog,
-            // addAppPackage, showAdbLimitedDialog) and call composable functions
-            // like stringResource.
-            val applyAddApp = { allowed: Boolean ->
+            // Function for adding an app manually from the dialog.
+            fun applyAddApp(allowed: Boolean) {
                 val pkg = addAppPackage.trim()
-                if (pkg.isEmpty()) return@applyAddApp
+                if (pkg.isEmpty()) return
 
                 val uid = runCatching {
                     packageManager.getPackageUid(pkg, 0)
@@ -206,19 +203,19 @@ class ApplicationManagementActivity : AppActivity() {
                 if (uid == -1) {
                     Toast.makeText(
                         this@ApplicationManagementActivity,
-                        stringResource(R.string.app_management_add_app_invalid),
+                        R.string.app_management_add_app_invalid,
                         Toast.LENGTH_SHORT
                     ).show()
-                    return@applyAddApp
+                    return
                 }
                 val alreadyExists = appEntries.any { it.packageInfo.packageName == pkg }
                 if (alreadyExists) {
                     Toast.makeText(
                         this@ApplicationManagementActivity,
-                        stringResource(R.string.app_management_add_app_exists),
+                        R.string.app_management_add_app_exists,
                         Toast.LENGTH_SHORT
                     ).show()
-                    return@applyAddApp
+                    return
                 }
 
                 try {
@@ -232,8 +229,8 @@ class ApplicationManagementActivity : AppActivity() {
                     viewModel.load()
                     Toast.makeText(
                         this@ApplicationManagementActivity,
-                        if (allowed) stringResource(R.string.app_management_add_app_added)
-                        else stringResource(R.string.app_management_add_app_deny),
+                        if (allowed) R.string.app_management_add_app_added
+                        else R.string.app_management_add_app_deny,
                         Toast.LENGTH_SHORT
                     ).show()
                     showAddAppDialog = false
@@ -242,7 +239,7 @@ class ApplicationManagementActivity : AppActivity() {
                     val serverUid = try {
                         Shizuku.getUid()
                     } catch (_: Throwable) {
-                        return@applyAddApp
+                        return
                     }
                     if (serverUid != 0) {
                         showAdbLimitedDialog = true
