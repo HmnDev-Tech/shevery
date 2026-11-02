@@ -180,7 +180,20 @@ class RequestPermissionActivity : AppActivity() {
                 callerIsForwarder ||
                 callerIsOwner
             )
-        callerTrusted = extrasTrusted
+        // When the launching UID is hidden (e.g. ROMs where getLaunchedFromUid() returns -1,
+        // such as Termux via rish), accept the Shizuku server's own request only if the claimed
+        // app UID really owns the claimed package and the request carries pid/requestCode.
+        val callerUnknown = callerUid <= 0
+        val serverRequest = callerUnknown &&
+            intent.getIntExtra("uid", -1) >= Process.FIRST_APPLICATION_UID &&
+            intent.getIntExtra("pid", -1) > 0 &&
+            intent.getIntExtra("requestCode", -1) != -1 &&
+            !intent.getStringExtra("packageName").isNullOrEmpty() &&
+            runCatching {
+                packageManager.getPackagesForUid(intent.getIntExtra("uid", -1))
+                    ?.contains(intent.getStringExtra("packageName")) == true
+            }.getOrDefault(false)
+        callerTrusted = extrasTrusted || serverRequest
 
         var uid = intent.getIntExtra("uid", -1)
         if (uid == -1) uid = intent.getIntExtra("client_uid", -1)
