@@ -26,6 +26,7 @@ import androidx.compose.ui.draw.clip
 import androidx.compose.ui.res.painterResource
 import androidx.compose.material.icons.Icons
 import androidx.compose.material.icons.rounded.Clear
+import androidx.compose.material.icons.rounded.Label
 import androidx.compose.material.icons.rounded.Search
 import androidx.compose.material3.AlertDialog
 import androidx.compose.ui.semantics.clearAndSetSemantics
@@ -169,11 +170,35 @@ class ApplicationManagementActivity : AppActivity() {
             var showAddAppDialog by rememberSaveable { mutableStateOf(false) }
             var addAppPackage by rememberSaveable { mutableStateOf("") }
 
+            val appEntries = remember(packages, tick) {
+                packages.mapNotNull { pkg ->
+                    val appInfo = pkg.applicationInfo ?: return@mapNotNull null
+                    val uid = appInfo.uid
+                    val userId = UserHandleCompat.getUserId(uid)
+                    val label = appInfo.loadLabel(pm).toString()
+                    val title = if (userId != UserHandleCompat.myUserId()) {
+                        val userInfo = ShizukuSystemApis.getUserInfo(userId)
+                        "$label - ${userInfo.name} ($userId)"
+                    } else {
+                        label
+                    }
+                    val granted = try {
+                        AuthorizationManager.granted(pkg.packageName, uid)
+                    } catch (_: SecurityException) {
+                        false
+                    }
+                    val isOneTime = AuthorizationManager.isOneTime(uid)
+                    AppEntry(pkg, title, granted, isOneTime)
+                }
+            }
+
             // Composable handler for adding an app manually from the dialog.
-            // Defined here so it can capture composable state and call other composables.
+            // Defined here so it can capture composable state (showAddAppDialog,
+            // addAppPackage, showAdbLimitedDialog) and call composable functions
+            // like stringResource.
             val applyAddApp = { allowed: Boolean ->
                 val pkg = addAppPackage.trim()
-                if (pkg.isEmpty()) return
+                if (pkg.isEmpty()) return@applyAddApp
 
                 val uid = runCatching {
                     packageManager.getPackageUid(pkg, 0)
@@ -184,7 +209,7 @@ class ApplicationManagementActivity : AppActivity() {
                         stringResource(R.string.app_management_add_app_invalid),
                         Toast.LENGTH_SHORT
                     ).show()
-                    return
+                    return@applyAddApp
                 }
                 val alreadyExists = appEntries.any { it.packageInfo.packageName == pkg }
                 if (alreadyExists) {
@@ -193,7 +218,7 @@ class ApplicationManagementActivity : AppActivity() {
                         stringResource(R.string.app_management_add_app_exists),
                         Toast.LENGTH_SHORT
                     ).show()
-                    return
+                    return@applyAddApp
                 }
 
                 try {
@@ -217,33 +242,11 @@ class ApplicationManagementActivity : AppActivity() {
                     val serverUid = try {
                         Shizuku.getUid()
                     } catch (_: Throwable) {
-                        return
+                        return@applyAddApp
                     }
                     if (serverUid != 0) {
                         showAdbLimitedDialog = true
                     }
-                }
-            }
-
-            val appEntries = remember(packages, tick) {
-                packages.mapNotNull { pkg ->
-                    val appInfo = pkg.applicationInfo ?: return@mapNotNull null
-                    val uid = appInfo.uid
-                    val userId = UserHandleCompat.getUserId(uid)
-                    val label = appInfo.loadLabel(pm).toString()
-                    val title = if (userId != UserHandleCompat.myUserId()) {
-                        val userInfo = ShizukuSystemApis.getUserInfo(userId)
-                        "$label - ${userInfo.name} ($userId)"
-                    } else {
-                        label
-                    }
-                    val granted = try {
-                        AuthorizationManager.granted(pkg.packageName, uid)
-                    } catch (_: SecurityException) {
-                        false
-                    }
-                    val isOneTime = AuthorizationManager.isOneTime(uid)
-                    AppEntry(pkg, title, granted, isOneTime)
                 }
             }
 
