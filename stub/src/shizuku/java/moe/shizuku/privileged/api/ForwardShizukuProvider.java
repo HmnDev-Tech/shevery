@@ -8,6 +8,8 @@ import android.net.Uri;
 import android.os.Build;
 import android.os.Bundle;
 
+import moe.shizuku.api.BinderContainer;
+
 /**
  * Compatibility ContentProvider inside the Shizuku Stub ({@code moe.shizuku.privileged.api}).
  * <p>
@@ -32,6 +34,9 @@ public class ForwardShizukuProvider extends ContentProvider {
         Context context = getContext();
         if (context == null) {
             return null;
+        }
+        if (extras != null) {
+            extras.setClassLoader(BinderContainer.class.getClassLoader());
         }
         Bundle forwardExtras = extras != null ? new Bundle(extras) : new Bundle();
         forwardExtras.putString("com.hamondev.shevery.intent.extra.PERMISSION_CHANNEL", "shizuku_stub");

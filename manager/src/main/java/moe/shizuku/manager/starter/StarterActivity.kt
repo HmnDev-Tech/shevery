@@ -353,102 +353,12 @@ private class ViewModel(context: Context, root: Boolean, dhizuku: Boolean, host:
 
     private fun startDhizuku(context: Context) {
         synchronized(outputLock) {
-            sb.append("Starting with Dhizuku (Device Owner)...").append('\n').append('\n')
+            sb.append("Starting with Dhizuku is not supported.").append('\n').append('\n')
         }
-        postResult()
-
-        viewModelScope.launch(Dispatchers.IO) {
-            try {
-                appendLine("Initializing Dhizuku...")
-                val initResult = com.rosan.dhizuku.api.Dhizuku.init(context.applicationContext)
-                if (!initResult) {
-                    appendLine("✗ Dhizuku init failed. Is Dhizuku app installed and active?")
-                    postResult(DhizukuException("Dhizuku init failed"))
-                    return@launch
-                }
-                appendLine("✓ Dhizuku initialized\n")
-
-                appendLine("Checking Dhizuku permission...")
-                if (!com.rosan.dhizuku.api.Dhizuku.isPermissionGranted()) {
-                    appendLine("Requesting Dhizuku permission...")
-                    val permissionGranted = kotlinx.coroutines.suspendCancellableCoroutine<Boolean> { cont ->
-                        com.rosan.dhizuku.api.Dhizuku.requestPermission(object : com.rosan.dhizuku.api.DhizukuRequestPermissionListener() {
-                            override fun onRequestPermission(grantResult: Int) {
-                                cont.resume(grantResult == android.content.pm.PackageManager.PERMISSION_GRANTED) {}
-                            }
-                        })
-                    }
-                    if (!permissionGranted) {
-                        appendLine("✗ Dhizuku permission denied")
-                        postResult(DhizukuException("Dhizuku permission denied"))
-                        return@launch
-                    }
-                }
-                appendLine("✓ Dhizuku permission granted\n")
-
-                appendLine("Binding Dhizuku user service...")
-                val userServiceArgs = com.rosan.dhizuku.api.DhizukuUserServiceArgs(
-                    android.content.ComponentName(context.applicationContext, moe.shizuku.manager.dhizuku.DhizukuService::class.java)
-                )
-                var connection: android.content.ServiceConnection? = null
-                try {
-                    val serviceResult = kotlinx.coroutines.withTimeoutOrNull(10000) {
-                        kotlinx.coroutines.suspendCancellableCoroutine<android.os.IBinder?> { cont ->
-                            val conn = object : android.content.ServiceConnection {
-                                override fun onServiceConnected(name: android.content.ComponentName?, service: android.os.IBinder?) {
-                                    if (cont.isActive) cont.resumeWith(Result.success(service))
-                                }
-                                override fun onServiceDisconnected(name: android.content.ComponentName?) {}
-                            }
-                            connection = conn
-                            val bound = com.rosan.dhizuku.api.Dhizuku.bindUserService(userServiceArgs, conn)
-                            if (!bound && cont.isActive) {
-                                cont.resumeWith(Result.success(null))
-                            }
-                        }
-                    }
-
-                    if (serviceResult == null) {
-                        appendLine("✗ Dhizuku service binding failed or timed out.")
-                        appendLine("  Make sure Dhizuku is set as Device Owner and is active.")
-                        postResult(DhizukuException("Dhizuku service binding failed"))
-                        return@launch
-                    }
-                    appendLine("✓ Dhizuku service connected\n")
-
-                    val dhizukuService = moe.shizuku.manager.dhizuku.IDhizukuService.Stub.asInterface(serviceResult)
-
-                    appendLine("Executing Shevery starter directly via Dhizuku Device Owner...")
-                    ShizukuStateMachine.onStartRequested()
-                    dhizukuService.runCommand(moe.shizuku.manager.starter.Starter.internalCommand)
-                    ShizukuSettings.setLastLaunchMode(ShizukuSettings.LaunchMethod.DHIZUKU)
-
-                    appendLine("✓ Starter command sent to Dhizuku shell.")
-                    appendLine("Waiting for Shevery service to initialize...")
-                    if (ShizukuStateMachine.awaitRunning(10_000L)) {
-                        appendLine("✓ Shevery binder verified.")
-                        postResult()
-                    } else {
-                        ShizukuStateMachine.onStartFailed()
-                        appendLine("✗ Starter command completed,but Shevery service did not become available.")
-                        appendLine("  Per README: start Shevery first by PC/OTG or Wireless Debugging, then use Dhizuku — \"Do not start Shevery via Dhizuku first.\"")
-                        appendLine("  Direct Dhizuku startup can fail when the Device Owner context cannot provide the same shell/root environment as ADB or root.")
-                        appendLine("  Try starting with Wireless ADB or root, then copy diagnostics if this repeats.")
-                        postResult(DhizukuException("Dhizuku starter did not publish a Shevery binder"))
-                    }
-                } finally {
-                    connection?.let { conn ->
-                        try {
-                            com.rosan.dhizuku.api.Dhizuku.unbindUserService(conn)
-                        } catch (e: Exception) { }
-                    }
-                }
-            } catch (e: Exception) {
-                ShizukuStateMachine.onStartFailed()
-                appendLine("\n✗ Dhizuku error: ${e.message}")
-                appendLine(Log.getStackTraceString(e))
-                postResult(DhizukuException("Dhizuku failed: ${e.message}", e))
-            }
-        }
+        appendLine("✗ Dhizuku user services run under the app UID (u0_a...).")
+        appendLine("  The Shevery service requires real ADB or root privileges to start.")
+        appendLine("  Start Shevery with Wireless ADB or root first.")
+        postResult(DhizukuException("ADB or root privileges are required to start the Shevery service"))
     }
+
 }

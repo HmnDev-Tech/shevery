@@ -50,7 +50,9 @@ import rikka.shizuku.server.ktx.workerHandler
 class RequestPermissionActivity : AppActivity() {
 
     private fun setShizukuResult(requestUid: Int, requestPid: Int, requestCode: Int, allowed: Boolean, onetime: Boolean) {
-        if (requestPid == -1 || requestCode == -1) return
+        // Intent-originated requests carry no pid/requestCode. Do not drop the decision:
+        // the server still updates the live client records and the UID flags.
+        if ((requestPid == -1 || requestCode == -1) && !onetime && !allowed) return
         val data = Bundle()
         data.putBoolean(REQUEST_PERMISSION_REPLY_ALLOWED, allowed)
         data.putBoolean(REQUEST_PERMISSION_REPLY_IS_ONETIME, onetime)

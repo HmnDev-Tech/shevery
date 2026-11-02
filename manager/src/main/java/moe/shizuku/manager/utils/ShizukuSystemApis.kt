@@ -239,7 +239,7 @@ object ShizukuSystemApis {
                 val pm = getPermissionManager()
                 val method = checkPermissionMethod
                 return if (method != null && method.parameterTypes.size >= 4) {
-                    invokeCompat(method, pm, pkgName, permName, userId) as? Int
+                    invokeCompat(method, pm, permName, pkgName, PERSISTENT_DEVICE_ID, userId) as? Int
                         ?: PackageManager.PERMISSION_DENIED
                 } else {
                     invokeCompat(method, pm, permName, pkgName, userId) as? Int

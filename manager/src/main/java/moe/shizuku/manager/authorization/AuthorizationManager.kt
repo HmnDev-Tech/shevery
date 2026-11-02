@@ -2,6 +2,7 @@ package moe.shizuku.manager.authorization
 
 import android.content.pm.PackageInfo
 import android.content.pm.PackageManager
+import android.os.Bundle
 import android.os.Parcel
 import com.hamondev.shevery.api.SheveryApiConstants
 import moe.shizuku.manager.BuildConfig
@@ -11,6 +12,8 @@ import moe.shizuku.manager.utils.Logger.LOGGER
 import moe.shizuku.manager.utils.ShizukuSystemApis
 import rikka.parcelablelist.ParcelableListSlice
 import rikka.shizuku.Shizuku
+import rikka.shizuku.ShizukuApiConstants.REQUEST_PERMISSION_REPLY_ALLOWED
+import rikka.shizuku.ShizukuApiConstants.REQUEST_PERMISSION_REPLY_IS_ONETIME
 import rikka.shizuku.server.ServerConstants
 import java.util.ArrayList
 
@@ -111,6 +114,34 @@ object AuthorizationManager {
         } else {
             (Shizuku.getFlagsForUid(uid, MASK_PERMISSION) and FLAG_ALLOWED) == FLAG_ALLOWED
         }
+    }
+
+    /**
+     * Grants access for the current server session only. The server applies the flag to the
+     * live client records but must not persist it to the config, so a restart forgets it.
+     */
+    fun grantSessionOnly(packageName: String, uid: Int, allowed: Boolean = true) {
+        if (allowed) {
+            sessionGrantedUids.add(uid)
+        } else {
+            sessionGrantedUids.remove(uid)
+        }
+
+        if (Shizuku.isPreV11()) {
+            val userId = uid / 100000
+            val targetPerm = resolveTargetPermission(packageName, userId)
+            if (allowed) {
+                ShizukuSystemApis.grantRuntimePermission(packageName, targetPerm, userId)
+            } else {
+                ShizukuSystemApis.revokeRuntimePermission(packageName, targetPerm, userId)
+            }
+            return
+        }
+
+        val data = Bundle()
+        data.putBoolean(REQUEST_PERMISSION_REPLY_ALLOWED, allowed)
+        data.putBoolean(REQUEST_PERMISSION_REPLY_IS_ONETIME, true)
+        Shizuku.dispatchPermissionConfirmationResult(uid, -1, -1, data)
     }
 
     fun grant(packageName: String, uid: Int) {

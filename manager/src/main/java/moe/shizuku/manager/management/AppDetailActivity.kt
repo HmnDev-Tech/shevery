@@ -168,9 +168,8 @@ class AppDetailActivity : AppActivity() {
             fun setSessionOnly(value: Boolean) {
                 try {
                     if (value) {
-                        // Drop the permanent grant, keep access for this session only.
-                        AuthorizationManager.revoke(pkgName, uid)
-                        AuthorizationManager.markOneTime(uid, true)
+                        // Keep access for this session only; do not revoke on the server.
+                        AuthorizationManager.grantSessionOnly(pkgName, uid)
                     } else {
                         AuthorizationManager.grant(pkgName, uid)
                         Toast.makeText(this@AppDetailActivity, R.string.app_management_made_permanent, Toast.LENGTH_SHORT).show()
