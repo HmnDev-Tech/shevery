@@ -36,6 +36,8 @@ import android.util.Log;
 import androidx.annotation.NonNull;
 import androidx.annotation.Nullable;
 
+import com.hamondev.shevery.api.SheveryApiConstants;
+
 import java.util.ArrayList;
 import java.util.List;
 import java.util.Objects;
@@ -314,6 +316,11 @@ public class ShizukuService extends Service<ShizukuUserServiceManager, ShizukuCl
                 LOGGER.w("Add client failed");
                 return;
             }
+        } else {
+            // A second attach from the same process may use a different
+            // IShizukuApplication token (Shizuku and Shevery facades). Keep the newest one
+            // so permission callbacks reach the token the client is actually listening on.
+            clientRecord.client = application;
         }
 
         LOGGER.d("attachApplication: %s %d %d", requestPackageName, callingUid, callingPid);
@@ -328,10 +335,12 @@ public class ShizukuService extends Service<ShizukuUserServiceManager, ShizukuCl
         reply.putInt(BIND_APPLICATION_SERVER_VERSION, replyServerVersion);
         reply.putString(BIND_APPLICATION_SERVER_SECONTEXT, OsUtils.getSELinuxContext());
         reply.putInt(BIND_APPLICATION_SERVER_PATCH_VERSION, ShizukuApiConstants.SERVER_PATCH_VERSION);
+        reply.putInt(SheveryApiConstants.BIND_APPLICATION_CAPABILITIES, Objects.requireNonNull(clientRecord).capabilities);
         if (!isManager) {
             reply.putBoolean(BIND_APPLICATION_PERMISSION_GRANTED, Objects.requireNonNull(clientRecord).allowed);
             reply.putBoolean(BIND_APPLICATION_SHOULD_SHOW_REQUEST_PERMISSION_RATIONALE, false);
         } else {
+            reply.putBoolean(BIND_APPLICATION_PERMISSION_GRANTED, true);
             try {
                 Android17Compat.grantRuntimePermission(MANAGER_APPLICATION_ID,
                         WRITE_SECURE_SETTINGS, UserHandleCompat.getUserId(callingUid));
@@ -393,6 +402,15 @@ public class ShizukuService extends Service<ShizukuUserServiceManager, ShizukuCl
         LOGGER.i("dispatchPermissionConfirmationResult: uid=%d, pid=%d, requestCode=%d, allowed=%s, onetime=%s",
                 requestUid, requestPid, requestCode, Boolean.toString(allowed), Boolean.toString(onetime));
 
+        int capabilities = 0;
+        if (allowed) {
+            ConfigPackageEntry entry = configManager.find(requestUid);
+            capabilities = entry != null ? entry.getCapabilities() : SheveryApiConstants.DEFAULT_CAPABILITIES;
+            if (capabilities == 0) {
+                capabilities = SheveryApiConstants.DEFAULT_CAPABILITIES;
+            }
+        }
+
         List<ClientRecord> records = clientManager.findClients(requestUid);
         List<String> packages = new ArrayList<>();
         if (records.isEmpty()) {
@@ -401,8 +419,9 @@ public class ShizukuService extends Service<ShizukuUserServiceManager, ShizukuCl
             for (ClientRecord record : records) {
                 packages.add(record.packageName);
                 record.allowed = allowed;
+                record.capabilities = capabilities;
                 if (record.pid == requestPid) {
-                    record.dispatchRequestPermissionResult(requestCode, allowed);
+                    record.dispatchRequestPermissionResult(requestCode, allowed, capabilities);
                 }
             }
         }
@@ -411,7 +430,7 @@ public class ShizukuService extends Service<ShizukuUserServiceManager, ShizukuCl
             configManager.update(requestUid, packages, ConfigManager.MASK_PERMISSION, allowed ? ConfigManager.FLAG_ALLOWED : ConfigManager.FLAG_DENIED);
         }
 
-        if (!onetime && allowed) {
+        if (!onetime) {
             int userId = UserHandleCompat.getUserId(requestUid);
             BinderSender.invalidateUid(requestUid);
 
@@ -481,12 +500,22 @@ public class ShizukuService extends Service<ShizukuUserServiceManager, ShizukuCl
         if ((mask & ConfigManager.MASK_PERMISSION) != 0) {
             boolean allowed = (value & ConfigManager.FLAG_ALLOWED) != 0;
 
+            ConfigPackageEntry entry = configManager.find(uid);
+            int grantedCapabilities = entry != null ? entry.getCapabilities() : SheveryApiConstants.DEFAULT_CAPABILITIES;
+            if (grantedCapabilities == 0) {
+                grantedCapabilities = SheveryApiConstants.DEFAULT_CAPABILITIES;
+            }
+
             List<ClientRecord> records = clientManager.findClients(uid);
             for (ClientRecord record : records) {
                 if (allowed) {
                     record.allowed = true;
+                    record.capabilities = grantedCapabilities;
+                    record.dispatchRequestPermissionResult(-1, true, grantedCapabilities);
                 } else {
                     record.allowed = false;
+                    record.capabilities = 0;
+                    record.dispatchRequestPermissionResult(-1, false, 0);
                     ActivityManagerApis.forceStopPackageNoThrow(record.packageName, UserHandleCompat.getUserId(record.uid));
                     onPermissionRevoked(record.packageName);
                 }

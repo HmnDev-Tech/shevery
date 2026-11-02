@@ -7,8 +7,6 @@ import kotlinx.coroutines.CoroutineScope
 import kotlinx.coroutines.Dispatchers
 import kotlinx.coroutines.delay
 import kotlinx.coroutines.launch
-import kotlinx.coroutines.suspendCancellableCoroutine
-import kotlinx.coroutines.withTimeoutOrNull
 import moe.shizuku.manager.ShizukuSettings
 import moe.shizuku.manager.ShizukuSettings.LaunchMethod
 import moe.shizuku.manager.errorprotect.ErrorProtectClient
@@ -210,7 +208,7 @@ object WatchdogManager {
                 when (lastMode) {
                     LaunchMethod.ROOT -> restartRoot()
                     LaunchMethod.ADB -> restartAdb(appContext, force)
-                    LaunchMethod.DHIZUKU -> restartDhizuku(appContext)
+                    LaunchMethod.DHIZUKU -> logd("Watchdog: Dhizuku cannot start the server; ADB or root required")
                     else -> logd("Watchdog: unknown mode $lastMode")
                 }
                 if (ShizukuStateMachine.awaitRunning(15_000L)) {
@@ -282,48 +280,4 @@ object WatchdogManager {
         }
     }
 
-    private suspend fun restartDhizuku(context: Context) {
-        try {
-            val initResult = com.rosan.dhizuku.api.Dhizuku.init(context.applicationContext)
-            if (!initResult || !com.rosan.dhizuku.api.Dhizuku.isPermissionGranted()) {
-                logd("Watchdog: Dhizuku not ready")
-                return
-            }
-            val args = com.rosan.dhizuku.api.DhizukuUserServiceArgs(
-                android.content.ComponentName(
-                    context.applicationContext,
-                    moe.shizuku.manager.dhizuku.DhizukuService::class.java
-                )
-            )
-            var connection: android.content.ServiceConnection? = null
-            try {
-                val binder = withTimeoutOrNull(10_000L) {
-                    suspendCancellableCoroutine<android.os.IBinder?> { cont ->
-                        val conn = object : android.content.ServiceConnection {
-                            override fun onServiceConnected(name: android.content.ComponentName?, service: android.os.IBinder?) {
-                                if (cont.isActive) cont.resumeWith(Result.success(service))
-                            }
-                            override fun onServiceDisconnected(name: android.content.ComponentName?) {}
-                        }
-                        connection = conn
-                        if (!com.rosan.dhizuku.api.Dhizuku.bindUserService(args, conn) && cont.isActive) {
-                            cont.resumeWith(Result.success(null))
-                        }
-                    }
-                } ?: return
-                val service = moe.shizuku.manager.dhizuku.IDhizukuService.Stub.asInterface(binder)
-                ShizukuStateMachine.onStartRequested()
-                service.runCommand(Starter.internalCommand)
-            } finally {
-                connection?.let {
-                    try {
-                        com.rosan.dhizuku.api.Dhizuku.unbindUserService(it)
-                    } catch (_: Exception) {
-                    }
-                }
-            }
-        } catch (e: Exception) {
-            logd("Watchdog Dhizuku restart failed: ${e.message}")
-        }
-    }
 }
