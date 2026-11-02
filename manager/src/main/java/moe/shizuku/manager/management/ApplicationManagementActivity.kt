@@ -192,6 +192,61 @@ class ApplicationManagementActivity : AppActivity() {
                 }
             }
 
+            // Function for adding an app manually from the dialog.
+            fun applyAddApp(allowed: Boolean) {
+                val pkg = addAppPackage.trim()
+                if (pkg.isEmpty()) return
+
+                val uid = runCatching {
+                    packageManager.getPackageUid(pkg, 0)
+                }.getOrDefault(-1)
+                if (uid == -1) {
+                    Toast.makeText(
+                        this@ApplicationManagementActivity,
+                        R.string.app_management_add_app_invalid,
+                        Toast.LENGTH_SHORT
+                    ).show()
+                    return
+                }
+                val alreadyExists = appEntries.any { it.packageInfo.packageName == pkg }
+                if (alreadyExists) {
+                    Toast.makeText(
+                        this@ApplicationManagementActivity,
+                        R.string.app_management_add_app_exists,
+                        Toast.LENGTH_SHORT
+                    ).show()
+                    return
+                }
+
+                try {
+                    if (allowed) {
+                        AuthorizationManager.grant(pkg, uid)
+                    } else {
+                        AuthorizationManager.revoke(pkg, uid)
+                    }
+                    setResult(RESULT_OK)
+                    permissionTick.intValue++
+                    viewModel.load()
+                    Toast.makeText(
+                        this@ApplicationManagementActivity,
+                        if (allowed) R.string.app_management_add_app_added
+                        else R.string.app_management_add_app_deny,
+                        Toast.LENGTH_SHORT
+                    ).show()
+                    showAddAppDialog = false
+                    addAppPackage = ""
+                } catch (e: SecurityException) {
+                    val serverUid = try {
+                        Shizuku.getUid()
+                    } catch (_: Throwable) {
+                        return
+                    }
+                    if (serverUid != 0) {
+                        showAdbLimitedDialog = true
+                    }
+                }
+            }
+
             val totalCount = appEntries.size
             val allowedCount = remember(appEntries) { appEntries.count { it.granted } }
             val deniedCount = totalCount - allowedCount
@@ -533,10 +588,7 @@ class ApplicationManagementActivity : AppActivity() {
                                         tint = MaterialTheme.colorScheme.onSurfaceVariant
                                     )
                                 },
-                                singleLine = true,
-                                keyboardOptions = androidx.compose.material3.KeyboardOptions(
-                                    capitalization = androidx.compose.ui.text.input.KeyboardCapitalization.None
-                                )
+                                singleLine = true
                             )
                         }
                     },
@@ -544,14 +596,14 @@ class ApplicationManagementActivity : AppActivity() {
                         Row(horizontalArrangement = Arrangement.spacedBy(8.dp)) {
                             OutlinedButton(
                                 onClick = {
-                                    applyAddApp(allowed = true, appEntries)
+                                    applyAddApp(true)
                                 }
                             ) {
                                 Text(stringResource(R.string.app_management_add_app_allow))
                             }
                             OutlinedButton(
                                 onClick = {
-                                    applyAddApp(allowed = false, appEntries)
+                                    applyAddApp(false)
                                 }
                             ) {
                                 Text(stringResource(R.string.app_management_add_app_deny))
@@ -591,60 +643,6 @@ class ApplicationManagementActivity : AppActivity() {
         }
         permissionTick.intValue++
         viewModel.load(onlyCount = true)
-    }
-
-    private fun applyAddApp(allowed: Boolean, appEntries: List<AppEntry>) {
-        val pkg = addAppPackage.trim()
-        if (pkg.isEmpty()) return
-
-        val uid = runCatching {
-            packageManager.getPackageUid(pkg, 0)
-        }.getOrDefault(-1)
-        if (uid == -1) {
-            Toast.makeText(
-                this,
-                stringResource(R.string.app_management_add_app_invalid),
-                Toast.LENGTH_SHORT
-            ).show()
-            return
-        }
-        val alreadyExists = appEntries.any { it.packageInfo.packageName == pkg }
-        if (alreadyExists) {
-            Toast.makeText(
-                this,
-                stringResource(R.string.app_management_add_app_exists),
-                Toast.LENGTH_SHORT
-            ).show()
-            return
-        }
-
-        try {
-            if (allowed) {
-                AuthorizationManager.grant(pkg, uid)
-            } else {
-                AuthorizationManager.revoke(pkg, uid)
-            }
-            setResult(RESULT_OK)
-            permissionTick.intValue++
-            viewModel.load()
-            Toast.makeText(
-                this,
-                if (allowed) stringResource(R.string.app_management_add_app_added)
-                else stringResource(R.string.app_management_add_app_deny),
-                Toast.LENGTH_SHORT
-            ).show()
-            showAddAppDialog = false
-            addAppPackage = ""
-        } catch (e: SecurityException) {
-            val serverUid = try {
-                Shizuku.getUid()
-            } catch (_: Throwable) {
-                return
-            }
-            if (serverUid != 0) {
-                showAdbLimitedDialog = true
-            }
-        }
     }
 
     override fun onDestroy() {
