@@ -61,33 +61,62 @@ object AuthorizationManager {
         return resolvePackagePermission(pi) ?: Manifest.permission.PRIVILEGED_API
     }
 
-    fun getPackages(): List<PackageInfo> {
-        val packages: MutableList<PackageInfo> = ArrayList()
-        if (Shizuku.isPreV11() || (Shizuku.getVersion() == 11 && Shizuku.getServerPatchVersion() < 3)) {
-            val allPackages: MutableList<PackageInfo> = ArrayList()
-            for (user in ShizukuSystemApis.getUsers(useCache = false)) {
-                try {
-                    allPackages.addAll(ShizukuSystemApis.getInstalledPackages((PackageManager.GET_META_DATA or PackageManager.GET_PERMISSIONS).toLong(), user.id))
-                } catch (e: Throwable) {
-                    LOGGER.w(e, "getInstalledPackages")
-                }
-            }
-            for (pi in allPackages) {
-                if (BuildConfig.APPLICATION_ID == pi.packageName) continue
-                if (StubManager.STUB_PACKAGE == pi.packageName) continue
-                val metaData = pi.applicationInfo?.metaData
-                val isSheveryClient = metaData?.getBoolean(SheveryApiConstants.META_DATA_CLIENT_SUPPORT) == true
-                        || pi.requestedPermissions?.contains(Manifest.permission.PRIVILEGED_API) == true
-                val isLegacyShizukuClient = metaData?.getBoolean(SheveryApiConstants.LEGACY_META_DATA_CLIENT_SUPPORT) == true
-                        && pi.requestedPermissions?.contains(Manifest.permission.API_V23) == true
-                if (!isSheveryClient && !isLegacyShizukuClient) continue
+    fun isClientPackage(pi: PackageInfo?): Boolean {
+        if (pi == null) return false
+        val metaData = pi.applicationInfo?.metaData
+        val isSheveryClient = metaData?.getBoolean(SheveryApiConstants.META_DATA_CLIENT_SUPPORT) == true
+                || pi.requestedPermissions?.contains(Manifest.permission.PRIVILEGED_API) == true
+        val isLegacyShizukuClient = metaData?.getBoolean(SheveryApiConstants.LEGACY_META_DATA_CLIENT_SUPPORT) == true
+                || pi.requestedPermissions?.contains(Manifest.permission.API_V23) == true
+        return isSheveryClient || isLegacyShizukuClient
+    }
 
-                packages.add(pi)
+    fun getPackages(): List<PackageInfo> {
+        val seen = LinkedHashMap<String, PackageInfo>()
+        val flags = (PackageManager.GET_META_DATA or PackageManager.GET_PERMISSIONS).toLong()
+
+        fun addPackage(pi: PackageInfo?) {
+            val appInfo = pi?.applicationInfo ?: return
+            val pkg = pi.packageName ?: return
+            if (BuildConfig.APPLICATION_ID == pkg) return
+            if (StubManager.STUB_PACKAGE == pkg) return
+            if ("com.rosan.dhizuku" == pkg) return
+            val key = "$pkg:${appInfo.uid}"
+            if (!seen.containsKey(key)) {
+                seen[key] = pi
             }
-        } else {
-            packages.addAll(getApplications(-1))
         }
-        return packages
+
+        if (!Shizuku.isPreV11() && !(Shizuku.getVersion() == 11 && Shizuku.getServerPatchVersion() < 3)) {
+            try {
+                for (pi in getApplications(-1)) {
+                    addPackage(pi)
+                }
+            } catch (e: Throwable) {
+                LOGGER.w(e, "getApplications")
+            }
+        }
+
+        for (user in ShizukuSystemApis.getUsers(useCache = false)) {
+            try {
+                for (pi in ShizukuSystemApis.getInstalledPackages(flags, user.id)) {
+                    addPackage(pi)
+                }
+            } catch (e: Throwable) {
+                LOGGER.w(e, "getInstalledPackages")
+            }
+        }
+
+        try {
+            val localPm = moe.shizuku.manager.application.packageManager
+            for (pi in localPm.getInstalledPackages(PackageManager.GET_META_DATA or PackageManager.GET_PERMISSIONS)) {
+                addPackage(pi)
+            }
+        } catch (e: Throwable) {
+            LOGGER.w(e, "local getInstalledPackages")
+        }
+
+        return ArrayList(seen.values)
     }
 
     // Tracks UIDs granted for this session only (one-time)

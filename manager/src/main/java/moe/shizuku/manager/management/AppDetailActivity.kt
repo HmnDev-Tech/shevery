@@ -76,16 +76,36 @@ class AppDetailActivity : AppActivity() {
             finish()
             return
         }
+        val requestedUserId = intent.getIntExtra(EXTRA_USER_ID, UserHandleCompat.myUserId())
         val packageInfo = try {
             // GET_PERMISSIONS populates requestedPermissions (the runtime
             // permission privileges below), GET_META_DATA the requires-root flag.
-            packageManager.getPackageInfo(
-                pkgName,
-                PackageManager.GET_PERMISSIONS or PackageManager.GET_META_DATA
-            )
+            if (requestedUserId == UserHandleCompat.myUserId()) {
+                packageManager.getPackageInfo(
+                    pkgName,
+                    PackageManager.GET_PERMISSIONS or PackageManager.GET_META_DATA
+                )
+            } else {
+                ShizukuSystemApis.getPackageInfo(
+                    pkgName,
+                    (PackageManager.GET_PERMISSIONS or PackageManager.GET_META_DATA).toLong(),
+                    requestedUserId
+                ) ?: packageManager.getPackageInfo(
+                    pkgName,
+                    PackageManager.GET_PERMISSIONS or PackageManager.GET_META_DATA
+                )
+            }
         } catch (e: Exception) {
-            finish()
-            return
+            runCatching {
+                ShizukuSystemApis.getPackageInfo(
+                    pkgName,
+                    (PackageManager.GET_PERMISSIONS or PackageManager.GET_META_DATA).toLong(),
+                    requestedUserId
+                )
+            }.getOrNull() ?: run {
+                finish()
+                return
+            }
         }
         val applicationInfo = packageInfo.applicationInfo ?: run {
             finish()
@@ -397,6 +417,7 @@ class AppDetailActivity : AppActivity() {
 
     companion object {
         const val EXTRA_PACKAGE_NAME = "package_name"
+        const val EXTRA_USER_ID = "user_id"
     }
 }
 

@@ -53,6 +53,7 @@ import androidx.compose.material3.Switch
 import androidx.compose.foundation.layout.Spacer
 import androidx.compose.foundation.layout.height
 import androidx.compose.foundation.layout.width
+import androidx.compose.foundation.lazy.itemsIndexed
 import androidx.compose.foundation.text.KeyboardActions
 import androidx.compose.foundation.text.KeyboardOptions
 import androidx.compose.ui.text.input.ImeAction
@@ -100,7 +101,9 @@ private data class AppEntry(
     val packageInfo: PackageInfo,
     val title: String,
     val granted: Boolean,
-    val isOneTime: Boolean = false
+    val isOneTime: Boolean = false,
+    val isClient: Boolean = false,
+    val isSystemApp: Boolean = false
 )
 
 class ApplicationManagementActivity : AppActivity() {
@@ -173,12 +176,18 @@ class ApplicationManagementActivity : AppActivity() {
             var showAddAppDialog by rememberSaveable { mutableStateOf(false) }
             var addAppPackage by rememberSaveable { mutableStateOf("") }
 
+            val labelCache = remember { HashMap<String, String>() }
             val appEntries = remember(packages, tick) {
                 packages.mapNotNull { pkg ->
                     val appInfo = pkg.applicationInfo ?: return@mapNotNull null
                     val uid = appInfo.uid
                     val userId = UserHandleCompat.getUserId(uid)
-                    val label = appInfo.loadLabel(pm).toString()
+                    val cacheKey = "${pkg.packageName}:$uid"
+                    val label = labelCache.getOrPut(cacheKey) {
+                        runCatching { appInfo.loadLabel(pm).toString() }
+                            .getOrDefault(pkg.packageName)
+                            .ifBlank { pkg.packageName }
+                    }
                     val title = if (userId != UserHandleCompat.myUserId()) {
                         val userInfo = ShizukuSystemApis.getUserInfo(userId)
                         "$label - ${userInfo.name} ($userId)"
@@ -187,12 +196,19 @@ class ApplicationManagementActivity : AppActivity() {
                     }
                     val granted = try {
                         AuthorizationManager.granted(pkg.packageName, uid)
-                    } catch (_: SecurityException) {
+                    } catch (_: Throwable) {
                         false
                     }
                     val isOneTime = AuthorizationManager.isOneTime(uid)
-                    AppEntry(pkg, title, granted, isOneTime)
-                }
+                    val isClient = AuthorizationManager.isClientPackage(pkg)
+                    val isSystemApp = (appInfo.flags and ApplicationInfo.FLAG_SYSTEM) != 0
+                    AppEntry(pkg, title, granted, isOneTime, isClient, isSystemApp)
+                }.sortedWith(
+                    compareByDescending<AppEntry> { it.granted }
+                        .thenByDescending { it.isClient }
+                        .thenBy { it.isSystemApp }
+                        .thenBy(String.CASE_INSENSITIVE_ORDER) { it.title }
+                )
             }
 
             // Function for adding an app manually from the dialog.
@@ -211,15 +227,6 @@ class ApplicationManagementActivity : AppActivity() {
                     Toast.makeText(
                         this@ApplicationManagementActivity,
                         R.string.app_management_add_app_invalid,
-                        Toast.LENGTH_SHORT
-                    ).show()
-                    return
-                }
-                val alreadyExists = appEntries.any { it.packageInfo.packageName == pkg }
-                if (alreadyExists) {
-                    Toast.makeText(
-                        this@ApplicationManagementActivity,
-                        R.string.app_management_add_app_exists,
                         Toast.LENGTH_SHORT
                     ).show()
                     return
@@ -277,6 +284,7 @@ class ApplicationManagementActivity : AppActivity() {
                 ShizukuLazyScaffold(
                     title = stringResource(R.string.home_app_management_title),
                     onNavigateUp = { finish() },
+                    verticalArrangement = Arrangement.spacedBy(0.dp),
                     actions = {
                         var menuExpanded by remember { mutableStateOf(false) }
 
@@ -475,6 +483,7 @@ class ApplicationManagementActivity : AppActivity() {
                                             label = { Text(stringResource(R.string.app_management_filter_denied, deniedCount)) }
                                         )
                                     }
+                                    Spacer(modifier = Modifier.height(12.dp))
                                 }
                             }
 
@@ -497,37 +506,45 @@ class ApplicationManagementActivity : AppActivity() {
                                     }
                                 }
                             } else {
-                                item {
+                                itemsIndexed(
+                                    items = filteredEntries,
+                                    key = { _, entry -> "${entry.packageInfo.packageName}:${entry.packageInfo.applicationInfo?.uid}" }
+                                ) { index, entry ->
+                                    val shape = when {
+                                        filteredEntries.size == 1 -> RoundedCornerShape(28.dp)
+                                        index == 0 -> RoundedCornerShape(topStart = 28.dp, topEnd = 28.dp)
+                                        index == filteredEntries.lastIndex -> RoundedCornerShape(bottomStart = 28.dp, bottomEnd = 28.dp)
+                                        else -> RoundedCornerShape(0.dp)
+                                    }
                                     Surface(
                                         modifier = Modifier.fillMaxWidth(),
-                                        shape = MaterialTheme.shapes.extraLarge,
+                                        shape = shape,
                                         color = MaterialTheme.colorScheme.surfaceContainer,
                                         tonalElevation = 1.dp
                                     ) {
                                         Column {
-                                            filteredEntries.forEachIndexed { index, entry ->
-                                                AppPermissionRow(
-                                                    entry = entry,
-                                                    tick = tick,
-                                                    onLimitedAdb = { showAdbLimitedDialog = true },
-                                                    onPermissionChanged = {
-                                                        setResult(RESULT_OK)
-                                                        permissionTick.intValue++
-                                                        viewModel.load(onlyCount = true)
-                                                    },
-                                                    onOpenDetail = { pkg ->
-                                                        detailLauncher.launch(
-                                                            Intent(this@ApplicationManagementActivity, AppDetailActivity::class.java)
-                                                                .putExtra(AppDetailActivity.EXTRA_PACKAGE_NAME, pkg)
-                                                        )
-                                                    }
-                                                )
-                                                if (index != filteredEntries.lastIndex) {
-                                                    HorizontalDivider(
-                                                        modifier = Modifier.fillMaxWidth(),
-                                                        color = MaterialTheme.colorScheme.outlineVariant
+                                            AppPermissionRow(
+                                                entry = entry,
+                                                tick = tick,
+                                                onLimitedAdb = { showAdbLimitedDialog = true },
+                                                onPermissionChanged = {
+                                                    setResult(RESULT_OK)
+                                                    permissionTick.intValue++
+                                                    viewModel.load(onlyCount = true)
+                                                },
+                                                onOpenDetail = { pkg, userId ->
+                                                    detailLauncher.launch(
+                                                        Intent(this@ApplicationManagementActivity, AppDetailActivity::class.java)
+                                                            .putExtra(AppDetailActivity.EXTRA_PACKAGE_NAME, pkg)
+                                                            .putExtra(AppDetailActivity.EXTRA_USER_ID, userId)
                                                     )
                                                 }
+                                            )
+                                            if (index != filteredEntries.lastIndex) {
+                                                HorizontalDivider(
+                                                    modifier = Modifier.fillMaxWidth(),
+                                                    color = MaterialTheme.colorScheme.outlineVariant
+                                                )
                                             }
                                         }
                                     }
@@ -704,22 +721,46 @@ private fun AppPermissionRow(
     tick: Int,
     onLimitedAdb: () -> Unit,
     onPermissionChanged: () -> Unit,
-    onOpenDetail: (String) -> Unit
+    onOpenDetail: (String, Int) -> Unit
 ) {
     val context = LocalContext.current
     val pm = context.packageManager
     val packageInfo = entry.packageInfo
     val applicationInfo = packageInfo.applicationInfo ?: return
     val uid = applicationInfo.uid
+    val userId = UserHandleCompat.getUserId(uid)
     val packageName = packageInfo.packageName
-    val granted by remember(packageName, uid, tick) {
+    var granted by remember(packageName, uid, tick) {
         mutableStateOf(entry.granted)
     }
     val title = entry.title
     val icon = remember(packageName) {
-        applicationInfo.loadIcon(pm).toBitmap(width = 96, height = 96).asImageBitmap()
+        runCatching {
+            applicationInfo.loadIcon(pm).toBitmap(width = 96, height = 96).asImageBitmap()
+        }.getOrNull()
     }
     val requiresRoot = applicationInfo.requiresRoot()
+
+    fun toggle() {
+        try {
+            if (granted) {
+                AuthorizationManager.revoke(packageName, uid)
+            } else {
+                AuthorizationManager.grant(packageName, uid)
+            }
+            granted = !granted
+            onPermissionChanged()
+        } catch (_: SecurityException) {
+            val serverUid = try {
+                Shizuku.getUid()
+            } catch (_: Throwable) {
+                return
+            }
+            if (serverUid != 0) {
+                onLimitedAdb()
+            }
+        }
+    }
 
     fun makePermanent() {
         try {
@@ -741,7 +782,7 @@ private fun AppPermissionRow(
     Row(
         modifier = Modifier
             .fillMaxWidth()
-            .clickable(onClick = { onOpenDetail(packageName) })
+            .clickable(onClick = { onOpenDetail(packageName, userId) })
             .semantics(mergeDescendants = true) {
                 this.stateDescription = if (granted) "Allowed" else "Denied"
             }
@@ -754,11 +795,13 @@ private fun AppPermissionRow(
             shape = RoundedCornerShape(14.dp),
             color = MaterialTheme.colorScheme.surfaceContainerHighest
         ) {
-            Image(
-                bitmap = icon,
-                contentDescription = null,
-                modifier = Modifier.size(46.dp)
-            )
+            if (icon != null) {
+                Image(
+                    bitmap = icon,
+                    contentDescription = null,
+                    modifier = Modifier.size(46.dp)
+                )
+            }
         }
         Column(
             modifier = Modifier.weight(1f),
@@ -818,7 +861,7 @@ private fun AppPermissionRow(
         Box(modifier = Modifier.clearAndSetSemantics {}) {
             ExpressiveSwitch(
                 checked = granted,
-                onCheckedChange = null
+                onCheckedChange = { toggle() }
             )
         }
     }
