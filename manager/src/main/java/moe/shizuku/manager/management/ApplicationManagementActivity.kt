@@ -49,7 +49,6 @@ import androidx.compose.material3.TextField
 import androidx.compose.material3.TextFieldDefaults
 import androidx.compose.material3.Card
 import androidx.compose.material3.CardDefaults
-import androidx.compose.material3.ExtendedFloatingActionButton
 import androidx.compose.material3.Switch
 import androidx.compose.foundation.layout.Spacer
 import androidx.compose.foundation.layout.height
@@ -279,12 +278,6 @@ class ApplicationManagementActivity : AppActivity() {
                     title = stringResource(R.string.home_app_management_title),
                     onNavigateUp = { finish() },
                     actions = {
-                        IconButton(onClick = { showAddAppDialog = true }) {
-                            ShizukuIcon(
-                                R.drawable.ic_add_24,
-                                contentDescription = stringResource(R.string.app_management_add_app)
-                            )
-                        }
                         var menuExpanded by remember { mutableStateOf(false) }
 
                         Box {
@@ -339,20 +332,6 @@ class ApplicationManagementActivity : AppActivity() {
                                 }
                             }
                         }
-                    },
-                    floatingActionButton = {
-                        ExtendedFloatingActionButton(
-                            onClick = { showAddAppDialog = true },
-                            icon = {
-                                Icon(
-                                    painter = painterResource(R.drawable.ic_add_24),
-                                    contentDescription = null
-                                )
-                            },
-                            text = { Text(stringResource(R.string.app_management_add_app)) },
-                            containerColor = MaterialTheme.colorScheme.primaryContainer,
-                            contentColor = MaterialTheme.colorScheme.onPrimaryContainer
-                        )
                     }
                 ) {
                     when {
@@ -599,79 +578,86 @@ class ApplicationManagementActivity : AppActivity() {
                         shape = MaterialTheme.shapes.extraLarge
                     )
                 }
-            }
-
-            if (showAddAppDialog) {
-                AlertDialog(
-                    onDismissRequest = {
-                        showAddAppDialog = false
-                        addAppPackage = ""
-                    },
-                    title = {
-                        Text(
-                            text = stringResource(R.string.app_management_add_app_title),
-                            style = MaterialTheme.typography.headlineSmall,
-                            fontWeight = FontWeight.Bold
-                        )
-                    },
-                    text = {
-                        Column(
-                            modifier = Modifier.fillMaxWidth(),
-                            verticalArrangement = Arrangement.spacedBy(8.dp)
-                        ) {
+                if (showAddAppDialog) {
+                    AlertDialog(
+                        onDismissRequest = {
+                            showAddAppDialog = false
+                            addAppPackage = ""
+                        },
+                        title = {
                             Text(
-                                text = stringResource(R.string.app_management_add_app_hint),
-                                style = MaterialTheme.typography.bodyMedium,
-                                color = MaterialTheme.colorScheme.onSurfaceVariant
+                                text = stringResource(R.string.app_management_add_app_title),
+                                style = MaterialTheme.typography.headlineSmall,
+                                fontWeight = FontWeight.Bold,
+                                color = MaterialTheme.colorScheme.onSurface
                             )
-                            TextField(
-                                value = addAppPackage,
-                                onValueChange = { addAppPackage = it },
+                        },
+                        text = {
+                            Column(
                                 modifier = Modifier.fillMaxWidth(),
-                                placeholder = { Text(stringResource(R.string.app_management_add_app_hint)) },
-                                leadingIcon = {
-                                    Icon(
-                                        imageVector = Icons.Rounded.Label,
-                                        contentDescription = null,
-                                        tint = MaterialTheme.colorScheme.onSurfaceVariant
-                                    )
-                                },
-                                singleLine = true,
-                                keyboardOptions = KeyboardOptions(
-                                    imeAction = ImeAction.Done
-                                ),
-                                keyboardActions = KeyboardActions(
-                                    onDone = { applyAddApp(true) }
+                                verticalArrangement = Arrangement.spacedBy(8.dp)
+                            ) {
+                                Text(
+                                    text = stringResource(R.string.app_management_add_app_hint),
+                                    style = MaterialTheme.typography.bodyMedium,
+                                    color = MaterialTheme.colorScheme.onSurfaceVariant
                                 )
-                            )
-                        }
-                    },
-                    confirmButton = {
-                        Row(horizontalArrangement = Arrangement.spacedBy(8.dp)) {
-                            Button(
-                                onClick = {
-                                    applyAddApp(true)
-                                }
-                            ) {
-                                Text(stringResource(R.string.app_management_add_app_allow))
+                                TextField(
+                                    value = addAppPackage,
+                                    onValueChange = { addAppPackage = it },
+                                    modifier = Modifier.fillMaxWidth(),
+                                    placeholder = { Text(stringResource(R.string.app_management_add_app_hint)) },
+                                    leadingIcon = {
+                                        Icon(
+                                            imageVector = Icons.Rounded.Label,
+                                            contentDescription = null,
+                                            tint = MaterialTheme.colorScheme.onSurfaceVariant
+                                        )
+                                    },
+                                    singleLine = true,
+                                    shape = MaterialTheme.shapes.extraLarge,
+                                    colors = TextFieldDefaults.colors(
+                                        focusedContainerColor = MaterialTheme.colorScheme.surfaceContainerHighest,
+                                        unfocusedContainerColor = MaterialTheme.colorScheme.surfaceContainerHighest,
+                                        focusedIndicatorColor = Color.Transparent,
+                                        unfocusedIndicatorColor = Color.Transparent
+                                    ),
+                                    keyboardOptions = KeyboardOptions(
+                                        imeAction = ImeAction.Done
+                                    ),
+                                    keyboardActions = KeyboardActions(
+                                        onDone = { applyAddApp(true) }
+                                    )
+                                )
                             }
-                            OutlinedButton(
-                                onClick = {
-                                    applyAddApp(false)
+                        },
+                        confirmButton = {
+                            Row(horizontalArrangement = Arrangement.spacedBy(8.dp)) {
+                                Button(
+                                    onClick = {
+                                        applyAddApp(true)
+                                    }
+                                ) {
+                                    Text(stringResource(R.string.app_management_add_app_allow))
                                 }
-                            ) {
-                                Text(stringResource(R.string.app_management_add_app_deny))
+                                OutlinedButton(
+                                    onClick = {
+                                        applyAddApp(false)
+                                    }
+                                ) {
+                                    Text(stringResource(R.string.app_management_add_app_deny))
+                                }
                             }
-                        }
-                    },
-                    dismissButton = {
-                        Button(onClick = { showAddAppDialog = false; addAppPackage = "" }) {
-                            Text(stringResource(android.R.string.cancel))
-                        }
-                    },
-                    containerColor = MaterialTheme.colorScheme.surfaceContainerHigh,
-                    shape = MaterialTheme.shapes.extraLarge
-                )
+                        },
+                        dismissButton = {
+                            FilledTonalButton(onClick = { showAddAppDialog = false; addAppPackage = "" }) {
+                                Text(stringResource(android.R.string.cancel))
+                            }
+                        },
+                        containerColor = MaterialTheme.colorScheme.surfaceContainerHigh,
+                        shape = MaterialTheme.shapes.extraLarge
+                    )
+                }
             }
         }
     }
