@@ -120,9 +120,12 @@
     <string name="app_management_filter_all">All (%1$d)</string>
     <string name="app_management_filter_allowed">Allowed (%1$d)</string>
     <string name="app_management_filter_denied">Denied (%1$d)</string>
+    <string name="app_management_filter_all_apps">All apps</string>
+    <string name="app_management_filter_api_apps">Apps declaring the API permission</string>
+    <string name="app_management_sort_name_a_to_z">Name (A to Z)</string>
+    <string name="app_management_sort_name_z_to_a">Name (Z to A)</string>
     <string name="app_management_no_search_results">No matching applications</string>
     <string name="app_management_no_search_results_desc">Try checking the spelling or resetting filters.</string>
-    <string name="app_management_show_all_apps">Show all apps</string>
     <string name="app_management_clear_filters">Reset filters</string>
     <string name="app_management_add_app">Add app</string>
     <string name="app_management_add_app_title">Add app manually</string>

@@ -27,6 +27,7 @@ import androidx.compose.ui.draw.clip
 import androidx.compose.ui.res.painterResource
 import androidx.compose.material.icons.Icons
 import androidx.compose.material.icons.rounded.Clear
+import androidx.compose.material.icons.rounded.ExpandMore
 import androidx.compose.material.icons.rounded.Label
 import androidx.compose.material.icons.rounded.Search
 import androidx.compose.material3.AlertDialog
@@ -101,14 +102,15 @@ import rikka.shizuku.Shizuku
 import java.util.Objects
 
 private enum class AppFilter { ALL, ALLOWED, DENIED }
+private enum class AppScopeFilter { API_CLIENTS, ALL_APPS }
+private enum class AppSortOrder { NAME_ASCENDING, NAME_DESCENDING }
 
 private data class AppEntry(
     val packageInfo: PackageInfo,
     val title: String,
     val granted: Boolean,
     val isOneTime: Boolean = false,
-    val isClient: Boolean = false,
-    val isSystemApp: Boolean = false
+    val isClient: Boolean = false
 )
 
 class ApplicationManagementActivity : AppActivity() {
@@ -177,45 +179,52 @@ class ApplicationManagementActivity : AppActivity() {
 
             var searchQuery by rememberSaveable { mutableStateOf("") }
             var selectedFilter by rememberSaveable { mutableStateOf(AppFilter.ALL) }
+            var selectedScopeFilter by rememberSaveable { mutableStateOf(AppScopeFilter.API_CLIENTS) }
+            var sortOrder by rememberSaveable { mutableStateOf(AppSortOrder.NAME_ASCENDING) }
+            var sortMenuExpanded by remember { mutableStateOf(false) }
             var whitelistMode by remember { mutableStateOf(ShizukuSettings.isShizukuWhitelistEnabled()) }
-            var showAllApps by rememberSaveable { mutableStateOf(false) }
             var showAddAppDialog by rememberSaveable { mutableStateOf(false) }
             var addAppPackage by rememberSaveable { mutableStateOf("") }
 
             val labelCache = remember { java.util.concurrent.ConcurrentHashMap<String, String>() }
             val allEntries by produceState(emptyList<AppEntry>(), packages, tick) {
                 value = withContext(Dispatchers.Default) {
-                packages.mapNotNull { pkg ->
-                    val appInfo = pkg.applicationInfo ?: return@mapNotNull null
-                    val uid = appInfo.uid
-                    val userId = UserHandleCompat.getUserId(uid)
-                    val cacheKey = "${pkg.packageName}:$uid"
-                    val label = labelCache.getOrPut(cacheKey) {
-                        runCatching { appInfo.loadLabel(pm).toString() }
-                            .getOrDefault(pkg.packageName)
-                            .ifBlank { pkg.packageName }
+                    val entries = packages.mapNotNull { pkg ->
+                        val appInfo = pkg.applicationInfo ?: return@mapNotNull null
+                        val uid = appInfo.uid
+                        val userId = UserHandleCompat.getUserId(uid)
+                        val cacheKey = "${pkg.packageName}:$uid"
+                        val label = labelCache.getOrPut(cacheKey) {
+                            runCatching { appInfo.loadLabel(pm).toString() }
+                                .getOrDefault(pkg.packageName)
+                                .ifBlank { pkg.packageName }
+                        }
+                        val title = if (userId != UserHandleCompat.myUserId()) {
+                            val userInfo = ShizukuSystemApis.getUserInfo(userId)
+                            "$label - ${userInfo.name} ($userId)"
+                        } else {
+                            label
+                        }
+                        val granted = try {
+                            AuthorizationManager.granted(pkg.packageName, uid)
+                        } catch (_: Throwable) {
+                            false
+                        }
+                        val isOneTime = AuthorizationManager.isOneTime(uid)
+                        val isClient = AuthorizationManager.isClientPackage(pkg)
+                        AppEntry(pkg, title, granted, isOneTime, isClient)
                     }
-                    val title = if (userId != UserHandleCompat.myUserId()) {
-                        val userInfo = ShizukuSystemApis.getUserInfo(userId)
-                        "$label - ${userInfo.name} ($userId)"
-                    } else {
-                        label
+                    entries
+                }
+            }
+            val sortedEntries by produceState(emptyList<AppEntry>(), allEntries, sortOrder) {
+                value = withContext(Dispatchers.Default) {
+                    val nameComparator = compareBy<AppEntry, String>(String.CASE_INSENSITIVE_ORDER) { it.title }
+                        .thenBy(String.CASE_INSENSITIVE_ORDER) { it.packageInfo.packageName }
+                    when (sortOrder) {
+                        AppSortOrder.NAME_ASCENDING -> allEntries.sortedWith(nameComparator)
+                        AppSortOrder.NAME_DESCENDING -> allEntries.sortedWith(nameComparator.reversed())
                     }
-                    val granted = try {
-                        AuthorizationManager.granted(pkg.packageName, uid)
-                    } catch (_: Throwable) {
-                        false
-                    }
-                    val isOneTime = AuthorizationManager.isOneTime(uid)
-                    val isClient = AuthorizationManager.isClientPackage(pkg)
-                    val isSystemApp = (appInfo.flags and ApplicationInfo.FLAG_SYSTEM) != 0
-                    AppEntry(pkg, title, granted, isOneTime, isClient, isSystemApp)
-                }.sortedWith(
-                    compareByDescending<AppEntry> { it.granted }
-                        .thenByDescending { it.isClient }
-                        .thenBy { it.isSystemApp }
-                        .thenBy(String.CASE_INSENSITIVE_ORDER) { it.title }
-                )
                 }
             }
 
@@ -246,6 +255,14 @@ class ApplicationManagementActivity : AppActivity() {
                     } else {
                         AuthorizationManager.deny(pkg, uid)
                     }
+                    val isApiClient = allEntries.any {
+                        it.packageInfo.packageName == pkg &&
+                            it.packageInfo.applicationInfo?.uid == uid &&
+                            it.isClient
+                    }
+                    if (!isApiClient) {
+                        selectedScopeFilter = AppScopeFilter.ALL_APPS
+                    }
                     setResult(RESULT_OK)
                     permissionTick.intValue++
                     viewModel.load()
@@ -269,8 +286,11 @@ class ApplicationManagementActivity : AppActivity() {
                 }
             }
 
-            val appEntries = remember(allEntries, showAllApps) {
-                if (showAllApps) allEntries else allEntries.filter { it.isClient || it.granted }
+            val appEntries = remember(sortedEntries, selectedScopeFilter) {
+                when (selectedScopeFilter) {
+                    AppScopeFilter.API_CLIENTS -> sortedEntries.filter { it.isClient }
+                    AppScopeFilter.ALL_APPS -> sortedEntries
+                }
             }
             val totalCount = appEntries.size
             val allowedCount = remember(appEntries) { appEntries.count { it.granted } }
@@ -328,11 +348,7 @@ class ApplicationManagementActivity : AppActivity() {
                                         text = { Text(stringResource(R.string.app_management_select_all)) },
                                         onClick = {
                                             menuExpanded = false
-                                            val targetPackages = if (filteredEntries.size < appEntries.size) {
-                                                filteredEntries.map { it.packageInfo }
-                                            } else {
-                                                packages
-                                            }
+                                            val targetPackages = filteredEntries.map { it.packageInfo }
                                             selectAll(targetPackages, true)
                                         }
                                     )
@@ -340,11 +356,7 @@ class ApplicationManagementActivity : AppActivity() {
                                         text = { Text(stringResource(R.string.app_management_deselect_all)) },
                                         onClick = {
                                             menuExpanded = false
-                                            val targetPackages = if (filteredEntries.size < appEntries.size) {
-                                                filteredEntries.map { it.packageInfo }
-                                            } else {
-                                                packages
-                                            }
+                                            val targetPackages = filteredEntries.map { it.packageInfo }
                                             selectAll(targetPackages, false)
                                         }
                                     )
@@ -479,6 +491,23 @@ class ApplicationManagementActivity : AppActivity() {
                                         horizontalArrangement = Arrangement.spacedBy(8.dp)
                                     ) {
                                         FilterChip(
+                                            selected = selectedScopeFilter == AppScopeFilter.ALL_APPS,
+                                            onClick = { selectedScopeFilter = AppScopeFilter.ALL_APPS },
+                                            label = { Text(stringResource(R.string.app_management_filter_all_apps)) }
+                                        )
+                                        FilterChip(
+                                            selected = selectedScopeFilter == AppScopeFilter.API_CLIENTS,
+                                            onClick = { selectedScopeFilter = AppScopeFilter.API_CLIENTS },
+                                            label = { Text(stringResource(R.string.app_management_filter_api_apps)) }
+                                        )
+                                    }
+                                    Row(
+                                        modifier = Modifier
+                                            .fillMaxWidth()
+                                            .horizontalScroll(rememberScrollState()),
+                                        horizontalArrangement = Arrangement.spacedBy(8.dp)
+                                    ) {
+                                        FilterChip(
                                             selected = selectedFilter == AppFilter.ALL,
                                             onClick = { selectedFilter = AppFilter.ALL },
                                             label = { Text(stringResource(R.string.app_management_filter_all, totalCount)) }
@@ -493,11 +522,74 @@ class ApplicationManagementActivity : AppActivity() {
                                             onClick = { selectedFilter = AppFilter.DENIED },
                                             label = { Text(stringResource(R.string.app_management_filter_denied, deniedCount)) }
                                         )
-                                        FilterChip(
-                                            selected = showAllApps,
-                                            onClick = { showAllApps = !showAllApps },
-                                            label = { Text(stringResource(R.string.app_management_show_all_apps)) }
-                                        )
+                                    }
+                                    Row(
+                                        modifier = Modifier.fillMaxWidth(),
+                                        horizontalArrangement = Arrangement.spacedBy(8.dp),
+                                        verticalAlignment = Alignment.CenterVertically
+                                    ) {
+                                        Box(modifier = Modifier.weight(1f)) {
+                                            OutlinedButton(
+                                                onClick = { sortMenuExpanded = true },
+                                                modifier = Modifier.fillMaxWidth()
+                                            ) {
+                                                Text(
+                                                    text = stringResource(
+                                                        if (sortOrder == AppSortOrder.NAME_ASCENDING) {
+                                                            R.string.app_management_sort_name_a_to_z
+                                                        } else {
+                                                            R.string.app_management_sort_name_z_to_a
+                                                        }
+                                                    ),
+                                                    maxLines = 1,
+                                                    overflow = TextOverflow.Ellipsis
+                                                )
+                                                Icon(
+                                                    imageVector = Icons.Rounded.ExpandMore,
+                                                    contentDescription = null,
+                                                    modifier = Modifier.size(18.dp)
+                                                )
+                                            }
+                                            DropdownMenu(
+                                                expanded = sortMenuExpanded,
+                                                onDismissRequest = { sortMenuExpanded = false }
+                                            ) {
+                                                DropdownMenuItem(
+                                                    text = {
+                                                        Text(stringResource(R.string.app_management_sort_name_a_to_z))
+                                                    },
+                                                    onClick = {
+                                                        sortOrder = AppSortOrder.NAME_ASCENDING
+                                                        sortMenuExpanded = false
+                                                    }
+                                                )
+                                                DropdownMenuItem(
+                                                    text = {
+                                                        Text(stringResource(R.string.app_management_sort_name_z_to_a))
+                                                    },
+                                                    onClick = {
+                                                        sortOrder = AppSortOrder.NAME_DESCENDING
+                                                        sortMenuExpanded = false
+                                                    }
+                                                )
+                                            }
+                                        }
+                                        FilledTonalButton(
+                                            onClick = { showAddAppDialog = true },
+                                            modifier = Modifier.weight(1f)
+                                        ) {
+                                            Icon(
+                                                painter = painterResource(R.drawable.ic_add_24),
+                                                contentDescription = null,
+                                                modifier = Modifier.size(18.dp)
+                                            )
+                                            Spacer(Modifier.width(8.dp))
+                                            Text(
+                                                text = stringResource(R.string.app_management_add_app),
+                                                maxLines = 1,
+                                                overflow = TextOverflow.Ellipsis
+                                            )
+                                        }
                                     }
                                     Spacer(modifier = Modifier.height(12.dp))
                                 }
@@ -514,6 +606,7 @@ class ApplicationManagementActivity : AppActivity() {
                                             onClick = {
                                                 searchQuery = ""
                                                 selectedFilter = AppFilter.ALL
+                                                selectedScopeFilter = AppScopeFilter.API_CLIENTS
                                             },
                                             modifier = Modifier.padding(top = 8.dp)
                                         ) {
