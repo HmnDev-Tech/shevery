@@ -108,7 +108,7 @@ object AuthorizationManager {
         }
 
         try {
-            val localPm = moe.shizuku.manager.ShizukuApplication.app.packageManager
+            val localPm = moe.shizuku.manager.application.packageManager
             for (pi in localPm.getInstalledPackages(PackageManager.GET_META_DATA or PackageManager.GET_PERMISSIONS)) {
                 addPackage(pi)
             }
