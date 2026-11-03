@@ -178,11 +178,12 @@ class ApplicationManagementActivity : AppActivity() {
             var searchQuery by rememberSaveable { mutableStateOf("") }
             var selectedFilter by rememberSaveable { mutableStateOf(AppFilter.ALL) }
             var whitelistMode by remember { mutableStateOf(ShizukuSettings.isShizukuWhitelistEnabled()) }
+            var showAllApps by rememberSaveable { mutableStateOf(false) }
             var showAddAppDialog by rememberSaveable { mutableStateOf(false) }
             var addAppPackage by rememberSaveable { mutableStateOf("") }
 
             val labelCache = remember { java.util.concurrent.ConcurrentHashMap<String, String>() }
-            val appEntries by produceState(emptyList<AppEntry>(), packages, tick) {
+            val allEntries by produceState(emptyList<AppEntry>(), packages, tick) {
                 value = withContext(Dispatchers.Default) {
                 packages.mapNotNull { pkg ->
                     val appInfo = pkg.applicationInfo ?: return@mapNotNull null
@@ -268,6 +269,9 @@ class ApplicationManagementActivity : AppActivity() {
                 }
             }
 
+            val appEntries = remember(allEntries, showAllApps) {
+                if (showAllApps) allEntries else allEntries.filter { it.isClient || it.granted }
+            }
             val totalCount = appEntries.size
             val allowedCount = remember(appEntries) { appEntries.count { it.granted } }
             val deniedCount = totalCount - allowedCount
@@ -488,6 +492,11 @@ class ApplicationManagementActivity : AppActivity() {
                                             selected = selectedFilter == AppFilter.DENIED,
                                             onClick = { selectedFilter = AppFilter.DENIED },
                                             label = { Text(stringResource(R.string.app_management_filter_denied, deniedCount)) }
+                                        )
+                                        FilterChip(
+                                            selected = showAllApps,
+                                            onClick = { showAllApps = !showAllApps },
+                                            label = { Text(stringResource(R.string.app_management_show_all_apps)) }
                                         )
                                     }
                                     Spacer(modifier = Modifier.height(12.dp))

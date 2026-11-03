@@ -122,6 +122,7 @@
     <string name="app_management_filter_denied">Denied (%1$d)</string>
     <string name="app_management_no_search_results">No matching applications</string>
     <string name="app_management_no_search_results_desc">Try checking the spelling or resetting filters.</string>
+    <string name="app_management_show_all_apps">Show all apps</string>
     <string name="app_management_clear_filters">Reset filters</string>
     <string name="app_management_add_app">Add app</string>
     <string name="app_management_add_app_title">Add app manually</string>
