@@ -115,26 +115,41 @@
     <string name="app_management_dialog_adb_is_limited_message"><![CDATA[It\'s highly possible that your device manufacturer limits the permission of adb.<p>There may be a solution for your system in <b><a href="%1$s">this document</a></b>.]]></string>
     <string name="app_management_item_summary_requires_root">* requires Shevery runs with root</string>
     <string name="app_management_loading">Loading apps…</string>
+    <string name="app_management_load_failed">Unable to load applications</string>
+    <string name="app_management_load_failed_desc">Application permissions could not be read. Try loading the list again.</string>
+    <string name="app_management_retry">Retry</string>
     <string name="app_management_search_hint">Search applications…</string>
+    <string name="app_management_search_authorized">Search authorized applications</string>
+    <string name="app_management_search_all_installed">Search all installed applications</string>
+    <string name="app_management_all_installed_title">All installed applications</string>
+    <string name="app_management_back_to_authorized_apps">Back to authorized applications</string>
+    <string name="app_management_browse_all_installed_apps">Browse all installed apps</string>
     <string name="app_management_clear_search">Clear search</string>
     <string name="app_management_filter_all">All (%1$d)</string>
     <string name="app_management_filter_allowed">Allowed (%1$d)</string>
     <string name="app_management_filter_denied">Denied (%1$d)</string>
-    <string name="app_management_filter_all_apps">All apps</string>
-    <string name="app_management_filter_api_apps">Apps declaring the API permission</string>
+    <string name="app_management_sort_recommended">Recommended</string>
     <string name="app_management_sort_name_a_to_z">Name (A to Z)</string>
     <string name="app_management_sort_name_z_to_a">Name (Z to A)</string>
     <string name="app_management_no_search_results">No matching applications</string>
     <string name="app_management_no_search_results_desc">Try checking the spelling or resetting filters.</string>
+    <string name="app_management_no_api_apps">No applications declare the Shizuku API permission</string>
+    <string name="app_management_no_api_apps_desc">Browse all installed apps to manage access for other applications.</string>
+    <string name="app_management_no_installed_apps">No installed applications</string>
+    <string name="app_management_no_installed_apps_desc">No installed applications are available to manage.</string>
     <string name="app_management_clear_filters">Reset filters</string>
     <string name="app_management_add_app">Add app</string>
     <string name="app_management_add_app_title">Add app manually</string>
+    <string name="app_management_add_app_package_label">Package name</string>
     <string name="app_management_add_app_hint">Enter package name (e.g. com.termux)</string>
     <string name="app_management_add_app_invalid">Invalid package name or app not installed</string>
     <string name="app_management_add_app_exists">App is already in the list</string>
     <string name="app_management_add_app_allow">Allow</string>
     <string name="app_management_add_app_deny">Deny</string>
     <string name="app_management_add_app_added">App added</string>
+    <string name="app_management_permission_control">Shizuku access for %1$s</string>
+    <string name="app_management_make_permanent_access">Temporary access for %1$s. Tap to make permanent.</string>
+    <string name="app_management_permission_update_failed">Unable to update Shizuku access.</string>
 
     <!-- App detail (per-app privileges) -->
     <string name="app_detail_privileges_title">Shizuku Privileges</string>
