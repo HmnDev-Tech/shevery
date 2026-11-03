@@ -12,9 +12,8 @@
 ## Fork status
 
 > [!IMPORTANT]
-> **Migration Action Required:** Due to the App Signation (`moe.shizuku.privileged.api` -> `com.hamondev.shevery`), you **MUST UNINSTALL** any older official Shizuku Manager app from your device before installing Shevery. Otherwise, they will conflict.
-Upstream project reference: <https://github.com/RikkaApps/Shizuku>
-> 
+> **Side-by-Side Installation Supported:** Thanks to its independent package ID (`com.hamondev.shevery`) and isolated permission namespace, you **can now install Shevery directly alongside other Shizuku implementations** without uninstalling them first. For legacy apps that explicitly check for `moe.shizuku.privileged.api`, you can optionally enable Compatibility Stubs in Settings once original Shizuku is removed.
+> Upstream project reference: <https://github.com/RikkaApps/Shizuku>
 
 ## Fork additions
 
