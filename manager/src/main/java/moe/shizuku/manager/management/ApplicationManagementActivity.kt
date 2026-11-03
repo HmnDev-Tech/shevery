@@ -6,6 +6,7 @@ import android.content.Intent
 import android.content.pm.ApplicationInfo
 import android.content.pm.PackageInfo
 import android.os.Bundle
+import android.util.LruCache
 import android.widget.Toast
 import androidx.activity.compose.setContent
 import androidx.activity.result.contract.ActivityResultContracts
@@ -63,13 +64,17 @@ import androidx.compose.runtime.getValue
 import androidx.compose.runtime.livedata.observeAsState
 import androidx.compose.runtime.mutableIntStateOf
 import androidx.compose.runtime.mutableStateOf
+import androidx.compose.runtime.produceState
 import androidx.compose.runtime.remember
 import androidx.compose.runtime.saveable.rememberSaveable
 import androidx.compose.runtime.setValue
 import androidx.compose.ui.Alignment
 import androidx.compose.ui.Modifier
 import androidx.compose.ui.graphics.Color
+import androidx.compose.ui.graphics.ImageBitmap
 import androidx.compose.ui.graphics.asImageBitmap
+import kotlinx.coroutines.Dispatchers
+import kotlinx.coroutines.withContext
 import androidx.compose.ui.platform.LocalContext
 import androidx.compose.ui.res.stringResource
 import androidx.compose.ui.text.font.FontWeight
@@ -176,8 +181,9 @@ class ApplicationManagementActivity : AppActivity() {
             var showAddAppDialog by rememberSaveable { mutableStateOf(false) }
             var addAppPackage by rememberSaveable { mutableStateOf("") }
 
-            val labelCache = remember { HashMap<String, String>() }
-            val appEntries = remember(packages, tick) {
+            val labelCache = remember { java.util.concurrent.ConcurrentHashMap<String, String>() }
+            val appEntries by produceState(emptyList<AppEntry>(), packages, tick) {
+                value = withContext(Dispatchers.Default) {
                 packages.mapNotNull { pkg ->
                     val appInfo = pkg.applicationInfo ?: return@mapNotNull null
                     val uid = appInfo.uid
@@ -209,6 +215,7 @@ class ApplicationManagementActivity : AppActivity() {
                         .thenBy { it.isSystemApp }
                         .thenBy(String.CASE_INSENSITIVE_ORDER) { it.title }
                 )
+                }
             }
 
             // Function for adding an app manually from the dialog.
@@ -715,6 +722,8 @@ class ApplicationManagementActivity : AppActivity() {
     }
 }
 
+private val iconCache = LruCache<String, ImageBitmap>(256)
+
 @Composable
 private fun AppPermissionRow(
     entry: AppEntry,
@@ -734,10 +743,13 @@ private fun AppPermissionRow(
         mutableStateOf(entry.granted)
     }
     val title = entry.title
-    val icon = remember(packageName) {
-        runCatching {
-            applicationInfo.loadIcon(pm).toBitmap(width = 96, height = 96).asImageBitmap()
-        }.getOrNull()
+    val icon by produceState<ImageBitmap?>(iconCache.get("$packageName:$uid"), packageName, uid) {
+        val key = "$packageName:$uid"
+        value = iconCache.get(key) ?: withContext(Dispatchers.IO) {
+            runCatching {
+                applicationInfo.loadIcon(pm).toBitmap(width = 96, height = 96).asImageBitmap()
+            }.getOrNull()
+        }?.also { iconCache.put(key, it) }
     }
     val requiresRoot = applicationInfo.requiresRoot()
 
@@ -795,9 +807,9 @@ private fun AppPermissionRow(
             shape = RoundedCornerShape(14.dp),
             color = MaterialTheme.colorScheme.surfaceContainerHighest
         ) {
-            if (icon != null) {
+            icon?.let { iconBitmap ->
                 Image(
-                    bitmap = icon,
+                    bitmap = iconBitmap,
                     contentDescription = null,
                     modifier = Modifier.size(46.dp)
                 )
