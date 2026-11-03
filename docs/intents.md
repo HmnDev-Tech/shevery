@@ -102,6 +102,33 @@ Supports opening or sharing module ZIP files directly from file managers and web
 
 The incoming stream is safely cached in `cacheDir/modules_zip/` before handing off the local file path to `HomeActivity` via `EXTRA_ZIP_PATH` to prevent content-provider permission revocation during asynchronous installation.
 
+### Module WebUI (Activity)
+
+Activity: `moe.shizuku.manager.module.ModuleWebViewActivity` (`exported=true`).
+
+Allows opening an installed module's WebUI directly from shell commands (ADB, `rish`, Termux), automation apps (Tasker, MacroDroid), or home screen shortcuts.
+
+> [!NOTE]
+> `android.intent.category.BROWSABLE` is intentionally omitted to prevent untrusted web pages and browser iframes from invoking privileged WebUIs (`ModuleJsBridge`).
+> If `APP_OPEN` protection is enabled in Security Settings, external launches are gated by biometric / device credential authentication before the WebUI is loaded.
+
+| Action | Extras / Data | Description |
+|---|---|---|
+| `android.intent.action.VIEW` | URI `shevery://module/<moduleId>` or `shevery://<moduleId>` | Opens WebUI for `<moduleId>` via deep link |
+| `com.hamondev.shevery.action.OPEN_WEBUI` / `moe.shizuku.manager.action.OPEN_WEBUI` | Extra `--es module_id <moduleId>` (or `--es id <moduleId>`) | Opens WebUI for `<moduleId>` via custom action |
+
+Example shell usage:
+```bash
+# via deep-link URI (works in ADB, rish, Termux)
+adb shell am start -a android.intent.action.VIEW -d "shevery://module/<moduleId>"
+
+# via custom action (with --es module_id)
+adb shell am start -a com.hamondev.shevery.action.OPEN_WEBUI -p com.hamondev.shevery --es module_id <moduleId>
+
+# via explicit component
+adb shell am start -n com.hamondev.shevery/moe.shizuku.manager.module.ModuleWebViewActivity --es module_id <moduleId>
+```
+
 ## Quick examples
 
 ```sh
@@ -110,6 +137,9 @@ adb shell am start -a com.hamondev.shevery.action.ACCESSIBILITY_MANAGER
 
 # legacy permission request (reproduces the API dialog path)
 adb shell am start -a com.hamondev.shevery.intent.action.REQUEST_PERMISSION
+
+# open module webui via deep link
+adb shell am start -a android.intent.action.VIEW -d "shevery://module/<moduleId>"
 ```
 
 Source of truth: `manager/src/main/AndroidManifest.xml`, `manager/.../receiver/SheveryControlReceiver.kt`, `tasker/.../PluginContract.kt`.

@@ -163,8 +163,19 @@
 
         <activity
             android:name=".module.ModuleWebViewActivity"
-            android:exported="false"
-            android:label="@string/modules_webui" />
+            android:exported="true"
+            android:label="@string/modules_webui">
+            <intent-filter>
+                <action android:name="android.intent.action.VIEW" />
+                <category android:name="android.intent.category.DEFAULT" />
+                <data android:scheme="shevery" />
+            </intent-filter>
+            <intent-filter>
+                <action android:name="${applicationId}.action.OPEN_WEBUI" />
+                <action android:name="moe.shizuku.manager.action.OPEN_WEBUI" />
+                <category android:name="android.intent.category.DEFAULT" />
+            </intent-filter>
+        </activity>
         <!-- "Open with"/share sheet entry: any app can hand over a module ZIP,
              InstallZipModuleActivity caches it and opens ADB Modules. -->
         <activity
