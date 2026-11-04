@@ -62,6 +62,7 @@ import androidx.compose.foundation.text.KeyboardOptions
 import androidx.compose.ui.text.input.ImeAction
 import moe.shizuku.manager.ShizukuSettings
 import androidx.compose.runtime.Composable
+import androidx.compose.runtime.LaunchedEffect
 import androidx.compose.runtime.getValue
 import androidx.compose.runtime.livedata.observeAsState
 import androidx.compose.runtime.mutableIntStateOf
@@ -69,6 +70,8 @@ import androidx.compose.runtime.mutableStateOf
 import androidx.compose.runtime.remember
 import androidx.compose.runtime.saveable.rememberSaveable
 import androidx.compose.runtime.setValue
+import kotlinx.coroutines.Dispatchers
+import kotlinx.coroutines.withContext
 import androidx.compose.ui.Alignment
 import androidx.compose.ui.Modifier
 import androidx.compose.ui.graphics.Color
@@ -635,48 +638,29 @@ class ApplicationManagementActivity : AppActivity() {
                     )
                 }
                 if (showAddAppDialog) {
-                    val allInstalledApps = remember(showAddAppDialog) {
-                        AuthorizationManager.getAllInstalledPackages().mapNotNull { pi ->
-                            val appInfo = pi.applicationInfo ?: return@mapNotNull null
-                            val cacheKey = "${pi.packageName}:${appInfo.uid}"
-                            val lbl = labelCache.getOrPut(cacheKey) {
-                                runCatching { appInfo.loadLabel(pm).toString() }
-                                    .getOrDefault(pi.packageName)
-                                    .ifBlank { pi.packageName }
+                    val trimmedInput = addAppPackage.trim()
+                    var suggestions by remember { mutableStateOf<List<AuthorizationManager.AppSuggestion>>(emptyList()) }
+
+                    LaunchedEffect(trimmedInput) {
+                        if (trimmedInput.length < 2) {
+                            suggestions = emptyList()
+                        } else {
+                            withContext(Dispatchers.IO) {
+                                suggestions = AuthorizationManager.findAppSuggestions(trimmedInput, maxResults = 5)
                             }
-                            pi to lbl
                         }
                     }
 
-                    val trimmedInput = addAppPackage.trim()
-                    val resolvedTarget = remember(trimmedInput, allInstalledApps) {
+                    val resolvedTarget = remember(trimmedInput) {
                         if (trimmedInput.isEmpty()) {
                             null
                         } else {
-                            allInstalledApps.firstOrNull { it.first.packageName.equals(trimmedInput, ignoreCase = true) }
-                                ?: resolveTargetPackageInfo(trimmedInput)?.let { pi ->
-                                    val lbl = pi.applicationInfo?.let {
-                                        runCatching { it.loadLabel(pm).toString() }.getOrNull()
-                                    }.orEmpty().ifBlank { pi.packageName }
-                                    pi to lbl
-                                }
-                        }
-                    }
-
-                    val suggestions = remember(trimmedInput, allInstalledApps, resolvedTarget) {
-                        if (trimmedInput.length < 2 || resolvedTarget?.first?.packageName.equals(trimmedInput, ignoreCase = true)) {
-                            emptyList()
-                        } else {
-                            allInstalledApps.filter { (pi, lbl) ->
-                                lbl.contains(trimmedInput, ignoreCase = true) ||
-                                    pi.packageName.contains(trimmedInput, ignoreCase = true)
-                            }.sortedWith(
-                                compareByDescending<Pair<PackageInfo, String>> { (pi, _) ->
-                                    AuthorizationManager.isClientPackage(pi)
-                                }.thenBy { (pi, _) ->
-                                    ((pi.applicationInfo?.flags ?: 0) and ApplicationInfo.FLAG_SYSTEM) != 0
-                                }.thenBy(String.CASE_INSENSITIVE_ORDER) { (_, lbl) -> lbl }
-                            ).take(5)
+                            resolveTargetPackageInfo(trimmedInput)?.let { pi ->
+                                val lbl = pi.applicationInfo?.let {
+                                    runCatching { it.loadLabel(pm).toString() }.getOrNull()
+                                }.orEmpty().ifBlank { pi.packageName }
+                                pi to lbl
+                            }
                         }
                     }
 
@@ -752,24 +736,23 @@ class ApplicationManagementActivity : AppActivity() {
                                     )
                                 )
 
-                                if (suggestions.isNotEmpty()) {
+                                if (suggestions.isNotEmpty() && (resolvedTarget == null || !resolvedTarget.first.packageName.equals(trimmedInput, ignoreCase = true))) {
                                     Surface(
                                         modifier = Modifier.fillMaxWidth(),
                                         shape = RoundedCornerShape(16.dp),
                                         color = MaterialTheme.colorScheme.surfaceContainerHighest
                                     ) {
                                         Column(modifier = Modifier.fillMaxWidth()) {
-                                            suggestions.forEachIndexed { idx, (pi, lbl) ->
-                                                val appInfo = pi.applicationInfo
-                                                val iconBmp = remember(pi.packageName) {
+                                            suggestions.forEachIndexed { idx, sugg ->
+                                                val iconBmp = remember(sugg.packageName) {
                                                     runCatching {
-                                                        appInfo?.loadIcon(pm)?.toBitmap(64, 64)?.asImageBitmap()
+                                                        pm.getApplicationIcon(sugg.packageName).toBitmap(64, 64).asImageBitmap()
                                                     }.getOrNull()
                                                 }
                                                 Row(
                                                     modifier = Modifier
                                                         .fillMaxWidth()
-                                                        .clickable { addAppPackage = pi.packageName }
+                                                        .clickable { addAppPackage = sugg.packageName }
                                                         .padding(horizontal = 12.dp, vertical = 8.dp),
                                                     verticalAlignment = Alignment.CenterVertically,
                                                     horizontalArrangement = Arrangement.spacedBy(10.dp)
@@ -785,14 +768,14 @@ class ApplicationManagementActivity : AppActivity() {
                                                     }
                                                     Column(modifier = Modifier.weight(1f)) {
                                                         Text(
-                                                            text = lbl,
+                                                            text = sugg.label,
                                                             style = MaterialTheme.typography.bodyMedium,
                                                             fontWeight = FontWeight.SemiBold,
                                                             maxLines = 1,
                                                             overflow = TextOverflow.Ellipsis
                                                         )
                                                         Text(
-                                                            text = pi.packageName,
+                                                            text = sugg.packageName,
                                                             style = MaterialTheme.typography.bodySmall,
                                                             color = MaterialTheme.colorScheme.onSurfaceVariant,
                                                             maxLines = 1,
