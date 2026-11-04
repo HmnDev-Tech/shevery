@@ -1,6 +1,7 @@
 package moe.shizuku.manager.module
 
 import android.annotation.SuppressLint
+import android.content.Intent
 import android.net.Uri
 import android.os.Bundle
 import android.widget.Toast
@@ -16,6 +17,8 @@ import androidx.compose.ui.viewinterop.AndroidView
 import androidx.webkit.WebViewAssetLoader
 import moe.shizuku.manager.R
 import moe.shizuku.manager.app.AppActivity
+import moe.shizuku.manager.security.AuthManager
+import moe.shizuku.manager.security.SecuritySettings
 import moe.shizuku.manager.ui.compose.ShizukuExpressiveTheme
 import moe.shizuku.manager.ui.compose.ShizukuScaffold
 import java.io.File
@@ -31,17 +34,111 @@ private data class PendingCommand(
 class ModuleWebViewActivity : AppActivity() {
 
     private val pendingCommands = androidx.compose.runtime.mutableStateListOf<PendingCommand>()
+    private var isAuthenticating = false
+
+    override fun onNewIntent(intent: Intent) {
+        super.onNewIntent(intent)
+        setIntent(intent)
+        recreate()
+    }
+
+    override fun onResume() {
+        super.onResume()
+        if (!isAuthenticating &&
+            SecuritySettings.isActionProtected(SecuritySettings.ProtectedAction.APP_OPEN) &&
+            !AuthManager.isAppOpenSessionValid()
+        ) {
+            isAuthenticating = true
+            AuthManager.authenticate(
+                activity = this,
+                title = getString(R.string.security_auth_prompt_title),
+                subtitle = getString(R.string.security_auth_prompt_app_open),
+                onResult = { authenticated ->
+                    isAuthenticating = false
+                    if (authenticated) {
+                        AuthManager.markAppOpenAuthenticated()
+                    } else {
+                        finish()
+                    }
+                }
+            )
+        }
+    }
+
+    private fun extractModuleId(intent: Intent): String {
+        val uri = intent.data
+
+        // 1. Explicit string extras: EXTRA_MODULE_ID ("module_id"), "id", or fallback "EXTRA_MODULE_ID"
+        intent.getStringExtra(EXTRA_MODULE_ID)?.takeIf { it.isNotBlank() }?.let { return it }
+        intent.getStringExtra("id")?.takeIf { it.isNotBlank() }?.let { return it }
+        intent.getStringExtra("EXTRA_MODULE_ID")?.takeIf { it.isNotBlank() }?.let { return it }
+
+        // 2. URI query parameters
+        uri?.getQueryParameter("module_id")?.takeIf { it.isNotBlank() }?.let { return it }
+        uri?.getQueryParameter("id")?.takeIf { it.isNotBlank() }?.let { return it }
+
+        // 3. URI host and path resolution:
+        // If uri.host == "module", read the first path segment (shevery://module/<moduleId>).
+        // Otherwise use uri.host (shevery://<moduleId> or shevery://<moduleId>/subpath).
+        if (uri != null) {
+            val host = uri.host
+            if (host.equals("module", ignoreCase = true)) {
+                uri.pathSegments?.firstOrNull()?.takeIf { it.isNotBlank() }?.let { return it }
+            } else if (!host.isNullOrBlank()) {
+                return host
+            }
+        }
+
+        return ""
+    }
 
     @SuppressLint("SetJavaScriptEnabled")
     override fun onCreate(savedInstanceState: Bundle?) {
         super.onCreate(savedInstanceState)
 
-        val moduleId = intent.getStringExtra(EXTRA_MODULE_ID)
-            ?: intent.data?.lastPathSegment.orEmpty()
-        val modulesRoot = AdbModuleManager.modulesRoot(this)
-        val module = AdbModuleManager.readModule(modulesRoot.resolve(moduleId))
-        val index = module?.webRoot?.resolve("index.html")
-        if (module == null || index?.isFile != true) {
+        if (SecuritySettings.isActionProtected(SecuritySettings.ProtectedAction.APP_OPEN) &&
+            !AuthManager.isAppOpenSessionValid()
+        ) {
+            isAuthenticating = true
+            AuthManager.authenticate(
+                activity = this,
+                title = getString(R.string.security_auth_prompt_title),
+                subtitle = getString(R.string.security_auth_prompt_app_open),
+                onResult = { authenticated ->
+                    isAuthenticating = false
+                    if (authenticated) {
+                        AuthManager.markAppOpenAuthenticated()
+                        initContent()
+                    } else {
+                        finish()
+                    }
+                }
+            )
+        } else {
+            initContent()
+        }
+    }
+
+    @SuppressLint("SetJavaScriptEnabled")
+    private fun initContent() {
+        val moduleId = extractModuleId(intent)
+        if (moduleId.isBlank() || !AdbModuleManager.isValidModuleId(moduleId)) {
+            Toast.makeText(this, R.string.modules_webui_not_found, Toast.LENGTH_SHORT).show()
+            finish()
+            return
+        }
+
+        val modulesRoot = AdbModuleManager.modulesRoot(this).canonicalFile
+        val targetDir = modulesRoot.resolve(moduleId).canonicalFile
+        if (!targetDir.toPath().startsWith(modulesRoot.toPath()) || targetDir == modulesRoot) {
+            Toast.makeText(this, R.string.modules_webui_not_found, Toast.LENGTH_SHORT).show()
+            finish()
+            return
+        }
+
+        val module = AdbModuleManager.readModule(targetDir)
+        val index = module?.webRoot?.resolve("index.html")?.canonicalFile
+        if (module == null || index?.isFile != true || !index.toPath().startsWith(targetDir.toPath())) {
             Toast.makeText(this, R.string.modules_webui_not_found, Toast.LENGTH_SHORT).show()
             finish()
             return
