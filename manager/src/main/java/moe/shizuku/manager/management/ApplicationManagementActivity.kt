@@ -7,6 +7,7 @@ import android.content.pm.ApplicationInfo
 import android.content.pm.PackageInfo
 import android.content.pm.PackageManager
 import android.content.pm.PermissionInfo
+import android.graphics.drawable.Drawable
 import android.os.Bundle
 import android.os.RemoteException
 import android.util.LruCache
@@ -70,10 +71,6 @@ import androidx.compose.runtime.produceState
 import androidx.compose.runtime.remember
 import androidx.compose.runtime.saveable.rememberSaveable
 import androidx.compose.runtime.setValue
-import kotlinx.coroutines.Dispatchers
-import kotlinx.coroutines.sync.Mutex
-import kotlinx.coroutines.sync.withLock
-import kotlinx.coroutines.withContext
 import androidx.compose.ui.Alignment
 import androidx.compose.ui.Modifier
 import androidx.compose.ui.draw.clip
@@ -100,6 +97,8 @@ import kotlinx.coroutines.Dispatchers
 import kotlinx.coroutines.currentCoroutineContext
 import kotlinx.coroutines.ensureActive
 import kotlinx.coroutines.launch
+import kotlinx.coroutines.sync.Mutex
+import kotlinx.coroutines.sync.withLock
 import kotlinx.coroutines.withContext
 import moe.shizuku.manager.Helps
 import moe.shizuku.manager.R
@@ -147,6 +146,9 @@ class ApplicationManagementActivity : AppActivity() {
     private val detailLauncher = registerForActivityResult(ActivityResultContracts.StartActivityForResult()) { result ->
         if (result.resultCode == RESULT_OK) {
             setResult(RESULT_OK)
+            if (viewModel.allPackages.value != null) {
+                viewModel.loadAll()
+            }
         }
     }
 
@@ -217,6 +219,7 @@ class ApplicationManagementActivity : AppActivity() {
             var showAddAppDialog by rememberSaveable { mutableStateOf(false) }
             var addAppPackage by rememberSaveable { mutableStateOf("") }
             var isAddingApp by remember { mutableStateOf(false) }
+            var isRemovingApp by remember { mutableStateOf(false) }
             var isBulkUpdating by remember { mutableStateOf(false) }
             var permissionOverrides by remember(packagesResource) {
                 mutableStateOf(emptyMap<String, AppPermissionState>())
@@ -263,6 +266,7 @@ class ApplicationManagementActivity : AppActivity() {
             val labelCache = remember { java.util.concurrent.ConcurrentHashMap<String, String>() }
             val allEntries by produceState<List<AppEntry>?>(null, packagesResource, packages, appEntriesRetry) {
                 appEntriesLoadFailed = false
+                value = null
                 value = try {
                     withContext(Dispatchers.Default) {
                         val coroutineContext = currentCoroutineContext()
@@ -391,7 +395,7 @@ class ApplicationManagementActivity : AppActivity() {
 
             fun applyAddApp(mode: AddAppAccessMode = addAppAccessMode) {
                 val pkg = addAppPackage.trim()
-                if (pkg.isEmpty() || isAddingApp || isBulkUpdating) return
+                if (pkg.isEmpty() || isAddingApp || isRemovingApp || isBulkUpdating) return
                 isAddingApp = true
 
                 lifecycleScope.launch {
@@ -411,24 +415,30 @@ class ApplicationManagementActivity : AppActivity() {
 
                         val userId = UserHandleCompat.getUserId(uid)
                         val grantRuntime = addAppGrantRuntime
-                        permissionMutex.withLock {
-                            withContext(Dispatchers.IO) {
-                                AuthorizationManager.addManualPackage(pkg)
+                        val failedRuntimePermissionCount = permissionMutex.withLock {
+                            val failures = withContext(Dispatchers.IO) {
                                 when (mode) {
                                     AddAppAccessMode.ALLOW -> AuthorizationManager.grant(pkg, uid)
                                     AddAppAccessMode.SESSION_ONLY -> AuthorizationManager.grantSessionOnly(pkg, uid, true)
                                     AddAppAccessMode.DENY -> AuthorizationManager.deny(pkg, uid)
                                 }
+                                AuthorizationManager.addManualPackage(pkg)
+                                var runtimePermissionFailures = 0
                                 if (grantRuntime && mode != AddAppAccessMode.DENY && targetPi != null) {
-                                    targetPi.requestedPermissions.orEmpty().forEach { perm ->
+                                    for (perm in targetPi.requestedPermissions.orEmpty()) {
                                         val permInfo = runCatching { packageManager.getPermissionInfo(perm, 0) }.getOrNull()
                                         if (permInfo != null && (permInfo.protectionLevel and 0xf) == PermissionInfo.PROTECTION_DANGEROUS) {
-                                            runCatching {
+                                            try {
                                                 ShizukuSystemApis.grantRuntimePermission(pkg, perm, userId)
+                                            } catch (e: CancellationException) {
+                                                throw e
+                                            } catch (_: Exception) {
+                                                runtimePermissionFailures++
                                             }
                                         }
                                     }
                                 }
+                                runtimePermissionFailures
                             }
                             updatePermissionState(
                                 pkg,
@@ -436,15 +446,18 @@ class ApplicationManagementActivity : AppActivity() {
                                 granted = mode != AddAppAccessMode.DENY,
                                 isOneTime = mode == AddAppAccessMode.SESSION_ONLY
                             )
+                            failures
                         }
                         val shouldOpenDetails = addAppOpenDetails
                         setResult(RESULT_OK)
-                        permissionTick.intValue++
                         viewModel.load()
                         Toast.makeText(
                             this@ApplicationManagementActivity,
-                            if (mode != AddAppAccessMode.DENY) R.string.app_management_add_app_added
-                            else R.string.app_management_add_app_deny,
+                            when {
+                                failedRuntimePermissionCount > 0 -> R.string.app_management_runtime_permissions_partial
+                                mode != AddAppAccessMode.DENY -> R.string.app_management_add_app_added
+                                else -> R.string.app_management_add_app_deny
+                            },
                             Toast.LENGTH_SHORT
                         ).show()
                         showAddAppDialog = false
@@ -471,51 +484,86 @@ class ApplicationManagementActivity : AppActivity() {
             }
 
             fun selectAll(packageInfos: List<PackageInfo>, granted: Boolean) {
-                if (isBulkUpdating || isAddingApp || packageInfos.isEmpty()) return
+                if (isBulkUpdating || isAddingApp || isRemovingApp || packageInfos.isEmpty()) return
                 isBulkUpdating = true
                 lifecycleScope.launch {
                     try {
                         permissionMutex.withLock {
-                        val (updates, failedCount) = withContext(Dispatchers.IO) {
-                            val changed = linkedMapOf<String, AppPermissionState>()
-                            var failures = 0
-                            val coroutineContext = currentCoroutineContext()
-                            for (packageInfo in packageInfos) {
-                                coroutineContext.ensureActive()
-                                val appInfo = packageInfo.applicationInfo ?: continue
-                                try {
-                                    if (granted) {
-                                        AuthorizationManager.grant(packageInfo.packageName, appInfo.uid)
-                                    } else {
-                                        AuthorizationManager.revoke(packageInfo.packageName, appInfo.uid)
+                            val (updates, failedCount) = withContext(Dispatchers.IO) {
+                                val changed = linkedMapOf<String, AppPermissionState>()
+                                var failures = 0
+                                val coroutineContext = currentCoroutineContext()
+                                for (packageInfo in packageInfos) {
+                                    coroutineContext.ensureActive()
+                                    val appInfo = packageInfo.applicationInfo ?: continue
+                                    try {
+                                        if (granted) {
+                                            AuthorizationManager.grant(packageInfo.packageName, appInfo.uid)
+                                        } else {
+                                            AuthorizationManager.revoke(packageInfo.packageName, appInfo.uid)
+                                        }
+                                        changed["${packageInfo.packageName}:${appInfo.uid}"] =
+                                            AppPermissionState(granted, isOneTime = false)
+                                    } catch (e: CancellationException) {
+                                        throw e
+                                    } catch (_: SecurityException) {
+                                        failures++
+                                    } catch (_: RemoteException) {
+                                        failures++
+                                    } catch (_: RuntimeException) {
+                                        failures++
                                     }
-                                    changed["${packageInfo.packageName}:${appInfo.uid}"] =
-                                        AppPermissionState(granted, isOneTime = false)
-                                } catch (e: CancellationException) {
-                                    throw e
-                                } catch (_: SecurityException) {
-                                    failures++
-                                } catch (_: RemoteException) {
-                                    failures++
-                                } catch (_: RuntimeException) {
-                                    failures++
                                 }
+                                changed to failures
                             }
-                            changed to failures
-                        }
-                        if (updates.isNotEmpty()) {
-                            updates.forEach { (key, state) ->
-                                val uid = key.substringAfterLast(':').toInt()
-                                updatePermissionState(key.substringBeforeLast(':'), uid, state.granted, state.isOneTime)
+                            if (updates.isNotEmpty()) {
+                                updates.forEach { (key, state) ->
+                                    val uid = key.substringAfterLast(':').toInt()
+                                    updatePermissionState(key.substringBeforeLast(':'), uid, state.granted, state.isOneTime)
+                                }
+                                setResult(RESULT_OK)
                             }
-                            setResult(RESULT_OK)
-                        }
-                        if (failedCount > 0) {
-                            reportPermissionUpdateFailure()
-                        }
+                            if (failedCount > 0) {
+                                reportPermissionUpdateFailure()
+                            }
                         }
                     } finally {
                         isBulkUpdating = false
+                    }
+                }
+            }
+
+            fun removeApp(packageName: String, uid: Int) {
+                if (isAddingApp || isRemovingApp || isBulkUpdating) return
+                isRemovingApp = true
+                lifecycleScope.launch {
+                    try {
+                        permissionMutex.withLock {
+                            withContext(Dispatchers.IO) {
+                                AuthorizationManager.revoke(packageName, uid)
+                                AuthorizationManager.removeManualPackage(packageName)
+                            }
+                            updatePermissionState(packageName, uid, granted = false, isOneTime = false)
+                        }
+                        setResult(RESULT_OK)
+                        viewModel.load()
+                        Toast.makeText(
+                            this@ApplicationManagementActivity,
+                            R.string.app_management_add_app_removed,
+                            Toast.LENGTH_SHORT
+                        ).show()
+                        showAddAppDialog = false
+                        addAppPackage = ""
+                    } catch (e: CancellationException) {
+                        throw e
+                    } catch (_: SecurityException) {
+                        reportPermissionUpdateFailure()
+                    } catch (_: RemoteException) {
+                        showPermissionUpdateFailure()
+                    } catch (_: RuntimeException) {
+                        showPermissionUpdateFailure()
+                    } finally {
+                        isRemovingApp = false
                     }
                 }
             }
@@ -605,7 +653,7 @@ class ApplicationManagementActivity : AppActivity() {
                                         menuExpanded = false
                                         showAddAppDialog = true
                                     },
-                                    enabled = !isAddingApp && !isBulkUpdating
+                                    enabled = !isAddingApp && !isRemovingApp && !isBulkUpdating
                                 )
                                 if (filteredEntries.isNotEmpty()) {
                                     DropdownMenuItem(
@@ -615,7 +663,7 @@ class ApplicationManagementActivity : AppActivity() {
                                             val targetPackages = filteredEntries.map { it.packageInfo }
                                             selectAll(targetPackages, true)
                                         },
-                                        enabled = !isBulkUpdating && !isAddingApp
+                                        enabled = !isBulkUpdating && !isAddingApp && !isRemovingApp
                                     )
                                     DropdownMenuItem(
                                         text = { Text(stringResource(R.string.app_management_deselect_all)) },
@@ -624,7 +672,7 @@ class ApplicationManagementActivity : AppActivity() {
                                             val targetPackages = filteredEntries.map { it.packageInfo }
                                             selectAll(targetPackages, false)
                                         },
-                                        enabled = !isBulkUpdating && !isAddingApp
+                                        enabled = !isBulkUpdating && !isAddingApp && !isRemovingApp
                                     )
                                 }
                             }
@@ -632,7 +680,43 @@ class ApplicationManagementActivity : AppActivity() {
                     }
                 ) {
                     when {
-                        packagesResource == null || allEntries == null || sortedEntries == null -> {
+                        packagesResource == null -> {
+                            item {
+                                Column(
+                                    modifier = Modifier
+                                        .fillMaxWidth()
+                                        .padding(vertical = 24.dp),
+                                    horizontalAlignment = Alignment.CenterHorizontally,
+                                    verticalArrangement = Arrangement.spacedBy(12.dp)
+                                ) {
+                                    LoadingIndicator(Modifier.size(36.dp))
+                                    Text(
+                                        text = stringResource(R.string.app_management_loading),
+                                        style = MaterialTheme.typography.bodyMedium,
+                                        color = MaterialTheme.colorScheme.onSurfaceVariant
+                                    )
+                                }
+                            }
+                        }
+                        packagesResource.status == Status.ERROR -> {
+                            item {
+                                ExpressiveCard(
+                                    icon = R.drawable.ic_system_icon,
+                                    title = stringResource(R.string.app_management_load_failed),
+                                    body = stringResource(R.string.app_management_load_failed_desc)
+                                ) {
+                                    FilledTonalButton(
+                                        onClick = {
+                                            if (showingAllInstalledApps) viewModel.loadAll() else viewModel.load()
+                                        },
+                                        modifier = Modifier.padding(top = 8.dp)
+                                    ) {
+                                        Text(stringResource(R.string.app_management_retry))
+                                    }
+                                }
+                            }
+                        }
+                        allEntries == null || sortedEntries == null -> {
                             item {
                                 Column(
                                     modifier = Modifier
@@ -690,7 +774,7 @@ class ApplicationManagementActivity : AppActivity() {
                                     FilledTonalButton(
                                         onClick = { showAddAppDialog = true },
                                         modifier = Modifier.padding(top = 8.dp),
-                                        enabled = !isAddingApp && !isBulkUpdating
+                                        enabled = !isAddingApp && !isRemovingApp && !isBulkUpdating
                                     ) {
                                         Icon(
                                             painter = painterResource(R.drawable.ic_add_24),
@@ -885,7 +969,7 @@ class ApplicationManagementActivity : AppActivity() {
                                         FilledTonalButton(
                                             onClick = { showAddAppDialog = true },
                                             modifier = Modifier.weight(1f),
-                                            enabled = !isAddingApp && !isBulkUpdating
+                                            enabled = !isAddingApp && !isRemovingApp && !isBulkUpdating
                                         ) {
                                             Icon(
                                                 painter = painterResource(R.drawable.ic_add_24),
@@ -952,8 +1036,8 @@ class ApplicationManagementActivity : AppActivity() {
                                             AppPermissionRow(
                                                 entry = entry,
                                                 permissionScope = lifecycleScope,
-                                permissionMutex = permissionMutex,
-                                                permissionChangesEnabled = !isBulkUpdating && !isAddingApp,
+                                                permissionMutex = permissionMutex,
+                                                permissionChangesEnabled = !isBulkUpdating && !isAddingApp && !isRemovingApp,
                                                 onLimitedAdb = { showAdbLimitedDialog = true },
                                                 onPermissionChanged = { packageName, uid, granted, isOneTime ->
                                                     updatePermissionState(packageName, uid, granted, isOneTime)
@@ -1042,30 +1126,40 @@ class ApplicationManagementActivity : AppActivity() {
                         if (trimmedInput.length < 2) {
                             suggestions = emptyList()
                         } else {
-                            withContext(Dispatchers.IO) {
-                                suggestions = AuthorizationManager.findAppSuggestions(trimmedInput, maxResults = 5)
+                            suggestions = emptyList()
+                            suggestions = withContext(Dispatchers.IO) {
+                                AuthorizationManager.findAppSuggestions(trimmedInput, maxResults = 5)
                             }
                         }
                     }
 
-                    val resolvedTarget = remember(trimmedInput) {
-                        if (trimmedInput.isEmpty()) {
+                    val resolvedTarget by produceState<Pair<PackageInfo, String>?>(null, trimmedInput) {
+                        value = null
+                        value = if (trimmedInput.isEmpty()) {
                             null
                         } else {
-                            resolveTargetPackageInfo(trimmedInput)?.let { pi ->
-                                val lbl = pi.applicationInfo?.let {
-                                    runCatching { it.loadLabel(pm).toString() }.getOrNull()
-                                }.orEmpty().ifBlank { pi.packageName }
-                                pi to lbl
+                            withContext(Dispatchers.IO) {
+                                resolveTargetPackageInfo(trimmedInput)?.let { pi ->
+                                    val label = pi.applicationInfo?.let {
+                                        runCatching { it.loadLabel(pm).toString() }.getOrNull()
+                                    }.orEmpty().ifBlank { pi.packageName }
+                                    pi to label
+                                }
                             }
                         }
                     }
 
-                    val dangerousPermCount = remember(resolvedTarget) {
-                        val pi = resolvedTarget?.first ?: return@remember 0
-                        pi.requestedPermissions.orEmpty().count { perm ->
-                            val info = runCatching { packageManager.getPermissionInfo(perm, 0) }.getOrNull()
-                            info != null && (info.protectionLevel and 0xf) == PermissionInfo.PROTECTION_DANGEROUS
+                    val dangerousPermCount by produceState(0, resolvedTarget) {
+                        val pi = resolvedTarget?.first
+                        value = if (pi == null) {
+                            0
+                        } else {
+                            withContext(Dispatchers.IO) {
+                                pi.requestedPermissions.orEmpty().count { perm ->
+                                    val info = runCatching { packageManager.getPermissionInfo(perm, 0) }.getOrNull()
+                                    info != null && (info.protectionLevel and 0xf) == PermissionInfo.PROTECTION_DANGEROUS
+                                }
+                            }
                         }
                     }
 
@@ -1077,7 +1171,7 @@ class ApplicationManagementActivity : AppActivity() {
 
                     AlertDialog(
                         onDismissRequest = {
-                            if (!isAddingApp) {
+                            if (!isAddingApp && !isRemovingApp) {
                                 showAddAppDialog = false
                                 addAppPackage = ""
                             }
@@ -1101,7 +1195,7 @@ class ApplicationManagementActivity : AppActivity() {
                                     value = addAppPackage,
                                     onValueChange = { addAppPackage = it },
                                     modifier = Modifier.fillMaxWidth(),
-                                    enabled = !isAddingApp,
+                                    enabled = !isAddingApp && !isRemovingApp,
                                     label = {
                                         Text(stringResource(R.string.app_management_add_app_package_label))
                                     },
@@ -1147,10 +1241,8 @@ class ApplicationManagementActivity : AppActivity() {
                                     ) {
                                         Column(modifier = Modifier.fillMaxWidth()) {
                                             suggestions.forEachIndexed { idx, sugg ->
-                                                val iconBmp = remember(sugg.packageName) {
-                                                    runCatching {
-                                                        pm.getApplicationIcon(sugg.packageName).toBitmap(64, 64).asImageBitmap()
-                                                    }.getOrNull()
+                                                val iconBmp = rememberAppIcon(sugg.packageName, sugg.uid) {
+                                                    pm.getApplicationIcon(sugg.packageName)
                                                 }
                                                 Row(
                                                     modifier = Modifier
@@ -1198,10 +1290,8 @@ class ApplicationManagementActivity : AppActivity() {
                                     val (targetPi, targetLabel) = resolvedTarget
                                     val targetAppInfo = targetPi.applicationInfo
                                     val targetUid = targetAppInfo?.uid ?: -1
-                                    val targetIcon = remember(targetPi.packageName) {
-                                        runCatching {
-                                            targetAppInfo?.loadIcon(pm)?.toBitmap(80, 80)?.asImageBitmap()
-                                        }.getOrNull()
+                                    val targetIcon = rememberAppIcon(targetPi.packageName, targetUid) {
+                                        targetAppInfo?.loadIcon(pm)
                                     }
                                     Surface(
                                         modifier = Modifier.fillMaxWidth(),
@@ -1243,21 +1333,9 @@ class ApplicationManagementActivity : AppActivity() {
                                             if (alreadyInList && targetUid != -1) {
                                                 OutlinedButton(
                                                     onClick = {
-                                                        runCatching {
-                                                            AuthorizationManager.revoke(targetPi.packageName, targetUid)
-                                                            AuthorizationManager.removeManualPackage(targetPi.packageName)
-                                                        }
-                                                        setResult(RESULT_OK)
-                                                        permissionTick.intValue++
-                                                        viewModel.load()
-                                                        Toast.makeText(
-                                                            this@ApplicationManagementActivity,
-                                                            R.string.app_management_add_app_removed,
-                                                            Toast.LENGTH_SHORT
-                                                        ).show()
-                                                        showAddAppDialog = false
-                                                        addAppPackage = ""
-                                                    }
+                                                        removeApp(targetPi.packageName, targetUid)
+                                                    },
+                                                    enabled = !isAddingApp && !isRemovingApp && !isBulkUpdating
                                                 ) {
                                                     Text(stringResource(R.string.app_management_add_app_remove))
                                                 }
@@ -1359,7 +1437,7 @@ class ApplicationManagementActivity : AppActivity() {
                         confirmButton = {
                             Button(
                                 onClick = { applyAddApp() },
-                                enabled = trimmedInput.isNotEmpty() && !isAddingApp
+                                enabled = trimmedInput.isNotEmpty() && !isAddingApp && !isRemovingApp && !isBulkUpdating
                             ) {
                                 Text(stringResource(R.string.app_management_add_app_apply))
                             }
@@ -1367,10 +1445,12 @@ class ApplicationManagementActivity : AppActivity() {
                         dismissButton = {
                             FilledTonalButton(
                                 onClick = {
-                                    showAddAppDialog = false
-                                    addAppPackage = ""
+                                    if (!isRemovingApp) {
+                                        showAddAppDialog = false
+                                        addAppPackage = ""
+                                    }
                                 },
-                                enabled = !isAddingApp
+                                enabled = !isAddingApp && !isRemovingApp
                             ) {
                                 Text(stringResource(android.R.string.cancel))
                             }
@@ -1398,6 +1478,19 @@ class ApplicationManagementActivity : AppActivity() {
 private val iconCache = LruCache<String, ImageBitmap>(256)
 
 @Composable
+private fun rememberAppIcon(packageName: String, uid: Int, loadIcon: () -> Drawable?): ImageBitmap? {
+    val key = "$packageName:$uid"
+    val icon by produceState<ImageBitmap?>(iconCache.get(key), key) {
+        value = iconCache.get(key) ?: withContext(Dispatchers.IO) {
+            runCatching {
+                loadIcon()?.toBitmap(width = 96, height = 96)?.asImageBitmap()
+            }.getOrNull()
+        }?.also { iconCache.put(key, it) }
+    }
+    return icon
+}
+
+@Composable
 private fun AppPermissionRow(
     entry: AppEntry,
     permissionScope: CoroutineScope,
@@ -1419,14 +1512,7 @@ private fun AppPermissionRow(
     }
     var isUpdating by remember(packageName, uid) { mutableStateOf(false) }
     val title = entry.title
-    val icon by produceState<ImageBitmap?>(iconCache.get("$packageName:$uid"), packageName, uid) {
-        val key = "$packageName:$uid"
-        value = iconCache.get(key) ?: withContext(Dispatchers.IO) {
-            runCatching {
-                applicationInfo.loadIcon(pm).toBitmap(width = 96, height = 96).asImageBitmap()
-            }.getOrNull()
-        }?.also { iconCache.put(key, it) }
-    }
+    val icon = rememberAppIcon(packageName, uid) { applicationInfo.loadIcon(pm) }
     val requiresRoot = applicationInfo.requiresRoot()
 
     fun showFailureToast() {

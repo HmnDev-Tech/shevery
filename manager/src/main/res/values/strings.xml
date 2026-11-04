@@ -150,6 +150,7 @@
     <string name="app_management_permission_control">Shizuku access for %1$s</string>
     <string name="app_management_make_permanent_access">Temporary access for %1$s. Tap to make permanent.</string>
     <string name="app_management_permission_update_failed">Unable to update Shizuku access.</string>
+    <string name="app_management_runtime_permissions_partial">Shizuku access was updated, but some runtime permissions could not be granted.</string>
     <string name="app_management_add_app_apply">Apply</string>
     <string name="app_management_add_app_remove">Remove</string>
     <string name="app_management_add_app_removed">App removed from list</string>

@@ -147,16 +147,18 @@ object AuthorizationManager {
             if ("com.rosan.dhizuku" == pkg) return
             val uid = appInfo.uid
 
-            // Only include apps that the user explicitly added or that have non-zero permission flags
-            val isManual = manualPackages.contains(pkg)
-            val isSession = isOneTime(uid)
-            val hasFlags = runCatching {
-                !Shizuku.isPreV11() && Shizuku.getFlagsForUid(uid, MASK_PERMISSION) != 0
-            }.getOrDefault(false)
-            val isGranted = runCatching { granted(pkg, uid) }.getOrDefault(false)
+            if (!includeAllInstalled) {
+                // Skip per-app permission queries while assembling the full installed-app list.
+                val isManual = manualPackages.contains(pkg)
+                val isSession = isOneTime(uid)
+                val hasFlags = runCatching {
+                    !Shizuku.isPreV11() && Shizuku.getFlagsForUid(uid, MASK_PERMISSION) != 0
+                }.getOrDefault(false)
+                val isGranted = runCatching { granted(pkg, uid) }.getOrDefault(false)
 
-            if (!includeAllInstalled && !isManual && !isSession && !hasFlags && !isGranted) {
-                return
+                if (!isManual && !isSession && !hasFlags && !isGranted) {
+                    return
+                }
             }
 
             val key = "$pkg:$uid"
