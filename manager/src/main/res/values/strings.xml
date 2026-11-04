@@ -928,6 +928,8 @@ Wi-Fi is required for the first restart because Shevery must connect to the curr
     <string name="app_management_make_permanent_desc">Currently granted for this session only. Tap to make it permanent.</string>
     <string name="app_management_make_permanent_prompt">Make permission permanent?</string>
     <string name="app_management_onetime_badge">This session only</string>
+    <string name="app_management_badge_shevery" translatable="false">Shevery</string>
+    <string name="app_management_badge_legacy" translatable="false">Legacy</string>
     <string name="compat_stubs_header_info">Compatibility stubs are lightweight bridge packages that emulate official services. They forward permissions, requests, and APIs to Shevery so third-party apps work without modification.</string>
     <string name="device_owner_active">Device Owner is active</string>
     <string name="device_owner_active_desc">Shevery has device owner privileges. It can manage ADB, delegate scopes to apps, and auto-start without a PC.</string>

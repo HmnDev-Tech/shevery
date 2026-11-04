@@ -697,4 +697,6 @@
     <string name="app_management_add_app_grant_runtime_desc">Автоматически выдать опасные разрешения (%1$d)</string>
     <string name="app_management_add_app_open_details">Открыть настройки привилегий после добавления</string>
     <string name="app_management_add_app_added">Привилегии приложения обновлены</string>
+    <string name="app_management_badge_shevery">Shevery</string>
+    <string name="app_management_badge_legacy">Legacy</string>
 </resources>

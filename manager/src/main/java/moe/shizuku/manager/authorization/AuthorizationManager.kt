@@ -97,14 +97,23 @@ object AuthorizationManager {
         return resolvePackagePermission(pi) ?: Manifest.permission.PRIVILEGED_API
     }
 
-    fun isClientPackage(pi: PackageInfo?): Boolean {
+    fun isSheveryClient(pi: PackageInfo?): Boolean {
         if (pi == null) return false
         val metaData = pi.applicationInfo?.metaData
-        val isSheveryClient = metaData?.getBoolean(SheveryApiConstants.META_DATA_CLIENT_SUPPORT) == true
+        return metaData?.getBoolean(SheveryApiConstants.META_DATA_CLIENT_SUPPORT) == true
                 || pi.requestedPermissions?.contains(Manifest.permission.PRIVILEGED_API) == true
-        val isLegacyShizukuClient = metaData?.getBoolean(SheveryApiConstants.LEGACY_META_DATA_CLIENT_SUPPORT) == true
+    }
+
+    fun isLegacyOnlyShizukuClient(pi: PackageInfo?): Boolean {
+        if (pi == null || isSheveryClient(pi)) return false
+        val metaData = pi.applicationInfo?.metaData
+        return metaData?.getBoolean(SheveryApiConstants.LEGACY_META_DATA_CLIENT_SUPPORT) == true
                 || pi.requestedPermissions?.contains(Manifest.permission.API_V23) == true
-        return isSheveryClient || isLegacyShizukuClient
+                || pi.requestedPermissions?.contains("moe.shizuku.manager.permission.API") == true
+    }
+
+    fun isClientPackage(pi: PackageInfo?): Boolean {
+        return isSheveryClient(pi) || isLegacyOnlyShizukuClient(pi)
     }
 
     data class AppSuggestion(
@@ -147,15 +156,18 @@ object AuthorizationManager {
             if ("com.rosan.dhizuku" == pkg) return
             val uid = appInfo.uid
 
-            // Only include apps that the user explicitly added or that have non-zero permission flags
+            // Include Shizuku/Shevery API client packages, manually added packages, or packages with permission flags
+            val isClient = isClientPackage(pi)
             val isManual = manualPackages.contains(pkg)
             val isSession = isOneTime(uid)
-            val hasFlags = runCatching {
+            val hasFlags = if (isClient || isManual || isSession) true else runCatching {
                 !Shizuku.isPreV11() && Shizuku.getFlagsForUid(uid, MASK_PERMISSION) != 0
             }.getOrDefault(false)
-            val isGranted = runCatching { granted(pkg, uid) }.getOrDefault(false)
+            val isGranted = if (isClient || isManual || isSession || hasFlags) true else runCatching {
+                granted(pkg, uid)
+            }.getOrDefault(false)
 
-            if (!isManual && !isSession && !hasFlags && !isGranted) {
+            if (!isClient && !isManual && !isSession && !hasFlags && !isGranted) {
                 return
             }
 
@@ -186,7 +198,16 @@ object AuthorizationManager {
             }
         }
 
-        // 3. Query server getApplications(-1), but strictly filter only privileged entries
+        // 3. Discover installed client packages (Shevery API and Legacy Shizuku API) locally without extra Binder calls
+        runCatching {
+            localPm?.getInstalledPackages(pmFlags)?.forEach { pi ->
+                if (isClientPackage(pi)) {
+                    addPackage(pi)
+                }
+            }
+        }
+
+        // 4. Query server getApplications(-1) for multi-user or flagged entries
         if (!Shizuku.isPreV11() && !(Shizuku.getVersion() == 11 && Shizuku.getServerPatchVersion() < 3)) {
             try {
                 for (pi in getApplications(-1)) {

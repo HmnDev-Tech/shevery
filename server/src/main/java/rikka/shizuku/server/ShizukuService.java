@@ -594,7 +594,12 @@ public class ShizukuService extends Service<ShizukuUserServiceManager, ShizukuCl
                     flags = entry.flags & ConfigManager.MASK_PERMISSION;
                 }
 
-                if (flags != 0) {
+                boolean isSheveryClient = ServerConstants.hasSheveryPermission(pi.requestedPermissions)
+                        || (pi.applicationInfo.metaData != null && pi.applicationInfo.metaData.getBoolean(ServerConstants.META_DATA_SHEVERY_CLIENT, false));
+                boolean isLegacyClient = ServerConstants.hasLegacyShizukuPermission(pi.requestedPermissions)
+                        || (pi.applicationInfo.metaData != null && pi.applicationInfo.metaData.getBoolean(ServerConstants.META_DATA_SHIZUKU_CLIENT, false));
+
+                if (flags != 0 || isSheveryClient || isLegacyClient) {
                     list.add(pi);
                 }
             }

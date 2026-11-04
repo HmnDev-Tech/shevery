@@ -110,6 +110,8 @@ private data class AppEntry(
     val granted: Boolean,
     val isOneTime: Boolean = false,
     val isClient: Boolean = false,
+    val isSheveryApi: Boolean = false,
+    val isLegacyShizukuApi: Boolean = false,
     val isSystemApp: Boolean = false
 )
 
@@ -210,9 +212,11 @@ class ApplicationManagementActivity : AppActivity() {
                         false
                     }
                     val isOneTime = AuthorizationManager.isOneTime(uid)
-                    val isClient = AuthorizationManager.isClientPackage(pkg)
+                    val isSheveryApi = AuthorizationManager.isSheveryClient(pkg)
+                    val isLegacyShizukuApi = AuthorizationManager.isLegacyOnlyShizukuClient(pkg)
+                    val isClient = isSheveryApi || isLegacyShizukuApi
                     val isSystemApp = (appInfo.flags and ApplicationInfo.FLAG_SYSTEM) != 0
-                    AppEntry(pkg, title, granted, isOneTime, isClient, isSystemApp)
+                    AppEntry(pkg, title, granted, isOneTime, isClient, isSheveryApi, isLegacyShizukuApi, isSystemApp)
                 }.sortedWith(
                     compareByDescending<AppEntry> { it.granted }
                         .thenByDescending { it.isClient }
@@ -1114,6 +1118,33 @@ private fun AppPermissionRow(
                     overflow = TextOverflow.Ellipsis,
                     modifier = Modifier.weight(1f, fill = false)
                 )
+                if (entry.isSheveryApi) {
+                    Surface(
+                        shape = RoundedCornerShape(6.dp),
+                        color = MaterialTheme.colorScheme.primaryContainer
+                    ) {
+                        Text(
+                            text = stringResource(R.string.app_management_badge_shevery),
+                            style = MaterialTheme.typography.labelSmall,
+                            fontWeight = FontWeight.SemiBold,
+                            color = MaterialTheme.colorScheme.onPrimaryContainer,
+                            modifier = Modifier.padding(horizontal = 6.dp, vertical = 2.dp)
+                        )
+                    }
+                } else if (entry.isLegacyShizukuApi) {
+                    Surface(
+                        shape = RoundedCornerShape(6.dp),
+                        color = MaterialTheme.colorScheme.secondaryContainer
+                    ) {
+                        Text(
+                            text = stringResource(R.string.app_management_badge_legacy),
+                            style = MaterialTheme.typography.labelSmall,
+                            fontWeight = FontWeight.SemiBold,
+                            color = MaterialTheme.colorScheme.onSecondaryContainer,
+                            modifier = Modifier.padding(horizontal = 6.dp, vertical = 2.dp)
+                        )
+                    }
+                }
                 if (entry.isOneTime && granted) {
                     Box(
                         modifier = Modifier
