@@ -337,7 +337,9 @@ fun ModulesScreen(
             },
             actions = {
                 ModuleTabsSwitcher(
-                    onCatalog = { showCatalog = true }
+                    selectedTab = ModuleTab.INSTALLED,
+                    onSelectInstalled = {},
+                    onSelectCatalog = { showCatalog = true }
                 )
                 Spacer(modifier = Modifier.size(8.dp))
                 FilledTonalButton(
@@ -886,66 +888,7 @@ private fun ModuleButton(
     }
 }
 
-@Composable
-private fun ModuleTabsSwitcher(
-    onCatalog: () -> Unit
-) {
-    Surface(
-        shape = RoundedCornerShape(50),
-        color = MaterialTheme.colorScheme.surfaceContainer,
-        contentColor = MaterialTheme.colorScheme.onSurfaceVariant,
-        modifier = Modifier.height(36.dp)
-    ) {
-        Row(verticalAlignment = Alignment.CenterVertically) {
-            ModuleTabSegment(
-                selected = true,
-                icon = Icons.Rounded.CheckCircle,
-                contentDescription = stringResource(R.string.modules_tab_installed),
-                onClick = {},
-                enabled = false
-            )
-            ModuleTabSegment(
-                selected = false,
-                icon = Icons.Rounded.Apps,
-                contentDescription = stringResource(R.string.modules_tab_catalog),
-                onClick = onCatalog
-            )
-        }
-    }
-}
 
-@Composable
-private fun ModuleTabSegment(
-    selected: Boolean,
-    icon: ImageVector,
-    contentDescription: String,
-    onClick: () -> Unit,
-    enabled: Boolean = true
-) {
-    Surface(
-        shape = RoundedCornerShape(50),
-        color = if (selected) MaterialTheme.colorScheme.secondaryContainer else Color.Transparent,
-        contentColor = if (selected) {
-            MaterialTheme.colorScheme.onSecondaryContainer
-        } else {
-            MaterialTheme.colorScheme.onSurfaceVariant
-        },
-        modifier = Modifier.height(36.dp),
-        onClick = onClick,
-        enabled = enabled
-    ) {
-        Box(
-            contentAlignment = Alignment.Center,
-            modifier = Modifier.padding(horizontal = 14.dp)
-        ) {
-            Icon(
-                imageVector = icon,
-                contentDescription = contentDescription,
-                modifier = Modifier.size(18.dp)
-            )
-        }
-    }
-}
 
 @Composable
 fun ModuleLiveConsoleDialog(

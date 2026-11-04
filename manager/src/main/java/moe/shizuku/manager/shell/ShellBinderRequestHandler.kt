@@ -10,7 +10,12 @@ import rikka.shizuku.Shizuku
 object ShellBinderRequestHandler {
 
     fun handleRequest(context: Context, intent: Intent): Boolean {
-        if (intent.action != "rikka.shizuku.intent.action.REQUEST_BINDER") {
+        val action = intent.action ?: return false
+        if (action != "rikka.shizuku.intent.action.REQUEST_BINDER" &&
+            action != "moe.shizuku.privileged.api.intent.action.REQUEST_BINDER" &&
+            action != "moe.shizuku.manager.intent.action.REQUEST_BINDER" &&
+            !action.endsWith(".REQUEST_BINDER")
+        ) {
             return false
         }
 

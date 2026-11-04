@@ -160,7 +160,9 @@ class ModuleDiscoveryManager private constructor(context: Context) {
                         stars = repo.stargazersCount,
                         repoDescription = repo.description,
                         ownerAvatar = repo.owner.avatarUrl,
-                        isOfficial = isOfficialOwner
+                        isOfficial = isOfficialOwner,
+                        createdAt = repo.createdAt,
+                        pushedAt = repo.pushedAt
                     )
                 )
             }

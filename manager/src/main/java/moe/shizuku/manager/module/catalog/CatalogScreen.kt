@@ -36,12 +36,15 @@ import androidx.compose.foundation.lazy.LazyColumn
 import androidx.compose.foundation.lazy.items
 import androidx.compose.foundation.shape.RoundedCornerShape
 import androidx.compose.material.icons.Icons
+import androidx.compose.material.icons.rounded.Check
 import androidx.compose.material.icons.rounded.Star
 import androidx.compose.material.icons.rounded.Update
 import androidx.compose.material3.AlertDialog
 import androidx.compose.material3.ExperimentalMaterial3Api
 import androidx.compose.material3.ExperimentalMaterial3ExpressiveApi
 import androidx.compose.material3.FilledTonalButton
+import androidx.compose.material3.FilterChip
+import androidx.compose.material3.FilterChipDefaults
 import androidx.compose.material3.HorizontalDivider
 import androidx.compose.material3.Icon
 import androidx.compose.material3.IconButton
@@ -53,6 +56,10 @@ import androidx.compose.material3.OutlinedTextField
 import androidx.compose.material3.Surface
 import androidx.compose.material3.Text
 import androidx.compose.material3.TextButton
+import androidx.compose.foundation.lazy.LazyRow
+import androidx.compose.foundation.lazy.items
+import moe.shizuku.manager.module.ModuleTab
+import moe.shizuku.manager.module.ModuleTabsSwitcher
 import androidx.compose.runtime.Composable
 import androidx.compose.runtime.LaunchedEffect
 import androidx.compose.runtime.collectAsState
@@ -159,8 +166,18 @@ fun CatalogScreen(onNavigateUp: () -> Unit) {
         installedIds = AdbModuleManager.listModules(context).map { it.id }.toSet()
     }
 
-    val sortedModules = remember(modules) {
-        modules.sortedByDescending { it.stars }
+    var selectedFilter by remember { mutableStateOf(CatalogFilter.MOST_STARRED) }
+
+    val sortedModules = remember(modules, selectedFilter) {
+        when (selectedFilter) {
+            CatalogFilter.MOST_STARRED -> modules.sortedByDescending { it.stars }
+            CatalogFilter.RECENTLY_UPDATED -> modules.sortedByDescending { it.updatedEpochMillis }
+            CatalogFilter.NEWEST -> modules.sortedByDescending { it.createdEpochMillis }
+            CatalogFilter.OLDEST -> modules.sortedBy {
+                val c = it.createdEpochMillis
+                if (c <= 0L) Long.MAX_VALUE else c
+            }
+        }
     }
 
     ShizukuExpressiveTheme {
@@ -196,6 +213,8 @@ fun CatalogScreen(onNavigateUp: () -> Unit) {
                     isLoading = isLoading,
                     error = error,
                     installing = installing,
+                    selectedFilter = selectedFilter,
+                    onSelectFilter = { selectedFilter = it },
                     onRefresh = {
                         scope.launch {
                             isLoading = true; error = null
@@ -340,6 +359,13 @@ private suspend fun checkModuleDanger(client: OkHttpClient, module: DiscoveredMo
     }
 }
 
+enum class CatalogFilter(@androidx.annotation.StringRes val labelRes: Int) {
+    MOST_STARRED(R.string.modules_filter_most_starred),
+    RECENTLY_UPDATED(R.string.modules_filter_recently_updated),
+    NEWEST(R.string.modules_filter_newest),
+    OLDEST(R.string.modules_filter_oldest)
+}
+
 @OptIn(ExperimentalMaterial3Api::class, ExperimentalMaterial3ExpressiveApi::class)
 @Composable
 private fun CatalogListScreen(
@@ -348,6 +374,8 @@ private fun CatalogListScreen(
     isLoading: Boolean,
     error: String?,
     installing: String?,
+    selectedFilter: CatalogFilter,
+    onSelectFilter: (CatalogFilter) -> Unit,
     onRefresh: () -> Unit,
     onCardClick: (DiscoveredModule) -> Unit,
     onInstall: (DiscoveredModule) -> Unit,
@@ -359,13 +387,41 @@ private fun CatalogListScreen(
         title = stringResource(R.string.modules_catalog_title),
         onNavigateUp = onNavigateUp,
         bottomInset = 112.dp,
+        isRefreshing = isLoading,
+        onRefresh = onRefresh,
         actions = {
-            FilledTonalButton(modifier = Modifier.height(48.dp), onClick = onRefresh) {
-                ShizukuIcon(R.drawable.ic_server_restart, modifier = Modifier.padding(end = 6.dp).size(16.dp))
-                Text(stringResource(R.string.home_refresh), style = MaterialTheme.typography.labelLarge)
-            }
+            ModuleTabsSwitcher(
+                selectedTab = ModuleTab.CATALOG,
+                onSelectInstalled = onNavigateUp,
+                onSelectCatalog = {}
+            )
         }
     ) {
+        item {
+            LazyRow(
+                modifier = Modifier
+                    .fillMaxWidth()
+                    .padding(vertical = 4.dp),
+                horizontalArrangement = Arrangement.spacedBy(8.dp)
+            ) {
+                items(CatalogFilter.values()) { filter ->
+                    FilterChip(
+                        selected = selectedFilter == filter,
+                        onClick = { onSelectFilter(filter) },
+                        label = { Text(stringResource(filter.labelRes)) },
+                        leadingIcon = if (selectedFilter == filter) {
+                            {
+                                Icon(
+                                    imageVector = Icons.Rounded.Check,
+                                    contentDescription = null,
+                                    modifier = Modifier.size(FilterChipDefaults.IconSize)
+                                )
+                            }
+                        } else null
+                    )
+                }
+            }
+        }
         item {
             AnimatedVisibility(visible = isLoading, enter = fadeIn(), exit = fadeOut()) {
                 Row(
@@ -594,6 +650,9 @@ private fun ModuleDetailScreen(
                         if (installed) {
                             DetailChip(text = "Installed", color = MaterialTheme.colorScheme.primaryContainer, onColor = MaterialTheme.colorScheme.onPrimaryContainer)
                         }
+                        if (module.isLongNonUpdating()) {
+                            DetailChip(text = stringResource(R.string.modules_catalog_long_non_updating), color = MaterialTheme.colorScheme.errorContainer, onColor = MaterialTheme.colorScheme.onErrorContainer)
+                        }
                     }
 
                     module.repoDescription?.let {
@@ -677,6 +736,7 @@ private fun CatalogModuleCard(
                 DetailChip(text = "${module.stars}", icon = { Icon(Icons.Rounded.Star, null, Modifier.size(14.dp), tint = MaterialTheme.colorScheme.onSecondaryContainer) }, color = MaterialTheme.colorScheme.secondaryContainer, onColor = MaterialTheme.colorScheme.onSecondaryContainer)
                 if (module.isOfficial) DetailChip(text = stringResource(R.string.modules_catalog_sort_official), color = MaterialTheme.colorScheme.tertiaryContainer, onColor = MaterialTheme.colorScheme.onTertiaryContainer)
                 if (installed) DetailChip(text = "Installed", color = MaterialTheme.colorScheme.primaryContainer, onColor = MaterialTheme.colorScheme.onPrimaryContainer)
+                if (module.isLongNonUpdating()) DetailChip(text = stringResource(R.string.modules_catalog_long_non_updating), color = MaterialTheme.colorScheme.errorContainer, onColor = MaterialTheme.colorScheme.onErrorContainer)
             }
             module.repoDescription?.let { Text(it, style = MaterialTheme.typography.bodySmall, color = MaterialTheme.colorScheme.onSurfaceVariant, maxLines = 2, overflow = TextOverflow.Ellipsis) }
             AnimatedVisibility(visible = installing, enter = fadeIn(), exit = fadeOut()) { LinearProgressIndicator(modifier = Modifier.fillMaxWidth()) }

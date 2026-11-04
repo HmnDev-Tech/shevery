@@ -28,6 +28,7 @@ import androidx.compose.animation.slideInHorizontally
 import androidx.compose.animation.slideOutHorizontally
 import androidx.compose.animation.togetherWith
 
+import androidx.compose.foundation.clickable
 import androidx.compose.foundation.layout.Arrangement
 import androidx.compose.foundation.layout.Column
 import androidx.compose.foundation.layout.Row
@@ -37,8 +38,10 @@ import androidx.compose.foundation.layout.height
 import androidx.compose.foundation.layout.heightIn
 import androidx.compose.foundation.layout.padding
 import androidx.compose.foundation.layout.size
+import androidx.compose.foundation.layout.width
 import androidx.compose.material3.CircularProgressIndicator
 import androidx.compose.material3.OutlinedButton
+import androidx.compose.material3.OutlinedTextField
 import androidx.compose.ui.Alignment
 import androidx.compose.foundation.lazy.LazyListState
 import androidx.compose.foundation.lazy.rememberLazyListState
@@ -353,6 +356,9 @@ fun SettingsScreen(
     var expHaptics by remember { mutableStateOf(ModuleSettings.isServiceStateHapticsEnabled()) }
     var expUptime by remember { mutableStateOf(ModuleSettings.isServiceUptimeShown()) }
     var expKeepScreen by remember { mutableStateOf(ModuleSettings.isKeepScreenOnWhileStarting()) }
+    var expParasiteEnabled by remember { mutableStateOf(ShizukuSettings.isParasiteEnabled()) }
+    var expParasiteTarget by remember { mutableStateOf(ShizukuSettings.getParasiteTargetPackage()) }
+    var showParasiteDialog by remember { mutableStateOf(false) }
     var showUnsafeDialog by remember { mutableStateOf(false) }
     var showRevokeDialog by remember { mutableStateOf(false) }
     var recreateTick by remember { mutableIntStateOf(0) }
@@ -507,6 +513,8 @@ fun SettingsScreen(
                 expHaptics = ModuleSettings.isServiceStateHapticsEnabled()
                 expUptime = ModuleSettings.isServiceUptimeShown()
                 expKeepScreen = ModuleSettings.isKeepScreenOnWhileStarting()
+                expParasiteEnabled = ShizukuSettings.isParasiteEnabled()
+                expParasiteTarget = ShizukuSettings.getParasiteTargetPackage()
                 agentSafetyMode = ModuleSettings.getAgentSafetyMode()
                 agentMaxSteps = ModuleSettings.getAgentMaxSteps()
                 agentAskShell = ModuleSettings.isAgentAskShell()
@@ -862,6 +870,9 @@ fun SettingsScreen(
                             expHaptics = expHaptics,
                             expUptime = expUptime,
                             expKeepScreen = expKeepScreen,
+                            expParasiteEnabled = expParasiteEnabled,
+                            expParasiteTarget = expParasiteTarget,
+                            onOpenParasiteDialog = { showParasiteDialog = true },
                             onNotifyRecoveryChange = { value ->
                                 notifyRecovery = value
                                 ModuleSettings.setNotifyOnRecovery(value)
@@ -1362,6 +1373,27 @@ fun SettingsScreen(
             },
             containerColor = MaterialTheme.colorScheme.surfaceContainerHigh,
             shape = MaterialTheme.shapes.extraLarge
+        )
+    }
+
+    if (showParasiteDialog) {
+        ParasiteForkDialog(
+            enabled = expParasiteEnabled,
+            currentTarget = expParasiteTarget,
+            onDismiss = { showParasiteDialog = false },
+            onSave = { enabled, pkg ->
+                showParasiteDialog = false
+                expParasiteEnabled = enabled
+                expParasiteTarget = pkg
+                ShizukuSettings.setParasiteEnabled(enabled)
+                ShizukuSettings.setParasiteTargetPackage(pkg)
+                Toast.makeText(
+                    context,
+                    if (enabled) context.getString(R.string.lab_exp_parasite_status_enabled, pkg)
+                    else context.getString(R.string.lab_exp_parasite_status_disabled),
+                    Toast.LENGTH_SHORT
+                ).show()
+            }
         )
     }
 }
@@ -1909,6 +1941,9 @@ private fun LazyListScope.extrasSectionContent(
     expHaptics: Boolean,
     expUptime: Boolean,
     expKeepScreen: Boolean,
+    expParasiteEnabled: Boolean,
+    expParasiteTarget: String,
+    onOpenParasiteDialog: () -> Unit,
     onNotifyRecoveryChange: (Boolean) -> Unit,
     onAutoRefreshChange: (Boolean) -> Unit,
     onVerboseLoggingChange: (Boolean) -> Unit,
@@ -2048,6 +2083,18 @@ private fun LazyListScope.extrasSectionContent(
                 summary = stringResource(R.string.lab_exp_keep_screen_summary),
                 checked = expKeepScreen,
                 onCheckedChange = onExpKeepScreenChange
+            )
+            GroupDivider()
+            val parasiteSummary = if (expParasiteEnabled) {
+                stringResource(R.string.lab_exp_parasite_status_enabled, expParasiteTarget)
+            } else {
+                stringResource(R.string.lab_exp_parasite_status_disabled)
+            }
+            SettingsRow(
+                icon = R.drawable.ic_system_icon,
+                title = stringResource(R.string.lab_exp_parasite_title),
+                summary = parasiteSummary,
+                onClick = onOpenParasiteDialog
             )
         }
     }
@@ -2317,7 +2364,9 @@ private data class LocaleOption(
     val tag: String,
     val title: String,
     val summary: String?
-)private fun buildLocaleOptions(context: android.content.Context, currentTag: String): List<LocaleOption> {
+)
+
+private fun buildLocaleOptions(context: android.content.Context, currentTag: String): List<LocaleOption> {
     val localeTags = ShizukuLocales.LOCALES
     val displayLocaleTags = ShizukuLocales.DISPLAY_LOCALES
     val currentLocale = ShizukuSettings.getLocale()
@@ -2476,6 +2525,148 @@ private fun ChoiceDialog(
             }
         },
         confirmButton = {
+            TextButton(onClick = onDismiss) {
+                Text(stringResource(android.R.string.cancel))
+            }
+        },
+        containerColor = MaterialTheme.colorScheme.surfaceContainerHigh,
+        shape = MaterialTheme.shapes.extraLarge
+    )
+}
+
+@Composable
+private fun ParasiteForkDialog(
+    enabled: Boolean,
+    currentTarget: String,
+    onDismiss: () -> Unit,
+    onSave: (Boolean, String) -> Unit
+) {
+    val context = LocalContext.current
+    var isEnabled by remember { mutableStateOf(enabled) }
+    var selectedPackage by remember { mutableStateOf(currentTarget) }
+    var customPackage by remember { mutableStateOf(if (currentTarget.isNotBlank()) currentTarget else "moe.shizuku.privileged.api") }
+
+    val discoveredForks = remember(context) {
+        val pm = context.packageManager
+        val installed = runCatching { pm.getInstalledPackages(0) }.getOrDefault(emptyList())
+        val knownCandidates = listOf(
+            "moe.shizuku.privileged.api",
+            "moe.shizuku.manager",
+            "com.rosan.dhizuku",
+            "io.github.muntashirakon.AppManager",
+            "org.lsposed.sui",
+            "dev.rikka.shizuku"
+        )
+        val matches = mutableListOf<String>()
+        for (pkg in knownCandidates) {
+            val exists = installed.any { it.packageName == pkg }
+            if (exists) matches.add(pkg)
+        }
+        for (p in installed) {
+            val name = p.packageName.lowercase()
+            if ((name.contains("shizuku") || name.contains("sui") || name.contains("dhizuku")) &&
+                p.packageName != context.packageName && !matches.contains(p.packageName)
+            ) {
+                matches.add(p.packageName)
+            }
+        }
+        matches
+    }
+
+    AlertDialog(
+        onDismissRequest = onDismiss,
+        title = { Text(stringResource(R.string.lab_exp_parasite_dialog_title)) },
+        text = {
+            Column(
+                modifier = Modifier
+                    .fillMaxWidth()
+                    .heightIn(max = 500.dp)
+                    .verticalScroll(rememberScrollState()),
+                verticalArrangement = Arrangement.spacedBy(12.dp)
+            ) {
+                Text(
+                    text = stringResource(R.string.lab_exp_parasite_summary),
+                    style = MaterialTheme.typography.bodyMedium,
+                    color = MaterialTheme.colorScheme.onSurfaceVariant
+                )
+
+                SwitchSettingsRow(
+                    icon = R.drawable.ic_system_icon,
+                    title = stringResource(R.string.lab_exp_parasite_enable),
+                    checked = isEnabled,
+                    onCheckedChange = { isEnabled = it }
+                )
+
+                GroupDivider()
+
+                Text(
+                    text = stringResource(R.string.lab_exp_parasite_detected_forks),
+                    style = MaterialTheme.typography.titleSmall,
+                    color = MaterialTheme.colorScheme.primary
+                )
+
+                if (discoveredForks.isEmpty()) {
+                    Text(
+                        text = stringResource(R.string.lab_exp_parasite_no_forks),
+                        style = MaterialTheme.typography.bodySmall,
+                        color = MaterialTheme.colorScheme.onSurfaceVariant
+                    )
+                } else {
+                    discoveredForks.forEach { pkg ->
+                        Row(
+                            modifier = Modifier
+                                .fillMaxWidth()
+                                .clickable {
+                                    selectedPackage = pkg
+                                    customPackage = pkg
+                                }
+                                .padding(vertical = 6.dp),
+                            verticalAlignment = Alignment.CenterVertically
+                        ) {
+                            RadioButton(
+                                selected = selectedPackage.equals(pkg, ignoreCase = true),
+                                onClick = {
+                                    selectedPackage = pkg
+                                    customPackage = pkg
+                                }
+                            )
+                            Spacer(Modifier.width(8.dp))
+                            Text(pkg, style = MaterialTheme.typography.bodyMedium)
+                        }
+                    }
+                }
+
+                GroupDivider()
+
+                Text(
+                    text = stringResource(R.string.lab_exp_parasite_custom_package),
+                    style = MaterialTheme.typography.titleSmall,
+                    color = MaterialTheme.colorScheme.primary
+                )
+
+                OutlinedTextField(
+                    value = customPackage,
+                    onValueChange = {
+                        customPackage = it
+                        selectedPackage = it
+                    },
+                    label = { Text(stringResource(R.string.lab_exp_parasite_select_package)) },
+                    singleLine = true,
+                    modifier = Modifier.fillMaxWidth()
+                )
+            }
+        },
+        confirmButton = {
+            TextButton(
+                onClick = {
+                    val finalPkg = customPackage.trim().ifEmpty { "moe.shizuku.privileged.api" }
+                    onSave(isEnabled, finalPkg)
+                }
+            ) {
+                Text(stringResource(android.R.string.ok))
+            }
+        },
+        dismissButton = {
             TextButton(onClick = onDismiss) {
                 Text(stringResource(android.R.string.cancel))
             }
