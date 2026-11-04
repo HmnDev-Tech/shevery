@@ -7,6 +7,7 @@ import android.os.Parcel
 import com.hamondev.shevery.api.SheveryApiConstants
 import moe.shizuku.manager.BuildConfig
 import moe.shizuku.manager.Manifest
+import moe.shizuku.manager.ShizukuSettings
 import moe.shizuku.manager.compat.StubManager
 import moe.shizuku.manager.utils.Logger.LOGGER
 import moe.shizuku.manager.utils.ShizukuSystemApis
@@ -22,6 +23,41 @@ object AuthorizationManager {
     private const val FLAG_ALLOWED = 1 shl 1
     private const val FLAG_DENIED = 1 shl 2
     private const val MASK_PERMISSION = FLAG_ALLOWED or FLAG_DENIED
+    private const val KEY_MANUAL_PACKAGES = "manual_added_packages"
+
+    fun getManualPackages(): Set<String> {
+        return ShizukuSettings.getPreferences()
+            .getStringSet(KEY_MANUAL_PACKAGES, emptySet())
+            .orEmpty()
+            .toSet()
+    }
+
+    fun isManualPackage(packageName: String): Boolean {
+        return getManualPackages().contains(packageName)
+    }
+
+    fun addManualPackage(packageName: String) {
+        val pkg = packageName.trim()
+        if (pkg.isEmpty()) return
+        val updated = LinkedHashSet(getManualPackages())
+        updated.add(pkg)
+        ShizukuSettings.getPreferences()
+            .edit()
+            .putStringSet(KEY_MANUAL_PACKAGES, updated)
+            .apply()
+    }
+
+    fun removeManualPackage(packageName: String) {
+        val pkg = packageName.trim()
+        if (pkg.isEmpty()) return
+        val updated = LinkedHashSet(getManualPackages())
+        if (updated.remove(pkg)) {
+            ShizukuSettings.getPreferences()
+                .edit()
+                .putStringSet(KEY_MANUAL_PACKAGES, updated)
+                .apply()
+        }
+    }
 
     private fun getApplications(userId: Int): List<PackageInfo> {
         val data = Parcel.obtain()
@@ -74,6 +110,8 @@ object AuthorizationManager {
     fun getPackages(): List<PackageInfo> {
         val seen = LinkedHashMap<String, PackageInfo>()
         val flags = (PackageManager.GET_META_DATA or PackageManager.GET_PERMISSIONS).toLong()
+        val pmFlags = PackageManager.GET_META_DATA or PackageManager.GET_PERMISSIONS
+        val manualPackages = getManualPackages()
 
         fun addPackage(pi: PackageInfo?) {
             val appInfo = pi?.applicationInfo ?: return
@@ -95,6 +133,65 @@ object AuthorizationManager {
             } catch (e: Throwable) {
                 LOGGER.w(e, "getApplications")
             }
+        } else {
+            for (user in ShizukuSystemApis.getUsers(useCache = false)) {
+                try {
+                    for (pi in ShizukuSystemApis.getInstalledPackages(flags, user.id)) {
+                        if (isClientPackage(pi) || manualPackages.contains(pi.packageName)) {
+                            addPackage(pi)
+                        }
+                    }
+                } catch (e: Throwable) {
+                    LOGGER.w(e, "getInstalledPackages")
+                }
+            }
+        }
+
+        val localPm = runCatching { moe.shizuku.manager.application.packageManager }.getOrNull()
+        for (pkg in manualPackages) {
+            val pi = runCatching {
+                localPm?.getPackageInfo(pkg, pmFlags)
+            }.getOrNull() ?: runCatching {
+                ShizukuSystemApis.getPackageInfo(pkg, flags, 0)
+            }.getOrNull()
+            addPackage(pi)
+        }
+
+        for (uid in sessionGrantedUids) {
+            val pkgs = runCatching { localPm?.getPackagesForUid(uid) }.getOrNull().orEmpty()
+            for (pkg in pkgs) {
+                val pi = runCatching { localPm?.getPackageInfo(pkg, pmFlags) }.getOrNull()
+                addPackage(pi)
+            }
+        }
+
+        return ArrayList(seen.values)
+    }
+
+    fun getAllInstalledPackages(): List<PackageInfo> {
+        val seen = LinkedHashMap<String, PackageInfo>()
+        val flags = (PackageManager.GET_META_DATA or PackageManager.GET_PERMISSIONS).toLong()
+        val pmFlags = PackageManager.GET_META_DATA or PackageManager.GET_PERMISSIONS
+
+        fun addPackage(pi: PackageInfo?) {
+            val appInfo = pi?.applicationInfo ?: return
+            val pkg = pi.packageName ?: return
+            if (BuildConfig.APPLICATION_ID == pkg) return
+            if (StubManager.STUB_PACKAGE == pkg) return
+            if ("com.rosan.dhizuku" == pkg) return
+            val key = "$pkg:${appInfo.uid}"
+            if (!seen.containsKey(key)) {
+                seen[key] = pi
+            }
+        }
+
+        try {
+            val localPm = moe.shizuku.manager.application.packageManager
+            for (pi in localPm.getInstalledPackages(pmFlags)) {
+                addPackage(pi)
+            }
+        } catch (e: Throwable) {
+            LOGGER.w(e, "local getInstalledPackages")
         }
 
         for (user in ShizukuSystemApis.getUsers(useCache = false)) {
@@ -105,15 +202,6 @@ object AuthorizationManager {
             } catch (e: Throwable) {
                 LOGGER.w(e, "getInstalledPackages")
             }
-        }
-
-        try {
-            val localPm = moe.shizuku.manager.application.packageManager
-            for (pi in localPm.getInstalledPackages(PackageManager.GET_META_DATA or PackageManager.GET_PERMISSIONS)) {
-                addPackage(pi)
-            }
-        } catch (e: Throwable) {
-            LOGGER.w(e, "local getInstalledPackages")
         }
 
         return ArrayList(seen.values)
