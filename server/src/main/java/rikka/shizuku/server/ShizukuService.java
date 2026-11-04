@@ -572,13 +572,25 @@ public class ShizukuService extends Service<ShizukuUserServiceManager, ShizukuCl
         }
 
         for (int user : users) {
+            boolean stubActive = isShizukuStubActive(user);
             for (PackageInfo pi : InstalledPackagesCompat.getInstalledPackagesNoThrow(PackageManager.GET_META_DATA | PackageManager.GET_PERMISSIONS, user)) {
                 if (Objects.equals(MANAGER_APPLICATION_ID, pi.packageName)) continue;
                 if (Objects.equals(ServerConstants.SHIZUKU_STUB_APPLICATION_ID, pi.packageName)) continue;
                 if (Objects.equals("com.rosan.dhizuku", pi.packageName)) continue;
                 if (pi.applicationInfo == null) continue;
 
-                list.add(pi);
+                int uid = pi.applicationInfo.uid;
+                int flags = 0;
+                ShizukuConfig.PackageEntry entry = configManager.find(uid);
+                if (entry != null) {
+                    if (entry.packages != null && !entry.packages.isEmpty() && !entry.packages.contains(pi.packageName))
+                        continue;
+                    flags = entry.flags & ConfigManager.MASK_PERMISSION;
+                }
+
+                if (flags != 0) {
+                    list.add(pi);
+                }
             }
         }
         return new ParcelableListSlice<>(list);

@@ -28,8 +28,23 @@ class AppsViewModel(context: Context) : ViewModel() {
     private val _packages = MutableLiveData<Resource<List<PackageInfo>>>()
     val packages = _packages as LiveData<Resource<List<PackageInfo>>>
 
+    private val _allPackages = MutableLiveData<Resource<List<PackageInfo>>>()
+    val allPackages = _allPackages as LiveData<Resource<List<PackageInfo>>>
+
     private val _grantedCount = MutableLiveData<Resource<Int>>()
     val grantedCount = _grantedCount as LiveData<Resource<Int>>
+
+    fun loadAll() {
+        viewModelScope.launch(Dispatchers.IO) {
+            try {
+                _allPackages.postValue(Resource.success(AuthorizationManager.getPackages(includeAllInstalled = true)))
+            } catch (e: CancellationException) {
+                throw e
+            } catch (e: Throwable) {
+                _allPackages.postValue(Resource.error(e, null))
+            }
+        }
+    }
 
     fun load(onlyCount: Boolean = false) {
         viewModelScope.launch(Dispatchers.IO) {
