@@ -35,12 +35,21 @@ export const PROJECT_FACTS = [
   },
   {
     term: "current release",
-    value: "14.6.2",
-    detail: "versionCode 48, published 2026-11-01. Built from api_version_name 14.6.2.",
+    value: "14.6.3",
+    detail: "versionCode 49, published 2026-11-04. Built from api_version_name 14.6.3.",
   },
 ]
 
 export const RECENT_CHANGES: ChangeCard[] = [
+  {
+    title: "14.6.3: strict Application Management filter and zero-lag Add App (#370)",
+    body: "Shevery 14.6.3 (versionCode 49) filters Application Management to strictly display only applications configured with permissions or manually added, eliminating full-device package enumeration lag. Expands Add App with asynchronous search, access modes, runtime permission grant, and detailed privilege management.",
+    commits: [
+      { label: "14.6.3", url: "https://github.com/HmnDev-Tech/shevery" },
+    ],
+    span: "lg:col-span-12",
+    variant: "primary",
+  },
   {
     title: "14.6.2: hotfix for RequestPermissionActivity immediate finish on rish/Termux (#349)",
     body: "Shevery 14.6.2 (versionCode 48) resolves issue #349: RequestPermissionActivity was calling finish() immediately (~47ms) when getLaunchedFromUid() reflection returned -1 (hidden API blocked on some ROMs), discarding the valid client UID from the intent. Fix preserves the intent UID when the system-identified caller UID is unavailable, and correctly passes pid/requestCode to dispatchPermissionConfirmationResult for server-initiated rish sessions.",
