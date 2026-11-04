@@ -5,6 +5,8 @@ package moe.shizuku.manager.management
 import android.content.Intent
 import android.content.pm.ApplicationInfo
 import android.content.pm.PackageInfo
+import android.content.pm.PackageManager
+import android.content.pm.PermissionInfo
 import android.os.Bundle
 import android.widget.Toast
 import androidx.activity.compose.setContent
@@ -13,6 +15,7 @@ import androidx.compose.foundation.Image
 import androidx.compose.foundation.background
 import androidx.compose.foundation.clickable
 import androidx.compose.foundation.horizontalScroll
+import androidx.compose.foundation.verticalScroll
 import androidx.compose.foundation.layout.Arrangement
 import androidx.compose.foundation.layout.Box
 import androidx.compose.foundation.layout.Column
@@ -96,6 +99,7 @@ import rikka.shizuku.Shizuku
 import java.util.Objects
 
 private enum class AppFilter { ALL, ALLOWED, DENIED }
+private enum class AddAppAccessMode { ALLOW, SESSION_ONLY, DENY }
 
 private data class AppEntry(
     val packageInfo: PackageInfo,
@@ -175,6 +179,9 @@ class ApplicationManagementActivity : AppActivity() {
             var whitelistMode by remember { mutableStateOf(ShizukuSettings.isShizukuWhitelistEnabled()) }
             var showAddAppDialog by rememberSaveable { mutableStateOf(false) }
             var addAppPackage by rememberSaveable { mutableStateOf("") }
+            var addAppAccessMode by rememberSaveable { mutableStateOf(AddAppAccessMode.ALLOW) }
+            var addAppGrantRuntime by rememberSaveable { mutableStateOf(false) }
+            var addAppOpenDetails by rememberSaveable { mutableStateOf(false) }
 
             val labelCache = remember { HashMap<String, String>() }
             val appEntries = remember(packages, tick) {
@@ -211,18 +218,28 @@ class ApplicationManagementActivity : AppActivity() {
                 )
             }
 
-            // Function for adding an app manually from the dialog.
-            fun applyAddApp(allowed: Boolean) {
+            fun resolveTargetPackageInfo(pkgName: String): PackageInfo? {
+                val trimmed = pkgName.trim()
+                if (trimmed.isEmpty()) return null
+                val pmFlags = PackageManager.GET_PERMISSIONS or PackageManager.GET_META_DATA
+                return runCatching {
+                    packageManager.getPackageInfo(trimmed, pmFlags)
+                }.getOrElse {
+                    runCatching {
+                        ShizukuSystemApis.getPackageInfo(trimmed, pmFlags.toLong(), 0)
+                    }.getOrNull()
+                }
+            }
+
+            fun applyAddApp(mode: AddAppAccessMode = addAppAccessMode) {
                 val pkg = addAppPackage.trim()
                 if (pkg.isEmpty()) return
 
-                val uid = runCatching {
+                val targetPi = resolveTargetPackageInfo(pkg)
+                val uid = targetPi?.applicationInfo?.uid ?: runCatching {
                     packageManager.getPackageUid(pkg, 0)
-                }.getOrElse {
-                    runCatching {
-                        ShizukuSystemApis.getPackageInfo(pkg, 0, 0)?.applicationInfo?.uid ?: -1
-                    }.getOrDefault(-1)
-                }
+                }.getOrDefault(-1)
+
                 if (uid == -1) {
                     Toast.makeText(
                         this@ApplicationManagementActivity,
@@ -232,23 +249,45 @@ class ApplicationManagementActivity : AppActivity() {
                     return
                 }
 
+                val userId = UserHandleCompat.getUserId(uid)
                 try {
-                    if (allowed) {
-                        AuthorizationManager.grant(pkg, uid)
-                    } else {
-                        AuthorizationManager.deny(pkg, uid)
+                    AuthorizationManager.addManualPackage(pkg)
+                    when (mode) {
+                        AddAppAccessMode.ALLOW -> AuthorizationManager.grant(pkg, uid)
+                        AddAppAccessMode.SESSION_ONLY -> AuthorizationManager.grantSessionOnly(pkg, uid, true)
+                        AddAppAccessMode.DENY -> AuthorizationManager.deny(pkg, uid)
                     }
+
+                    if (addAppGrantRuntime && mode != AddAppAccessMode.DENY && targetPi != null) {
+                        targetPi.requestedPermissions.orEmpty().forEach { perm ->
+                            val permInfo = runCatching { packageManager.getPermissionInfo(perm, 0) }.getOrNull()
+                            if (permInfo != null && (permInfo.protectionLevel and 0xf) == PermissionInfo.PROTECTION_DANGEROUS) {
+                                runCatching {
+                                    ShizukuSystemApis.grantRuntimePermission(pkg, perm, userId)
+                                }
+                            }
+                        }
+                    }
+
+                    val shouldOpenDetails = addAppOpenDetails
                     setResult(RESULT_OK)
                     permissionTick.intValue++
                     viewModel.load()
                     Toast.makeText(
                         this@ApplicationManagementActivity,
-                        if (allowed) R.string.app_management_add_app_added
+                        if (mode != AddAppAccessMode.DENY) R.string.app_management_add_app_added
                         else R.string.app_management_add_app_deny,
                         Toast.LENGTH_SHORT
                     ).show()
                     showAddAppDialog = false
                     addAppPackage = ""
+                    if (shouldOpenDetails) {
+                        detailLauncher.launch(
+                            Intent(this@ApplicationManagementActivity, AppDetailActivity::class.java)
+                                .putExtra(AppDetailActivity.EXTRA_PACKAGE_NAME, pkg)
+                                .putExtra(AppDetailActivity.EXTRA_USER_ID, userId)
+                        )
+                    }
                 } catch (e: SecurityException) {
                     val serverUid = try {
                         Shizuku.getUid()
@@ -596,6 +635,65 @@ class ApplicationManagementActivity : AppActivity() {
                     )
                 }
                 if (showAddAppDialog) {
+                    val allInstalledApps = remember(showAddAppDialog) {
+                        AuthorizationManager.getAllInstalledPackages().mapNotNull { pi ->
+                            val appInfo = pi.applicationInfo ?: return@mapNotNull null
+                            val cacheKey = "${pi.packageName}:${appInfo.uid}"
+                            val lbl = labelCache.getOrPut(cacheKey) {
+                                runCatching { appInfo.loadLabel(pm).toString() }
+                                    .getOrDefault(pi.packageName)
+                                    .ifBlank { pi.packageName }
+                            }
+                            pi to lbl
+                        }
+                    }
+
+                    val trimmedInput = addAppPackage.trim()
+                    val resolvedTarget = remember(trimmedInput, allInstalledApps) {
+                        if (trimmedInput.isEmpty()) {
+                            null
+                        } else {
+                            allInstalledApps.firstOrNull { it.first.packageName.equals(trimmedInput, ignoreCase = true) }
+                                ?: resolveTargetPackageInfo(trimmedInput)?.let { pi ->
+                                    val lbl = pi.applicationInfo?.let {
+                                        runCatching { it.loadLabel(pm).toString() }.getOrNull()
+                                    }.orEmpty().ifBlank { pi.packageName }
+                                    pi to lbl
+                                }
+                        }
+                    }
+
+                    val suggestions = remember(trimmedInput, allInstalledApps, resolvedTarget) {
+                        if (trimmedInput.length < 2 || resolvedTarget?.first?.packageName.equals(trimmedInput, ignoreCase = true)) {
+                            emptyList()
+                        } else {
+                            allInstalledApps.filter { (pi, lbl) ->
+                                lbl.contains(trimmedInput, ignoreCase = true) ||
+                                    pi.packageName.contains(trimmedInput, ignoreCase = true)
+                            }.sortedWith(
+                                compareByDescending<Pair<PackageInfo, String>> { (pi, _) ->
+                                    AuthorizationManager.isClientPackage(pi)
+                                }.thenBy { (pi, _) ->
+                                    ((pi.applicationInfo?.flags ?: 0) and ApplicationInfo.FLAG_SYSTEM) != 0
+                                }.thenBy(String.CASE_INSENSITIVE_ORDER) { (_, lbl) -> lbl }
+                            ).take(5)
+                        }
+                    }
+
+                    val dangerousPermCount = remember(resolvedTarget) {
+                        val pi = resolvedTarget?.first ?: return@remember 0
+                        pi.requestedPermissions.orEmpty().count { perm ->
+                            val info = runCatching { packageManager.getPermissionInfo(perm, 0) }.getOrNull()
+                            info != null && (info.protectionLevel and 0xf) == PermissionInfo.PROTECTION_DANGEROUS
+                        }
+                    }
+
+                    val alreadyInList = remember(resolvedTarget, appEntries) {
+                        val pkgName = resolvedTarget?.first?.packageName ?: return@remember false
+                        appEntries.any { it.packageInfo.packageName == pkgName } ||
+                            AuthorizationManager.isManualPackage(pkgName)
+                    }
+
                     AlertDialog(
                         onDismissRequest = {
                             showAddAppDialog = false
@@ -611,14 +709,11 @@ class ApplicationManagementActivity : AppActivity() {
                         },
                         text = {
                             Column(
-                                modifier = Modifier.fillMaxWidth(),
-                                verticalArrangement = Arrangement.spacedBy(8.dp)
+                                modifier = Modifier
+                                    .fillMaxWidth()
+                                    .verticalScroll(rememberScrollState()),
+                                verticalArrangement = Arrangement.spacedBy(10.dp)
                             ) {
-                                Text(
-                                    text = stringResource(R.string.app_management_add_app_hint),
-                                    style = MaterialTheme.typography.bodyMedium,
-                                    color = MaterialTheme.colorScheme.onSurfaceVariant
-                                )
                                 TextField(
                                     value = addAppPackage,
                                     onValueChange = { addAppPackage = it },
@@ -630,6 +725,16 @@ class ApplicationManagementActivity : AppActivity() {
                                             contentDescription = null,
                                             tint = MaterialTheme.colorScheme.onSurfaceVariant
                                         )
+                                    },
+                                    trailingIcon = {
+                                        if (addAppPackage.isNotEmpty()) {
+                                            IconButton(onClick = { addAppPackage = "" }) {
+                                                Icon(
+                                                    imageVector = Icons.Rounded.Clear,
+                                                    contentDescription = stringResource(R.string.app_management_clear_search)
+                                                )
+                                            }
+                                        }
                                     },
                                     singleLine = true,
                                     shape = MaterialTheme.shapes.extraLarge,
@@ -643,27 +748,234 @@ class ApplicationManagementActivity : AppActivity() {
                                         imeAction = ImeAction.Done
                                     ),
                                     keyboardActions = KeyboardActions(
-                                        onDone = { applyAddApp(true) }
+                                        onDone = { applyAddApp() }
                                     )
                                 )
+
+                                if (suggestions.isNotEmpty()) {
+                                    Surface(
+                                        modifier = Modifier.fillMaxWidth(),
+                                        shape = RoundedCornerShape(16.dp),
+                                        color = MaterialTheme.colorScheme.surfaceContainerHighest
+                                    ) {
+                                        Column(modifier = Modifier.fillMaxWidth()) {
+                                            suggestions.forEachIndexed { idx, (pi, lbl) ->
+                                                val appInfo = pi.applicationInfo
+                                                val iconBmp = remember(pi.packageName) {
+                                                    runCatching {
+                                                        appInfo?.loadIcon(pm)?.toBitmap(64, 64)?.asImageBitmap()
+                                                    }.getOrNull()
+                                                }
+                                                Row(
+                                                    modifier = Modifier
+                                                        .fillMaxWidth()
+                                                        .clickable { addAppPackage = pi.packageName }
+                                                        .padding(horizontal = 12.dp, vertical = 8.dp),
+                                                    verticalAlignment = Alignment.CenterVertically,
+                                                    horizontalArrangement = Arrangement.spacedBy(10.dp)
+                                                ) {
+                                                    if (iconBmp != null) {
+                                                        Image(
+                                                            bitmap = iconBmp,
+                                                            contentDescription = null,
+                                                            modifier = Modifier
+                                                                .size(32.dp)
+                                                                .clip(RoundedCornerShape(8.dp))
+                                                        )
+                                                    }
+                                                    Column(modifier = Modifier.weight(1f)) {
+                                                        Text(
+                                                            text = lbl,
+                                                            style = MaterialTheme.typography.bodyMedium,
+                                                            fontWeight = FontWeight.SemiBold,
+                                                            maxLines = 1,
+                                                            overflow = TextOverflow.Ellipsis
+                                                        )
+                                                        Text(
+                                                            text = pi.packageName,
+                                                            style = MaterialTheme.typography.bodySmall,
+                                                            color = MaterialTheme.colorScheme.onSurfaceVariant,
+                                                            maxLines = 1,
+                                                            overflow = TextOverflow.Ellipsis
+                                                        )
+                                                    }
+                                                }
+                                                if (idx < suggestions.lastIndex) {
+                                                    HorizontalDivider(color = MaterialTheme.colorScheme.outlineVariant)
+                                                }
+                                            }
+                                        }
+                                    }
+                                }
+
+                                if (resolvedTarget != null) {
+                                    val (targetPi, targetLabel) = resolvedTarget
+                                    val targetAppInfo = targetPi.applicationInfo
+                                    val targetUid = targetAppInfo?.uid ?: -1
+                                    val targetIcon = remember(targetPi.packageName) {
+                                        runCatching {
+                                            targetAppInfo?.loadIcon(pm)?.toBitmap(80, 80)?.asImageBitmap()
+                                        }.getOrNull()
+                                    }
+                                    Surface(
+                                        modifier = Modifier.fillMaxWidth(),
+                                        shape = RoundedCornerShape(16.dp),
+                                        color = MaterialTheme.colorScheme.surfaceContainerHighest
+                                    ) {
+                                        Row(
+                                            modifier = Modifier
+                                                .fillMaxWidth()
+                                                .padding(12.dp),
+                                            verticalAlignment = Alignment.CenterVertically,
+                                            horizontalArrangement = Arrangement.spacedBy(12.dp)
+                                        ) {
+                                            if (targetIcon != null) {
+                                                Image(
+                                                    bitmap = targetIcon,
+                                                    contentDescription = null,
+                                                    modifier = Modifier
+                                                        .size(40.dp)
+                                                        .clip(RoundedCornerShape(10.dp))
+                                                )
+                                            }
+                                            Column(modifier = Modifier.weight(1f)) {
+                                                Text(
+                                                    text = targetLabel,
+                                                    style = MaterialTheme.typography.bodyLarge,
+                                                    fontWeight = FontWeight.SemiBold,
+                                                    maxLines = 1,
+                                                    overflow = TextOverflow.Ellipsis
+                                                )
+                                                Text(
+                                                    text = "${targetPi.packageName} • UID $targetUid",
+                                                    style = MaterialTheme.typography.bodySmall,
+                                                    color = MaterialTheme.colorScheme.onSurfaceVariant,
+                                                    maxLines = 1,
+                                                    overflow = TextOverflow.Ellipsis
+                                                )
+                                            }
+                                            if (alreadyInList && targetUid != -1) {
+                                                OutlinedButton(
+                                                    onClick = {
+                                                        runCatching {
+                                                            AuthorizationManager.revoke(targetPi.packageName, targetUid)
+                                                            AuthorizationManager.removeManualPackage(targetPi.packageName)
+                                                        }
+                                                        setResult(RESULT_OK)
+                                                        permissionTick.intValue++
+                                                        viewModel.load()
+                                                        Toast.makeText(
+                                                            this@ApplicationManagementActivity,
+                                                            R.string.app_management_add_app_removed,
+                                                            Toast.LENGTH_SHORT
+                                                        ).show()
+                                                        showAddAppDialog = false
+                                                        addAppPackage = ""
+                                                    }
+                                                ) {
+                                                    Text(stringResource(R.string.app_management_add_app_remove))
+                                                }
+                                            }
+                                        }
+                                    }
+                                }
+
+                                Text(
+                                    text = stringResource(R.string.app_management_add_app_access_mode),
+                                    style = MaterialTheme.typography.labelLarge,
+                                    color = MaterialTheme.colorScheme.onSurfaceVariant
+                                )
+
+                                Row(
+                                    modifier = Modifier
+                                        .fillMaxWidth()
+                                        .horizontalScroll(rememberScrollState()),
+                                    horizontalArrangement = Arrangement.spacedBy(8.dp)
+                                ) {
+                                    FilterChip(
+                                        selected = addAppAccessMode == AddAppAccessMode.ALLOW,
+                                        onClick = { addAppAccessMode = AddAppAccessMode.ALLOW },
+                                        label = { Text(stringResource(R.string.app_management_add_app_allow)) }
+                                    )
+                                    FilterChip(
+                                        selected = addAppAccessMode == AddAppAccessMode.SESSION_ONLY,
+                                        onClick = { addAppAccessMode = AddAppAccessMode.SESSION_ONLY },
+                                        label = { Text(stringResource(R.string.app_management_add_app_session)) }
+                                    )
+                                    FilterChip(
+                                        selected = addAppAccessMode == AddAppAccessMode.DENY,
+                                        onClick = { addAppAccessMode = AddAppAccessMode.DENY },
+                                        label = { Text(stringResource(R.string.app_management_add_app_deny)) }
+                                    )
+                                }
+
+                                Surface(
+                                    modifier = Modifier.fillMaxWidth(),
+                                    shape = RoundedCornerShape(16.dp),
+                                    color = MaterialTheme.colorScheme.surfaceContainerHighest
+                                ) {
+                                    Column(modifier = Modifier.fillMaxWidth()) {
+                                        Row(
+                                            modifier = Modifier
+                                                .fillMaxWidth()
+                                                .clickable(enabled = addAppAccessMode != AddAppAccessMode.DENY) {
+                                                    addAppGrantRuntime = !addAppGrantRuntime
+                                                }
+                                                .padding(horizontal = 12.dp, vertical = 10.dp),
+                                            verticalAlignment = Alignment.CenterVertically
+                                        ) {
+                                            Column(modifier = Modifier.weight(1f)) {
+                                                Text(
+                                                    text = stringResource(R.string.app_management_add_app_grant_runtime),
+                                                    style = MaterialTheme.typography.bodyMedium,
+                                                    fontWeight = FontWeight.Medium
+                                                )
+                                                Text(
+                                                    text = stringResource(
+                                                        R.string.app_management_add_app_grant_runtime_desc,
+                                                        dangerousPermCount
+                                                    ),
+                                                    style = MaterialTheme.typography.bodySmall,
+                                                    color = MaterialTheme.colorScheme.onSurfaceVariant
+                                                )
+                                            }
+                                            Spacer(modifier = Modifier.width(8.dp))
+                                            Switch(
+                                                checked = addAppGrantRuntime && addAppAccessMode != AddAppAccessMode.DENY,
+                                                onCheckedChange = { addAppGrantRuntime = it },
+                                                enabled = addAppAccessMode != AddAppAccessMode.DENY
+                                            )
+                                        }
+                                        HorizontalDivider(color = MaterialTheme.colorScheme.outlineVariant)
+                                        Row(
+                                            modifier = Modifier
+                                                .fillMaxWidth()
+                                                .clickable { addAppOpenDetails = !addAppOpenDetails }
+                                                .padding(horizontal = 12.dp, vertical = 10.dp),
+                                            verticalAlignment = Alignment.CenterVertically
+                                        ) {
+                                            Text(
+                                                text = stringResource(R.string.app_management_add_app_open_details),
+                                                style = MaterialTheme.typography.bodyMedium,
+                                                fontWeight = FontWeight.Medium,
+                                                modifier = Modifier.weight(1f)
+                                            )
+                                            Spacer(modifier = Modifier.width(8.dp))
+                                            Switch(
+                                                checked = addAppOpenDetails,
+                                                onCheckedChange = { addAppOpenDetails = it }
+                                            )
+                                        }
+                                    }
+                                }
                             }
                         },
                         confirmButton = {
-                            Row(horizontalArrangement = Arrangement.spacedBy(8.dp)) {
-                                Button(
-                                    onClick = {
-                                        applyAddApp(true)
-                                    }
-                                ) {
-                                    Text(stringResource(R.string.app_management_add_app_allow))
-                                }
-                                OutlinedButton(
-                                    onClick = {
-                                        applyAddApp(false)
-                                    }
-                                ) {
-                                    Text(stringResource(R.string.app_management_add_app_deny))
-                                }
+                            Button(
+                                onClick = { applyAddApp() },
+                                enabled = trimmedInput.isNotEmpty()
+                            ) {
+                                Text(stringResource(R.string.app_management_add_app_apply))
                             }
                         },
                         dismissButton = {

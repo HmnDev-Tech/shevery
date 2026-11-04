@@ -674,4 +674,22 @@
     <string name="home_shizuku_deprecated_banner_title">Shizuku API больше не используется</string>
     <string name="home_shizuku_deprecated_banner_body">Shevery перешёл на нативный Shevery API. Для поддержки приложений, работающих через Shizuku, используйте Compatibility Stubs — заглушки перенаправят привилегии и разрешения в Shevery.</string>
     <string name="home_shizuku_deprecated_banner_button">Compatibility Stubs</string>
+
+    <!-- Add App -->
+    <string name="app_management_add_app">Добавить приложение</string>
+    <string name="app_management_add_app_title">Добавить приложение</string>
+    <string name="app_management_add_app_hint">Имя приложения или пакет (напр. com.termux)</string>
+    <string name="app_management_add_app_invalid">Пакет не найден или приложение не установлено</string>
+    <string name="app_management_add_app_exists">Приложение уже в списке</string>
+    <string name="app_management_add_app_allow">Разрешить</string>
+    <string name="app_management_add_app_session">На сессию</string>
+    <string name="app_management_add_app_deny">Запретить</string>
+    <string name="app_management_add_app_apply">Применить</string>
+    <string name="app_management_add_app_remove">Удалить</string>
+    <string name="app_management_add_app_removed">Приложение удалено из списка</string>
+    <string name="app_management_add_app_access_mode">Режим доступа</string>
+    <string name="app_management_add_app_grant_runtime">Выдать runtime-разрешения</string>
+    <string name="app_management_add_app_grant_runtime_desc">Автоматически выдать опасные разрешения (%1$d)</string>
+    <string name="app_management_add_app_open_details">Открыть настройки привилегий после добавления</string>
+    <string name="app_management_add_app_added">Привилегии приложения обновлены</string>
 </resources>

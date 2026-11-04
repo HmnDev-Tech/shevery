@@ -125,12 +125,20 @@
     <string name="app_management_clear_filters">Reset filters</string>
     <string name="app_management_add_app">Add app</string>
     <string name="app_management_add_app_title">Add app manually</string>
-    <string name="app_management_add_app_hint">Enter package name (e.g. com.termux)</string>
+    <string name="app_management_add_app_hint">Search app name or enter package (e.g. com.termux)</string>
     <string name="app_management_add_app_invalid">Invalid package name or app not installed</string>
     <string name="app_management_add_app_exists">App is already in the list</string>
     <string name="app_management_add_app_allow">Allow</string>
+    <string name="app_management_add_app_session">Session only</string>
     <string name="app_management_add_app_deny">Deny</string>
-    <string name="app_management_add_app_added">App added</string>
+    <string name="app_management_add_app_apply">Apply</string>
+    <string name="app_management_add_app_remove">Remove</string>
+    <string name="app_management_add_app_removed">App removed from list</string>
+    <string name="app_management_add_app_access_mode">Access mode</string>
+    <string name="app_management_add_app_grant_runtime">Grant runtime permissions</string>
+    <string name="app_management_add_app_grant_runtime_desc">Automatically grant declared dangerous permissions (%1$d)</string>
+    <string name="app_management_add_app_open_details">Open privilege settings after adding</string>
+    <string name="app_management_add_app_added">App privileges updated</string>
 
     <!-- App detail (per-app privileges) -->
     <string name="app_detail_privileges_title">Shizuku Privileges</string>

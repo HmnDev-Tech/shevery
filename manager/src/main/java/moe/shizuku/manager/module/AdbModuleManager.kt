@@ -38,7 +38,8 @@ object AdbModuleManager {
     @Volatile
     private var servicesStartedForBinder = false
 
-    private val idRegex = Regex("[A-Za-z][A-Za-z0-9._-]{1,63}")
+    val idRegex = Regex("[A-Za-z][A-Za-z0-9._-]{1,63}")
+    fun isValidModuleId(id: String): Boolean = idRegex.matches(id)
     private val installMutexes = ConcurrentHashMap<String, Mutex>()
 
     // Process-wide scope so downloads, ZIP installs, and module scripts are never
