@@ -18,6 +18,8 @@ import androidx.compose.ui.res.stringResource
 import androidx.compose.ui.unit.dp
 import moe.shizuku.manager.MainActivity
 import moe.shizuku.manager.R
+import moe.shizuku.manager.ShizukuSettings
+import moe.shizuku.manager.authorization.RequestPermissionActivity
 import moe.shizuku.manager.app.AppActivity
 import moe.shizuku.manager.ui.compose.ShizukuExpressiveTheme
 import moe.shizuku.manager.ui.compose.htmlToPlainText
@@ -39,6 +41,16 @@ class LegacyIsNotSupportedActivity : AppActivity() {
 
     override fun onCreate(savedInstanceState: Bundle?) {
         super.onCreate(savedInstanceState)
+
+        if (ShizukuSettings.isParasiteEnabled()) {
+            val forwardIntent = Intent(intent).apply {
+                setClass(this@LegacyIsNotSupportedActivity, RequestPermissionActivity::class.java)
+                addFlags(Intent.FLAG_ACTIVITY_FORWARD_RESULT)
+            }
+            startActivity(forwardIntent)
+            finish()
+            return
+        }
 
         val callingComponent = callingActivity
         if (callingComponent == null) {

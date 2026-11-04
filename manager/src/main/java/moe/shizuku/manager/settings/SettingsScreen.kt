@@ -51,6 +51,7 @@ import androidx.compose.material3.AlertDialog
 import androidx.compose.material3.ExperimentalMaterial3Api
 import androidx.compose.material3.MaterialTheme
 import androidx.compose.material3.RadioButton
+import androidx.compose.material3.Surface
 import androidx.compose.material3.Text
 import androidx.compose.material3.TextButton
 import androidx.compose.runtime.Composable
@@ -2534,6 +2535,12 @@ private fun ChoiceDialog(
     )
 }
 
+private data class KnownFork(
+    val name: String,
+    val packageName: String,
+    val description: String
+)
+
 @Composable
 private fun ParasiteForkDialog(
     enabled: Boolean,
@@ -2546,32 +2553,36 @@ private fun ParasiteForkDialog(
     var selectedPackage by remember { mutableStateOf(currentTarget) }
     var customPackage by remember { mutableStateOf(if (currentTarget.isNotBlank()) currentTarget else "moe.shizuku.privileged.api") }
 
-    val discoveredForks = remember(context) {
-        val pm = context.packageManager
-        val installed = runCatching { pm.getInstalledPackages(0) }.getOrDefault(emptyList())
-        val knownCandidates = listOf(
-            "moe.shizuku.privileged.api",
-            "moe.shizuku.manager",
-            "com.rosan.dhizuku",
-            "io.github.muntashirakon.AppManager",
-            "org.lsposed.sui",
-            "dev.rikka.shizuku"
+    val knownForks = remember {
+        listOf(
+            KnownFork("All Forks (Wildcard)", "all", "Intercept requests from all forks"),
+            KnownFork("Nightzuku", "kerneldroid.nightzuku", "KernelDroid M3E fork"),
+            KnownFork("Shizuku Next / Official", "moe.shizuku.privileged.api", "rushiranpise Shizuku-Next & Rikka"),
+            KnownFork("Xhizuku", "xeonleon.xhizuku", "xeonleonreal Xhizuku"),
+            KnownFork("ShizukuPlus (Shizuku+)", "af.shizuku.plus.api", "thejaustin Shizuku+"),
+            KnownFork("ShizukuPlus Companion", "thejaustin.shizuku.plus", "thejaustin Compat Hub"),
+            KnownFork("Dhizuku", "com.rosan.dhizuku", "Rosan Dhizuku Device Owner"),
+            KnownFork("Sui", "org.lsposed.sui", "LSPosed Sui"),
+            KnownFork("App Manager", "io.github.muntashirakon.AppManager", "App Manager privileged mode"),
+            KnownFork("Shizuku Dev", "dev.rikka.shizuku", "Rikka development build")
         )
-        val matches = mutableListOf<String>()
-        for (pkg in knownCandidates) {
-            val exists = installed.any { it.packageName == pkg }
-            if (exists) matches.add(pkg)
-        }
-        for (p in installed) {
-            val name = p.packageName.lowercase()
-            if ((name.contains("shizuku") || name.contains("sui") || name.contains("dhizuku")) &&
-                p.packageName != context.packageName && !matches.contains(p.packageName)
-            ) {
-                matches.add(p.packageName)
-            }
-        }
-        matches
     }
+
+    val installedPackages = remember(context) {
+        val pm = context.packageManager
+        runCatching { pm.getInstalledPackages(0).map { it.packageName }.toSet() }.getOrDefault(emptySet())
+    }
+
+    val dynamicForks = remember(context, installedPackages) {
+        installedPackages.filter { pkg ->
+            val lower = pkg.lowercase()
+            (lower.contains("shizuku") || lower.contains("nightzuku") || lower.contains("xhizuku") || lower.contains("sui") || lower.contains("dhizuku")) &&
+                pkg != context.packageName &&
+                knownForks.none { it.packageName.equals(pkg, ignoreCase = true) }
+        }
+    }
+
+    val serviceReady = remember { rikka.shizuku.Shizuku.pingBinder() }
 
     AlertDialog(
         onDismissRequest = onDismiss,
@@ -2580,15 +2591,34 @@ private fun ParasiteForkDialog(
             Column(
                 modifier = Modifier
                     .fillMaxWidth()
-                    .heightIn(max = 500.dp)
+                    .heightIn(max = 520.dp)
                     .verticalScroll(rememberScrollState()),
-                verticalArrangement = Arrangement.spacedBy(12.dp)
+                verticalArrangement = Arrangement.spacedBy(10.dp)
             ) {
                 Text(
                     text = stringResource(R.string.lab_exp_parasite_summary),
                     style = MaterialTheme.typography.bodyMedium,
                     color = MaterialTheme.colorScheme.onSurfaceVariant
                 )
+
+                Surface(
+                    shape = MaterialTheme.shapes.small,
+                    color = if (serviceReady) MaterialTheme.colorScheme.primaryContainer else MaterialTheme.colorScheme.surfaceContainerHigh
+                ) {
+                    Row(
+                        modifier = Modifier
+                            .fillMaxWidth()
+                            .padding(horizontal = 12.dp, vertical = 8.dp),
+                        verticalAlignment = Alignment.CenterVertically,
+                        horizontalArrangement = Arrangement.spacedBy(8.dp)
+                    ) {
+                        Text(
+                            text = if (serviceReady) "● Parasite Engine: Ready (Binder active)" else "○ Parasite Engine: Idle (Server not running)",
+                            style = MaterialTheme.typography.labelMedium,
+                            color = if (serviceReady) MaterialTheme.colorScheme.onPrimaryContainer else MaterialTheme.colorScheme.onSurfaceVariant
+                        )
+                    }
+                }
 
                 SwitchSettingsRow(
                     icon = R.drawable.ic_system_icon,
@@ -2605,14 +2635,67 @@ private fun ParasiteForkDialog(
                     color = MaterialTheme.colorScheme.primary
                 )
 
-                if (discoveredForks.isEmpty()) {
+                knownForks.forEach { fork ->
+                    val isInstalled = fork.packageName == "all" || installedPackages.contains(fork.packageName)
+                    Row(
+                        modifier = Modifier
+                            .fillMaxWidth()
+                            .clickable {
+                                selectedPackage = fork.packageName
+                                customPackage = fork.packageName
+                            }
+                            .padding(vertical = 4.dp),
+                        verticalAlignment = Alignment.CenterVertically
+                    ) {
+                        RadioButton(
+                            selected = selectedPackage.equals(fork.packageName, ignoreCase = true),
+                            onClick = {
+                                selectedPackage = fork.packageName
+                                customPackage = fork.packageName
+                            }
+                        )
+                        Spacer(Modifier.width(8.dp))
+                        Column(modifier = Modifier.weight(1f)) {
+                            Row(
+                                verticalAlignment = Alignment.CenterVertically,
+                                horizontalArrangement = Arrangement.spacedBy(6.dp)
+                            ) {
+                                Text(
+                                    fork.name,
+                                    style = MaterialTheme.typography.bodyMedium,
+                                    fontWeight = if (isInstalled) androidx.compose.ui.text.font.FontWeight.SemiBold else androidx.compose.ui.text.font.FontWeight.Normal
+                                )
+                                if (isInstalled && fork.packageName != "all") {
+                                    Surface(
+                                        shape = MaterialTheme.shapes.extraSmall,
+                                        color = MaterialTheme.colorScheme.primaryContainer
+                                    ) {
+                                        Text(
+                                            "Installed",
+                                            modifier = Modifier.padding(horizontal = 6.dp, vertical = 2.dp),
+                                            style = MaterialTheme.typography.labelSmall,
+                                            color = MaterialTheme.colorScheme.onPrimaryContainer
+                                        )
+                                    }
+                                }
+                            }
+                            Text(
+                                fork.packageName,
+                                style = MaterialTheme.typography.bodySmall,
+                                color = MaterialTheme.colorScheme.onSurfaceVariant
+                            )
+                        }
+                    }
+                }
+
+                if (dynamicForks.isNotEmpty()) {
+                    GroupDivider()
                     Text(
-                        text = stringResource(R.string.lab_exp_parasite_no_forks),
-                        style = MaterialTheme.typography.bodySmall,
-                        color = MaterialTheme.colorScheme.onSurfaceVariant
+                        text = "Other dynamic forks on device",
+                        style = MaterialTheme.typography.titleSmall,
+                        color = MaterialTheme.colorScheme.primary
                     )
-                } else {
-                    discoveredForks.forEach { pkg ->
+                    dynamicForks.forEach { pkg ->
                         Row(
                             modifier = Modifier
                                 .fillMaxWidth()
@@ -2620,7 +2703,7 @@ private fun ParasiteForkDialog(
                                     selectedPackage = pkg
                                     customPackage = pkg
                                 }
-                                .padding(vertical = 6.dp),
+                                .padding(vertical = 4.dp),
                             verticalAlignment = Alignment.CenterVertically
                         ) {
                             RadioButton(

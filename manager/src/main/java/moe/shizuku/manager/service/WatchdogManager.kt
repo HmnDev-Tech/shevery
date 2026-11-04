@@ -233,9 +233,7 @@ object WatchdogManager {
             Shizuku.exit()
             null
         } catch (e: Throwable) {
-            logd("Watchdog stop failed: ${e.message}")
-            expectingDeath = false
-            ShizukuStateMachine.update()
+            logd("Watchdog stop via Shizuku.exit() failed: ${e.message}")
             e
         }
     }
@@ -246,15 +244,49 @@ object WatchdogManager {
         timeoutMs: Long = 3_000L
     ): StopResult {
         val exitError = requestStopServer(context, userInitiated)
-        if (exitError != null) {
+        var stopped = ShizukuStateMachine.awaitStopped(1_500L)
+        var fallbackAttempted = false
+
+        if (!stopped || Shizuku.pingBinder()) {
+            fallbackAttempted = true
+            logi("Server did not stop cleanly, executing fallback kill...")
+
+            try {
+                if (Shizuku.pingBinder()) {
+                    val service = moe.shizuku.server.IShizukuService.Stub.asInterface(Shizuku.getBinder())
+                    service?.newProcess(
+                        arrayOf("sh", "-c", "killall -9 shizuku_server libshizuku.so 2>/dev/null; pkill -9 -f shizuku_server 2>/dev/null; pkill -9 -f libshizuku.so 2>/dev/null"),
+                        null,
+                        null
+                    )
+                }
+            } catch (t: Throwable) {
+                logd("Fallback Shizuku shell kill failed: ${t.message}")
+            }
+
+            try {
+                if (Shell.getShell().isRoot) {
+                    Shell.cmd("killall -9 shizuku_server libshizuku.so 2>/dev/null; pkill -9 -f shizuku_server 2>/dev/null; pkill -9 -f libshizuku.so 2>/dev/null").exec()
+                }
+            } catch (t: Throwable) {
+                logd("Fallback root kill failed: ${t.message}")
+            }
+
+            stopped = ShizukuStateMachine.awaitStopped(timeoutMs)
+        }
+
+        expectingDeath = false
+        if (stopped) {
+            return StopResult(exitRequested = true, stopped = true, fallbackAttempted = fallbackAttempted)
+        } else {
+            ShizukuStateMachine.update()
             return StopResult(
-                exitRequested = false,
-                stopped = !Shizuku.pingBinder(),
-                error = exitError.message ?: exitError.javaClass.simpleName
+                exitRequested = true,
+                stopped = false,
+                fallbackAttempted = fallbackAttempted,
+                error = exitError?.message ?: "Server process refused to stop"
             )
         }
-        val stopped = ShizukuStateMachine.awaitStopped(timeoutMs)
-        return StopResult(exitRequested = true, stopped = stopped)
     }
 
     private fun restartRoot() {

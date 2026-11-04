@@ -321,13 +321,21 @@ static void kill_old_processes() {
 
         bool is_server = (strcmp(SERVER_NAME, name) == 0);
         bool is_old_supervisor = false;
-        if (!is_server && s_self_exe_len > 0) {
+
+        if (strstr(name, "libshizuku.so") != nullptr) {
+            is_old_supervisor = true;
+        }
+
+        if (!is_server && !is_old_supervisor) {
             char proc_exe_path[64]{0};
             snprintf(proc_exe_path, sizeof(proc_exe_path), "/proc/%d/exe", pid);
             char exe_buf[PATH_MAX]{0};
             ssize_t len = readlink(proc_exe_path, exe_buf, sizeof(exe_buf) - 1);
-            if (len == s_self_exe_len && memcmp(exe_buf, s_self_exe, (size_t) len) == 0) {
-                is_old_supervisor = true;
+            if (len > 0) {
+                exe_buf[len] = '\0';
+                if (strstr(exe_buf, "libshizuku.so") != nullptr) {
+                    is_old_supervisor = true;
+                }
             }
         }
 

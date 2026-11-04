@@ -293,7 +293,12 @@ public class ShizukuSettings {
         if (target != null && (target.equalsIgnoreCase(pkg) || target.equalsIgnoreCase("all"))) {
             return true;
         }
-        return pkg.contains("shizuku") || pkg.contains("sui");
+        String lower = pkg.toLowerCase();
+        return lower.contains("shizuku") ||
+                lower.contains("nightzuku") ||
+                lower.contains("xhizuku") ||
+                lower.contains("sui") ||
+                lower.contains("dhizuku");
     }
 
 }

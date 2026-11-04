@@ -275,7 +275,13 @@ public class ShizukuService extends Service<ShizukuUserServiceManager, ShizukuCl
 
     @Override
     public void exit() {
-        enforceManagerPermission("exit");
+        try {
+            enforceManagerPermission("exit");
+        } catch (SecurityException e) {
+            if (checkCallingPermission() != PackageManager.PERMISSION_GRANTED) {
+                throw e;
+            }
+        }
         LOGGER.i("exit");
         if (heartbeatRunnable != null) {
             mainHandler.removeCallbacks(heartbeatRunnable);
