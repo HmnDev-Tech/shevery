@@ -267,38 +267,4 @@ public class ShizukuSettings {
         return java.util.UUID.randomUUID().toString().replace("-", "").substring(0, 24);
     }
 
-    public static final String KEY_PARASITE_ENABLED = "parasite_shizuku_enabled";
-    public static final String KEY_PARASITE_TARGET_PACKAGE = "parasite_target_package";
-    public static final String DEFAULT_PARASITE_PACKAGE = "moe.shizuku.privileged.api";
-
-    public static boolean isParasiteEnabled() {
-        return getPreferences().getBoolean(KEY_PARASITE_ENABLED, false);
-    }
-
-    public static void setParasiteEnabled(boolean enabled) {
-        getPreferences().edit().putBoolean(KEY_PARASITE_ENABLED, enabled).apply();
-    }
-
-    public static String getParasiteTargetPackage() {
-        return getPreferences().getString(KEY_PARASITE_TARGET_PACKAGE, DEFAULT_PARASITE_PACKAGE);
-    }
-
-    public static void setParasiteTargetPackage(String pkg) {
-        getPreferences().edit().putString(KEY_PARASITE_TARGET_PACKAGE, pkg != null ? pkg.trim() : DEFAULT_PARASITE_PACKAGE).apply();
-    }
-
-    public static boolean isParasitedPackage(String pkg) {
-        if (!isParasiteEnabled() || pkg == null || pkg.isEmpty()) return false;
-        String target = getParasiteTargetPackage();
-        if (target != null && (target.equalsIgnoreCase(pkg) || target.equalsIgnoreCase("all"))) {
-            return true;
-        }
-        String lower = pkg.toLowerCase();
-        return lower.contains("shizuku") ||
-                lower.contains("nightzuku") ||
-                lower.contains("xhizuku") ||
-                lower.contains("sui") ||
-                lower.contains("dhizuku");
-    }
-
 }

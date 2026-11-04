@@ -83,9 +83,6 @@ class RequestPermissionActivity : AppActivity() {
      * relay a client UID/package, because the forwarder itself is the launch caller.
      */
     private fun isTrustedForwarder(packageName: String): Boolean {
-        if (ShizukuSettings.isParasiteEnabled() && ShizukuSettings.isParasitedPackage(packageName)) {
-            return true
-        }
         if (packageName != "moe.shizuku.privileged.api" && packageName != "com.rosan.dhizuku") {
             return false
         }

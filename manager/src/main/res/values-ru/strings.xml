@@ -347,16 +347,6 @@
     <string name="modules_filter_newest"><![CDATA[Новые]]></string>
     <string name="modules_filter_oldest"><![CDATA[Старые]]></string>
     <string name="modules_catalog_long_non_updating"><![CDATA[Давно не обновлялся]]></string>
-    <string name="lab_exp_parasite_title"><![CDATA[Паразитирование форков Shizuku]]></string>
-    <string name="lab_exp_parasite_summary"><![CDATA[Перенаправлять запросы разрешений из других установленных форков Shizuku в Shevery]]></string>
-    <string name="lab_exp_parasite_dialog_title"><![CDATA[Паразитирование форка Shizuku]]></string>
-    <string name="lab_exp_parasite_enable"><![CDATA[Включить паразитирование]]></string>
-    <string name="lab_exp_parasite_select_package"><![CDATA[Целевой пакет Shizuku]]></string>
-    <string name="lab_exp_parasite_status_enabled"><![CDATA[Активно: перехват с %s]]></string>
-    <string name="lab_exp_parasite_status_disabled"><![CDATA[Отключено]]></string>
-    <string name="lab_exp_parasite_custom_package"><![CDATA[Произвольное имя пакета]]></string>
-    <string name="lab_exp_parasite_detected_forks"><![CDATA[Обнаруженные форки Shizuku / Sui]]></string>
-    <string name="lab_exp_parasite_no_forks"><![CDATA[Другие форки Shizuku не найдены]]></string>
     <string name="home_local_network_title"><![CDATA[Доступ к локальной сети]]></string>
     <string name="home_local_network_description"><![CDATA[Для беспроводной отладки требуется %1$s на этой версии Android.]]></string>
     <string name="home_local_network_granted"><![CDATA[%1$s предоставлено.]]></string>

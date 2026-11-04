@@ -576,16 +576,6 @@ Wi-Fi is required for the first restart because Shevery must connect to the curr
     <string name="modules_filter_newest">Newest</string>
     <string name="modules_filter_oldest">Oldest</string>
     <string name="modules_catalog_long_non_updating">Long non-updating</string>
-    <string name="lab_exp_parasite_title">Shizuku Fork Parasite</string>
-    <string name="lab_exp_parasite_summary">Redirect permission requests from other installed Shizuku forks into Shevery</string>
-    <string name="lab_exp_parasite_dialog_title">Parasitize Shizuku Fork</string>
-    <string name="lab_exp_parasite_enable">Enable parasite mode</string>
-    <string name="lab_exp_parasite_select_package">Target Shizuku package</string>
-    <string name="lab_exp_parasite_status_enabled">Active: redirecting from %s</string>
-    <string name="lab_exp_parasite_status_disabled">Disabled</string>
-    <string name="lab_exp_parasite_custom_package">Custom package name</string>
-    <string name="lab_exp_parasite_detected_forks">Detected Shizuku / Sui installations</string>
-    <string name="lab_exp_parasite_no_forks">No other Shizuku forks detected</string>
 
     <!-- TV Status -->
     <string name="tv_status_active">ACTIVE</string>
