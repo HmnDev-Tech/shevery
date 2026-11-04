@@ -11,7 +11,9 @@ import android.Manifest
 import android.app.Activity
 import android.content.ClipData
 import android.content.ClipboardManager
+import android.content.BroadcastReceiver
 import android.content.Context
+import android.content.IntentFilter
 import android.content.ContextWrapper
 import android.content.Intent
 import android.content.pm.PackageManager
@@ -1045,6 +1047,7 @@ abstract class HomeActivity : AppActivity() {
         if (ModuleSettings.isAutoRefreshOnResume()) {
             checkServerStatus()
         }
+        StubManager.notifyStubStateChanged()
         permissionRefreshTick.intValue++
     }
 
@@ -1301,6 +1304,37 @@ private fun HomeScreen(
     } else {
         null
     }
+    val stubTick by StubManager.stubStateTick.collectAsState()
+    var packageChangeTick by remember { mutableIntStateOf(0) }
+    DisposableEffect(context) {
+        val pkgReceiver = object : BroadcastReceiver() {
+            override fun onReceive(c: Context?, intent: Intent?) {
+                val pkg = intent?.data?.schemeSpecificPart
+                if (pkg == null || pkg == StubManager.STUB_PACKAGE) {
+                    packageChangeTick++
+                    StubManager.notifyStubStateChanged()
+                }
+            }
+        }
+        val filter = IntentFilter().apply {
+            addAction(Intent.ACTION_PACKAGE_ADDED)
+            addAction(Intent.ACTION_PACKAGE_REMOVED)
+            addAction(Intent.ACTION_PACKAGE_REPLACED)
+            addDataScheme("package")
+        }
+        ContextCompat.registerReceiver(
+            context,
+            pkgReceiver,
+            filter,
+            ContextCompat.RECEIVER_EXPORTED
+        )
+        onDispose {
+            runCatching { context.unregisterReceiver(pkgReceiver) }
+        }
+    }
+    val shizukuStubInstalled = remember(context, stubTick, packageChangeTick, localNetworkPermissionState, running) {
+        StubManager.isInstalled(context, StubManager.StubType.SHIZUKU)
+    }
     val scope = rememberCoroutineScope()
     var isRefreshing by remember { mutableStateOf(false) }
     var showAutomationSheet by remember { mutableStateOf(false) }
@@ -1427,22 +1461,24 @@ private fun HomeScreen(
                 )
             }
 
-            item {
-                HomeCard(
-                    icon = R.drawable.ic_warning_24,
-                    title = stringResource(R.string.home_shizuku_deprecated_banner_title),
-                    body = stringResource(R.string.home_shizuku_deprecated_banner_body)
-                ) {
-                    HomeButtons(
-                        listOf(
-                            HomeButtonSpec(
-                                label = R.string.home_shizuku_deprecated_banner_button,
-                                icon = R.drawable.ic_system_icon,
-                                primary = true,
-                                onClick = onOpenCompatStubs
+            if (!shizukuStubInstalled) {
+                item {
+                    HomeCard(
+                        icon = R.drawable.ic_warning_24,
+                        title = stringResource(R.string.home_shizuku_deprecated_banner_title),
+                        body = stringResource(R.string.home_shizuku_deprecated_banner_body)
+                    ) {
+                        HomeButtons(
+                            listOf(
+                                HomeButtonSpec(
+                                    label = R.string.home_shizuku_deprecated_banner_button,
+                                    icon = R.drawable.ic_system_icon,
+                                    primary = true,
+                                    onClick = onOpenCompatStubs
+                                )
                             )
                         )
-                    )
+                    }
                 }
             }
 

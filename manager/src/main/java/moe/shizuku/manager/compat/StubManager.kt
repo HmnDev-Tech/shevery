@@ -14,6 +14,9 @@ import androidx.annotation.StringRes
 import androidx.core.content.ContextCompat
 import com.topjohnwu.superuser.Shell
 import kotlinx.coroutines.Dispatchers
+import kotlinx.coroutines.flow.MutableStateFlow
+import kotlinx.coroutines.flow.StateFlow
+import kotlinx.coroutines.flow.asStateFlow
 import kotlinx.coroutines.delay
 import kotlinx.coroutines.withContext
 import moe.shizuku.manager.R
@@ -59,6 +62,13 @@ object StubManager {
     const val STUB_PACKAGE = "moe.shizuku.privileged.api"
     const val DHIZUKU_STUB_PACKAGE = "com.rosan.dhizuku"
 
+    private val _stubStateTick = MutableStateFlow(0)
+    val stubStateTick: StateFlow<Int> = _stubStateTick.asStateFlow()
+
+    fun notifyStubStateChanged() {
+        _stubStateTick.value++
+    }
+
     private const val CHANNEL_DEVICE_OWNER = "Device Owner"
     private const val CHANNEL_SERVER = "Shevery"
     private const val CHANNEL_ROOT = "root"
@@ -99,6 +109,7 @@ object StubManager {
             if (DeviceOwnerManager.isOwner(context)) {
                 val doResult = runViaDeviceOwner(context, privateApk)
                 if (doResult.ok && pollInstalled(context, type, wantInstalled = true)) {
+                    notifyStubStateChanged()
                     return@withContext doResult
                 }
                 lastFailure = doResult
@@ -130,6 +141,7 @@ object StubManager {
                     else -> Result(false, script.channel, "unknown channel")
                 }
                 if (result.ok && pollInstalled(context, type, wantInstalled = true)) {
+                    notifyStubStateChanged()
                     return@withContext Result(true, result.channel)
                 }
                 if (!result.ok) {
@@ -153,6 +165,7 @@ object StubManager {
             if (DeviceOwnerManager.isOwner(context)) {
                 val doResult = uninstallViaDeviceOwner(context, type)
                 if (doResult.ok && pollInstalled(context, type, wantInstalled = false)) {
+                    notifyStubStateChanged()
                     return@withContext doResult
                 }
                 lastFailure = doResult
@@ -168,6 +181,7 @@ object StubManager {
                     else -> runViaAdb(ShellScript(channel, script))
                 }
                 if (result.ok && pollInstalled(context, type, wantInstalled = false)) {
+                    notifyStubStateChanged()
                     return@withContext Result(true, result.channel)
                 }
                 lastFailure = result
