@@ -353,6 +353,17 @@ class ApplicationManagementActivity : AppActivity() {
                 permissionOverrides = permissionOverrides + (key to AppPermissionState(granted, isOneTime))
             }
 
+            fun updatePermissionStates(updates: Map<String, AppPermissionState>) {
+                if (updates.isEmpty()) return
+                val isPreV11 = Shizuku.isPreV11()
+                val updatedOverrides = permissionOverrides.toMutableMap()
+                updates.forEach { (packageKey, state) ->
+                    val key = if (isPreV11) packageKey else "uid:${packageKey.substringAfterLast(':')}"
+                    updatedOverrides[key] = state
+                }
+                permissionOverrides = updatedOverrides
+            }
+
             fun showPermissionUpdateFailure() {
                 Toast.makeText(
                     this@ApplicationManagementActivity,
@@ -517,10 +528,7 @@ class ApplicationManagementActivity : AppActivity() {
                                 changed to failures
                             }
                             if (updates.isNotEmpty()) {
-                                updates.forEach { (key, state) ->
-                                    val uid = key.substringAfterLast(':').toInt()
-                                    updatePermissionState(key.substringBeforeLast(':'), uid, state.granted, state.isOneTime)
-                                }
+                                updatePermissionStates(updates)
                                 setResult(RESULT_OK)
                             }
                             if (failedCount > 0) {
