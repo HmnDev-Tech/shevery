@@ -346,7 +346,7 @@
     <string name="modules_filter_recently_updated"><![CDATA[Недавно обновлённые]]></string>
     <string name="modules_filter_newest"><![CDATA[Новые]]></string>
     <string name="modules_filter_oldest"><![CDATA[Старые]]></string>
-    <string name="modules_catalog_long_non_updating"><![CDATA[Давно не обновлялся]]></string>
+    <string name="modules_catalog_long_non_updating"><![CDATA[Outdated]]></string>
     <string name="home_local_network_title"><![CDATA[Доступ к локальной сети]]></string>
     <string name="home_local_network_description"><![CDATA[Для беспроводной отладки требуется %1$s на этой версии Android.]]></string>
     <string name="home_local_network_granted"><![CDATA[%1$s предоставлено.]]></string>

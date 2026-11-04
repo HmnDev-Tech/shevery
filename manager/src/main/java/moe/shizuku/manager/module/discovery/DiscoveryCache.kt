@@ -31,7 +31,9 @@ class DiscoveryCache(private val prefs: SharedPreferences) {
 
     fun isStale(): Boolean {
         val timestamp = prefs.getLong(KEY_TIMESTAMP, 0L)
-        return System.currentTimeMillis() - timestamp > TTL_MS
+        if (System.currentTimeMillis() - timestamp > TTL_MS) return true
+        val cached = load()
+        return cached.isEmpty() || cached.any { it.createdEpochMillis <= 0L || it.updatedEpochMillis <= 0L }
     }
 
     fun clear() {
@@ -39,8 +41,8 @@ class DiscoveryCache(private val prefs: SharedPreferences) {
     }
 
     companion object {
-        private const val KEY_MODULES = "discovery_cache_modules"
-        private const val KEY_TIMESTAMP = "discovery_cache_timestamp"
+        private const val KEY_MODULES = "discovery_cache_modules_v2"
+        private const val KEY_TIMESTAMP = "discovery_cache_timestamp_v2"
         private const val TTL_MS = 6 * 60 * 60 * 1000L
     }
 }

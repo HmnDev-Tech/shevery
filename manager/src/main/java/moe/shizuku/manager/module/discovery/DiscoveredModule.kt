@@ -23,37 +23,51 @@ data class DiscoveredModule(
     val isValid: Boolean,
     val isOfficial: Boolean = false,
     val createdAt: String? = null,
-    val pushedAt: String? = null
+    val pushedAt: String? = null,
+    val updatedAt: String? = null
 ) {
     val createdEpochMillis: Long
-        get() = parseIsoTimestamp(createdAt)
+        get() = parseIsoTimestamp(createdAt).takeIf { it > 0L }
+            ?: parseIsoTimestamp(pushedAt).takeIf { it > 0L }
+            ?: parseIsoTimestamp(updatedAt)
 
     val updatedEpochMillis: Long
-        get() = parseIsoTimestamp(pushedAt)
+        get() = parseIsoTimestamp(pushedAt).takeIf { it > 0L }
+            ?: parseIsoTimestamp(updatedAt).takeIf { it > 0L }
+            ?: parseIsoTimestamp(createdAt)
 
-    fun isLongNonUpdating(): Boolean {
+    fun isOutdated(): Boolean {
         val updated = updatedEpochMillis
         if (updated <= 0L) return false
         val diff = System.currentTimeMillis() - updated
         val twentyDaysMs = 20L * 24 * 60 * 60 * 1000L
-        return diff > twentyDaysMs
+        return diff >= twentyDaysMs
     }
+
+    fun isLongNonUpdating(): Boolean = isOutdated()
 
     companion object {
         fun parseIsoTimestamp(isoString: String?): Long {
             if (isoString.isNullOrBlank()) return 0L
-            return try {
-                val sdf = SimpleDateFormat("yyyy-MM-dd'T'HH:mm:ss'Z'", Locale.US)
-                sdf.timeZone = TimeZone.getTimeZone("UTC")
-                sdf.parse(isoString)?.time ?: 0L
-            } catch (_: Exception) {
+            val trimmed = isoString.trim()
+            val patterns = arrayOf(
+                "yyyy-MM-dd'T'HH:mm:ss'Z'",
+                "yyyy-MM-dd'T'HH:mm:ss.SSS'Z'",
+                "yyyy-MM-dd'T'HH:mm:ssXXX",
+                "yyyy-MM-dd'T'HH:mm:ssZ"
+            )
+            for (pattern in patterns) {
                 try {
-                    val sdf = SimpleDateFormat("yyyy-MM-dd'T'HH:mm:ssXXX", Locale.US)
-                    sdf.parse(isoString)?.time ?: 0L
+                    val sdf = SimpleDateFormat(pattern, Locale.US)
+                    if (pattern.endsWith("'Z'")) {
+                        sdf.timeZone = TimeZone.getTimeZone("UTC")
+                    }
+                    val parsed = sdf.parse(trimmed)?.time
+                    if (parsed != null && parsed > 0L) return parsed
                 } catch (_: Exception) {
-                    0L
                 }
             }
+            return 0L
         }
     }
 }

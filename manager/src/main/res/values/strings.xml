@@ -575,7 +575,7 @@ Wi-Fi is required for the first restart because Shevery must connect to the curr
     <string name="modules_filter_recently_updated">Recently Updated</string>
     <string name="modules_filter_newest">Newest</string>
     <string name="modules_filter_oldest">Oldest</string>
-    <string name="modules_catalog_long_non_updating">Long non-updating</string>
+    <string name="modules_catalog_long_non_updating" translatable="false">Outdated</string>
 
     <!-- TV Status -->
     <string name="tv_status_active">ACTIVE</string>

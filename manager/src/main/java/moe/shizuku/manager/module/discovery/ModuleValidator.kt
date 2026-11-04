@@ -54,7 +54,7 @@ class ModuleValidator(private val client: OkHttpClient, private val rateLimit: R
             if (item.type != "file" || item.downloadUrl == null) return null
 
             val propContent = fetchRawContent(item.downloadUrl, authHeader) ?: return null
-            return parseModuleProp(propContent, owner, repo, subPath)
+            return parseModuleProp(propContent, owner, repo, subPath, authHeader)
         }
     }
 
@@ -168,11 +168,39 @@ class ModuleValidator(private val client: OkHttpClient, private val rateLimit: R
         }
     }
 
+    private fun fetchLatestSubPathCommitDate(
+        owner: String,
+        repo: String,
+        subPath: String,
+        authHeader: String? = null
+    ): String? {
+        if (rateLimit.isExhausted()) return null
+        val url = "https://api.github.com/repos/$owner/$repo/commits?path=$subPath&per_page=1"
+        val builder = Request.Builder()
+            .url(url)
+            .header("Accept", "application/vnd.github+json")
+            .header("X-GitHub-Api-Version", "2022-11-28")
+        authHeader?.let { builder.header("Authorization", it) }
+        return try {
+            client.newCall(builder.build()).execute().use { resp ->
+                rateLimit.update(resp.headers)
+                if (!resp.isSuccessful) return null
+                val body = resp.body?.string() ?: return null
+                val commits = json.decodeFromString<List<GitHubCommitItem>>(body)
+                val first = commits.firstOrNull()?.commit
+                first?.committer?.date ?: first?.author?.date
+            }
+        } catch (_: Exception) {
+            null
+        }
+    }
+
     private fun parseModuleProp(
         raw: String,
         owner: String,
         repo: String,
-        subPath: String?
+        subPath: String?,
+        authHeader: String? = null
     ): DiscoveredModule? {
         val props = raw.lineSequence()
             .map { it.trim() }
@@ -185,6 +213,10 @@ class ModuleValidator(private val client: OkHttpClient, private val rateLimit: R
         val id = props["id"]?.takeIf { it.isNotBlank() } ?: return null
         if (!ID_REGEX.matches(id)) return null
         val name = props["name"]?.takeIf { it.isNotBlank() } ?: id
+
+        val subPathCommitDate = if (!subPath.isNullOrBlank()) {
+            fetchLatestSubPathCommitDate(owner, repo, subPath, authHeader)
+        } else null
 
         return DiscoveredModule(
             repoFullName = "$owner/$repo",
@@ -200,7 +232,8 @@ class ModuleValidator(private val client: OkHttpClient, private val rateLimit: R
             ownerAvatar = "",
             subPath = subPath,
             lastChecked = System.currentTimeMillis(),
-            isValid = true
+            isValid = true,
+            pushedAt = subPathCommitDate
         )
     }
 
