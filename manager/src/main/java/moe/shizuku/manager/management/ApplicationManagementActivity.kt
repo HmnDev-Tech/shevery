@@ -411,24 +411,32 @@ class ApplicationManagementActivity : AppActivity() {
 
                         val userId = UserHandleCompat.getUserId(uid)
                         val grantRuntime = addAppGrantRuntime
-                        permissionMutex.withLock { withContext(Dispatchers.IO) {
-                            AuthorizationManager.addManualPackage(pkg)
-                            when (mode) {
-                                AddAppAccessMode.ALLOW -> AuthorizationManager.grant(pkg, uid)
-                                AddAppAccessMode.SESSION_ONLY -> AuthorizationManager.grantSessionOnly(pkg, uid, true)
-                                AddAppAccessMode.DENY -> AuthorizationManager.deny(pkg, uid)
-                            }
-                            if (grantRuntime && mode != AddAppAccessMode.DENY && targetPi != null) {
-                                targetPi.requestedPermissions.orEmpty().forEach { perm ->
-                                    val permInfo = runCatching { packageManager.getPermissionInfo(perm, 0) }.getOrNull()
-                                    if (permInfo != null && (permInfo.protectionLevel and 0xf) == PermissionInfo.PROTECTION_DANGEROUS) {
-                                        runCatching {
-                                            ShizukuSystemApis.grantRuntimePermission(pkg, perm, userId)
+                        permissionMutex.withLock {
+                            withContext(Dispatchers.IO) {
+                                AuthorizationManager.addManualPackage(pkg)
+                                when (mode) {
+                                    AddAppAccessMode.ALLOW -> AuthorizationManager.grant(pkg, uid)
+                                    AddAppAccessMode.SESSION_ONLY -> AuthorizationManager.grantSessionOnly(pkg, uid, true)
+                                    AddAppAccessMode.DENY -> AuthorizationManager.deny(pkg, uid)
+                                }
+                                if (grantRuntime && mode != AddAppAccessMode.DENY && targetPi != null) {
+                                    targetPi.requestedPermissions.orEmpty().forEach { perm ->
+                                        val permInfo = runCatching { packageManager.getPermissionInfo(perm, 0) }.getOrNull()
+                                        if (permInfo != null && (permInfo.protectionLevel and 0xf) == PermissionInfo.PROTECTION_DANGEROUS) {
+                                            runCatching {
+                                                ShizukuSystemApis.grantRuntimePermission(pkg, perm, userId)
+                                            }
                                         }
                                     }
                                 }
                             }
-                        } }
+                            updatePermissionState(
+                                pkg,
+                                uid,
+                                granted = mode != AddAppAccessMode.DENY,
+                                isOneTime = mode == AddAppAccessMode.SESSION_ONLY
+                            )
+                        }
                         val shouldOpenDetails = addAppOpenDetails
                         setResult(RESULT_OK)
                         permissionTick.intValue++
