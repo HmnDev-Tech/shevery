@@ -1148,9 +1148,10 @@ class ApplicationManagementActivity : AppActivity() {
                             }
                         }
                     }
+                    val resolvedTargetValue = resolvedTarget
 
-                    val dangerousPermCount by produceState(0, resolvedTarget) {
-                        val pi = resolvedTarget?.first
+                    val dangerousPermCount by produceState(0, resolvedTargetValue) {
+                        val pi = resolvedTargetValue?.first
                         value = if (pi == null) {
                             0
                         } else {
@@ -1163,8 +1164,8 @@ class ApplicationManagementActivity : AppActivity() {
                         }
                     }
 
-                    val alreadyInList = remember(resolvedTarget, appEntries) {
-                        val pkgName = resolvedTarget?.first?.packageName ?: return@remember false
+                    val alreadyInList = remember(resolvedTargetValue, appEntries) {
+                        val pkgName = resolvedTargetValue?.first?.packageName ?: return@remember false
                         appEntries.any { it.packageInfo.packageName == pkgName } ||
                             AuthorizationManager.isManualPackage(pkgName)
                     }
@@ -1233,7 +1234,7 @@ class ApplicationManagementActivity : AppActivity() {
                                     )
                                 )
 
-                                if (suggestions.isNotEmpty() && (resolvedTarget == null || !resolvedTarget.first.packageName.equals(trimmedInput, ignoreCase = true))) {
+                                if (suggestions.isNotEmpty() && (resolvedTargetValue == null || !resolvedTargetValue.first.packageName.equals(trimmedInput, ignoreCase = true))) {
                                     Surface(
                                         modifier = Modifier.fillMaxWidth(),
                                         shape = RoundedCornerShape(16.dp),
@@ -1286,8 +1287,8 @@ class ApplicationManagementActivity : AppActivity() {
                                     }
                                 }
 
-                                if (resolvedTarget != null) {
-                                    val (targetPi, targetLabel) = resolvedTarget
+                                if (resolvedTargetValue != null) {
+                                    val (targetPi, targetLabel) = resolvedTargetValue
                                     val targetAppInfo = targetPi.applicationInfo
                                     val targetUid = targetAppInfo?.uid ?: -1
                                     val targetIcon = rememberAppIcon(targetPi.packageName, targetUid) {
