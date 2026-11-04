@@ -590,13 +590,6 @@ public class ShizukuService extends Service<ShizukuUserServiceManager, ShizukuCl
 
                 if (flags != 0) {
                     list.add(pi);
-                } else if (ServerConstants.hasSheveryPermission(pi.requestedPermissions)) {
-                    list.add(pi);
-                } else if (stubActive
-                        && pi.applicationInfo.metaData != null
-                        && pi.applicationInfo.metaData.getBoolean(ServerConstants.META_DATA_SHIZUKU_CLIENT, false)
-                        && ServerConstants.hasLegacyShizukuPermission(pi.requestedPermissions)) {
-                    list.add(pi);
                 }
             }
         }
