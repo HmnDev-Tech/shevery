@@ -33,6 +33,7 @@
 #define EXIT_FATAL_KILL 9
 #define EXIT_FATAL_BINDER_BLOCKED_BY_SELINUX 10
 #define EXIT_MANAGER_APP_NOT_FOUND 50
+#define EXIT_MANAGER_APP_LOOKUP_UNAVAILABLE 51
 #define STABLE_UPTIME_RESET_SECS 60
 
 #define PACKAGE_NAME "com.hamondev.shevery"
@@ -199,6 +200,12 @@ v_current = (uintptr_t) v + v_size - sizeof(char *); \
         if (!killed_by_signal && exit_code == EXIT_MANAGER_APP_NOT_FOUND) {
             LOGW("manager application not found, stopping supervisor without restart");
             exit(0);
+        }
+
+        if (!killed_by_signal && exit_code == EXIT_MANAGER_APP_LOOKUP_UNAVAILABLE) {
+            LOGW("manager package lookup unavailable, retrying without crash budget");
+            sleep(restart_delay_secs);
+            continue;
         }
 
         if (uptime_secs >= STABLE_UPTIME_RESET_SECS) {

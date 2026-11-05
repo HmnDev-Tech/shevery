@@ -178,30 +178,35 @@ object Android17Compat {
     @JvmStatic
     fun getApplicationInfo(packageName: String, flags: Long, userId: Int): ApplicationInfo? {
         return try {
-            value(
-                Operation.APPLICATION_INFO,
-                listOf(
-                    Candidate(
-                        Backend.PACKAGE,
-                        "getApplicationInfo",
-                        listOf(STRING, LONG, INT),
-                        listOf(packageName, flags, userId)
-                    ),
-                    // API 32 and older expose int flags; long flags arrived with
-                    // ApplicationInfoFlags in API 33.
-                    Candidate(
-                        Backend.PACKAGE,
-                        "getApplicationInfo",
-                        listOf(STRING, INT, INT),
-                        listOf(packageName, flags.toInt(), userId)
-                    )
-                )
-            ) as ApplicationInfo?
+            getApplicationInfoOrThrow(packageName, flags, userId)
         } catch (t: Throwable) {
             LOGGER.w(t, "getApplicationInfo(%s, %d) failed", packageName, userId)
             null
         }
     }
+
+    /** A null return means absent; lookup and Binder failures remain exceptions. */
+    @JvmStatic
+    @Throws(Exception::class)
+    fun getApplicationInfoOrThrow(packageName: String, flags: Long, userId: Int): ApplicationInfo? =
+        value(
+            Operation.APPLICATION_INFO,
+            listOf(
+                Candidate(
+                    Backend.PACKAGE,
+                    "getApplicationInfo",
+                    listOf(STRING, LONG, INT),
+                    listOf(packageName, flags, userId)
+                ),
+                // API 32 and older expose int flags.
+                Candidate(
+                    Backend.PACKAGE,
+                    "getApplicationInfo",
+                    listOf(STRING, INT, INT),
+                    listOf(packageName, flags.toInt(), userId)
+                )
+            )
+        ) as ApplicationInfo?
 
     @JvmStatic
     fun checkPermission(permissionName: String, packageName: String, userId: Int): Int {
