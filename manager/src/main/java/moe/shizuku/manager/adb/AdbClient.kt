@@ -83,9 +83,17 @@ class AdbClient(private val host: String, private val port: Int, private val key
         if (message.command != A_CNXN) error("not A_CNXN")
     }
 
-    fun command(command: String, listener: ((ByteArray) -> Unit)? = null) {
+    fun command(command: String, listener: ((ByteArray) -> Unit)? = null) =
+        command(command, listener, {}, {})
+
+    internal fun command(command: String, listener: ((ByteArray) -> Unit)?,
+                         checkAllowed: () -> Unit, markPossiblyDispatched: () -> Unit) {
         val localId = 1
-        write(A_OPEN, localId, 0, command)
+        val packet = AdbMessage(A_OPEN, localId, 0, command).toByteArray()
+        AdbCommandDispatch.write(outputStream, packet, {
+            check(!socket.isClosed) { "ADB socket was closed before command write" }
+            checkAllowed()
+        }, markPossiblyDispatched)
 
         var message = read()
         when (message.command) {
@@ -116,7 +124,12 @@ class AdbClient(private val host: String, private val port: Int, private val key
         }
     }
 
-    fun shellCommand(command: String, listener: ((ByteArray) -> Unit)?) = this.command("shell:$command", listener)
+    fun shellCommand(command: String, listener: ((ByteArray) -> Unit)?) =
+        this.command("shell:$command", listener)
+
+    internal fun shellCommand(command: String, listener: ((ByteArray) -> Unit)?,
+                              checkAllowed: () -> Unit, markPossiblyDispatched: () -> Unit) =
+        this.command("shell:$command", listener, checkAllowed, markPossiblyDispatched)
 
     private fun write(command: Int, arg0: Int, arg1: Int, data: ByteArray? = null) = write(AdbMessage(command, arg0, arg1, data))
 
@@ -153,6 +166,9 @@ class AdbClient(private val host: String, private val port: Int, private val key
     }
 
     override fun close() {
+        // Closing the socket first unblocks reads, including TLS handshakes.
+        if (::socket.isInitialized) runCatching { socket.close() }
+        if (::tlsSocket.isInitialized) runCatching { tlsSocket.close() }
         try {
             plainInputStream.close()
         } catch (e: Throwable) {

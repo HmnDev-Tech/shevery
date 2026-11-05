@@ -240,6 +240,7 @@ dependencies {
     implementation 'androidx.security:security-crypto:1.1.0-beta01'
     implementation 'androidx.biometric:biometric:1.2.0-alpha05'
     implementation 'io.coil-kt:coil-compose:2.7.0'
+    testImplementation 'junit:junit:4.13.2'
 }
 
 apply from: rootProject.file('signing.gradle')
