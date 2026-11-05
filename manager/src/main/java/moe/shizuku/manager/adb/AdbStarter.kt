@@ -2,7 +2,9 @@ package moe.shizuku.manager.adb
 
 import android.content.Context
 import kotlinx.coroutines.CancellationException
+import kotlinx.coroutines.currentCoroutineContext
 import kotlinx.coroutines.delay
+import kotlinx.coroutines.ensureActive
 import moe.shizuku.manager.ShizukuSettings
 import moe.shizuku.manager.starter.Starter
 import moe.shizuku.manager.utils.EnvironmentUtils
@@ -11,6 +13,12 @@ import rikka.shizuku.Shizuku
 import java.io.IOException
 
 object AdbStarter {
+
+    private val launches = AdbLaunchCoordinator(
+        awaitIdle = { CancellableIo.awaitIdle() },
+        awaitReady = { Starter.waitForBinder() },
+        isRunning = { Shizuku.pingBinder() }
+    )
 
     const val TCP_MODE_PORT = 5555
 
@@ -22,18 +30,14 @@ object AdbStarter {
         listener: ((ByteArray) -> Unit)? = null,
         log: ((String) -> Unit)? = null,
     ) {
-        if (!force && Shizuku.pingBinder()) {
-            ShizukuStateMachine.update()
-            log?.invoke("Service is already running.")
-            return
-        }
-        ShizukuStateMachine.onStartRequested()
-        val key = AdbKey(PreferenceAdbKeyStore(ShizukuSettings.getPreferences()), "shizuku")
-        val tcpMode = ShizukuSettings.isTcpMode()
-        val targetPort = if (tcpMode) TCP_MODE_PORT else port
-        var startedSuccessfully = false
-
-        try {
+        var entered = false
+        var tcpMode = false
+        launches.launch(skipIfRunning = !force, checkAllowed = {}) { markPossiblyDispatched ->
+            entered = true
+            ShizukuStateMachine.onStartRequested()
+            val key = AdbKey(PreferenceAdbKeyStore(ShizukuSettings.getPreferences()), "shizuku")
+            tcpMode = ShizukuSettings.isTcpMode()
+            val targetPort = if (tcpMode) TCP_MODE_PORT else port
             val isTargetAlreadyLive = EnvironmentUtils.isAdbPortLive(targetPort)
             if (tcpMode && port != targetPort && !isTargetAlreadyLive) {
                 log?.invoke("Switching ADB from port $port to TCP port $targetPort...")
@@ -41,19 +45,17 @@ object AdbStarter {
             }
 
             log?.invoke("Connecting to ADB on port $targetPort...")
-            connectWithRetry(host, targetPort, key) { client ->
+            connectWithRetry(host, targetPort, key, markPossiblyDispatched) { client, checkActive, mark ->
                 ShizukuSettings.setLastLaunchMode(ShizukuSettings.LaunchMethod.ADB)
                 ShizukuSettings.setLastAdbPort(targetPort)
-                client.shellCommand(Starter.internalCommand, listener)
+                client.shellCommand(Starter.internalCommand, listener, checkActive, mark)
             }
-            startedSuccessfully = true
-        } finally {
-            // Only touch wireless debugging when this starter put the device
-            // in TCP mode and successfully launched the service; unconditional
-            // disable would break automatic retry and recovery on failure.
-            if (tcpMode && startedSuccessfully) {
-                disableWirelessDebugging(context)
-            }
+        }
+        if (!entered) {
+            ShizukuStateMachine.update()
+            log?.invoke("Service is already running.")
+        } else if (tcpMode) {
+            disableWirelessDebugging(context)
         }
     }
 
@@ -62,16 +64,20 @@ object AdbStarter {
         currentPort: Int,
         targetPort: Int = TCP_MODE_PORT,
     ) {
-        ShizukuStateMachine.onStartRequested()
-        val key = AdbKey(PreferenceAdbKeyStore(ShizukuSettings.getPreferences()), "shizuku")
-        switchToTcp(host, currentPort, targetPort, key)
+        launches.withGate({}) {
+            ShizukuStateMachine.onStartRequested()
+            val key = AdbKey(PreferenceAdbKeyStore(ShizukuSettings.getPreferences()), "shizuku")
+            switchToTcp(host, currentPort, targetPort, key)
+        }
     }
 
-    private fun switchToTcp(host: String, currentPort: Int, targetPort: Int, key: AdbKey) {
-        AdbClient(host, currentPort, key).use { client ->
+    private suspend fun switchToTcp(host: String, currentPort: Int, targetPort: Int, key: AdbKey) {
+        val client = AdbClient(host, currentPort, key)
+        CancellableIo.run(client) { checkActive ->
             client.connect()
+            checkActive()
             try {
-                client.command("tcpip:$targetPort")
+                client.command("tcpip:$targetPort", null, checkActive, {})
             } catch (e: IOException) {
                 // Expected: adbd restarts (dropping TCP/TLS socket) when switching to TCP mode.
             }
@@ -82,26 +88,33 @@ object AdbStarter {
         host: String,
         port: Int,
         key: AdbKey,
+        markPossiblyDispatched: () -> Unit,
         retries: Int = 8,
-        block: (AdbClient) -> Unit,
+        block: (AdbClient, () -> Unit, () -> Unit) -> Unit,
     ) {
-        var lastError: Throwable? = null
         repeat(retries) { attempt ->
+            currentCoroutineContext().ensureActive()
+            var dispatched = false
             try {
-                AdbClient(host, port, key).use { client ->
+                val client = AdbClient(host, port, key)
+                CancellableIo.run(client) { checkActive ->
                     client.connect()
-                    block(client)
+                    checkActive()
+                    block(client, checkActive) {
+                        dispatched = true
+                        markPossiblyDispatched()
+                    }
                 }
                 return
             } catch (e: CancellationException) {
                 throw e
-            } catch (e: Throwable) {
-                lastError = e
-                if (attempt == retries - 1) throw e
+            } catch (e: Exception) {
+                currentCoroutineContext().ensureActive()
+                // After A_OPEN may have been sent, retrying can restart a live server.
+                if (dispatched || attempt == retries - 1) throw e
                 delay(500L * (attempt + 1))
             }
         }
-        lastError?.let { throw it }
     }
 
     private fun disableWirelessDebugging(context: Context?) {
