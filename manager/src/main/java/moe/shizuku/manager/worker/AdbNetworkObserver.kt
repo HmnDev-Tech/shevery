@@ -98,6 +98,8 @@ object AdbNetworkObserver {
             return
         }
         if (!ShizukuSettings.getStartOnBootAdb()) return
+        if (ShizukuSettings.getLastLaunchMode() == ShizukuSettings.LaunchMethod.ROOT) return
+        if (moe.shizuku.manager.service.WatchdogManager.isUserStopRequested()) return
 
         synchronized(this) {
             val now = android.os.SystemClock.elapsedRealtime()
@@ -115,16 +117,17 @@ object AdbNetworkObserver {
                 // fresh attempt immediately, instead of KEEP no-op'ing, which would
                 // leave a delayed retry parked until its countdown has expired.
                 val state = withTimeout(5_000L) {
-                    val info = WorkManager.getInstance(app.applicationContext)
+                    val states = WorkManager.getInstance(app.applicationContext)
                         .getWorkInfosForUniqueWork(AdbStartWorker.UNIQUE_WORK_NAME)
                         .get()
-                        .firstOrNull()
-                    if (info?.state != WorkInfo.State.RUNNING) {
+                        .map { it.state }
+                    val state = activeAdbWorkState(states)
+                    if (state != WorkInfo.State.RUNNING) {
 
                         AdbStartWorker.enqueue(app.applicationContext)
                     }
 
-                    when (info?.state) {
+                    when (state) {
                         WorkInfo.State.RUNNING -> ShizukuReceiverStarter.WorkerState.RUNNING
                         WorkInfo.State.BLOCKED -> ShizukuReceiverStarter.WorkerState.AWAITING_WIFI
 
@@ -149,3 +152,8 @@ object AdbNetworkObserver {
         }
     }
 }
+
+/** Finished rows may precede the currently running unique work. */
+internal fun activeAdbWorkState(states: List<WorkInfo.State>): WorkInfo.State? =
+    states.firstOrNull { it == WorkInfo.State.RUNNING }
+        ?: states.firstOrNull { !it.isFinished }
