@@ -12,11 +12,10 @@ import android.os.Build
 import android.os.Process
 import androidx.core.content.ContextCompat
 import java.io.File
-import kotlin.coroutines.resume
+import java.io.Closeable
+import kotlinx.coroutines.CancellationException
 import kotlinx.coroutines.Dispatchers
-import kotlinx.coroutines.suspendCancellableCoroutine
 import kotlinx.coroutines.withContext
-import kotlinx.coroutines.withTimeout
 
 /**
  * Streams the downloaded update APK into a [PackageInstaller] session — the same
@@ -81,14 +80,17 @@ object AppUpdateInstaller {
                     session.fsync(output)
                     output.close()
                 }
-                session.commit(commitIntent(appContext, sessionId).intentSender)
+                return@withContext awaitStatus(appContext, sessionId) {
+                    session.commit(commitIntent(appContext, sessionId).intentSender)
+                }
             } finally {
                 session.close()
             }
+        } catch (e: CancellationException) {
+            throw e
         } catch (e: Exception) {
             return@withContext Result.Failed(null, e.message ?: e.javaClass.simpleName)
         }
-        awaitStatus(appContext, sessionId)
     }
 
     private fun isSignedBySameKey(
@@ -137,45 +139,47 @@ object AppUpdateInstaller {
         )
     }
 
-    private suspend fun awaitStatus(context: Context, sessionId: Int): Result = withContext(Dispatchers.Main.immediate) {
-        withTimeout(INSTALL_TIMEOUT_MINUTES * 60 * 1000) {
-            suspendCancellableCoroutine { cont ->
-                val receiver = object : BroadcastReceiver() {
-                    override fun onReceive(ctx: Context?, intent: Intent?) {
-                        if (intent?.action != ACTION_INSTALL_STATUS) return
-                        val status = intent.getIntExtra(
-                            PackageInstaller.EXTRA_STATUS,
-                            PackageInstaller.STATUS_FAILURE
-                        )
-                        when (status) {
-                            PackageInstaller.STATUS_PENDING_USER_ACTION -> {
-                                val confirm = confirmIntent(intent)
-                                if (cont.isActive) cont.resume(Result.UserActionRequired(confirm))
-                            }
-                            PackageInstaller.STATUS_SUCCESS -> {
-                                if (cont.isActive) cont.resume(Result.Success(status))
-                            }
-                            else -> {
-                                val msg = intent.getStringExtra(PackageInstaller.EXTRA_STATUS_MESSAGE)
-                                if (cont.isActive) {
-                                    cont.resume(Result.Failed(status, msg ?: "install_status_$status"))
-                                }
-                            }
-                        }
-                        runCatching { context.unregisterReceiver(this) }
+    private suspend fun awaitStatus(context: Context, sessionId: Int, commit: () -> Unit): Result =
+        withContext(Dispatchers.Main.immediate) {
+            InstallStatusAwaiter.await<Result>(
+                INSTALL_TIMEOUT_MINUTES * 60 * 1000,
+                register = { complete -> registerStatus(context, sessionId, complete) },
+                commit = { withContext(Dispatchers.IO) { commit() } }
+            ) ?: Result.Failed(null, "Install status timed out")
+        }
+
+    private fun registerStatus(context: Context, sessionId: Int, complete: (Result) -> Unit): Closeable {
+        val receiver = object : BroadcastReceiver() {
+            override fun onReceive(ctx: Context?, intent: Intent?) {
+                if (intent?.action != ACTION_INSTALL_STATUS) return
+                if (intent.getIntExtra(PackageInstaller.EXTRA_SESSION_ID, -1) != sessionId) return
+                val status = intent.getIntExtra(
+                    PackageInstaller.EXTRA_STATUS,
+                    PackageInstaller.STATUS_FAILURE
+                )
+                val result = when (status) {
+                    PackageInstaller.STATUS_PENDING_USER_ACTION -> {
+                        val confirm = confirmIntent(intent)
+                        if (confirm != null) Result.UserActionRequired(confirm)
+                        else Result.Failed(status, "Missing installation confirmation")
+                    }
+                    PackageInstaller.STATUS_SUCCESS -> Result.Success(status)
+                    else -> {
+                        val msg = intent.getStringExtra(PackageInstaller.EXTRA_STATUS_MESSAGE)
+                        Result.Failed(status, msg ?: "install_status_$status")
                     }
                 }
-                val filter = IntentFilter(ACTION_INSTALL_STATUS)
-                val flags = if (Build.VERSION.SDK_INT >= Build.VERSION_CODES.TIRAMISU) {
- // 33: implicit broadcast from the system install dialog
-                    ContextCompat.RECEIVER_NOT_EXPORTED
-                } else {
-                    0
-                }
-                ContextCompat.registerReceiver(context, receiver, filter, flags)
-                cont.invokeOnCancellation { runCatching { context.unregisterReceiver(receiver) } }
+                complete(result)
             }
         }
+        val filter = IntentFilter(ACTION_INSTALL_STATUS)
+        val flags = if (Build.VERSION.SDK_INT >= Build.VERSION_CODES.TIRAMISU) {
+            ContextCompat.RECEIVER_NOT_EXPORTED
+        } else {
+            0
+        }
+        ContextCompat.registerReceiver(context, receiver, filter, flags)
+        return Closeable { runCatching { context.unregisterReceiver(receiver) } }
     }
 
     private fun confirmIntent(intent: Intent): Intent? {
