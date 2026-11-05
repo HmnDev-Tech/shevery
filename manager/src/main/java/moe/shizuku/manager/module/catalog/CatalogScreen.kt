@@ -21,6 +21,8 @@ import androidx.compose.foundation.clickable
 import androidx.compose.foundation.layout.Arrangement
 import androidx.compose.foundation.layout.Box
 import androidx.compose.foundation.layout.Column
+import androidx.compose.foundation.layout.ExperimentalLayoutApi
+import androidx.compose.foundation.layout.FlowRow
 import androidx.compose.foundation.layout.Row
 import androidx.compose.foundation.layout.Spacer
 import androidx.compose.foundation.layout.WindowInsets
@@ -33,15 +35,19 @@ import androidx.compose.foundation.layout.size
 import androidx.compose.foundation.layout.width
 import androidx.compose.foundation.layout.windowInsetsPadding
 import androidx.compose.foundation.lazy.LazyColumn
+import androidx.compose.foundation.lazy.rememberLazyListState
 import androidx.compose.foundation.lazy.items
 import androidx.compose.foundation.shape.RoundedCornerShape
 import androidx.compose.material.icons.Icons
+import androidx.compose.material.icons.rounded.Check
 import androidx.compose.material.icons.rounded.Star
 import androidx.compose.material.icons.rounded.Update
 import androidx.compose.material3.AlertDialog
 import androidx.compose.material3.ExperimentalMaterial3Api
 import androidx.compose.material3.ExperimentalMaterial3ExpressiveApi
 import androidx.compose.material3.FilledTonalButton
+import androidx.compose.material3.FilterChip
+import androidx.compose.material3.FilterChipDefaults
 import androidx.compose.material3.HorizontalDivider
 import androidx.compose.material3.Icon
 import androidx.compose.material3.IconButton
@@ -53,6 +59,10 @@ import androidx.compose.material3.OutlinedTextField
 import androidx.compose.material3.Surface
 import androidx.compose.material3.Text
 import androidx.compose.material3.TextButton
+import androidx.compose.foundation.lazy.LazyRow
+import androidx.compose.foundation.lazy.items
+import moe.shizuku.manager.module.ModuleTab
+import moe.shizuku.manager.module.ModuleTabsSwitcher
 import androidx.compose.runtime.Composable
 import androidx.compose.runtime.LaunchedEffect
 import androidx.compose.runtime.collectAsState
@@ -103,7 +113,7 @@ import java.util.Locale
 private const val MAX_BANNER_BYTES = 512 * 1024
 private const val MAX_README_CHARS = 16000
 
-@OptIn(ExperimentalMaterial3Api::class, ExperimentalMaterial3ExpressiveApi::class)
+@OptIn(ExperimentalMaterial3Api::class, ExperimentalMaterial3ExpressiveApi::class, ExperimentalLayoutApi::class)
 @Composable
 fun CatalogScreen(onNavigateUp: () -> Unit) {
     BackHandler { onNavigateUp() }
@@ -141,15 +151,22 @@ fun CatalogScreen(onNavigateUp: () -> Unit) {
     val client = remember { OkHttpClient() }
 
     LaunchedEffect(token) {
-        if (token.isNullOrBlank()) { showTokenDialog = true; isLoading = false }
-        else {
-            val cached = discoveryManager.getModules(forceRefresh = false)
-            if (cached.isNotEmpty()) { modules = cached; isLoading = false }
-            else {
-                isLoading = true; error = null
-                try { modules = discoveryManager.getModules(forceRefresh = true) }
-                catch (e: Exception) { error = e.message }
-                finally { isLoading = false }
+        if (token.isNullOrBlank()) {
+            showTokenDialog = true
+            isLoading = false
+        } else {
+            isLoading = true
+            error = null
+            try {
+                val loaded = discoveryManager.getModules(forceRefresh = false)
+                modules = loaded
+                if (loaded.isEmpty()) {
+                    error = discoveryManager.error.value
+                }
+            } catch (e: Exception) {
+                error = e.message
+            } finally {
+                isLoading = false
             }
         }
     }
@@ -159,8 +176,37 @@ fun CatalogScreen(onNavigateUp: () -> Unit) {
         installedIds = AdbModuleManager.listModules(context).map { it.id }.toSet()
     }
 
-    val sortedModules = remember(modules) {
-        modules.sortedByDescending { it.stars }
+    var selectedFilter by remember { mutableStateOf(CatalogFilter.MOST_STARRED) }
+
+    val sortedModules = remember(modules, selectedFilter) {
+        when (selectedFilter) {
+            CatalogFilter.MOST_STARRED -> modules.sortedWith(
+                compareByDescending<DiscoveredModule> { it.stars }
+                    .thenByDescending { it.updatedEpochMillis }
+                    .thenBy(String.CASE_INSENSITIVE_ORDER) { it.moduleName }
+            )
+            CatalogFilter.RECENTLY_UPDATED -> modules.sortedWith(
+                compareByDescending<DiscoveredModule> { it.updatedEpochMillis }
+                    .thenByDescending { it.stars }
+                    .thenBy(String.CASE_INSENSITIVE_ORDER) { it.moduleName }
+            )
+            CatalogFilter.NEWEST -> modules.sortedWith(
+                compareByDescending<DiscoveredModule> { it.createdEpochMillis }
+                    .thenByDescending { it.updatedEpochMillis }
+                    .thenBy(String.CASE_INSENSITIVE_ORDER) { it.moduleName }
+            )
+            CatalogFilter.OLDEST -> modules.sortedWith(
+                compareBy<DiscoveredModule> {
+                    val c = it.createdEpochMillis
+                    if (c <= 0L) Long.MAX_VALUE else c
+                }
+                    .thenBy {
+                        val u = it.updatedEpochMillis
+                        if (u <= 0L) Long.MAX_VALUE else u
+                    }
+                    .thenBy(String.CASE_INSENSITIVE_ORDER) { it.moduleName }
+            )
+        }
     }
 
     ShizukuExpressiveTheme {
@@ -196,11 +242,17 @@ fun CatalogScreen(onNavigateUp: () -> Unit) {
                     isLoading = isLoading,
                     error = error,
                     installing = installing,
+                    selectedFilter = selectedFilter,
+                    onSelectFilter = { selectedFilter = it },
                     onRefresh = {
                         scope.launch {
                             isLoading = true; error = null
                             try {
-                                modules = discoveryManager.getModules(forceRefresh = true)
+                                val refreshed = discoveryManager.getModules(forceRefresh = true)
+                                modules = refreshed
+                                if (refreshed.isEmpty()) {
+                                    error = discoveryManager.error.value
+                                }
                                 installedIds = AdbModuleManager.listModules(context).map { it.id }.toSet()
                             } catch (e: Exception) { error = e.message }
                             finally { isLoading = false }
@@ -340,7 +392,14 @@ private suspend fun checkModuleDanger(client: OkHttpClient, module: DiscoveredMo
     }
 }
 
-@OptIn(ExperimentalMaterial3Api::class, ExperimentalMaterial3ExpressiveApi::class)
+enum class CatalogFilter(@androidx.annotation.StringRes val labelRes: Int) {
+    MOST_STARRED(R.string.modules_filter_most_starred),
+    RECENTLY_UPDATED(R.string.modules_filter_recently_updated),
+    NEWEST(R.string.modules_filter_newest),
+    OLDEST(R.string.modules_filter_oldest)
+}
+
+@OptIn(ExperimentalMaterial3Api::class, ExperimentalMaterial3ExpressiveApi::class, ExperimentalLayoutApi::class)
 @Composable
 private fun CatalogListScreen(
     modules: List<DiscoveredModule>,
@@ -348,6 +407,8 @@ private fun CatalogListScreen(
     isLoading: Boolean,
     error: String?,
     installing: String?,
+    selectedFilter: CatalogFilter,
+    onSelectFilter: (CatalogFilter) -> Unit,
     onRefresh: () -> Unit,
     onCardClick: (DiscoveredModule) -> Unit,
     onInstall: (DiscoveredModule) -> Unit,
@@ -355,17 +416,53 @@ private fun CatalogListScreen(
     onEditToken: () -> Unit,
     onNavigateUp: () -> Unit
 ) {
+    val listState = rememberLazyListState()
+    LaunchedEffect(selectedFilter) {
+        if (listState.firstVisibleItemIndex > 0 || listState.firstVisibleItemScrollOffset > 0) {
+            listState.scrollToItem(0)
+        }
+    }
+
     ShizukuLazyScaffold(
         title = stringResource(R.string.modules_catalog_title),
         onNavigateUp = onNavigateUp,
         bottomInset = 112.dp,
+        isRefreshing = isLoading,
+        onRefresh = onRefresh,
+        listState = listState,
         actions = {
-            FilledTonalButton(modifier = Modifier.height(48.dp), onClick = onRefresh) {
-                ShizukuIcon(R.drawable.ic_server_restart, modifier = Modifier.padding(end = 6.dp).size(16.dp))
-                Text(stringResource(R.string.home_refresh), style = MaterialTheme.typography.labelLarge)
-            }
+            ModuleTabsSwitcher(
+                selectedTab = ModuleTab.CATALOG,
+                onSelectInstalled = onNavigateUp,
+                onSelectCatalog = {}
+            )
         }
     ) {
+        item {
+            LazyRow(
+                modifier = Modifier
+                    .fillMaxWidth()
+                    .padding(vertical = 4.dp),
+                horizontalArrangement = Arrangement.spacedBy(8.dp)
+            ) {
+                items(CatalogFilter.values()) { filter ->
+                    FilterChip(
+                        selected = selectedFilter == filter,
+                        onClick = { onSelectFilter(filter) },
+                        label = { Text(stringResource(filter.labelRes)) },
+                        leadingIcon = if (selectedFilter == filter) {
+                            {
+                                Icon(
+                                    imageVector = Icons.Rounded.Check,
+                                    contentDescription = null,
+                                    modifier = Modifier.size(FilterChipDefaults.IconSize)
+                                )
+                            }
+                        } else null
+                    )
+                }
+            }
+        }
         item {
             AnimatedVisibility(visible = isLoading, enter = fadeIn(), exit = fadeOut()) {
                 Row(
@@ -409,20 +506,21 @@ private fun CatalogListScreen(
             }
         }
 
-        items(modules, key = { "${it.repoFullName}/${it.moduleId}" }) { module ->
+        items(modules, key = { "${it.repoFullName}/${it.subPath.orEmpty()}/${it.moduleId}" }) { module ->
             CatalogModuleCard(
                 module = module,
                 installed = module.moduleId in installedIds,
                 installing = installing == module.moduleId,
                 onCardClick = { onCardClick(module) },
                 onInstall = { onInstall(module) },
-                onViewOnGitHub = { onViewOnGitHub(module) }
+                onViewOnGitHub = { onViewOnGitHub(module) },
+                modifier = Modifier.animateItem()
             )
         }
     }
 }
 
-@OptIn(ExperimentalMaterial3Api::class, ExperimentalMaterial3ExpressiveApi::class)
+@OptIn(ExperimentalMaterial3Api::class, ExperimentalMaterial3ExpressiveApi::class, ExperimentalLayoutApi::class)
 @Composable
 private fun ModuleDetailScreen(
     module: DiscoveredModule,
@@ -578,7 +676,10 @@ private fun ModuleDetailScreen(
                         color = MaterialTheme.colorScheme.onSurfaceVariant
                     )
 
-                    Row(horizontalArrangement = Arrangement.spacedBy(8.dp), verticalAlignment = Alignment.CenterVertically) {
+                    FlowRow(
+                        horizontalArrangement = Arrangement.spacedBy(8.dp),
+                        verticalArrangement = Arrangement.spacedBy(8.dp)
+                    ) {
                         module.version?.let {
                             DetailChip(text = "v$it", color = MaterialTheme.colorScheme.secondaryContainer, onColor = MaterialTheme.colorScheme.onSecondaryContainer)
                         }
@@ -593,6 +694,9 @@ private fun ModuleDetailScreen(
                         }
                         if (installed) {
                             DetailChip(text = "Installed", color = MaterialTheme.colorScheme.primaryContainer, onColor = MaterialTheme.colorScheme.onPrimaryContainer)
+                        }
+                        if (module.isOutdated()) {
+                            DetailChip(text = stringResource(R.string.modules_catalog_long_non_updating), color = MaterialTheme.colorScheme.errorContainer, onColor = MaterialTheme.colorScheme.onErrorContainer)
                         }
                     }
 
@@ -668,11 +772,33 @@ private fun CatalogModuleCard(
             Row(horizontalArrangement = Arrangement.spacedBy(12.dp), verticalAlignment = Alignment.CenterVertically) {
                 CatalogAvatar(ownerAvatar = module.ownerAvatar, moduleName = module.moduleName, modifier = Modifier.size(48.dp))
                 Column(modifier = Modifier.weight(1f), verticalArrangement = Arrangement.spacedBy(2.dp)) {
-                    Text(module.moduleName, style = MaterialTheme.typography.titleMedium, fontWeight = FontWeight.SemiBold, maxLines = 1, overflow = TextOverflow.Ellipsis)
+                    Row(
+                        verticalAlignment = Alignment.CenterVertically,
+                        horizontalArrangement = Arrangement.spacedBy(8.dp)
+                    ) {
+                        Text(
+                            module.moduleName,
+                            style = MaterialTheme.typography.titleMedium,
+                            fontWeight = FontWeight.SemiBold,
+                            maxLines = 1,
+                            overflow = TextOverflow.Ellipsis,
+                            modifier = Modifier.weight(1f, fill = false)
+                        )
+                        if (module.isOutdated()) {
+                            DetailChip(
+                                text = stringResource(R.string.modules_catalog_long_non_updating),
+                                color = MaterialTheme.colorScheme.errorContainer,
+                                onColor = MaterialTheme.colorScheme.onErrorContainer
+                            )
+                        }
+                    }
                     Text(module.author ?: module.repoFullName.substringBefore('/'), style = MaterialTheme.typography.bodySmall, color = MaterialTheme.colorScheme.onSurfaceVariant, maxLines = 1, overflow = TextOverflow.Ellipsis)
                 }
             }
-            Row(horizontalArrangement = Arrangement.spacedBy(8.dp), verticalAlignment = Alignment.CenterVertically) {
+            FlowRow(
+                horizontalArrangement = Arrangement.spacedBy(8.dp),
+                verticalArrangement = Arrangement.spacedBy(8.dp)
+            ) {
                 module.version?.let { DetailChip(text = it, color = MaterialTheme.colorScheme.secondaryContainer, onColor = MaterialTheme.colorScheme.onSecondaryContainer) }
                 DetailChip(text = "${module.stars}", icon = { Icon(Icons.Rounded.Star, null, Modifier.size(14.dp), tint = MaterialTheme.colorScheme.onSecondaryContainer) }, color = MaterialTheme.colorScheme.secondaryContainer, onColor = MaterialTheme.colorScheme.onSecondaryContainer)
                 if (module.isOfficial) DetailChip(text = stringResource(R.string.modules_catalog_sort_official), color = MaterialTheme.colorScheme.tertiaryContainer, onColor = MaterialTheme.colorScheme.onTertiaryContainer)
@@ -712,7 +838,7 @@ private fun CatalogAvatar(ownerAvatar: String, moduleName: String, modifier: Mod
     }
 }
 
-@OptIn(ExperimentalMaterial3Api::class, ExperimentalMaterial3ExpressiveApi::class)
+@OptIn(ExperimentalMaterial3Api::class, ExperimentalMaterial3ExpressiveApi::class, ExperimentalLayoutApi::class)
 @Composable
 private fun TokenInputDialog(onDismiss: () -> Unit, onTokenSet: (String) -> Unit) {
     var tokenInput by remember { mutableStateOf("") }
@@ -747,7 +873,7 @@ private fun TokenInputDialog(onDismiss: () -> Unit, onTokenSet: (String) -> Unit
     )
 }
 
-@OptIn(ExperimentalMaterial3Api::class, ExperimentalMaterial3ExpressiveApi::class)
+@OptIn(ExperimentalMaterial3Api::class, ExperimentalMaterial3ExpressiveApi::class, ExperimentalLayoutApi::class)
 @Composable
 private fun InstallModeDialog(module: DiscoveredModule, onDismiss: () -> Unit, onInstall: (ModuleSettings.InstallMode) -> Unit) {
     AlertDialog(

@@ -275,7 +275,13 @@ public class ShizukuService extends Service<ShizukuUserServiceManager, ShizukuCl
 
     @Override
     public void exit() {
-        enforceManagerPermission("exit");
+        try {
+            enforceManagerPermission("exit");
+        } catch (SecurityException e) {
+            if (checkCallingPermission() != PackageManager.PERMISSION_GRANTED) {
+                throw e;
+            }
+        }
         LOGGER.i("exit");
         if (heartbeatRunnable != null) {
             mainHandler.removeCallbacks(heartbeatRunnable);
@@ -588,7 +594,12 @@ public class ShizukuService extends Service<ShizukuUserServiceManager, ShizukuCl
                     flags = entry.flags & ConfigManager.MASK_PERMISSION;
                 }
 
-                if (flags != 0) {
+                boolean isSheveryClient = ServerConstants.hasSheveryPermission(pi.requestedPermissions)
+                        || (pi.applicationInfo.metaData != null && pi.applicationInfo.metaData.getBoolean(ServerConstants.META_DATA_SHEVERY_CLIENT, false));
+                boolean isLegacyClient = ServerConstants.hasLegacyShizukuPermission(pi.requestedPermissions)
+                        || (pi.applicationInfo.metaData != null && pi.applicationInfo.metaData.getBoolean(ServerConstants.META_DATA_SHIZUKU_CLIENT, false));
+
+                if (flags != 0 || isSheveryClient || isLegacyClient) {
                     list.add(pi);
                 }
             }

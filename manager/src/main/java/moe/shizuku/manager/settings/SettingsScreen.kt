@@ -28,6 +28,7 @@ import androidx.compose.animation.slideInHorizontally
 import androidx.compose.animation.slideOutHorizontally
 import androidx.compose.animation.togetherWith
 
+import androidx.compose.foundation.clickable
 import androidx.compose.foundation.layout.Arrangement
 import androidx.compose.foundation.layout.Column
 import androidx.compose.foundation.layout.Row
@@ -37,8 +38,10 @@ import androidx.compose.foundation.layout.height
 import androidx.compose.foundation.layout.heightIn
 import androidx.compose.foundation.layout.padding
 import androidx.compose.foundation.layout.size
+import androidx.compose.foundation.layout.width
 import androidx.compose.material3.CircularProgressIndicator
 import androidx.compose.material3.OutlinedButton
+import androidx.compose.material3.OutlinedTextField
 import androidx.compose.ui.Alignment
 import androidx.compose.foundation.lazy.LazyListState
 import androidx.compose.foundation.lazy.rememberLazyListState
@@ -48,6 +51,7 @@ import androidx.compose.material3.AlertDialog
 import androidx.compose.material3.ExperimentalMaterial3Api
 import androidx.compose.material3.MaterialTheme
 import androidx.compose.material3.RadioButton
+import androidx.compose.material3.Surface
 import androidx.compose.material3.Text
 import androidx.compose.material3.TextButton
 import androidx.compose.runtime.Composable
@@ -1364,6 +1368,7 @@ fun SettingsScreen(
             shape = MaterialTheme.shapes.extraLarge
         )
     }
+
 }
 
 private fun LazyListScope.applicationSectionContent(
@@ -2317,7 +2322,9 @@ private data class LocaleOption(
     val tag: String,
     val title: String,
     val summary: String?
-)private fun buildLocaleOptions(context: android.content.Context, currentTag: String): List<LocaleOption> {
+)
+
+private fun buildLocaleOptions(context: android.content.Context, currentTag: String): List<LocaleOption> {
     val localeTags = ShizukuLocales.LOCALES
     val displayLocaleTags = ShizukuLocales.DISPLAY_LOCALES
     val currentLocale = ShizukuSettings.getLocale()
@@ -2484,3 +2491,4 @@ private fun ChoiceDialog(
         shape = MaterialTheme.shapes.extraLarge
     )
 }
+

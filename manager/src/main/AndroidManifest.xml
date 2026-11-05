@@ -223,6 +223,10 @@
                 <action android:name="${applicationId}.intent.action.REQUEST_PERMISSION" />
                 <action android:name="com.hamondev.shevery.intent.action.REQUEST_PERMISSION" />
 
+                <!-- Legacy Shizuku compatibility stub actions -->
+                <action android:name="moe.shizuku.privileged.api.intent.action.REQUEST_PERMISSION" />
+                <action android:name="moe.shizuku.manager.intent.action.REQUEST_PERMISSION" />
+
                 <!-- Dhizuku compatibility actions -->
                 <action android:name="${applicationId}.action.request.permission" />
                 <action android:name="${applicationId}.action.REQUEST_DHIZUKU_PERMISSION" />
@@ -376,6 +380,8 @@
                 <action android:name="com.hamondev.shevery.intent.action.REQUEST_BINDER" />
                 <action android:name="${applicationId}.intent.action.REQUEST_BINDER" />
                 <action android:name="rikka.shizuku.intent.action.REQUEST_BINDER" />
+                <action android:name="moe.shizuku.privileged.api.intent.action.REQUEST_BINDER" />
+                <action android:name="moe.shizuku.manager.intent.action.REQUEST_BINDER" />
             </intent-filter>
         </receiver>
 

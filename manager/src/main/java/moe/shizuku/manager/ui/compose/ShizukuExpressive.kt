@@ -470,29 +470,22 @@ fun ShizukuLazyScaffold(
         floatingActionButton = floatingActionButton
     ) { innerPadding ->
         val navigationBarPadding = WindowInsets.navigationBars.asPaddingValues()
-        val list = @Composable {
-            LazyColumn(
-                state = listState,
-                modifier = Modifier
-                    .fillMaxSize()
-                    .padding(innerPadding)
-                    .scrollMotionBlur(
-                        listState = listState,
-                        enabled = motionBlurEnabled,
-                        intensity = motionBlurIntensity,
-                        strength = motionBlurStrength
-                    ),
-                contentPadding = PaddingValues(
-                    start = contentPadding.calculateStartPadding(LayoutDirection.Ltr),
-                    top = contentPadding.calculateTopPadding(),
-                    end = contentPadding.calculateEndPadding(LayoutDirection.Ltr),
-                    bottom = contentPadding.calculateBottomPadding() +
-                        navigationBarPadding.calculateBottomPadding() + bottomInset
-                ),
-                verticalArrangement = verticalArrangement,
-                content = content
+        val resolvedContentPadding = PaddingValues(
+            start = contentPadding.calculateStartPadding(LayoutDirection.Ltr),
+            top = contentPadding.calculateTopPadding(),
+            end = contentPadding.calculateEndPadding(LayoutDirection.Ltr),
+            bottom = contentPadding.calculateBottomPadding() +
+                navigationBarPadding.calculateBottomPadding() + bottomInset
+        )
+        val listModifier = Modifier
+            .fillMaxSize()
+            .padding(innerPadding)
+            .scrollMotionBlur(
+                listState = listState,
+                enabled = motionBlurEnabled,
+                intensity = motionBlurIntensity,
+                strength = motionBlurStrength
             )
-        }
         if (onRefresh != null) {
             val pullToRefreshState = rememberPullToRefreshState()
             Box(modifier = Modifier.fillMaxSize()) {
@@ -503,7 +496,13 @@ fun ShizukuLazyScaffold(
                     state = pullToRefreshState,
                     indicator = {}
                 ) {
-                    list()
+                    LazyColumn(
+                        state = listState,
+                        modifier = listModifier,
+                        contentPadding = resolvedContentPadding,
+                        verticalArrangement = verticalArrangement,
+                        content = content
+                    )
                 }
                 PullToRefreshDefaults.LoadingIndicator(
                     state = pullToRefreshState,
@@ -517,7 +516,13 @@ fun ShizukuLazyScaffold(
                 )
             }
         } else {
-            list()
+            LazyColumn(
+                state = listState,
+                modifier = listModifier,
+                contentPadding = resolvedContentPadding,
+                verticalArrangement = verticalArrangement,
+                content = content
+            )
         }
     }
 }

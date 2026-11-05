@@ -342,6 +342,11 @@
     <string name="modules_catalog_view_github"><![CDATA[Открыть на GitHub]]></string>
     <string name="modules_catalog_skip_token"><![CDATA[Пропустить]]></string>
     <string name="modules_catalog_open"><![CDATA[Открыть каталог]]></string>
+    <string name="modules_filter_most_starred"><![CDATA[По звёздам]]></string>
+    <string name="modules_filter_recently_updated"><![CDATA[Недавно обновлённые]]></string>
+    <string name="modules_filter_newest"><![CDATA[Новые]]></string>
+    <string name="modules_filter_oldest"><![CDATA[Старые]]></string>
+    <string name="modules_catalog_long_non_updating"><![CDATA[Outdated]]></string>
     <string name="home_local_network_title"><![CDATA[Доступ к локальной сети]]></string>
     <string name="home_local_network_description"><![CDATA[Для беспроводной отладки требуется %1$s на этой версии Android.]]></string>
     <string name="home_local_network_granted"><![CDATA[%1$s предоставлено.]]></string>
@@ -692,4 +697,6 @@
     <string name="app_management_add_app_grant_runtime_desc">Автоматически выдать опасные разрешения (%1$d)</string>
     <string name="app_management_add_app_open_details">Открыть настройки привилегий после добавления</string>
     <string name="app_management_add_app_added">Привилегии приложения обновлены</string>
+    <string name="app_management_badge_shevery">Shevery</string>
+    <string name="app_management_badge_legacy">Legacy</string>
 </resources>

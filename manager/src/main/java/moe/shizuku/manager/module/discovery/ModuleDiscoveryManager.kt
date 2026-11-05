@@ -89,7 +89,7 @@ class ModuleDiscoveryManager private constructor(context: Context) {
 
     private fun searchRepos(): List<GitHubRepo> {
         val url = "https://api.github.com/search/repositories" +
-                "?q=topic:shevery-modules&sort=stars&per_page=30"
+                "?q=topic:shevery-modules&sort=stars&per_page=100"
 
         val builder = Request.Builder()
             .url(url)
@@ -155,12 +155,21 @@ class ModuleDiscoveryManager private constructor(context: Context) {
                     moduleCountByOwner[owner] = currentCount + 1
                 }
 
+                val resolvedPushedAt = module.pushedAt?.takeIf { it.isNotBlank() }
+                    ?: repo.pushedAt?.takeIf { it.isNotBlank() }
+                    ?: repo.updatedAt
+                val resolvedCreatedAt = module.createdAt?.takeIf { it.isNotBlank() }
+                    ?: repo.createdAt?.takeIf { it.isNotBlank() }
+                    ?: resolvedPushedAt
                 modules.add(
                     module.copy(
                         stars = repo.stargazersCount,
-                        repoDescription = repo.description,
+                        repoDescription = repo.description ?: module.description,
                         ownerAvatar = repo.owner.avatarUrl,
-                        isOfficial = isOfficialOwner
+                        isOfficial = isOfficialOwner,
+                        createdAt = resolvedCreatedAt,
+                        pushedAt = resolvedPushedAt,
+                        updatedAt = repo.updatedAt ?: resolvedPushedAt
                     )
                 )
             }
