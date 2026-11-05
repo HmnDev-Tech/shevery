@@ -2130,7 +2130,7 @@ private val contributors = listOf(
     Contributor(
         "arysm4a",
         "Wireless-debugging boot autostart, Dhizuku compatibility stubs, biometric auth & session security, Jetpack Compose UI/UX modernization",
-        "https://github.com/tim1540"
+        "https://gitlab.com/arysm4a"
     ),
     Contributor(
         "Jursin",
