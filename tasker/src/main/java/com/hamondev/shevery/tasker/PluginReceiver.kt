@@ -44,7 +44,7 @@ class PluginReceiver : BroadcastReceiver() {
             return
         }
 
-        if (isDirectAction(intent.action) || intent.action == PluginContract.ACTION_FIRE_SETTING) {
+        if (requiresAuth(intent.action)) {
             val expectedToken = getAuthToken(context)
             val providedToken = intent.getStringExtra(PluginContract.EXTRA_AUTH)
                 ?: intent.getBundleExtra(PluginContract.EXTRA_BUNDLE)
@@ -68,7 +68,7 @@ class PluginReceiver : BroadcastReceiver() {
                     title = context.getString(titleRes),
                     message = context.getString(msgRes)
                 )
-                resultCode = Activity.RESULT_CANCELED
+                resultCode = authFailureResult(intent.action)
                 return
             }
         }
@@ -81,14 +81,6 @@ class PluginReceiver : BroadcastReceiver() {
             PluginContract.ACTION_DIRECT_RESTART -> handleDirect(context, Command.RESTART)
             PluginContract.ACTION_DIRECT_TOGGLE -> handleDirect(context, Command.TOGGLE)
         }
-    }
-
-    private fun isDirectAction(action: String?): Boolean = when (action) {
-        PluginContract.ACTION_DIRECT_START,
-        PluginContract.ACTION_DIRECT_STOP,
-        PluginContract.ACTION_DIRECT_RESTART,
-        PluginContract.ACTION_DIRECT_TOGGLE -> true
-        else -> false
     }
 
     private fun getAuthToken(context: Context): String = readAuthToken(context)
