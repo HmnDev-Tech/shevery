@@ -212,7 +212,7 @@ object Android17Compat {
                     Backend.PERMISSION,
                     "checkPermission",
                     listOf(STRING, STRING, STRING, INT),
-                    listOf(permissionName, packageName, PERSISTENT_DEVICE_ID, userId)
+                    listOf(packageName, permissionName, PERSISTENT_DEVICE_ID, userId)
                 ),
                 Candidate(
                     Backend.PERMISSION,
