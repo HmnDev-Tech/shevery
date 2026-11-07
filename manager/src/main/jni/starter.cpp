@@ -33,6 +33,7 @@
 #define EXIT_FATAL_KILL 9
 #define EXIT_FATAL_BINDER_BLOCKED_BY_SELINUX 10
 #define EXIT_MANAGER_APP_NOT_FOUND 50
+#define EXIT_MANAGER_APP_LOOKUP_UNAVAILABLE 51
 #define STABLE_UPTIME_RESET_SECS 60
 
 #define PACKAGE_NAME "com.hamondev.shevery"
@@ -136,6 +137,8 @@ v_current = (uintptr_t) v + v_size - sizeof(char *); \
 [[noreturn]] static void supervise_server(const char *path, const char *main_class, const char *process_name, int pipe_write_fd) {
     int restart_count = 0;
     const int max_restarts = 5;
+    int manager_lookup_retry_count = 0;
+    const int max_manager_lookup_retries = 5;
     const unsigned int restart_delay_secs = 5;
 
     for (;;) {
@@ -200,6 +203,21 @@ v_current = (uintptr_t) v + v_size - sizeof(char *); \
             LOGW("manager application not found, stopping supervisor without restart");
             exit(0);
         }
+
+        if (!killed_by_signal && exit_code == EXIT_MANAGER_APP_LOOKUP_UNAVAILABLE) {
+            if (manager_lookup_retry_count >= max_manager_lookup_retries) {
+                LOGE("fatal: manager package lookup unavailable after %d retries, giving up",
+                     manager_lookup_retry_count);
+                exit(EXIT_FATAL_APP_PROCESS);
+            }
+            manager_lookup_retry_count += 1;
+            LOGW("manager package lookup unavailable, retrying (%d/%d)",
+                 manager_lookup_retry_count, max_manager_lookup_retries);
+            sleep(restart_delay_secs);
+            continue;
+        }
+
+        manager_lookup_retry_count = 0;
 
         if (uptime_secs >= STABLE_UPTIME_RESET_SECS) {
             restart_count = 0;

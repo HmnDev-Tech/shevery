@@ -9,6 +9,7 @@ import kotlin.collections.ArraysKt;
 public class ServerConstants {
 
     public static final int MANAGER_APP_NOT_FOUND = 50;
+    public static final int MANAGER_APP_LOOKUP_UNAVAILABLE = 51;
 
     public static final String MANAGER_APPLICATION_ID = SheveryApiConstants.MANAGER_APPLICATION_ID;
     public static final String SHIZUKU_STUB_APPLICATION_ID = SheveryApiConstants.SHIZUKU_STUB_APPLICATION_ID;
