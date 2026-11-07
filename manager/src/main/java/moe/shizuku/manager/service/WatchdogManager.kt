@@ -30,7 +30,7 @@ import java.util.concurrent.atomic.AtomicBoolean
  *   Binder IPC (BINDER_TRANSACTION_setErrorProtectEnabled / getErrorProtectEnabled).
  * - If the binder dies and is not recovered by the native starter supervisor
  *   within [SUPERVISOR_RECOVERY_GRACE_MS], this manager issues a fallback
- *   restart for the last launch mode (root / adb / dhizuku).
+ *   restart for the last launch mode (root / adb).
  */
 object WatchdogManager {
 
@@ -208,7 +208,6 @@ object WatchdogManager {
                 when (lastMode) {
                     LaunchMethod.ROOT -> restartRoot()
                     LaunchMethod.ADB -> restartAdb(appContext, force)
-                    LaunchMethod.DHIZUKU -> logd("Watchdog: Dhizuku cannot start the server; ADB or root required")
                     else -> logd("Watchdog: unknown mode $lastMode")
                 }
                 if (ShizukuStateMachine.awaitRunning(15_000L)) {

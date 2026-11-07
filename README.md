@@ -20,7 +20,6 @@
 - Jetpack Compose manager UI with Material 3 Expressive components, motion, switches, and rounded icon treatment.
 - **Device Owner Management & Integration**: Full Device Owner management (app delegation scopes, ownership transfer, DPM-assisted ADB) inspired by and compatible with Dhizuku.
 - **Biometric Security & Protection**: Master switch to require biometric or device PIN/pattern/password authentication with configurable timeouts and granular action protection.
-- **Dhizuku Experimental Support**: Dedicated Device-Owner bridging system available inside Laboratory features.
 - **Better shell/adb based "Comput"** feature with Gemini Explaination, Macros and Commandium AI Command create.
 - Android 16/17 target work with current SDK/build tooling in this fork.
 - ADB Modules screen for installing and managing ZIP modules.
@@ -146,12 +145,6 @@ Every push to `main`, `dev` and `nightly`, and every pull request, runs the [Bui
 
 The release artifact is signature-verified with `apksigner` in every run. Fork pull requests build both variants with a generated keystore, so untrusted code never touches the release signing key.
 
-## How "Start(via Dhizuku)" works?
-
-* First, you need to start Shevery by PC/OTG or Wireless Debugging.
-* Next, start Dhizuku.
-  - Do not start Shevery via Dhizuku first.
-  
 ## License
 
 All code files in this project are licensed under Apache 2.0

@@ -12,7 +12,6 @@
 ## 分支新增功能
 
 - 使用 Material 3 Expressive 组件、动效、开关和圆角图标设计的 Jetpack Compose 管理器界面。
-- **Dhizuku 实验性支持**：在实验室功能中提供专用的设备所有者桥接系统。
 - 改进了基于 shell/adb 的 “Comput” 功能，支持 Gemini 解释、宏和 Commandium AI 命令创建。
 - 此分支采用当前 SDK/构建工具，开展 Android 16/17 目标版本适配工作。
 - 用于安装和管理 ZIP 模块的 ADB Modules 界面。

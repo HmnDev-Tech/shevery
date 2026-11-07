@@ -45,7 +45,6 @@
 
 ## Known limitations (so the AI doesn't mistake a feature for a bug)
 
-- Dhizuku support is experimental and gated under Laboratory features.
 - ADB permissions differ based on Android OS version.
 
 ## Examples of TRASH specific to this repository
