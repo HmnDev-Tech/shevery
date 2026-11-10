@@ -102,7 +102,7 @@ const LAUNCH_PATHS: Record<
       "Per-app delegation of 5 DPM scopes + Strict Whitelist Mode",
     ],
     limitation:
-      "README warns: start Shevery via PC/OTG or Wireless Debugging first, then start Dhizuku — do not bootstrap Shevery via Dhizuku first.",
+      "Requires Shevery to be running via Wireless Debugging or Root for full binder functionality.",
   },
 }
 

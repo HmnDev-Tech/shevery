@@ -18,7 +18,6 @@
 ## Novidades do fork
 
 - Interface do gerenciador em Jetpack Compose com componentes Material 3 Expressive, animações, interruptores e ícones arredondados.
-- **Suporte experimental ao Dhizuku**: sistema dedicado de ponte Device Owner, disponível nos recursos de Laboratório.
 - Recurso **«Comput» aprimorado** baseado em shell/adb, com explicações do Gemini, macros e criação de comandos via Commandium AI.
 - Trabalho de compatibilidade com Android 16/17 usando SDK e ferramentas de build atuais neste fork.
 - Tela de módulos ADB para instalar e gerenciar módulos ZIP.
@@ -124,12 +123,6 @@ https://github.com/RikkaApps/Shizuku-API#migration-guide-for-existing-applicatio
 - Execute a tarefa do Gradle `:manager:assembleDebug` ou `:manager:assembleRelease`
 
 A tarefa `:manager:assembleDebug` gera um servidor depurável. Você pode anexar um depurador ao `shizuku_server` para depurar o servidor. Atenção: no Android Studio, em «Run/Debug configurations», a opção «Always install with package manager» deve estar marcada, para que o servidor use o código mais recente.
-
-## Como funciona o «Iniciar (via Dhizuku)»?
-
-* Primeiro, você precisa iniciar o Shevery via PC/OTG ou depuração sem fio.
-* Em seguida, inicie o Dhizuku.
-  - Não inicie o Shevery via Dhizuku primeiro.
 
 ## Licença
 

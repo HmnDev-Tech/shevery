@@ -18,7 +18,6 @@
 ## إضافات الفرع
 
 - واجهة مدير مبنية بـ Jetpack Compose مع مكونات Material 3 Expressive والحركات والمفاتيح وأيقونات دائرية.
-- **دعم تجريبي لـ Dhizuku**: نظام ربط مخصص لمالك الجهاز (Device Owner) متوفر داخل مزايا المختبر.
 - ميزة **«Comput» المحسّنة** المبنية على shell/adb مع شرح Gemini ووحدات الماكرو وإنشاء الأوامر عبر Commandium AI.
 - العمل على دعم Android 16/17 باستخدام أحدث SDK وأدوات البناء في هذا الفرع.
 - شاشة وحدات ADB لتثبيت وإدارة وحدات ZIP.
@@ -124,12 +123,6 @@ https://github.com/RikkaApps/Shizuku-API#migration-guide-for-existing-applicatio
 - شغّل مهمة Gradle `:manager:assembleDebug` أو `:manager:assembleRelease`
 
 تُنتج المهمة `:manager:assembleDebug` خادمًا قابلًا لتصحيح الأخطاء. يمكنك إرفاق المصحح بـ `shizuku_server` لتصحيح الخادم. انتبه إلى أنه في Android Studio يجب تفعيل «Run/Debug configurations» - «Always install with package manager» حتى يستخدم الخادم أحدث الشيفرة.
-
-## كيف يعمل «البدء (عبر Dhizuku)»؟
-
-* أولًا، تحتاج إلى بدء Shevery عبر الحاسوب/OTG أو تصحيح الأخطاء اللاسلكي.
-* ثم ابدأ Dhizuku.
-  - لا تبدأ Shevery عبر Dhizuku أولًا.
 
 ## الترخيص
 

@@ -55,20 +55,17 @@ import java.net.ConnectException
 import javax.net.ssl.SSLProtocolException
 
 private class NotRootedException : Exception()
-private class DhizukuException(message: String, cause: Throwable? = null) : Exception(message, cause)
 
 class StarterActivity : AppActivity() {
 
     private var waitingForService = false
 
     private val startedWithRoot by lazy { intent.getBooleanExtra(EXTRA_IS_ROOT, true) }
-    private val startedWithDhizuku by lazy { intent.getBooleanExtra(EXTRA_IS_DHIZUKU, false) }
 
     private val viewModel by viewModels {
         ViewModel(
             this,
             startedWithRoot,
-            startedWithDhizuku,
             intent.getStringExtra(EXTRA_HOST),
             intent.getIntExtra(EXTRA_PORT, 0)
         )
@@ -83,17 +80,8 @@ class StarterActivity : AppActivity() {
 
         viewModel.output.observe(this) {
             val output = it.data.orEmpty().trim()
-            val dhizukuFinished = startedWithDhizuku && output.endsWith("✓ Shevery binder verified.")
             val finished = output.endsWith("info: shizuku_starter exit with 0")
-            if (!waitingForService && dhizukuFinished) {
-                waitingForService = true
-                moe.shizuku.manager.service.WatchdogManager.clearUserStopRequest(this@StarterActivity)
-                viewModel.appendOutput("Service started, this window will be automatically closed in 3 seconds")
-                lifecycleScope.launch {
-                    delay(3000L)
-                    if (!isFinishing) finish()
-                }
-            } else if (!waitingForService && finished) {
+            if (!waitingForService && finished) {
                 waitingForService = true
                 viewModel.appendOutput("")
                 viewModel.appendOutput("Waiting for service...")
@@ -154,12 +142,10 @@ class StarterActivity : AppActivity() {
                         val isServiceStarted = output.contains("Service started")
                         ExpressiveCard(
                             icon = when {
-                                startedWithDhizuku -> R.drawable.ic_system_icon
                                 startedWithRoot -> R.drawable.ic_root_24dp
                                 else -> R.drawable.ic_adb_24dp
                             },
                             title = when {
-                                startedWithDhizuku -> HtmlText(R.string.home_dhizuku_title)
                                 startedWithRoot -> HtmlText(R.string.home_root_title)
                                 else -> HtmlText(R.string.home_wireless_adb_title)
                             },
@@ -225,13 +211,12 @@ class StarterActivity : AppActivity() {
     companion object {
 
         const val EXTRA_IS_ROOT = "$EXTRA.IS_ROOT"
-        const val EXTRA_IS_DHIZUKU = "$EXTRA.IS_DHIZUKU"
         const val EXTRA_HOST = "$EXTRA.HOST"
         const val EXTRA_PORT = "$EXTRA.PORT"
     }
 }
 
-private class ViewModel(context: Context, root: Boolean, dhizuku: Boolean, host: String?, port: Int) : androidx.lifecycle.ViewModel() {
+private class ViewModel(context: Context, root: Boolean, host: String?, port: Int) : androidx.lifecycle.ViewModel() {
 
     private val appContext = context.applicationContext
 
@@ -245,7 +230,6 @@ private class ViewModel(context: Context, root: Boolean, dhizuku: Boolean, host:
         prewarmManagerProvider()
         try {
             when {
-                dhizuku -> startDhizuku(context)
                 root -> startRoot()
                 else -> startAdb(host!!, port)
             }
@@ -349,16 +333,6 @@ private class ViewModel(context: Context, root: Boolean, dhizuku: Boolean, host:
                 postResult(it)
             }
         }
-    }
-
-    private fun startDhizuku(context: Context) {
-        synchronized(outputLock) {
-            sb.append("Starting with Dhizuku is not supported.").append('\n').append('\n')
-        }
-        appendLine("✗ Dhizuku user services run under the app UID (u0_a...).")
-        appendLine("  The Shevery service requires real ADB or root privileges to start.")
-        appendLine("  Start Shevery with Wireless ADB or root first.")
-        postResult(DhizukuException("ADB or root privileges are required to start the Shevery service"))
     }
 
 }

@@ -248,9 +248,6 @@ fun SettingsScreen(
     var adbStartOnBoot by remember {
         mutableStateOf(ShizukuSettings.getStartOnBootAdb())
     }
-    var dhizukuEnabled by remember {
-        mutableStateOf(ModuleSettings.isDhizukuEnabled())
-    }
     var showStealthDialog by remember { mutableStateOf(false) }
     var stealthFileName by remember {
         mutableStateOf("SystemToolkit-v${BuildConfig.VERSION_NAME}")
@@ -260,7 +257,6 @@ fun SettingsScreen(
     var notifyDeath by remember {
         mutableStateOf(ModuleSettings.isNotifyOnServiceDeath())
     }
-    var showDhizukuDialog by remember { mutableStateOf(false) }
     var wifiReassert by remember {
         mutableStateOf(ModuleSettings.isWifiReassertEnabled())
     }
@@ -483,7 +479,6 @@ fun SettingsScreen(
                 startOnBoot = ShizukuSettings.getStartOnBoot()
                 adbStartOnBoot = ShizukuSettings.getStartOnBootAdb()
                 watchdog = ModuleSettings.isWatchdogEnabled()
-                dhizukuEnabled = ModuleSettings.isDhizukuEnabled()
                 notifyDeath = ModuleSettings.isNotifyOnServiceDeath()
                 languageTag = prefs.getString(LANGUAGE, "SYSTEM") ?: "SYSTEM"
                 nightMode = ShizukuSettings.getNightMode()
@@ -639,7 +634,6 @@ fun SettingsScreen(
                             adbStartOnBoot = adbStartOnBoot,
                             tcpMode = tcpMode,
                             watchdog = watchdog,
-                            dhizukuEnabled = dhizukuEnabled,
                             notifyDeath = notifyDeath,
                             wifiReassert = wifiReassert,
                             autoDisableUsbDebugging = autoDisableUsbDebugging,
@@ -696,14 +690,6 @@ fun SettingsScreen(
                                 ModuleSettings.setWatchdogEnabled(enabled)
                                 watchdog = ModuleSettings.isWatchdogEnabled()
                                 moe.shizuku.manager.service.WatchdogManager.reconcileService(context)
-                            },
-                            onDhizukuToggle = { enabled ->
-                                if (enabled) {
-                                    showDhizukuDialog = true
-                                } else {
-                                    ModuleSettings.setDhizukuEnabled(false)
-                                    dhizukuEnabled = false
-                                }
                             },
                             onNotifyDeathChange = { enabled ->
                                 ModuleSettings.setNotifyOnServiceDeath(enabled)
@@ -1065,32 +1051,6 @@ fun SettingsScreen(
         )
     }
 
-    if (showDhizukuDialog) {
-        AlertDialog(
-            onDismissRequest = { showDhizukuDialog = false },
-            title = { Text(stringResource(R.string.dhizuku_warning_title)) },
-            text = { Text(stringResource(R.string.dhizuku_warning_message)) },
-            confirmButton = {
-                TextButton(
-                    onClick = {
-                        ModuleSettings.setDhizukuEnabled(true)
-                        dhizukuEnabled = true
-                        showDhizukuDialog = false
-                    }
-                ) {
-                    Text(stringResource(android.R.string.ok))
-                }
-            },
-            dismissButton = {
-                TextButton(onClick = { showDhizukuDialog = false }) {
-                    Text(stringResource(android.R.string.cancel))
-                }
-            },
-            containerColor = MaterialTheme.colorScheme.surfaceContainerHigh,
-            shape = MaterialTheme.shapes.extraLarge
-        )
-    }
-
     if (showStealthDialog) {
         AlertDialog(
             onDismissRequest = { showStealthDialog = false },
@@ -1377,7 +1337,6 @@ private fun LazyListScope.applicationSectionContent(
     adbStartOnBoot: Boolean,
     tcpMode: Boolean,
     watchdog: Boolean,
-    dhizukuEnabled: Boolean,
     notifyDeath: Boolean,
     wifiReassert: Boolean,
     autoDisableUsbDebugging: Boolean,
@@ -1388,7 +1347,6 @@ private fun LazyListScope.applicationSectionContent(
     onStartOnBootChange: (Boolean) -> Unit,
     onAdbStartOnBootChange: (Boolean) -> Unit,
     onWatchdogChange: (Boolean) -> Unit,
-    onDhizukuToggle: (Boolean) -> Unit,
     onNotifyDeathChange: (Boolean) -> Unit,
     onWifiReassertChange: (Boolean) -> Unit,
     onAutoDisableUsbDebuggingChange: (Boolean) -> Unit,
@@ -1427,16 +1385,6 @@ private fun LazyListScope.applicationSectionContent(
                 checked = watchdog,
                 onCheckedChange = onWatchdogChange
             )
-            if (!DeviceOwnerManager.isOwner(LocalContext.current)) {
-                GroupDivider()
-                SwitchSettingsRow(
-                    icon = R.drawable.ic_outline_info_24,
-                    title = stringResource(R.string.dhizuku_mode_title),
-                    summary = stringResource(R.string.dhizuku_mode_summary),
-                    checked = dhizukuEnabled,
-                    onCheckedChange = onDhizukuToggle
-                )
-            }
             GroupDivider()
             SwitchSettingsRow(
                 icon = R.drawable.ic_outline_notifications_active_24,

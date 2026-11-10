@@ -23,7 +23,7 @@ import rikka.shizuku.Shizuku
  * set() calls. UI can observe via [asFlow] for reactive state updates.
  *
  * States:
- * - STARTING: Server is being launched (root, ADB, or Dhizuku)
+ * - STARTING: Server is being launched (root or ADB)
  * - RUNNING: Binder is alive (pingBinder() returns true)
  * - STOPPING: Stop has been requested, waiting for binder to die
  * - STOPPED: Binder is dead, stop was expected (or initial state)

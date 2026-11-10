@@ -22,7 +22,6 @@ object ModuleSettings {
     private const val KEY_RECOMMAND_ACTION = "adb_modules_recommand_action"
     private const val KEY_TRUSTED_MODULES = "adb_modules_trusted_modules"
     private const val KEY_CONNECTOR_ENABLED = "shizuku_connector_enabled"
-    private const val KEY_DHIZUKU_ENABLED = "shizuku_dhizuku_enabled"
     private const val KEY_VERBOSE_LOGGING = "shizuku_verbose_logging"
     private const val KEY_NOTIFY_DEATH = "shizuku_notify_service_death"
     private const val KEY_NOTIFY_RECOVERY = "shizuku_notify_recovery"
@@ -224,15 +223,6 @@ object ModuleSettings {
     fun setConnectorEnabled(value: Boolean) {
         ShizukuSettings.getPreferences().edit().putBoolean(KEY_CONNECTOR_ENABLED, value).apply()
     }
-
-    fun isDhizukuEnabled(): Boolean {
-        return ShizukuSettings.getPreferences().getBoolean(KEY_DHIZUKU_ENABLED, false)
-    }
-
-    fun setDhizukuEnabled(value: Boolean) {
-        ShizukuSettings.getPreferences().edit().putBoolean(KEY_DHIZUKU_ENABLED, value).apply()
-    }
-
 
     fun isVerboseLogging(): Boolean {
         return ShizukuSettings.getPreferences().getBoolean(KEY_VERBOSE_LOGGING, false)

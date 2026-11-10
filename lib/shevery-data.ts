@@ -35,12 +35,21 @@ export const PROJECT_FACTS = [
   },
   {
     term: "current release",
-    value: "14.6.3",
-    detail: "versionCode 49, published 2026-11-04. Built from api_version_name 14.6.3.",
+    value: "14.6.4",
+    detail: "versionCode 50, published 2026-11-10. Built from api_version_name 14.6.4.",
   },
 ]
 
 export const RECENT_CHANGES: ChangeCard[] = [
+  {
+    title: "14.6.4: update Wireless Debugging paired device name and bump Shevery-API (#386)",
+    body: "Shevery 14.6.4 (versionCode 50) updates the service name shown in Wireless Debugging paired devices from 'shizuku' to 'shevery' to prevent confusion across parallel implementations (#386). Upgrades Shevery-API to 14.6.4.",
+    commits: [
+      { label: "14.6.4", url: "https://github.com/HmnDev-Tech/shevery" },
+    ],
+    span: "lg:col-span-12",
+    variant: "primary",
+  },
   {
     title: "14.6.3: strict Application Management filter and zero-lag Add App (#370)",
     body: "Shevery 14.6.3 (versionCode 49) filters Application Management to strictly display only applications configured with permissions or manually added, eliminating full-device package enumeration lag. Expands Add App with asynchronous search, access modes, runtime permission grant, and detailed privilege management.",

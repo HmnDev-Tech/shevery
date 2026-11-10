@@ -18,7 +18,6 @@
 ## Fork-tağı jaña mümkinşilikter
 
 - Material 3 Expressive komponentterimen, animaciyalarmen, auıstırıp-qosqıştarmen jäne jumır belgilerimen Jetpack Compose basqaru interfeysi.
-- **Dhizuku eksperimental qoldauı**: Laboratoriya mümkindikteri işinde qoljetimdi arnayı Device Owner köpirlik jüyesi.
 - **Jaqsartılğan «Comput»** funksiäsı — shell/adb negizinde, Gemini tüsindirmeleri, Makrostar jäne Commandium AI komanda jasau mümkinşiligimen.
 - Bul fork-ta qazirgi SDK/qūrastıru qūraldarın qoldanıp, Android 16/17-ge beyimdeu jumāstarı jürgizilude.
 - ZIP moduldärdi ornatu jäne basqaruğa arnalğan ADB Modules ekranı.
@@ -124,12 +123,6 @@ https://github.com/RikkaApps/Shizuku-API#migration-guide-for-existing-applicatio
 - Gradle tapsırmasın orındañız: `:manager:assembleDebug` nemese `:manager:assembleRelease`
 
 `:manager:assembleDebug` tapsırması jöndeuge bolatın server jasaydı. Serverdi jöndeu üşin `shizuku_server`-ge jöndeuşini qosıñız. Nazarıñızda bolsın: Android Studio-da «Run/Debug configurations» - «Always install with package manager» belgilenuі kerek, söytip server eñ soñğı kodtı qoldanadı.
-
-## «Iske qosu (Dhizuku arqılı)» qalayı jūmıs isteydi?
-
-* Aldımen Shevery-di DK/OTG nemese SІmsız jöndeu arqılı iske qosuıñız kerek.
-* Sodan keyin Dhizuku-dı iske qosıñız.
-  - Shevery-di eñ aldın Dhizuku arqılı iske qospаñız.
 
 ## Lisenziya
 

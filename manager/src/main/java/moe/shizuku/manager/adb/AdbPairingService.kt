@@ -147,7 +147,7 @@ class AdbPairingService : Service() {
             val host = "127.0.0.1"
 
             val key = try {
-                AdbKey(PreferenceAdbKeyStore(ShizukuSettings.getPreferences()), "shizuku")
+                AdbKey(PreferenceAdbKeyStore(ShizukuSettings.getPreferences()), "shevery")
             } catch (e: Throwable) {
                 e.printStackTrace()
                 return@launch

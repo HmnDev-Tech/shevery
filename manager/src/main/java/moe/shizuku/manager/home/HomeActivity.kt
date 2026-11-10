@@ -336,16 +336,13 @@ abstract class HomeActivity : AppActivity() {
             LaunchedEffect(serviceResource?.status, serviceResource?.data?.uid) {
                 val status = serviceResource?.data ?: return@LaunchedEffect
                 if (serviceResource?.status == Status.SUCCESS && status.isRunning) {
-                    val currentMode = ShizukuSettings.getLastLaunchMode()
-                    if (currentMode != ShizukuSettings.LaunchMethod.DHIZUKU) {
-                        ShizukuSettings.setLastLaunchMode(
-                            if (status.uid == 0) {
-                                ShizukuSettings.LaunchMethod.ROOT
-                            } else {
-                                ShizukuSettings.LaunchMethod.ADB
-                            }
-                        )
-                    }
+                    ShizukuSettings.setLastLaunchMode(
+                        if (status.uid == 0) {
+                            ShizukuSettings.LaunchMethod.ROOT
+                        } else {
+                            ShizukuSettings.LaunchMethod.ADB
+                        }
+                    )
                     try {
                         AdbModuleManager.runEnabledServicesIfAllowed(applicationContext)
                         WifiDebugReassert.reassertIfEnabled(applicationContext)
@@ -652,8 +649,6 @@ abstract class HomeActivity : AppActivity() {
                                     onRequestLocalNetworkPermission = {
                                         requestLocalNetworkPermission { permissionRefreshTick.intValue++ }
                                     },
-                                    onStartDhizuku = { startDhizukuMode() },
-                                    dhizukuEnabled = ModuleSettings.isDhizukuEnabled(),
                                     onOpenAutomationSettings = {
                                         settingsTargetSection = SettingsSection.AUTOMATION
                                         selectedTab = 3
@@ -1163,15 +1158,6 @@ abstract class HomeActivity : AppActivity() {
             .setPrimaryClip(ClipData.newPlainText(getString(R.string.home_diagnostics_title), text))
         Toast.makeText(this, R.string.home_diagnostics_copied, Toast.LENGTH_SHORT).show()
     }
-    private fun startDhizukuMode() {
-        moe.shizuku.manager.service.WatchdogManager.clearUserStopRequest(this@HomeActivity)
-        startActivity(
-            Intent(this, StarterActivity::class.java).apply {
-                putExtra(StarterActivity.EXTRA_IS_ROOT, false)
-                putExtra(StarterActivity.EXTRA_IS_DHIZUKU, true)
-            }
-        )
-    }
 
     private fun isPermissionDefined(permission: String): Boolean {
         return try {
@@ -1254,8 +1240,6 @@ private fun HomeScreen(
     onOpenAdbPermissionHelp: () -> Unit,
     onCopyDiagnostics: (String) -> Unit,
     onRequestLocalNetworkPermission: () -> Unit,
-    onStartDhizuku: () -> Unit,
-    dhizukuEnabled: Boolean,
     onOpenAutomationSettings: () -> Unit = {},
     onOpenCompatStubs: () -> Unit = {},
     listState: LazyListState = rememberLazyListState()
@@ -1393,10 +1377,8 @@ private fun HomeScreen(
                     isPrimaryUser = isPrimaryUser,
                     isRooted = isRooted,
                     canUseWirelessAdb = canUseWirelessAdb,
-                    dhizukuEnabled = dhizukuEnabled,
                     onStartRoot = onStartRoot,
                     onStartWirelessAdb = onStartWirelessAdb,
-                    onStartDhizuku = onStartDhizuku,
                     onManageApps = onManageApps,
                     onStop = onStop,
                     uptime = uptimeText
@@ -1534,11 +1516,6 @@ private fun HomeScreen(
                         RootCard(onStartRoot)
                     }
                 }
-                if (dhizukuEnabled) {
-                    item {
-                        DhizukuCard(onStartDhizuku)
-                    }
-                }
             }
 
             item {
@@ -1579,10 +1556,8 @@ private fun StatusHero(
     isPrimaryUser: Boolean,
     isRooted: Boolean,
     canUseWirelessAdb: Boolean,
-    dhizukuEnabled: Boolean,
     onStartRoot: () -> Unit,
     onStartWirelessAdb: () -> Unit,
-    onStartDhizuku: () -> Unit,
     onManageApps: () -> Unit,
     onStop: () -> Unit,
     uptime: String? = null
@@ -1709,12 +1684,6 @@ private fun StatusHero(
                         FilledTonalButton(onClick = onStartWirelessAdb) {
                             ButtonIcon(R.drawable.ic_wadb_24)
                             Text(stringResource(R.string.home_wireless_adb_title))
-                        }
-                    }
-                    if (dhizukuEnabled) {
-                        FilledTonalButton(onClick = onStartDhizuku) {
-                            ButtonIcon(R.drawable.ic_system_icon)
-                            Text(stringResource(R.string.home_dhizuku_title))
                         }
                     }
                 }
@@ -2396,7 +2365,6 @@ private fun buildServiceSummary(context: android.content.Context, status: Servic
     if (!status.isRunning) return ""
 
     val user = when {
-        ShizukuSettings.getLastLaunchMode() == ShizukuSettings.LaunchMethod.DHIZUKU -> "dhizuku"
         status.uid == 0 -> "root"
         else -> "adb"
     }
@@ -2420,7 +2388,6 @@ private fun buildDiagnostics(
     localNetworkPermissionState: LocalNetworkPermissionState,
     isRooted: Boolean,
     watchdogEnabled: Boolean,
-    dhizukuEnabled: Boolean,
     tcpMode: Boolean,
     launchMode: Int
 ): String {
@@ -2439,7 +2406,6 @@ private fun buildDiagnostics(
     val lastLaunch = when (launchMode) {
         ShizukuSettings.LaunchMethod.ROOT -> "root"
         ShizukuSettings.LaunchMethod.ADB -> "adb"
-        ShizukuSettings.LaunchMethod.DHIZUKU -> "dhizuku"
         else -> context.getString(R.string.diagnostics_unknown)
     }
 
@@ -2455,7 +2421,6 @@ private fun buildDiagnostics(
         appendLine("${context.getString(R.string.diagnostics_authorized_apps)}: $grantedCount")
         appendLine("${context.getString(R.string.diagnostics_local_network)}: $localNetwork")
         appendLine("${context.getString(R.string.diagnostics_error_protect)}: ${onOff(watchdogEnabled)}")
-        appendLine("${context.getString(R.string.diagnostics_dhizuku_mode)}: ${onOff(dhizukuEnabled)}")
         appendLine("${context.getString(R.string.diagnostics_tcp_mode)}: ${onOff(tcpMode)}")
         appendLine("${context.getString(R.string.diagnostics_launch_mode)}: $lastLaunch")
         appendLine("${context.getString(R.string.diagnostics_root)}: ${if (isRooted) context.getString(R.string.diagnostics_available) else context.getString(R.string.diagnostics_unavailable)}")
@@ -2477,26 +2442,6 @@ private fun RootCard(onStartRoot: () -> Unit) {
                     icon = R.drawable.ic_server_start_24dp,
                     primary = true,
                     onClick = onStartRoot
-                )
-            )
-        )
-    }
-}
-
-@Composable
-private fun DhizukuCard(onStartDhizuku: () -> Unit) {
-    HomeCard(
-        icon = R.drawable.ic_system_icon,
-        title = HtmlText(R.string.home_dhizuku_title),
-        body = HtmlText(R.string.home_dhizuku_description)
-    ) {
-        HomeButtons(
-            listOf(
-                HomeButtonSpec(
-                    label = R.string.home_root_button_start,
-                    icon = R.drawable.ic_server_start_24dp,
-                    primary = true,
-                    onClick = onStartDhizuku
                 )
             )
         )
