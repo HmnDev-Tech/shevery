@@ -35,7 +35,7 @@ object AdbStarter {
         launches.launch(skipIfRunning = !force, checkAllowed = {}) { markPossiblyDispatched ->
             entered = true
             ShizukuStateMachine.onStartRequested()
-            val key = AdbKey(PreferenceAdbKeyStore(ShizukuSettings.getPreferences()), "shizuku")
+            val key = AdbKey(PreferenceAdbKeyStore(ShizukuSettings.getPreferences()), "shevery")
             tcpMode = ShizukuSettings.isTcpMode()
             val targetPort = if (tcpMode) TCP_MODE_PORT else port
             val isTargetAlreadyLive = EnvironmentUtils.isAdbPortLive(targetPort)
@@ -66,7 +66,7 @@ object AdbStarter {
     ) {
         launches.withGate({}) {
             ShizukuStateMachine.onStartRequested()
-            val key = AdbKey(PreferenceAdbKeyStore(ShizukuSettings.getPreferences()), "shizuku")
+            val key = AdbKey(PreferenceAdbKeyStore(ShizukuSettings.getPreferences()), "shevery")
             switchToTcp(host, currentPort, targetPort, key)
         }
     }

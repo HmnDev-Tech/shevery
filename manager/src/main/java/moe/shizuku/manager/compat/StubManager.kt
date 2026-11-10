@@ -435,7 +435,7 @@ object StubManager {
             return Result(false, CHANNEL_ADB, "no ADB port")
         }
 
-        val key = AdbKey(PreferenceAdbKeyStore(ShizukuSettings.getPreferences()), "shizuku")
+        val key = AdbKey(PreferenceAdbKeyStore(ShizukuSettings.getPreferences()), "shevery")
         for (port in candidatePorts) {
             try {
                 val output = StringBuilder()
