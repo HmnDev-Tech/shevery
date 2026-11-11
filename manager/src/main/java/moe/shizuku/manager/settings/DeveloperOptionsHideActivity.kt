@@ -4,13 +4,26 @@ import android.content.Intent
 import android.os.Bundle
 import android.provider.Settings
 import androidx.activity.compose.setContent
+import androidx.compose.foundation.layout.fillMaxWidth
 import androidx.compose.foundation.layout.padding
+import androidx.compose.foundation.layout.size
 import androidx.compose.foundation.lazy.items
+import androidx.compose.material.icons.Icons
+import androidx.compose.material.icons.rounded.Clear
+import androidx.compose.material.icons.rounded.Search
+import androidx.compose.material3.Icon
+import androidx.compose.material3.IconButton
+import androidx.compose.material3.MaterialTheme
 import androidx.compose.material3.Text
+import androidx.compose.material3.TextField
+import androidx.compose.material3.TextFieldDefaults
 import androidx.compose.runtime.getValue
 import androidx.compose.runtime.mutableStateOf
 import androidx.compose.runtime.remember
+import androidx.compose.runtime.saveable.rememberSaveable
 import androidx.compose.runtime.setValue
+import androidx.compose.ui.Modifier
+import androidx.compose.ui.graphics.Color
 import androidx.compose.ui.platform.LocalContext
 import androidx.compose.ui.res.stringResource
 import androidx.compose.ui.unit.dp
@@ -39,6 +52,7 @@ class DeveloperOptionsHideActivity : AppActivity() {
             var refresh by remember { mutableStateOf(0) }
             var apps by remember { mutableStateOf(emptyList<DevOptionsHideTargetApp>()) }
             var targets by remember { mutableStateOf(DeveloperOptionsHideManager.targetPackages()) }
+            var searchQuery by rememberSaveable { mutableStateOf("") }
             var usageAccess by remember { mutableStateOf(DeveloperOptionsHideManager.hasUsageAccess(context)) }
             var canChangeSetting by remember { mutableStateOf(AdbArm.canArm(context)) }
             LifecycleEventEffect(Lifecycle.Event.ON_RESUME) {
@@ -55,6 +69,17 @@ class DeveloperOptionsHideActivity : AppActivity() {
                 )
                 targets = DeveloperOptionsHideManager.targetPackages()
             }
+            val filteredApps = remember(apps, searchQuery) {
+                val query = searchQuery.trim()
+                if (query.isEmpty()) {
+                    apps
+                } else {
+                    apps.filter {
+                        it.label.contains(query, ignoreCase = true) ||
+                            it.packageName.contains(query, ignoreCase = true)
+                    }
+                }
+            }
 
             ShizukuExpressiveTheme {
                 ShizukuLazyScaffold(
@@ -65,7 +90,7 @@ class DeveloperOptionsHideActivity : AppActivity() {
                         SettingsGroup(title = stringResource(R.string.developer_options_hide_title)) {
                             Text(
                                 stringResource(R.string.developer_options_hide_warning),
-                                modifier = androidx.compose.ui.Modifier.padding(16.dp)
+                                modifier = Modifier.padding(16.dp)
                             )
                             GroupDivider()
                             SettingsRow(
@@ -86,15 +111,52 @@ class DeveloperOptionsHideActivity : AppActivity() {
                                 GroupDivider()
                                 Text(
                                     stringResource(R.string.developer_options_hide_permission_required),
-                                    modifier = androidx.compose.ui.Modifier.padding(16.dp)
+                                    modifier = Modifier.padding(16.dp)
                                 )
                             }
                         }
                     }
                     item {
-                        SettingsGroup(title = stringResource(R.string.usb_debugging_hide_apps)) {}
+                        SettingsGroup(title = stringResource(R.string.usb_debugging_hide_apps)) {
+                            TextField(
+                                value = searchQuery,
+                                onValueChange = { searchQuery = it },
+                                modifier = Modifier
+                                    .fillMaxWidth()
+                                    .padding(horizontal = 16.dp, vertical = 8.dp),
+                                placeholder = { Text(stringResource(R.string.app_management_search_hint)) },
+                                leadingIcon = {
+                                    Icon(
+                                        imageVector = Icons.Rounded.Search,
+                                        contentDescription = null,
+                                        tint = MaterialTheme.colorScheme.onSurfaceVariant
+                                    )
+                                },
+                                trailingIcon = {
+                                    if (searchQuery.isNotEmpty()) {
+                                        IconButton(
+                                            onClick = { searchQuery = "" },
+                                            modifier = Modifier.size(48.dp)
+                                        ) {
+                                            Icon(
+                                                imageVector = Icons.Rounded.Clear,
+                                                contentDescription = stringResource(R.string.app_management_clear_search)
+                                            )
+                                        }
+                                    }
+                                },
+                                singleLine = true,
+                                shape = MaterialTheme.shapes.extraLarge,
+                                colors = TextFieldDefaults.colors(
+                                    focusedContainerColor = MaterialTheme.colorScheme.surfaceContainerHigh,
+                                    unfocusedContainerColor = MaterialTheme.colorScheme.surfaceContainerHigh,
+                                    focusedIndicatorColor = Color.Transparent,
+                                    unfocusedIndicatorColor = Color.Transparent
+                                )
+                            )
+                        }
                     }
-                    items(apps, key = { it.packageName }) { app ->
+                    items(filteredApps, key = { it.packageName }) { app ->
                         SwitchSettingsRow(
                             icon = R.drawable.ic_system_icon,
                             title = app.label,
