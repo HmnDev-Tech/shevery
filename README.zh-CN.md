@@ -1,11 +1,11 @@
 # Shevery
 
-[English](README.md) | [Русский](README.ru.md) | [Қазақша](README.kk.md) | [Qazaqşa (Latın)](README.kk-Latn.md) | [Português](README.pt.md) | [Español](README.es.md) | [العربية](README.ar.md) | [简体中文](README.zh-CN.md) | [日本語](README.ja.md)
+[English](README.md) | [Русский](README.ru.md) | [Қазақша](README.kk.md) | [Qazaqşa (Latın)](README.kk-Latn.md) | [Português](README.pt.md) | [Español](README.es.md) | [العربية](README.ar.md) | [简体中文](README.zh-CN.md) | [繁體中文](README.zh-TW.md) | [日本語](README.ja.md)
 
 ## 分支状态
 
 > [!IMPORTANT]
-> **需要执行迁移操作：** 由于应用标识从 moe.shizuku.privileged.api 更改为 **com.hamondev.shevery**，在安装 Shevery 之前，你**必须卸载**设备上任何旧版官方 Shizuku Manager 应用。否则，两者会发生冲突。
+> **支持并存安装：** 得益于独立的包 ID（`com.hamondev.shevery`）和隔离的权限命名空间，你**现在可以直接将 Shevery 与其他 Shizuku 实现并存安装**，无需事先卸载它们。对于会显式检查 `moe.shizuku.privileged.api` 的旧版应用，可以在移除原版 Shizuku 后，选择性地在设置中启用兼容性存根。
 上游项目参考：<https://github.com/RikkaApps/Shizuku>
 >
 
