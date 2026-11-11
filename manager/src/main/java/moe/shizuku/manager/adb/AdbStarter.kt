@@ -20,7 +20,10 @@ object AdbStarter {
         isRunning = { Shizuku.pingBinder() }
     )
 
-    const val TCP_MODE_PORT = 5555
+    const val DEFAULT_TCP_MODE_PORT = 5555
+
+    val TCP_MODE_PORT: Int
+        get() = ShizukuSettings.getTcpModePort()
 
     suspend fun start(
         host: String = "127.0.0.1",
@@ -37,9 +40,13 @@ object AdbStarter {
             ShizukuStateMachine.onStartRequested()
             val key = AdbKey(PreferenceAdbKeyStore(ShizukuSettings.getPreferences()), "shevery")
             tcpMode = ShizukuSettings.isTcpMode()
-            val targetPort = if (tcpMode) TCP_MODE_PORT else port
+            var targetPort = if (tcpMode) TCP_MODE_PORT else port
             val isTargetAlreadyLive = EnvironmentUtils.isAdbPortLive(targetPort)
             if (tcpMode && port != targetPort && !isTargetAlreadyLive) {
+                if (ShizukuSettings.isTcpPortRandomized()) {
+                    targetPort = ShizukuSettings.randomTcpPort()
+                    ShizukuSettings.setTcpModePort(targetPort)
+                }
                 log?.invoke("Switching ADB from port $port to TCP port $targetPort...")
                 switchToTcp(host, port, targetPort, key)
             }

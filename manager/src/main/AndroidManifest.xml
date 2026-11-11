@@ -142,6 +142,10 @@
             android:exported="false"
             android:label="@string/usb_debugging_hide_title" />
         <activity
+            android:name=".settings.DeveloperOptionsHideActivity"
+            android:exported="false"
+            android:label="@string/developer_options_hide_title" />
+        <activity
             android:name=".settings.NetworkFirewallActivity"
             android:exported="false"
             android:label="@string/network_firewall_title" />
@@ -292,6 +296,17 @@
         </service>
 
         <service
+            android:name=".settings.DeveloperOptionsHideService"
+            android:enabled="true"
+            android:exported="false"
+            android:foregroundServiceType="specialUse"
+            tools:targetApi="34">
+            <property
+                android:name="android.app.PROPERTY_SPECIAL_USE_FGS_SUBTYPE"
+                android:value="Temporarily changes Developer Options while configured apps are in the foreground." />
+        </service>
+
+        <service
             android:name=".accessibility.AccessibilityDaemonService"
             android:enabled="true"
             android:exported="false"
@@ -357,6 +372,16 @@
             android:exported="true">
             <intent-filter>
                 <action android:name="android.intent.action.BOOT_COMPLETED" />
+            </intent-filter>
+        </receiver>
+
+        <receiver
+            android:name=".receiver.FirewallPackageReceiver"
+            android:enabled="true"
+            android:exported="true">
+            <intent-filter>
+                <action android:name="android.intent.action.PACKAGE_ADDED" />
+                <data android:scheme="package" />
             </intent-filter>
         </receiver>
 

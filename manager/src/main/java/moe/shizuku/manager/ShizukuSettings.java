@@ -31,6 +31,9 @@ public class ShizukuSettings {
     public static final String LANGUAGE = "language";
     public static final String KEEP_START_ON_BOOT = "start_on_boot";
     public static final String TCP_MODE = "tcp_mode";
+    public static final String TCP_MODE_PORT = "tcp_mode_port";
+    public static final String TCP_MODE_RANDOMIZE_PORT = "tcp_mode_randomize_port";
+    public static final int DEFAULT_TCP_MODE_PORT = 5555;
     public static final String SUPPRESS_TCP_MODE_PROMPT = "suppress_tcp_mode_prompt";
     public static final String LAST_ADB_PORT = "last_adb_port";
     public static final String AUTO_DISABLE_USB_DEBUGGING = "auto_disable_usb_debugging";
@@ -132,6 +135,29 @@ public class ShizukuSettings {
 
     public static void setTcpMode(boolean enabled) {
         getPreferences().edit().putBoolean(TCP_MODE, enabled).apply();
+    }
+
+    public static int getTcpModePort() {
+        int port = getPreferences().getInt(TCP_MODE_PORT, DEFAULT_TCP_MODE_PORT);
+        return (port >= 1 && port <= 65535) ? port : DEFAULT_TCP_MODE_PORT;
+    }
+
+    public static void setTcpModePort(int port) {
+        if (port >= 1 && port <= 65535) {
+            getPreferences().edit().putInt(TCP_MODE_PORT, port).apply();
+        }
+    }
+
+    public static boolean isTcpPortRandomized() {
+        return getPreferences().getBoolean(TCP_MODE_RANDOMIZE_PORT, false);
+    }
+
+    public static void setTcpPortRandomized(boolean enabled) {
+        getPreferences().edit().putBoolean(TCP_MODE_RANDOMIZE_PORT, enabled).apply();
+    }
+
+    public static int randomTcpPort() {
+        return 10000 + new java.util.Random().nextInt(50000);
     }
 
     public static boolean getAutoDisableUsbDebugging() {

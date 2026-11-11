@@ -37,6 +37,7 @@ object ModuleSettings {
     private const val KEY_EXP_SERVICE_HAPTICS = "exp_service_state_haptics"
     private const val KEY_EXP_SHOW_UPTIME = "exp_show_service_uptime"
     private const val KEY_EXP_KEEP_SCREEN_STARTING = "exp_keep_screen_on_starting"
+    const val KEY_SHOW_HOME_DIAGNOSTICS = "shizuku_show_home_diagnostics"
 
 
     enum class AccessMode(
@@ -324,6 +325,14 @@ object ModuleSettings {
 
     fun setKeepScreenOnWhileStarting(value: Boolean) {
         ShizukuSettings.getPreferences().edit().putBoolean(KEY_EXP_KEEP_SCREEN_STARTING, value).apply()
+    }
+
+    fun isHomeDiagnosticsShown(): Boolean {
+        return ShizukuSettings.getPreferences().getBoolean(KEY_SHOW_HOME_DIAGNOSTICS, false)
+    }
+
+    fun setHomeDiagnosticsShown(value: Boolean) {
+        ShizukuSettings.getPreferences().edit().putBoolean(KEY_SHOW_HOME_DIAGNOSTICS, value).apply()
     }
 
     // Comput Settings

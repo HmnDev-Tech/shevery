@@ -136,6 +136,25 @@ object AdbArm {
         }.getOrDefault(false)
     }
 
+    fun setDeveloperOptionsEnabled(context: Context, enabled: Boolean): Boolean {
+        val app = context.applicationContext
+        val expected = if (enabled) 1 else 0
+        val written = when (method(app)) {
+            Method.WRITE_SECURE_SETTINGS ->
+                putInt(app, Settings.Global.DEVELOPMENT_SETTINGS_ENABLED, expected)
+            Method.DEVICE_OWNER ->
+                DeviceOwnerManager.setGlobalSetting(
+                    app,
+                    Settings.Global.DEVELOPMENT_SETTINGS_ENABLED,
+                    expected.toString()
+                )
+            Method.NONE -> false
+        }
+        return written && runCatching {
+            Settings.Global.getInt(app.contentResolver, Settings.Global.DEVELOPMENT_SETTINGS_ENABLED, 0) == expected
+        }.getOrDefault(false)
+    }
+
     /**
      * Full write set, only reachable with WRITE_SECURE_SETTINGS.
      *

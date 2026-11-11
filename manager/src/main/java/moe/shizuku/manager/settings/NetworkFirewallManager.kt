@@ -9,7 +9,18 @@ import java.util.concurrent.TimeUnit
 object NetworkFirewallManager {
 
     private const val KEY_BLOCKED_PACKAGES = "network_firewall_blocked_packages"
+    private const val KEY_AUTO_FIREWALL_ON_INSTALL = "network_firewall_auto_on_install"
     private val packageNamePattern = Regex("[A-Za-z0-9_]+(?:\\.[A-Za-z0-9_]+)+")
+
+    fun isAutoFirewallOnInstall(): Boolean =
+        ShizukuSettings.getPreferences()
+            .getBoolean(KEY_AUTO_FIREWALL_ON_INSTALL, false)
+
+    fun setAutoFirewallOnInstall(enabled: Boolean) {
+        ShizukuSettings.getPreferences().edit()
+            .putBoolean(KEY_AUTO_FIREWALL_ON_INSTALL, enabled)
+            .apply()
+    }
 
     fun blockedPackages(): Set<String> =
         ShizukuSettings.getPreferences()

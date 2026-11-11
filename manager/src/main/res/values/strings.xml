@@ -364,7 +364,13 @@ With %1$s, in any terminal app, you can connect to and interact with the shell r
     <string name="dhizuku_warning_title">Warning: Dhizuku Mode</string>
     <string name="dhizuku_warning_message">Dhizuku is designed for Device Owner/admin privileges. Some shell and ADB-specific commands may not work properly or may be entirely unsupported when running Shevery via Dhizuku. Are you sure you want to proceed?</string>
     <string name="settings_tcp_mode">TCP Mode</string>
-    <string name="settings_tcp_mode_summary">Restart ADB startup onto TCP port 5555 so Shevery can reconnect without relying on the changing Wireless Debugging port.</string>
+    <string name="settings_tcp_mode_summary">Restart ADB startup onto a persistent TCP port so Shevery can reconnect without relying on the changing Wireless Debugging port.</string>
+    <string name="settings_tcp_port_title">TCP Mode Port</string>
+    <string name="settings_tcp_port_summary">Port %1$d</string>
+    <string name="settings_tcp_port_dialog_message">Choose a custom TCP port (1–65535) for ADB TCP mode, or tap the refresh icon to randomize.</string>
+    <string name="settings_tcp_port_randomize_title">Randomize TCP port on start</string>
+    <string name="settings_tcp_port_randomize_summary">Pick a random port each time Shevery switches ADB to TCP mode</string>
+    <string name="settings_tcp_port_randomize_action">Randomize port</string>
     <string name="settings_restart_dialog_title">Restart required</string>
     <string name="settings_restart_dialog_message">Shevery needs to restart to apply this TCP mode change.</string>
     <string name="settings_restart_dialog_message_wifi_required">
@@ -383,6 +389,13 @@ Wi-Fi is required for the first restart because Shevery must connect to the curr
     <string name="usb_debugging_hide_notification_channel">USB debugging hide</string>
     <string name="usb_debugging_hide_notification_title">USB debugging is being managed</string>
     <string name="usb_debugging_hide_notification_summary">USB debugging is turned off only while a selected app is in the foreground</string>
+    <string name="developer_options_hide_title">Hide Developer options</string>
+    <string name="developer_options_hide_open_summary">Temporarily turn off Developer options while selected apps are in front</string>
+    <string name="developer_options_hide_warning">This changes the device-wide Developer options setting; it is not hidden from only the selected app. Usage access and permission to change secure settings are required. If you force-stop Shevery, Android prevents cleanup until Shevery is opened again.</string>
+    <string name="developer_options_hide_permission_required">Start Shevery with Shizuku or configure it as Device Owner so it can change Developer options.</string>
+    <string name="developer_options_hide_notification_channel">Developer options hide</string>
+    <string name="developer_options_hide_notification_title">Developer options is being managed</string>
+    <string name="developer_options_hide_notification_summary">Developer options is turned off only while a selected app is in the foreground</string>
     <string name="network_firewall_title">Firewall</string>
     <string name="network_firewall_open_summary">Block selected apps from network access without a VPN</string>
     <string name="network_firewall_summary">Uses Android’s platform firewall (Android 11 or newer), not a VPN. Shevery shows rules it created; the firewall chain is shared, so enabling it may also activate rules set by other apps.</string>
@@ -390,6 +403,8 @@ Wi-Fi is required for the first restart because Shevery must connect to the curr
     <string name="network_firewall_server_required">Start Shevery with Shizuku before changing firewall rules.</string>
     <string name="network_firewall_apps">Apps</string>
     <string name="network_firewall_change_failed">Could not apply the firewall rule. Check that Shevery is running with Shizuku permission.</string>
+    <string name="network_firewall_auto_on_install_title">Auto-firewall app on install (Experimental)</string>
+    <string name="network_firewall_auto_on_install_summary">Automatically block network access for newly installed apps</string>
     <string name="settings_service_group">Service Maintenance</string>
     <string name="settings_application">Application</string>
     <string name="settings_appearance">Appearance</string>
@@ -436,6 +451,8 @@ Wi-Fi is required for the first restart because Shevery must connect to the curr
     <string name="lab_exp_uptime_summary">Show how long the service has been running under the home status card</string>
     <string name="lab_exp_keep_screen_title">Keep Screen On While Starting</string>
     <string name="lab_exp_keep_screen_summary">Prevent the screen from sleeping while the service is starting</string>
+    <string name="lab_home_diagnostics_title">Show Homepage Diagnostics Panel</string>
+    <string name="lab_home_diagnostics_summary">Display the optional diagnostics information card on the Home screen</string>
 
     <!-- Settings section summaries -->
     <string name="settings_section_startup_summary">Boot start, watchdog, connection</string>
