@@ -5,13 +5,15 @@
 ## 分支狀態
 
 > [!IMPORTANT]
-> **需要執行遷移操作：** 由於應用程式識別碼從 moe.shizuku.privileged.api 改為 **com.hamondev.shevery**，在安裝 Shevery 之前，你**必須解除安裝**裝置上任何舊版官方 Shizuku Manager 應用程式。否則兩者會發生衝突。
-上游專案參考：<https://github.com/RikkaApps/Shizuku>
+> **支援並存安裝：** 拜獨立的套件 ID（`com.hamondev.shevery`）與隔離的權限命名空間之賜，你**現在可以直接將 Shevery 與其他 Shizuku 實作並存安裝**，不需要先解除安裝它們。對於會明確檢查 `moe.shizuku.privileged.api` 的舊版應用程式，可以在移除原版 Shizuku 之後，選擇性啟用設定中的相容性橋接套件。
+> 上游專案參考：<https://github.com/RikkaApps/Shizuku>
 >
 
 ## 分支新增功能
 
 - 以 Material 3 Expressive 元件、動效、開關與圓角圖示設計的 Jetpack Compose 管理介面。
+- **裝置擁有者管理與整合**：完整的裝置擁有者管理（應用程式委派範圍、擁有權轉移、DPM 輔助 ADB），概念來自 Dhizuku 並與之相容。
+- **生物辨識安全與保護**：可要求生物辨識或裝置 PIN／圖形／密碼驗證的主開關，支援可調整的逾時與逐項動作保護。
 - 改良後基於 shell/adb 的「Comput」功能，支援 Gemini 解說、巨集與 Commandium AI 指令建立。
 - 此分支採用目前 SDK／建置工具，進行 Android 16/17 目標版本適配。
 - 用於安裝與管理 ZIP 模組的 ADB Modules 介面。
