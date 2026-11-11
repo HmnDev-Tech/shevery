@@ -1594,28 +1594,28 @@ private fun HomeScreen(
             }
 
             if (showHomeDiagnostics) {
-                val diagnostics = remember(
-                    context,
-                    status,
-                    grantedCount,
-                    localNetworkPermissionState,
-                    isRooted,
-                    watchdogEnabled,
-                    tcpMode,
-                    launchMode
-                ) {
-                    buildDiagnostics(
-                        context = context,
-                        status = status,
-                        grantedCount = grantedCount,
-                        localNetworkPermissionState = localNetworkPermissionState,
-                        isRooted = isRooted,
-                        watchdogEnabled = watchdogEnabled,
-                        tcpMode = tcpMode,
-                        launchMode = launchMode
-                    )
-                }
                 item {
+                    val diagnostics = remember(
+                        context,
+                        status,
+                        grantedCount,
+                        localNetworkPermissionState,
+                        isRooted,
+                        watchdogEnabled,
+                        tcpMode,
+                        launchMode
+                    ) {
+                        buildDiagnostics(
+                            context = context,
+                            status = status,
+                            grantedCount = grantedCount,
+                            localNetworkPermissionState = localNetworkPermissionState,
+                            isRooted = isRooted,
+                            watchdogEnabled = watchdogEnabled,
+                            tcpMode = tcpMode,
+                            launchMode = launchMode
+                        )
+                    }
                     DiagnosticsCard(
                         diagnostics = diagnostics,
                         onCopyDiagnostics = onCopyDiagnostics
