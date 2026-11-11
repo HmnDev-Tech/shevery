@@ -991,7 +991,7 @@
     <string name="settings_device_owner_title"><![CDATA[裝置擁有者]]></string>
     <string name="settings_security_summary"><![CDATA[生物辨識驗證與受保護的動作]]></string>
     <string name="settings_security_title"><![CDATA[安全性]]></string>
-    <string name="settings_stealth_version"><![CDATA[隱蔽版本]]></string>
+    <string name="settings_stealth_version"><![CDATA[隱蔽版本 (bugged)]]></string>
     <string name="settings_stealth_version_summary"><![CDATA[具備隨機套件名稱的偽裝版本，會將 APK 儲存到「下載」資料夾]]></string>
     <string name="settings_stealth_dialog_title"><![CDATA[儲存隱蔽 APK]]></string>
     <string name="settings_stealth_dialog_message"><![CDATA[套件名稱：%1$s

@@ -953,7 +953,7 @@
     <string name="comput_agent_ask_module_summary"><![CDATA[在自定义模式下，运行模块服务前显示批准对话框]]></string>
 
     <!-- Stealth version -->
-    <string name="settings_stealth_version"><![CDATA[隐身版本]]></string>
+    <string name="settings_stealth_version"><![CDATA[隐身版本 (bugged)]]></string>
     <string name="settings_stealth_version_summary"><![CDATA[使用随机包名的伪装副本。将 APK 文件保存到下载目录]]></string>
     <string name="settings_stealth_dialog_title"><![CDATA[保存隐身 APK]]></string>
     <string name="settings_stealth_dialog_message"><![CDATA[包名：%1$s\n应用版本：%2$s\n\n隐身副本声明了相同的 Shizuku 授权，因此请在安装前卸载常规版 Shevery。]]></string>
