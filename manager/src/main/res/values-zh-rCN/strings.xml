@@ -582,7 +582,7 @@
     <string name="comput_ai_active"><![CDATA[活跃]]></string>
     <string name="comput_ai_add_provider"><![CDATA[添加提供商]]></string>
     <string name="comput_ai_base_url_invalid"><![CDATA[Base URL 必须以 http:// 或 https:// 开头]]></string>
-    <string name="comput_ai_base_url_label"><![CDATA[Base URL]]></string>
+    <string name="comput_ai_base_url_label"><![CDATA[基础 URL]]></string>
     <string name="comput_ai_base_url_placeholder"><![CDATA[https://openrouter.ai/api/v1/]]></string>
     <string name="comput_ai_chip_active"><![CDATA[AI：%1$s]]></string>
     <string name="comput_ai_chip_active_model"><![CDATA[AI：%1$s · %2$s]]></string>
@@ -997,4 +997,35 @@
     <string name="comput_agent_messages_count"><![CDATA[%1$d 条消息]]></string>
     <string name="comput_agent_role_user"><![CDATA[你]]></string>
     <string name="comput_agent_role_agent"><![CDATA[智能体]]></string>
+
+    <!-- Strings for Shevery features, synced with values/strings.xml -->
+
+    <!-- Application management -->
+    <string name="app_management_add_app"><![CDATA[添加应用]]></string>
+    <string name="app_management_add_app_title"><![CDATA[手动添加应用]]></string>
+    <string name="app_management_add_app_hint"><![CDATA[搜索应用名称或输入包名（例如 com.termux）]]></string>
+    <string name="app_management_add_app_invalid"><![CDATA[包名无效或应用未安装]]></string>
+    <string name="app_management_add_app_exists"><![CDATA[应用已在列表中]]></string>
+    <string name="app_management_add_app_allow"><![CDATA[允许]]></string>
+    <string name="app_management_add_app_session"><![CDATA[仅本次会话]]></string>
+    <string name="app_management_add_app_deny"><![CDATA[拒绝]]></string>
+    <string name="app_management_add_app_apply"><![CDATA[应用]]></string>
+    <string name="app_management_add_app_remove"><![CDATA[移除]]></string>
+    <string name="app_management_add_app_removed"><![CDATA[已从列表移除应用]]></string>
+    <string name="app_management_add_app_access_mode"><![CDATA[访问模式]]></string>
+    <string name="app_management_add_app_grant_runtime"><![CDATA[授予运行时权限]]></string>
+    <string name="app_management_add_app_grant_runtime_desc"><![CDATA[自动授予已声明的危险权限（共 %1$d 项）]]></string>
+    <string name="app_management_add_app_open_details"><![CDATA[添加后打开权限设置]]></string>
+    <string name="app_management_add_app_added"><![CDATA[应用权限已更新]]></string>
+
+    <!-- Module Catalog -->
+    <string name="modules_filter_most_starred"><![CDATA[星标最多]]></string>
+    <string name="modules_filter_recently_updated"><![CDATA[最近更新]]></string>
+    <string name="modules_filter_newest"><![CDATA[最新]]></string>
+    <string name="modules_filter_oldest"><![CDATA[最旧]]></string>
+
+    <!-- Compatibility Stub notice on Home -->
+    <string name="home_shizuku_deprecated_banner_title"><![CDATA[Shizuku API 已弃用]]></string>
+    <string name="home_shizuku_deprecated_banner_body"><![CDATA[Shevery 现已改用原生 Shevery API。如需支持仍依赖 Shizuku 的旧版应用，请使用兼容性存根将权限与 API 桥接到 Shevery。]]></string>
+    <string name="home_shizuku_deprecated_banner_button"><![CDATA[兼容性存根]]></string>
 </resources>

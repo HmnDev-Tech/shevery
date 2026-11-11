@@ -33,7 +33,7 @@
     <string name="dialog_adb_port"><![CDATA[連接埠]]></string>
     <string name="dialog_adb_invalid_port"><![CDATA[連接埠必須是 1 到 65535 之間的整數。]]></string>
     <string name="adb_pairing"><![CDATA[配對]]></string>
-    <string name="dialog_adb_pairing_title"><![CDATA[配对裝置]]></string>
+    <string name="dialog_adb_pairing_title"><![CDATA[配對裝置]]></string>
     <string name="dialog_adb_pairing_discovery"><![CDATA[正在搜尋配對服務]]></string>
     <string name="dialog_adb_pairing_paring_code"><![CDATA[配對碼]]></string>
     <string name="paring_code_is_wrong"><![CDATA[配對碼錯誤。]]></string>
@@ -62,7 +62,7 @@
     <string name="adb_pairing_tutorial_content_network_limation_not_foreground"><![CDATA[某些系統（如 MIUI）在應用程式未處於前景時會停用網路存取。請為 Shevery 關閉電池最佳化。]]></string>
     <string name="home_root_title"><![CDATA[啟動（針對已 Root 裝置）]]></string>
     <string name="home_root_description"><![CDATA[此外，Shevery 可以在開機時自動啟動。如果未啟動，請檢查系統或第三方工具是否限制了 Shevery。<br/>可以參考 %s。]]></string>
-    <string name="home_root_description_sui"><![CDATA[如果您正在使用 Magisk，可以嘗試 %1$s。對於 Root 使用者，它最終將取代 Shevery。]]></string>
+    <string name="home_root_description_sui"><![CDATA[如果您正在使用 Magisk，可以嘗試 %1$s。對於 Root 使用者，它最終將取代 Shevery。注意，現有應用程式需稍作修改才能使用 %2$s。]]></string>
     <string name="home_root_button_start"><![CDATA[啟動]]></string>
     <string name="home_root_button_restart"><![CDATA[重新啟動]]></string>
     <string name="home_app_management_title"><![CDATA[應用程式管理]]></string>
@@ -456,9 +456,9 @@
     <string name="shevery_update_auto_check_summary"><![CDATA[即使應用程式關閉時也會尋找新版本]]></string>
     <string name="home_update_available_title"><![CDATA[Shevery 有可用更新：%s]]></string>
     <string name="home_update_available_body"><![CDATA[有較新版本可用。點擊以下載。]]></string>
-    <string name="wadb_notification_channel"><![CDATA[ADB-Autostartdienst]]></string>
-    <string name="accessibility_manager_services_group"><![CDATA[Accessibility Services (%1$d)]]></string>
-    <string name="accessibility_manager_service_no_description"><![CDATA[Keine Beschreibung vom Dienst bereitgestellt.]]></string>
+    <string name="wadb_notification_channel"><![CDATA[無線 ADB 自動啟動]]></string>
+    <string name="accessibility_manager_services_group"><![CDATA[無障礙服務（%1$d）]]></string>
+    <string name="accessibility_manager_service_no_description"><![CDATA[服務未提供說明。]]></string>
     <string name="home_adb_dialog_view_command_notice"><![CDATA[還有其他幾點需要留意，請先確認您已閱讀說明文件。]]></string>
     <string name="app_management_loading"><![CDATA[正在載入應用程式……]]></string>
     <string name="settings_start_on_boot_adb"><![CDATA[透過無線除錯在開機時啟動]]></string>
@@ -605,7 +605,7 @@
     <string name="home_automation_regenerate_token">重新產生權杖</string>
     <string name="home_automation_regenerate_token_confirm">確定要重新產生權杖嗎？所有已設定的 Tasker 或 MacroDroid Intent 都需要更新為新權杖。</string>
     <string name="automation_security_group_title">驗證與安全性</string>
-    <string name="automation_security_description">直接廣播 Intent 需要透過 \'auth\' 參數 (-e auth &lt;token&gt;) 傳遞此秘密驗證權杖，以防止未經授權的應用程式控制 Shevery。</string>
+    <string name="automation_security_description">直接廣播 Intent 需要透過 「auth」 參數 (-e auth &lt;token&gt;) 傳遞此秘密驗證權杖，以防止未經授權的應用程式控制 Shevery。</string>
     <string name="automation_regenerate_token_summary">產生新的秘密權杖並使現有權杖失效</string>
     <string name="automation_target_component_label">接收器元件</string>
     <string name="home_automation_connectors_disabled_status">連接器已停用 (Intent 未啟用)</string>
@@ -621,4 +621,407 @@
     <string name="notification_auth_invalid_message">請確認 Intent 中的權杖與 Shevery 設定中的權杖相符。</string>
     <string name="notification_connectors_disabled_title">自動化連接器已停用</string>
     <string name="notification_connectors_disabled_message">自動化 Intent 已被封鎖，因為 Shevery 連接器在設定中已停用。輕觸以啟用。</string>
+
+    <!-- Strings for Shevery features, synced with values/strings.xml -->
+
+    <!-- Home - Status -->
+    <string name="home_status_uptime"><![CDATA[執行時間：%1$s]]></string>
+
+    <!-- Application management -->
+    <string name="app_management_search_hint"><![CDATA[搜尋應用程式…]]></string>
+    <string name="app_management_clear_search"><![CDATA[清除搜尋]]></string>
+    <string name="app_management_filter_all"><![CDATA[全部 (%1$d)]]></string>
+    <string name="app_management_filter_allowed"><![CDATA[已允許 (%1$d)]]></string>
+    <string name="app_management_filter_denied"><![CDATA[已拒絕 (%1$d)]]></string>
+    <string name="app_management_no_search_results"><![CDATA[沒有符合的應用程式]]></string>
+    <string name="app_management_no_search_results_desc"><![CDATA[請檢查拼字，或重設篩選條件。]]></string>
+    <string name="app_management_clear_filters"><![CDATA[重設篩選條件]]></string>
+    <string name="app_management_add_app"><![CDATA[新增應用程式]]></string>
+    <string name="app_management_add_app_title"><![CDATA[手動新增應用程式]]></string>
+    <string name="app_management_add_app_hint"><![CDATA[搜尋應用程式名稱，或輸入套件名稱（例如 com.termux）]]></string>
+    <string name="app_management_add_app_invalid"><![CDATA[套件名稱無效，或應用程式尚未安裝]]></string>
+    <string name="app_management_add_app_exists"><![CDATA[應用程式已在清單中]]></string>
+    <string name="app_management_add_app_allow"><![CDATA[允許]]></string>
+    <string name="app_management_add_app_session"><![CDATA[僅限本次工作階段]]></string>
+    <string name="app_management_add_app_deny"><![CDATA[拒絕]]></string>
+    <string name="app_management_add_app_apply"><![CDATA[套用]]></string>
+    <string name="app_management_add_app_remove"><![CDATA[移除]]></string>
+    <string name="app_management_add_app_removed"><![CDATA[已從清單移除應用程式]]></string>
+    <string name="app_management_add_app_access_mode"><![CDATA[存取模式]]></string>
+    <string name="app_management_add_app_grant_runtime"><![CDATA[授予執行時權限]]></string>
+    <string name="app_management_add_app_grant_runtime_desc"><![CDATA[自動授予已宣告的危險權限（共 %1$d 項）]]></string>
+    <string name="app_management_add_app_open_details"><![CDATA[新增後開啟權限設定]]></string>
+    <string name="app_management_add_app_added"><![CDATA[已更新應用程式權限]]></string>
+
+    <!-- App detail (per-app privileges) -->
+    <string name="app_detail_privileges_title"><![CDATA[Shizuku 權限]]></string>
+    <string name="app_detail_shizuku_access"><![CDATA[Shizuku 存取權]]></string>
+    <string name="app_detail_state_allowed"><![CDATA[已允許]]></string>
+    <string name="app_detail_state_denied"><![CDATA[已拒絕]]></string>
+    <string name="app_detail_session_only"><![CDATA[僅限本次工作階段的存取權]]></string>
+    <string name="app_detail_session_only_summary"><![CDATA[僅在本次工作階段授予；關閉後即改為永久授予]]></string>
+    <string name="app_detail_runtime_permissions"><![CDATA[執行時權限]]></string>
+    <string name="app_detail_runtime_permissions_empty"><![CDATA[此應用程式未宣告任何執行時權限]]></string>
+    <string name="app_detail_info_title"><![CDATA[應用程式資訊]]></string>
+    <string name="app_detail_package"><![CDATA[套件]]></string>
+    <string name="app_detail_version"><![CDATA[版本]]></string>
+    <string name="app_detail_version_unknown"><![CDATA[未知]]></string>
+    <string name="app_detail_uid"><![CDATA[UID]]></string>
+
+    <!-- ADB modules -->
+    <string name="modules_install_zip_module"><![CDATA[安裝模組]]></string>
+    <string name="modules_installing_zip"><![CDATA[正在安裝 ZIP 模組…]]></string>
+    <string name="modules_zip_unreadable"><![CDATA[無法讀取 ZIP 檔案]]></string>
+    <string name="modules_live_log_title"><![CDATA[正在執行 %s]]></string>
+    <string name="modules_live_log_hide"><![CDATA[隱藏]]></string>
+    <string name="modules_shortcut"><![CDATA[捷徑]]></string>
+    <string name="modules_shortcut_added"><![CDATA[已將捷徑新增至主畫面]]></string>
+    <string name="modules_shortcut_not_supported"><![CDATA[您的啟動器不支援新增捷徑]]></string>
+    <string name="modules_webui_not_found"><![CDATA[找不到模組或 WebUI]]></string>
+
+    <!-- Permission related, appears in system permission UI -->
+    <string name="dhizuku_permission_label"><![CDATA[存取裝置擁有者權限]]></string>
+    <string name="device_admin_description"><![CDATA[Shevery 的裝置管理員。管理裝置原則與擁有權功能時需要此權限。]]></string>
+    <string name="grant_dialog_button_allow_once"><![CDATA[僅允許這次]]></string>
+
+    <!-- Lab Features -->
+    <string name="usb_debugging_hide_title"><![CDATA[隱藏 USB 偵錯]]></string>
+    <string name="usb_debugging_hide_open_summary"><![CDATA[所選應用程式位於前景時，暫時關閉 USB 偵錯]]></string>
+    <string name="usb_debugging_hide_warning"><![CDATA[這會變更整台裝置的 USB 偵錯設定，並非只對所選應用程式隱藏。關閉期間，透過 ADB 的連線可能會中斷。需要具備使用情況存取權，以及修改安全設定的權限。若強制停止 Shevery，Android 會阻擋清理動作，直到再次開啟 Shevery 為止。]]></string>
+    <string name="usb_debugging_hide_usage_access"><![CDATA[使用情況存取權]]></string>
+    <string name="usb_debugging_hide_usage_access_granted"><![CDATA[已授予]]></string>
+    <string name="usb_debugging_hide_usage_access_required"><![CDATA[點選以授予偵測前景應用程式所需的權限]]></string>
+    <string name="usb_debugging_hide_permission_required"><![CDATA[請透過 Shizuku 啟動 Shevery，或將其設為裝置擁有者，才能變更 USB 偵錯。]]></string>
+    <string name="usb_debugging_hide_apps"><![CDATA[已選應用程式]]></string>
+    <string name="usb_debugging_hide_notification_channel"><![CDATA[USB 偵錯隱藏]]></string>
+    <string name="usb_debugging_hide_notification_title"><![CDATA[USB 偵錯正在管理]]></string>
+    <string name="usb_debugging_hide_notification_summary"><![CDATA[只有在所選應用程式位於前景時，才會關閉 USB 偵錯]]></string>
+    <string name="network_firewall_title"><![CDATA[防火牆]]></string>
+    <string name="network_firewall_open_summary"><![CDATA[不需 VPN 即可封鎖所選應用程式的網路存取]]></string>
+    <string name="network_firewall_summary"><![CDATA[使用 Android 平台防火牆（Android 11 以上），並非 VPN。Shevery 只會顯示自己建立的規則；防火牆鏈為共用機制，因此啟用時也可能一併啟用其他應用程式設定的規則。]]></string>
+    <string name="network_firewall_unsupported"><![CDATA[平台防火牆指令需要 Android 11 或以上版本。]]></string>
+    <string name="network_firewall_server_required"><![CDATA[變更防火牆規則前，請先透過 Shizuku 啟動 Shevery。]]></string>
+    <string name="network_firewall_apps"><![CDATA[應用程式]]></string>
+    <string name="network_firewall_change_failed"><![CDATA[無法套用防火牆規則。請確認 Shevery 已在具備 Shizuku 權限的情況下執行。]]></string>
+
+    <!-- Lab Features - Debugging -->
+    <string name="lab_notify_recovery_title"><![CDATA[自動復原時通知]]></string>
+    <string name="lab_notify_recovery_summary"><![CDATA[ErrorProtect（看門狗）成功重新啟動服務時顯示通知]]></string>
+    <string name="lab_auto_refresh_title"><![CDATA[回到畫面時重新整理狀態]]></string>
+    <string name="lab_auto_refresh_summary"><![CDATA[每次開啟首頁時重新檢查服務狀態]]></string>
+
+    <!-- Lab Features - Assistant -->
+    <string name="lab_ai_title"><![CDATA[助理]]></string>
+    <string name="lab_ai_explain_title"><![CDATA[AI 失敗原因說明]]></string>
+    <string name="lab_ai_explain_summary"><![CDATA[AI 請求失敗時，請 AI 用淺顯的方式說明問題出在哪裡]]></string>
+
+    <!-- Lab Features - Maintenance -->
+    <string name="lab_maintenance_title"><![CDATA[維護]]></string>
+    <string name="lab_restart_service_title"><![CDATA[立即重新啟動服務]]></string>
+    <string name="lab_restart_service_summary"><![CDATA[以上次的啟動方式重新啟動 Shevery 服務]]></string>
+    <string name="lab_clear_update_title"><![CDATA[關閉更新橫幅]]></string>
+    <string name="lab_clear_update_summary"><![CDATA[清除卡在首頁的更新橫幅]]></string>
+    <string name="lab_revoke_trusted_title"><![CDATA[撤銷受信任模組]]></string>
+    <string name="lab_revoke_trusted_summary"><![CDATA[移除所有模組的信任授權；模組將改回依存取模式規則判定]]></string>
+    <string name="lab_revoke_trusted_warning_title"><![CDATA[要撤銷受信任模組嗎？]]></string>
+    <string name="lab_revoke_trusted_warning_message"><![CDATA[所有模組都會失去受信任狀態，並重新依存取模式規則判定。要繼續嗎？]]></string>
+
+    <!-- Lab Features - Experimental -->
+    <string name="lab_experimental_title"><![CDATA[實驗性功能]]></string>
+    <string name="lab_exp_haptics_title"><![CDATA[服務狀態變更時震動]]></string>
+    <string name="lab_exp_haptics_summary"><![CDATA[Shevery 服務啟動或停止時短暫震動]]></string>
+    <string name="lab_exp_uptime_title"><![CDATA[顯示服務執行時間]]></string>
+    <string name="lab_exp_uptime_summary"><![CDATA[在首頁狀態卡片下方顯示服務已執行多久]]></string>
+    <string name="lab_exp_keep_screen_title"><![CDATA[啟動期間保持螢幕開啟]]></string>
+    <string name="lab_exp_keep_screen_summary"><![CDATA[服務啟動期間避免螢幕進入休眠]]></string>
+
+    <!-- Settings section summaries -->
+    <string name="settings_section_startup_summary"><![CDATA[開機啟動、看門狗、連線]]></string>
+    <string name="settings_section_lab_summary"><![CDATA[實驗性功能、備份與還原]]></string>
+    <string name="settings_section_appearance_summary"><![CDATA[語言、深色主題與色彩]]></string>
+    <string name="settings_section_modules_summary"><![CDATA[存取模式、背景動作、ReCommand]]></string>
+    <string name="settings_section_updates_summary"><![CDATA[模組目錄與應用程式更新頻道]]></string>
+    <string name="settings_section_ai_summary"><![CDATA[AI 供應商與建議]]></string>
+    <string name="settings_section_about_summary"><![CDATA[版本、授權條款與連結]]></string>
+    <string name="notification_recovery_title"><![CDATA[Shevery 服務已復原]]></string>
+    <string name="notification_recovery_text"><![CDATA[ErrorProtect 已成功重新啟動 Shevery 服務。]]></string>
+    <string name="notification_channel_watchdog_death"><![CDATA[看門狗警告]]></string>
+
+    <!-- Shevery App Updates -->
+    <string name="shevery_update_download_install"><![CDATA[下載並安裝]]></string>
+    <string name="shevery_update_downloading_title"><![CDATA[正在下載更新…]]></string>
+    <string name="shevery_update_download_progress"><![CDATA[已下載 %1$d%%]]></string>
+    <string name="shevery_update_preparing"><![CDATA[正在準備下載…]]></string>
+    <string name="shevery_update_installing"><![CDATA[正在安裝更新…]]></string>
+    <string name="shevery_update_install_failed_title"><![CDATA[安裝失敗]]></string>
+    <string name="shevery_update_retry"><![CDATA[重試]]></string>
+    <string name="shevery_update_download_manual"><![CDATA[手動下載]]></string>
+    <string name="shevery_update_install_success"><![CDATA[更新已安裝]]></string>
+
+    <!-- Module Catalog -->
+    <string name="modules_catalog_empty_retry"><![CDATA[重試]]></string>
+    <string name="modules_catalog_empty_token"><![CDATA[編輯權杖]]></string>
+    <string name="modules_filter_most_starred"><![CDATA[星號最多]]></string>
+    <string name="modules_filter_recently_updated"><![CDATA[最近更新]]></string>
+    <string name="modules_filter_newest"><![CDATA[最新]]></string>
+    <string name="modules_filter_oldest"><![CDATA[最舊]]></string>
+
+    <!-- Backup &amp; Restore -->
+    <string name="settings_swipe_between_tabs"><![CDATA[在分頁間滑動切換]]></string>
+    <string name="settings_swipe_between_tabs_summary"><![CDATA[在主畫面左右滑動，即可切換首頁、模組、Comput 與設定]]></string>
+    <string name="settings_motion_blur"><![CDATA[動態模糊]]></string>
+    <string name="settings_motion_blur_summary"><![CDATA[在分頁間滑動及上下捲動清單時模糊內容]]></string>
+    <string name="settings_motion_blur_intensity"><![CDATA[動態模糊程度]]></string>
+    <string name="settings_motion_blur_intensity_summary"><![CDATA[滑動時的最大模糊半徑：%1$d%%]]></string>
+    <string name="settings_motion_blur_strength"><![CDATA[動態模糊反應速度]]></string>
+    <string name="settings_motion_blur_strength_summary"><![CDATA[模糊隨滑動速度增強的速率：%1$d%%]]></string>
+
+    <!-- Comput Console -->
+    <string name="comput_ai_provider_title"><![CDATA[AI 供應商]]></string>
+    <string name="comput_ai_preset_label"><![CDATA[預設範本]]></string>
+    <string name="comput_ai_preset_custom"><![CDATA[自訂]]></string>
+    <string name="comput_ai_provider_not_configured"><![CDATA[尚未設定]]></string>
+    <string name="comput_ai_name_label"><![CDATA[供應商名稱]]></string>
+    <string name="comput_ai_name_placeholder"><![CDATA[例如 OpenRouter、Gemini、自訂]]></string>
+    <string name="comput_ai_base_url_label"><![CDATA[基底網址]]></string>
+    <string name="comput_ai_base_url_placeholder"><![CDATA[https://openrouter.ai/api/v1/]]></string>
+    <string name="comput_ai_base_url_invalid"><![CDATA[基底網址必須以 http:// 或 https:// 開頭]]></string>
+    <string name="comput_ai_model_label"><![CDATA[模型]]></string>
+    <string name="comput_ai_model_placeholder"><![CDATA[輸入模型名稱]]></string>
+    <string name="comput_ai_model_loading"><![CDATA[正在載入模型…]]></string>
+    <string name="comput_ai_model_unavailable"><![CDATA[此伺服器未公開模型清單，請直接輸入模型名稱。]]></string>
+    <string name="comput_ai_manager_title"><![CDATA[AI 供應商]]></string>
+    <string name="comput_ai_add_provider"><![CDATA[新增供應商]]></string>
+    <string name="comput_ai_edit_provider"><![CDATA[編輯供應商]]></string>
+    <string name="comput_ai_delete_provider"><![CDATA[刪除供應商]]></string>
+    <string name="comput_ai_delete_confirm_title"><![CDATA[要刪除供應商嗎？]]></string>
+    <string name="comput_ai_delete_confirm_text"><![CDATA[要移除 %1$s 嗎？已儲存的 API 金鑰也會一併刪除。]]></string>
+    <string name="comput_ai_test_connection"><![CDATA[測試連線]]></string>
+    <string name="comput_ai_test_testing"><![CDATA[測試中…]]></string>
+    <string name="comput_ai_test_ok"><![CDATA[連線成功（%1$d 個模型）]]></string>
+    <string name="comput_ai_test_fail"><![CDATA[失敗：%1$s]]></string>
+    <string name="comput_ai_test_no_key"><![CDATA[測試前請先輸入 API 金鑰。]]></string>
+    <string name="comput_ai_set_active"><![CDATA[將 %1$s 設為使用中的供應商]]></string>
+    <string name="comput_ai_active"><![CDATA[使用中]]></string>
+    <string name="comput_ai_key_saved"><![CDATA[已儲存 API 金鑰]]></string>
+    <string name="comput_ai_key_missing"><![CDATA[未設定 API 金鑰]]></string>
+    <string name="comput_commandium_recent"><![CDATA[最近的提示]]></string>
+    <string name="comput_commandium_error"><![CDATA[錯誤]]></string>
+    <string name="comput_ai_setup_hint"><![CDATA[尚未設定 AI 供應商，點選標籤即可設定]]></string>
+    <string name="comput_ai_no_provider_title"><![CDATA[尚未設定 AI 供應商]]></string>
+    <string name="comput_ai_no_provider_body"><![CDATA[新增供應商與 API 金鑰，即可開始產生指令。]]></string>
+    <string name="comput_ai_configure_provider"><![CDATA[設定供應商]]></string>
+    <string name="comput_ai_stage_1"><![CDATA[預設範本]]></string>
+    <string name="comput_ai_stage_2"><![CDATA[認證資訊]]></string>
+    <string name="comput_ai_stage_3"><![CDATA[模型]]></string>
+    <string name="comput_ai_discover_models"><![CDATA[探索模型]]></string>
+    <string name="comput_ai_discovering"><![CDATA[正在探索模型…]]></string>
+    <string name="comput_ai_models_found"><![CDATA[找到 %1$d 個模型。點選「模型」即可挑選。]]></string>
+    <string name="comput_ai_models_none"><![CDATA[此端點未提供模型清單，請手動輸入模型。]]></string>
+    <string name="comput_ai_pick_model"><![CDATA[挑選模型]]></string>
+    <string name="comput_ai_default_model"><![CDATA[預設（建議）]]></string>
+    <string name="comput_ai_search_models"><![CDATA[搜尋模型]]></string>
+    <string name="comput_ai_no_models_match"><![CDATA[沒有符合的模型]]></string>
+    <string name="comput_ai_switch_title"><![CDATA[切換 AI 模型]]></string>
+    <string name="comput_ai_chip_active"><![CDATA[AI：%1$s]]></string>
+    <string name="comput_ai_chip_active_model"><![CDATA[AI：%1$s · %2$s]]></string>
+    <string name="comput_ai_no_active_toast"><![CDATA[尚未設定使用中的 AI 供應商。請至設定 → Comput Console → AI 供應商新增。]]></string>
+    <string name="comput_ai_error_hint"><![CDATA[請至設定檢查使用中的供應商與模型。]]></string>
+    <string name="comput_ai_empty_title"><![CDATA[尚無 AI 供應商]]></string>
+    <string name="comput_ai_empty_body"><![CDATA[新增供應商與 API 金鑰，即可在 Comput Console 使用 AI。可從預設範本開始，或輸入自訂端點。]]></string>
+    <string name="comput_ai_switch_fail"><![CDATA[無法載入模型，請檢查供應商連線。]]></string>
+    <string name="comput_commandium_generating"><![CDATA[正在產生指令…]]></string>
+    <string name="comput_commandium_ready"><![CDATA[指令已產生]]></string>
+    <string name="comput_commandium_failed"><![CDATA[產生失敗]]></string>
+    <string name="comput_agent_title"><![CDATA[Comput 代理]]></string>
+    <string name="comput_agent_open"><![CDATA[Comput 代理]]></string>
+    <string name="comput_agent_description"><![CDATA[描述要達成的目標。代理會透過 AI 供應商規劃 shell 指令與模組服務、逐一說明每個動作、顯示進度並回報結果。]]></string>
+    <string name="comput_agent_goal_label"><![CDATA[要代理做什麼？]]></string>
+    <string name="comput_agent_goal_placeholder"><![CDATA[例如：檢查電池健康度與可用空間]]></string>
+    <string name="comput_agent_run"><![CDATA[執行代理]]></string>
+    <string name="comput_agent_stop"><![CDATA[停止]]></string>
+    <string name="comput_agent_planning"><![CDATA[正在透過 AI 規劃…]]></string>
+    <string name="comput_agent_plan_empty"><![CDATA[代理無法為這個目標建立計畫。]]></string>
+    <string name="comput_agent_executing"><![CDATA[第 %1$d 步，共 %2$d 步]]></string>
+    <string name="comput_agent_final_answer"><![CDATA[結果]]></string>
+    <string name="comput_agent_executed"><![CDATA[已執行的動作]]></string>
+    <string name="comput_agent_step_shell"><![CDATA[Shell]]></string>
+    <string name="comput_agent_step_service"><![CDATA[模組服務]]></string>
+    <string name="comput_agent_approve_title"><![CDATA[要執行這個動作嗎？]]></string>
+    <string name="comput_agent_allow"><![CDATA[允許]]></string>
+    <string name="comput_agent_deny"><![CDATA[拒絕]]></string>
+    <string name="comput_agent_custom"><![CDATA[自行提出]]></string>
+    <string name="comput_agent_allow_always"><![CDATA[永遠允許]]></string>
+    <string name="comput_agent_custom_hint"><![CDATA[編輯指令後再執行]]></string>
+    <string name="comput_agent_denied"><![CDATA[使用者已拒絕]]></string>
+    <string name="comput_agent_stopped"><![CDATA[使用者已停止]]></string>
+    <string name="comput_agent_no_output"><![CDATA[沒有輸出。]]></string>
+    <string name="comput_agent_summarizing"><![CDATA[正在彙整…]]></string>
+    <string name="comput_agent_safety_title"><![CDATA[代理安全模式]]></string>
+    <string name="comput_agent_mode_secure"><![CDATA[安全 — 每次詢問]]></string>
+    <string name="comput_agent_mode_secure_summary"><![CDATA[代理會在每個指令執行前詢問]]></string>
+    <string name="comput_agent_mode_turbo"><![CDATA[Turbo — 不詢問直接執行]]></string>
+    <string name="comput_agent_mode_turbo_summary"><![CDATA[代理會立即執行每個規劃的動作]]></string>
+    <string name="comput_agent_mode_custom"><![CDATA[自訂]]></string>
+    <string name="comput_agent_mode_custom_summary"><![CDATA[在下方逐項設定各動作]]></string>
+    <string name="comput_agent_max_steps"><![CDATA[每項任務的步數上限]]></string>
+    <string name="comput_agent_max_steps_value"><![CDATA[%1$d 步]]></string>
+    <string name="comput_agent_ask_shell_title"><![CDATA[執行 shell 指令前詢問]]></string>
+    <string name="comput_agent_ask_shell_summary"><![CDATA[自訂模式下，每個 shell 指令都會跳出核准對話框]]></string>
+    <string name="comput_agent_ask_module_title"><![CDATA[執行模組服務前詢問]]></string>
+    <string name="comput_agent_ask_module_summary"><![CDATA[自訂模式下，執行模組服務前會跳出核准對話框]]></string>
+    <string name="comput_agent_history"><![CDATA[對話記錄]]></string>
+    <string name="comput_agent_history_empty"><![CDATA[尚無對話。執行代理即可開始。]]></string>
+    <string name="comput_agent_new_chat"><![CDATA[新增對話]]></string>
+    <string name="comput_agent_delete_chat"><![CDATA[刪除對話]]></string>
+    <string name="comput_agent_messages_count"><![CDATA[%1$d 則訊息]]></string>
+    <string name="comput_agent_role_user"><![CDATA[您]]></string>
+    <string name="comput_agent_role_agent"><![CDATA[代理]]></string>
+    <string name="comput_command_send"><![CDATA[傳送]]></string>
+    <string name="diagnostics_device"><![CDATA[裝置]]></string>
+    <string name="diagnostics_error_protect"><![CDATA[ErrorProtect]]></string>
+    <string name="diagnostics_dhizuku_mode"><![CDATA[Dhizuku 模式]]></string>
+    <string name="diagnostics_tcp_mode"><![CDATA[TCP 模式]]></string>
+    <string name="diagnostics_launch_mode"><![CDATA[上次啟動]]></string>
+    <string name="diagnostics_root"><![CDATA[Root]]></string>
+    <string name="diagnostics_enabled"><![CDATA[已啟用]]></string>
+    <string name="diagnostics_disabled"><![CDATA[已停用]]></string>
+    <string name="diagnostics_available"><![CDATA[可用]]></string>
+    <string name="diagnostics_unavailable"><![CDATA[不可用]]></string>
+
+    <!-- ErrorProtect &amp; TCP 5555 -->
+    <string name="settings_wifi_reassert_title"><![CDATA[重新套用無線偵錯設定]]></string>
+    <string name="settings_wifi_reassert_summary"><![CDATA[預設為關閉。若 ROM 清除了無線偵錯旗標（ADB 啟動時與 Wi-Fi 重新連線時），會自動恢復；絕不會主動關閉它。]]></string>
+
+    <!-- Restored entries lost in merge 92f81f97 -->
+    <string name="app_management_made_permanent"><![CDATA[已永久委派]]></string>
+    <string name="app_management_make_permanent_desc"><![CDATA[目前僅在本次工作階段授予。點選即可改為永久。]]></string>
+    <string name="app_management_make_permanent_prompt"><![CDATA[要將權限設為永久嗎？]]></string>
+    <string name="app_management_onetime_badge"><![CDATA[僅限本次工作階段]]></string>
+    <string name="compat_stubs_header_info"><![CDATA[相容性橋接套件是輕量的橋接套件，用來模擬官方服務。它們會把權限、請求與 API 轉送到 Shevery，讓第三方應用程式無需修改即可運作。]]></string>
+    <string name="device_owner_active"><![CDATA[裝置擁有者已啟用]]></string>
+    <string name="device_owner_active_desc"><![CDATA[Shevery 具備裝置擁有者權限，可管理 ADB、將範圍委派給應用程式，並在無需電腦的情況下自動啟動。]]></string>
+    <string name="profile_owner_active"><![CDATA[設定檔擁有者已啟用]]></string>
+    <string name="profile_owner_active_desc"><![CDATA[Shevery 具備設定檔擁有者權限，可管理應用程式權限、凍結應用程式，並在此設定檔內委派範圍。]]></string>
+    <string name="profile_owner_inactive_desc"><![CDATA[若要在目前的使用者／設定檔啟用設定檔擁有者，請透過 ADB 執行下列指令：]]></string>
+    <string name="profile_owner_tab"><![CDATA[設定檔擁有者]]></string>
+    <string name="device_owner_tab"><![CDATA[裝置擁有者]]></string>
+    <string name="activate_via_shizuku"><![CDATA[透過 Shizuku 啟用]]></string>
+    <string name="activate_via_shizuku_desc"><![CDATA[使用執行中的 Shizuku 服務，一鍵啟用設定檔擁有者]]></string>
+    <string name="activate_via_shizuku_success"><![CDATA[已透過 Shizuku 成功啟用設定檔擁有者]]></string>
+    <string name="activate_via_shizuku_failed"><![CDATA[透過 Shizuku 啟用失敗：%1$s]]></string>
+    <string name="profile_owner_deactivate_dialog_title"><![CDATA[要停用設定檔擁有者嗎？]]></string>
+    <string name="profile_owner_deactivate_dialog_message"><![CDATA[確定要停用設定檔擁有者嗎？所有已委派的權限與原則都會被撤銷。若要恢復設定檔擁有者，必須重新執行 ADB 指令。]]></string>
+    <string name="profile_owner_deactivate_title"><![CDATA[停用設定檔擁有者]]></string>
+    <string name="profile_owner_deactivate_summary"><![CDATA[移除 Shevery 的設定檔擁有者權限]]></string>
+    <string name="profile_owner_deactivate_success"><![CDATA[設定檔擁有者已停用]]></string>
+    <string name="profile_owner_deactivate_failed"><![CDATA[停用設定檔擁有者失敗]]></string>
+    <string name="device_owner_admin_enabled_toast"><![CDATA[已授予 Shevery %1$s 權限]]></string>
+    <string name="device_owner_danger_zone_title"><![CDATA[危險區域]]></string>
+    <string name="device_owner_deactivate_button"><![CDATA[停用]]></string>
+    <string name="device_owner_deactivate_countdown"><![CDATA[停用（%1$d 秒）]]></string>
+    <string name="device_owner_deactivate_dialog_message"><![CDATA[確定要停用裝置擁有者嗎？所有已委派的權限與原則都會被撤銷。若要恢復裝置擁有者，必須重新執行 ADB 指令。]]></string>
+    <string name="device_owner_deactivate_dialog_title"><![CDATA[要停用裝置擁有者嗎？]]></string>
+    <string name="device_owner_deactivate_failed"><![CDATA[停用裝置擁有者失敗]]></string>
+    <string name="device_owner_deactivate_success"><![CDATA[裝置擁有者已停用]]></string>
+    <string name="device_owner_deactivate_summary"><![CDATA[移除 Shevery 的裝置擁有者權限]]></string>
+    <string name="device_owner_deactivate_title"><![CDATA[停用裝置擁有者]]></string>
+    <string name="device_owner_delegation_all_apps"><![CDATA[所有已安裝應用程式]]></string>
+    <string name="device_owner_delegation_configure"><![CDATA[設定]]></string>
+    <string name="device_owner_delegation_dhizuku_supported"><![CDATA[支援 Dhizuku API]]></string>
+    <string name="device_owner_delegation_dialog_desc"><![CDATA[選擇要委派給此應用程式的範圍：]]></string>
+    <string name="device_owner_delegation_empty"><![CDATA[找不到可委派的其他已安裝應用程式]]></string>
+    <string name="device_owner_delegation_filter_dhizuku"><![CDATA[僅顯示 Dhizuku 應用程式]]></string>
+    <string name="device_owner_delegation_no_dhizuku_apps"><![CDATA[找不到使用 Dhizuku API 的應用程式]]></string>
+    <string name="device_owner_delegation_none"><![CDATA[無範圍]]></string>
+    <string name="device_owner_delegation_revoked"><![CDATA[已撤銷委派]]></string>
+    <string name="device_owner_delegation_save"><![CDATA[儲存]]></string>
+    <string name="device_owner_delegation_scopes_count"><![CDATA[個範圍使用中]]></string>
+    <string name="device_owner_delegation_summary"><![CDATA[將裝置管理範圍委派給其他應用程式]]></string>
+    <string name="device_owner_delegation_title"><![CDATA[應用程式委派]]></string>
+    <string name="device_owner_delegation_updated"><![CDATA[已更新委派]]></string>
+    <string name="device_owner_enable_adb"><![CDATA[透過 DPM 啟用 ADB]]></string>
+    <string name="device_owner_enable_adb_summary"><![CDATA[直接透過裝置原則管理員開啟 USB 與無線偵錯]]></string>
+    <string name="device_owner_features_title"><![CDATA[裝置擁有者功能]]></string>
+    <string name="device_owner_inactive"><![CDATA[尚未設定裝置擁有者]]></string>
+    <string name="device_owner_inactive_desc"><![CDATA[若要啟用裝置擁有者，請先移除裝置上的所有帳戶，再透過 ADB 執行下列指令：]]></string>
+    <string name="device_owner_transfer_button"><![CDATA[轉移]]></string>
+    <string name="device_owner_transfer_dialog_hint"><![CDATA[目標應用程式必須先在 Android 設定 → 安全性 → 裝置管理員應用程式中啟用。]]></string>
+    <string name="device_owner_transfer_dialog_message"><![CDATA[此操作會將裝置擁有者權限從 Shevery 永久轉移給所選應用程式。Shevery 將不再具備裝置擁有者身分。]]></string>
+    <string name="device_owner_transfer_dialog_title"><![CDATA[要轉移裝置擁有權嗎？]]></string>
+    <string name="device_owner_transfer_failed"><![CDATA[轉移擁有權失敗]]></string>
+    <string name="device_owner_transfer_no_admin_apps"><![CDATA[找不到符合條件的裝置管理員應用程式]]></string>
+    <string name="device_owner_transfer_open_settings"><![CDATA[開啟設定]]></string>
+    <string name="device_owner_transfer_search_hint"><![CDATA[搜尋應用程式…]]></string>
+    <string name="device_owner_transfer_select_target"><![CDATA[選擇目標管理員應用程式]]></string>
+    <string name="device_owner_transfer_status_active"><![CDATA[裝置管理員作用中]]></string>
+    <string name="device_owner_transfer_status_inactive"><![CDATA[未啟用（需在設定中啟用）]]></string>
+    <string name="device_owner_transfer_success"><![CDATA[已成功轉移擁有權]]></string>
+    <string name="device_owner_transfer_summary"><![CDATA[將裝置擁有者權限轉移給其他已安裝的應用程式]]></string>
+    <string name="device_owner_transfer_target_not_active"><![CDATA[目標應用程式不是作用中的裝置管理員。請先在 Android 設定 → 安全性 → 裝置管理員應用程式中啟用它。]]></string>
+    <string name="device_owner_transfer_title"><![CDATA[轉移擁有權]]></string>
+    <string name="device_owner_whitelist_summary"><![CDATA[封鎖權限彈出視窗，並拒絕未在此處授權的應用程式]]></string>
+    <string name="security_action_app_open"><![CDATA[開啟應用程式時解鎖]]></string>
+    <string name="security_action_device_owner"><![CDATA[裝置擁有者設定與轉移]]></string>
+    <string name="security_action_permissions"><![CDATA[管理應用程式權限]]></string>
+    <string name="security_action_server"><![CDATA[啟動與停止伺服器]]></string>
+    <string name="security_action_stubs"><![CDATA[安裝或移除橋接套件]]></string>
+    <string name="security_auth_prompt_app_open"><![CDATA[解鎖 Shevery]]></string>
+    <string name="security_auth_prompt_device_owner"><![CDATA[存取裝置擁有者設定]]></string>
+    <string name="security_auth_prompt_permissions"><![CDATA[管理應用程式權限]]></string>
+    <string name="security_auth_prompt_server"><![CDATA[控制 Shevery 伺服器]]></string>
+    <string name="security_auth_prompt_stubs"><![CDATA[管理相容性橋接套件]]></string>
+    <string name="security_auth_prompt_title"><![CDATA[驗證以管理 Shevery]]></string>
+    <string name="security_locked_desc"><![CDATA[需要驗證才能使用 Shevery]]></string>
+    <string name="security_locked_title"><![CDATA[Shevery 已鎖定]]></string>
+    <string name="security_protected_actions_title"><![CDATA[受保護的動作]]></string>
+    <string name="security_require_auth_summary"><![CDATA[以指紋、臉部解鎖或裝置鎖定保護 Shevery 的動作]]></string>
+    <string name="security_require_auth_title"><![CDATA[需要驗證]]></string>
+    <string name="security_timeout_15min"><![CDATA[15 分鐘]]></string>
+    <string name="security_timeout_1hour"><![CDATA[1 小時]]></string>
+    <string name="security_timeout_1min"><![CDATA[1 分鐘]]></string>
+    <string name="security_timeout_30min"><![CDATA[30 分鐘]]></string>
+    <string name="security_timeout_5min"><![CDATA[5 分鐘]]></string>
+    <string name="security_timeout_immediately"><![CDATA[立即]]></string>
+    <string name="security_timeout_title"><![CDATA[工作階段逾時]]></string>
+    <string name="security_unlock_button"><![CDATA[解鎖]]></string>
+    <string name="settings_compat_stubs_summary"><![CDATA[管理供舊版應用程式使用的 Shizuku 與 Dhizuku 橋接套件]]></string>
+    <string name="settings_compat_stubs_title"><![CDATA[相容性橋接套件]]></string>
+    <string name="settings_device_owner_summary"><![CDATA[裝置擁有權、應用程式委派與系統權限]]></string>
+    <string name="settings_device_owner_title"><![CDATA[裝置擁有者]]></string>
+    <string name="settings_security_summary"><![CDATA[生物辨識驗證與受保護的動作]]></string>
+    <string name="settings_security_title"><![CDATA[安全性]]></string>
+    <string name="settings_stealth_version"><![CDATA[隱蔽版本]]></string>
+    <string name="settings_stealth_version_summary"><![CDATA[具備隨機套件名稱的偽裝版本，會將 APK 儲存到「下載」資料夾]]></string>
+    <string name="settings_stealth_dialog_title"><![CDATA[儲存隱蔽 APK]]></string>
+    <string name="settings_stealth_dialog_message"><![CDATA[套件名稱：%1$s
+應用程式版本：%2$s
+
+隱蔽版本宣告了相同的 Shizuku authorities，因此安裝前請先解除安裝一般版 Shevery。]]></string>
+    <string name="settings_stealth_appname_label"><![CDATA[應用程式名稱]]></string>
+    <string name="settings_stealth_filename_label"><![CDATA[檔案名稱]]></string>
+    <string name="settings_stealth_action_save"><![CDATA[儲存]]></string>
+    <string name="settings_stealth_saved"><![CDATA[隱蔽 APK 已儲存至「下載」：%1$s]]></string>
+    <string name="settings_stealth_save_failed"><![CDATA[無法儲存隱蔽 APK（需 Android 10 以上）]]></string>
+    <string name="shizuku_whitelist_summary"><![CDATA[封鎖權限彈出視窗，並拒絕未在此清單中開啟的應用程式]]></string>
+    <string name="stub_action_install"><![CDATA[安裝]]></string>
+    <string name="stub_action_uninstall"><![CDATA[解除安裝]]></string>
+    <string name="stub_dhizuku_summary"><![CDATA[宣告 com.rosan.dhizuku 套件與 Dhizuku API 權限，為硬性檢查 Dhizuku 的應用程式提供相容性。]]></string>
+    <string name="stub_dhizuku_title"><![CDATA[Dhizuku 相容性橋接套件]]></string>
+    <string name="stub_installed_success"><![CDATA[%1$s 已透過 %2$s 成功安裝]]></string>
+    <string name="stub_shizuku_summary"><![CDATA[宣告 moe.shizuku.privileged.api 套件與 Shizuku 權限，並將授權與 binder 請求轉送到 Shevery。]]></string>
+    <string name="stub_shizuku_title"><![CDATA[Shizuku 相容性橋接套件]]></string>
+    <string name="stub_status_installed"><![CDATA[已安裝]]></string>
+    <string name="stub_status_not_installed"><![CDATA[未安裝]]></string>
+    <string name="stub_uninstalled_success"><![CDATA[%1$s 已成功移除]]></string>
+    <string name="whitelist_mode_title"><![CDATA[白名單模式]]></string>
+
+    <!-- Compatibility Stub notice on Home -->
+    <string name="home_shizuku_deprecated_banner_title"><![CDATA[Shizuku API 已棄用]]></string>
+    <string name="home_shizuku_deprecated_banner_body"><![CDATA[Shevery 現在改用原生 Shevery API。若要支援仍需要 Shizuku 的舊版應用程式，請使用相容性橋接套件，將權限與 API 橋接到 Shevery。]]></string>
+    <string name="home_shizuku_deprecated_banner_button"><![CDATA[相容性橋接套件]]></string>
+
+    <plurals name="home_app_management_authorized_apps_count">
+        <item quantity="other"><![CDATA[已授權 %d 個應用程式]]></item>
+    </plurals>
 </resources>
