@@ -25,4 +25,5 @@ node_modules/
 next-env.d.ts
 tsconfig.tsbuildinfo
 /tmp/
+/native/target/
 

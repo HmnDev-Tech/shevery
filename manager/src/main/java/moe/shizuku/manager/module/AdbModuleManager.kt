@@ -709,7 +709,8 @@ object AdbModuleManager {
                 }
             } else {
                 try {
-                    stdout = readStreamTail(ParcelFileDescriptor.AutoCloseInputStream(stdoutPfd))
+                    stdout = ModuleNative.readPfdTail(stdoutPfd, MAX_OUTPUT_CHARS)
+                        ?: readStreamTail(ParcelFileDescriptor.AutoCloseInputStream(stdoutPfd))
                 } catch (ignore: Exception) { }
             }
         }
@@ -746,7 +747,8 @@ object AdbModuleManager {
                 }
             } else {
                 try {
-                    stderr = readStreamTail(ParcelFileDescriptor.AutoCloseInputStream(stderrPfd))
+                    stderr = ModuleNative.readPfdTail(stderrPfd, MAX_OUTPUT_CHARS)
+                        ?: readStreamTail(ParcelFileDescriptor.AutoCloseInputStream(stderrPfd))
                 } catch (ignore: Exception) { }
             }
         }
@@ -917,6 +919,9 @@ object AdbModuleManager {
      */
     private fun moduleFingerprint(directory: File): String? {
         if (!directory.isDirectory) return null
+        if (ModuleNative.isAvailable) {
+            ModuleNative.nativeModuleFingerprint(directory.absolutePath)?.let { return it }
+        }
         return try {
             val digest = MessageDigest.getInstance("SHA-256")
             val files = directory.walkTopDown()
@@ -1149,6 +1154,8 @@ object AdbModuleManager {
         runCatching {
             val shimScript = """
                 mkdir -p /data/local/tmp/shevery/bin 2>/dev/null
+                chmod 0700 /data/local/tmp/shevery /data/local/tmp/shevery/bin 2>/dev/null
+                rm -f /data/local/tmp/shevery/bin/adb 2>/dev/null
                 cat << 'EOF' > /data/local/tmp/shevery/bin/adb
 #!/system/bin/sh
 while [ ${'$'}# -gt 0 ]; do
@@ -1164,7 +1171,7 @@ case "${'$'}1" in
         if [ ${'$'}# -eq 0 ]; then
             exec /system/bin/sh
         else
-            eval "${'$'}*"
+            exec /system/bin/sh -c "${'$'}*"
         fi
         ;;
     devices)
@@ -1200,12 +1207,12 @@ case "${'$'}1" in
         if [ ${'$'}# -eq 0 ]; then
             exec /system/bin/sh
         else
-            eval "${'$'}*"
+            exec /system/bin/sh -c "${'$'}*"
         fi
         ;;
 esac
 EOF
-                chmod 0755 /data/local/tmp/shevery/bin/adb 2>/dev/null
+                chmod 0700 /data/local/tmp/shevery/bin/adb 2>/dev/null
             """.trimIndent()
             val proc = service.newProcess(arrayOf("sh", "-c", shimScript), null, "/data/local/tmp")
             proc?.waitForTimeout(5, TimeUnit.SECONDS.name)

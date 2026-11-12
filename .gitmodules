@@ -1,4 +1,4 @@
 [submodule "api"]
 	path = api
 	url = https://github.com/HmnDev-Tech/Shevery-API.git
-	branch = main
+	branch = sh-rust

@@ -124,7 +124,7 @@ object ModuleSettings {
     }
 
     fun canRunAction(module: AdbModule): Boolean {
-        return module.enabled && (isModuleTrusted(module.id) || canRunAction() || getAccessMode() != AccessMode.SAFE)
+        return module.enabled && (isModuleTrusted(module.id) || canRunAction())
     }
 
     fun canRunService(): Boolean {
@@ -136,7 +136,7 @@ object ModuleSettings {
     }
 
     fun canRunService(module: AdbModule): Boolean {
-        return module.enabled && (isModuleTrusted(module.id) || canRunService() || getAccessMode() != AccessMode.SAFE)
+        return module.enabled && (isModuleTrusted(module.id) || canRunService())
     }
 
     fun canExposeWebBridge(): Boolean {
@@ -148,7 +148,7 @@ object ModuleSettings {
     }
 
     fun canExposeWebBridge(module: AdbModule): Boolean {
-        return module.enabled && (isModuleTrusted(module.id) || canExposeWebBridge() || getAccessMode() != AccessMode.SAFE)
+        return module.enabled && (isModuleTrusted(module.id) || canExposeWebBridge())
     }
 
     fun canUseWebNetwork(): Boolean {

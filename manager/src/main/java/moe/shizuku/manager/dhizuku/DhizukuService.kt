@@ -1,17 +1,29 @@
 package moe.shizuku.manager.dhizuku
 
+import android.app.Service
 import android.app.admin.DevicePolicyManager
 import android.content.Context
+import android.content.Intent
 import android.content.pm.PackageManager
 import android.os.Binder
 import android.os.Build
+import android.os.IBinder
 import android.os.Process
 import android.os.SystemProperties
 import android.provider.Settings
 import android.util.Log
 import moe.shizuku.manager.utils.EnvironmentUtils
 
-class DhizukuService(private val context: Context) : IDhizukuService.Stub() {
+class DhizukuService() : Service() {
+
+    private var injectedContext: Context? = null
+
+    constructor(context: Context) : this() {
+        this.injectedContext = context
+    }
+
+    private val hostContext: Context
+        get() = injectedContext ?: applicationContext ?: this
 
     companion object {
         private const val TAG = "DhizukuService"
@@ -26,8 +38,9 @@ class DhizukuService(private val context: Context) : IDhizukuService.Stub() {
         val uid = Binder.getCallingUid()
         if (uid == Process.myUid() || uid < Process.FIRST_APPLICATION_UID) return true
         return try {
-            val packages = context.packageManager.getPackagesForUid(uid).orEmpty()
-            val dpm = context.getSystemService(Context.DEVICE_POLICY_SERVICE) as? DevicePolicyManager
+            val ctx = hostContext
+            val packages = ctx.packageManager.getPackagesForUid(uid).orEmpty()
+            val dpm = ctx.getSystemService(Context.DEVICE_POLICY_SERVICE) as? DevicePolicyManager
             if (dpm != null && packages.any {
                     dpm.isDeviceOwnerApp(it) || dpm.isProfileOwnerApp(it)
                 }
@@ -47,6 +60,7 @@ class DhizukuService(private val context: Context) : IDhizukuService.Stub() {
 
     private fun isSignedByUs(packageName: String): Boolean {
         return try {
+            val ctx = hostContext
             val api28 = Build.VERSION.SDK_INT >= Build.VERSION_CODES.P
             val flags = if (api28) {
                 PackageManager.GET_SIGNING_CERTIFICATES
@@ -55,7 +69,7 @@ class DhizukuService(private val context: Context) : IDhizukuService.Stub() {
                 PackageManager.GET_SIGNATURES
             }
             fun certs(name: String): Set<String> {
-                val info = context.packageManager.getPackageInfo(name, flags)
+                val info = ctx.packageManager.getPackageInfo(name, flags)
                 val signatures = if (api28) {
                     info.signingInfo?.apkContentsSigners
                 } else {
@@ -65,140 +79,157 @@ class DhizukuService(private val context: Context) : IDhizukuService.Stub() {
                 return signatures?.map { it.toCharsString() }?.toSet().orEmpty()
             }
             val theirs = certs(packageName)
-            val ours = certs(context.packageName)
+            val ours = certs(ctx.packageName)
             theirs.isNotEmpty() && theirs == ours
         } catch (_: Throwable) {
             false
         }
     }
 
-    override fun runCommand(command: String?) {
-        if (!isTrustedCaller()) {
-            Log.w(TAG, "Rejected runCommand from uid ${Binder.getCallingUid()}")
-            return
-        }
-        command?.let {
-            try {
-                Log.d(TAG, "Executing command: $it")
-                val process = Runtime.getRuntime().exec(arrayOf("sh", "-c", it))
+    private val binder = object : IDhizukuService.Stub() {
+        override fun runCommand(command: String?) {
+            if (!isTrustedCaller()) {
+                Log.w(TAG, "Rejected runCommand from uid ${Binder.getCallingUid()}")
+                return
+            }
+            command?.let {
                 try {
-                    process.outputStream.close()
-                } catch (_: Exception) {}
-                val stdoutThread = Thread {
+                    Log.d(TAG, "Executing command: $it")
+                    val process = Runtime.getRuntime().exec(arrayOf("sh", "-c", it))
                     try {
-                        process.inputStream.use { stream ->
-                            val buffer = ByteArray(1024)
-                            while (stream.read(buffer) != -1) { }
-                        }
+                        process.outputStream.close()
                     } catch (_: Exception) {}
+                    val stdoutThread = Thread {
+                        try {
+                            process.inputStream.use { stream ->
+                                val buffer = ByteArray(1024)
+                                while (stream.read(buffer) != -1) { }
+                            }
+                        } catch (_: Exception) {}
+                    }
+                    val stderrThread = Thread {
+                        try {
+                            process.errorStream.use { stream ->
+                                val buffer = ByteArray(1024)
+                                while (stream.read(buffer) != -1) { }
+                            }
+                        } catch (_: Exception) {}
+                    }
+                    stdoutThread.start()
+                    stderrThread.start()
+                    Thread {
+                        try {
+                            process.waitFor()
+                            stdoutThread.join()
+                            stderrThread.join()
+                        } catch (_: Exception) {}
+                    }.start()
+                } catch (e: Exception) {
+                    Log.e(TAG, "Failed to execute command", e)
                 }
-                val stderrThread = Thread {
-                    try {
-                        process.errorStream.use { stream ->
-                            val buffer = ByteArray(1024)
-                            while (stream.read(buffer) != -1) { }
-                        }
-                    } catch (_: Exception) {}
+            }
+        }
+
+        override fun enableAdb(): Boolean {
+            if (!isTrustedCaller()) {
+                Log.w(TAG, "Rejected enableAdb from uid ${Binder.getCallingUid()}")
+                return false
+            }
+            return try {
+                val ctx = hostContext
+                val dpm = ctx.getSystemService(Context.DEVICE_POLICY_SERVICE) as DevicePolicyManager
+                val admins = dpm.activeAdmins
+                if (admins.isNullOrEmpty()) {
+                    Log.e(TAG, "No active device admins found")
+                    return false
                 }
-                stdoutThread.start()
-                stderrThread.start()
-                Thread {
+
+                // Find the owner admin component (Device Owner or Profile Owner)
+                val ownerAdmin = admins.firstOrNull { admin ->
                     try {
-                        process.waitFor()
-                        stdoutThread.join()
-                        stderrThread.join()
-                    } catch (_: Exception) {}
-                }.start()
+                        dpm.isDeviceOwnerApp(admin.packageName) || dpm.isProfileOwnerApp(admin.packageName)
+                    } catch (e: Exception) {
+                        false
+                    }
+                }
+
+                if (ownerAdmin == null) {
+                    Log.e(TAG, "No device/profile owner admin found among active admins: ${admins.map { it.flattenToString() }}")
+                    return false
+                }
+
+                Log.d(TAG, "Device owner admin: ${ownerAdmin.flattenToString()}")
+
+                // Enable ADB
+                dpm.setGlobalSetting(ownerAdmin, Settings.Global.ADB_ENABLED, "1")
+                Log.d(TAG, "ADB enabled via DPM")
+
+                // On Android 11+, enable wireless debugging
+                if (Build.VERSION.SDK_INT >= Build.VERSION_CODES.R) {
+                    try {
+                        dpm.setGlobalSetting(ownerAdmin, "adb_wifi_enabled", "1")
+                        Log.d(TAG, "Wireless ADB enabled via DPM")
+                    } catch (e: Exception) {
+                        Log.w(TAG, "Failed to enable wireless ADB: ${e.message}")
+                    }
+                }
+
+                true
             } catch (e: Exception) {
-                Log.e(TAG, "Failed to execute command", e)
+                Log.e(TAG, "enableAdb failed", e)
+                false
             }
         }
-    }
 
-    override fun enableAdb(): Boolean {
-        if (!isTrustedCaller()) {
-            Log.w(TAG, "Rejected enableAdb from uid ${Binder.getCallingUid()}")
-            return false
+        override fun getAdbPort(): Int {
+            if (!isTrustedCaller()) {
+                Log.w(TAG, "Rejected getAdbPort from uid ${Binder.getCallingUid()}")
+                return -1
+            }
+            return try {
+                val ctx = hostContext
+                var port = SystemProperties.getInt("service.adb.tcp.port", -1)
+                if (port == -1) port = SystemProperties.getInt("persist.adb.tcp.port", -1)
+                // Also check wireless debugging port on Android 11+
+                if (port == -1 && Build.VERSION.SDK_INT >= Build.VERSION_CODES.R) {
+                    try {
+                        val wifiPort = Settings.Global.getInt(ctx.contentResolver, "adb_wifi_port", -1)
+                        if (wifiPort > 0) port = wifiPort
+                    } catch (_: Exception) {}
+                }
+                port
+            } catch (e: Exception) {
+                Log.e(TAG, "getAdbPort failed", e)
+                -1
+            }
         }
-        return try {
-            val dpm = context.getSystemService(Context.DEVICE_POLICY_SERVICE) as DevicePolicyManager
-            val admins = dpm.activeAdmins
-            if (admins.isNullOrEmpty()) {
-                Log.e(TAG, "No active device admins found")
+
+        override fun bindAdbTcp(port: Int): Boolean {
+            if (!isTrustedCaller()) {
+                Log.w(TAG, "Rejected bindAdbTcp from uid ${Binder.getCallingUid()}")
                 return false
             }
-
-            // Find the owner admin component (Device Owner or Profile Owner)
-            val ownerAdmin = admins.firstOrNull { admin ->
-                try {
-                    dpm.isDeviceOwnerApp(admin.packageName) || dpm.isProfileOwnerApp(admin.packageName)
-                } catch (e: Exception) {
-                    false
-                }
+            return try {
+                val targetPort = if (port in 1..65535) port else 5555
+                Log.d(TAG, "Binding ADB TCP on port $targetPort")
+                val exitCode = runAdbTcpBindCommand(targetPort)
+                val live = waitForAdbTcpPort(targetPort)
+                Log.d(TAG, "ADB TCP bind command finished, exit code: $exitCode, live: $live")
+                exitCode == 0 && live
+            } catch (e: Exception) {
+                Log.e(TAG, "bindAdbTcp failed", e)
+                false
             }
-
-            if (ownerAdmin == null) {
-                Log.e(TAG, "No device/profile owner admin found among active admins: ${admins.map { it.flattenToString() }}")
-                return false
-            }
-
-            Log.d(TAG, "Device owner admin: ${ownerAdmin.flattenToString()}")
-
-            // Enable ADB
-            dpm.setGlobalSetting(ownerAdmin, Settings.Global.ADB_ENABLED, "1")
-            Log.d(TAG, "ADB enabled via DPM")
-
-            // On Android 11+, enable wireless debugging
-            if (Build.VERSION.SDK_INT >= Build.VERSION_CODES.R) {
-                try {
-                    dpm.setGlobalSetting(ownerAdmin, "adb_wifi_enabled", "1")
-                    Log.d(TAG, "Wireless ADB enabled via DPM")
-                } catch (e: Exception) {
-                    Log.w(TAG, "Failed to enable wireless ADB: ${e.message}")
-                }
-            }
-
-            true
-        } catch (e: Exception) {
-            Log.e(TAG, "enableAdb failed", e)
-            false
         }
     }
 
-    override fun getAdbPort(): Int {
-        return try {
-            var port = SystemProperties.getInt("service.adb.tcp.port", -1)
-            if (port == -1) port = SystemProperties.getInt("persist.adb.tcp.port", -1)
-            // Also check wireless debugging port on Android 11+
-            if (port == -1 && Build.VERSION.SDK_INT >= Build.VERSION_CODES.R) {
-                try {
-                    val wifiPort = Settings.Global.getInt(context.contentResolver, "adb_wifi_port", -1)
-                    if (wifiPort > 0) port = wifiPort
-                } catch (_: Exception) {}
-            }
-            port
-        } catch (e: Exception) {
-            Log.e(TAG, "getAdbPort failed", e)
-            -1
-        }
-    }
+    override fun onBind(intent: Intent?): IBinder = binder
 
-    override fun bindAdbTcp(port: Int): Boolean {
-        return try {
-            val targetPort = if (port > 0) port else 5555
-            Log.d(TAG, "Binding ADB TCP on port $targetPort")
-            val exitCode = runAdbTcpBindCommand(targetPort)
-            val live = waitForAdbTcpPort(targetPort)
-            Log.d(TAG, "ADB TCP bind command finished, exit code: $exitCode, live: $live")
-            exitCode == 0 && live
-        } catch (e: Exception) {
-            Log.e(TAG, "bindAdbTcp failed", e)
-            false
-        }
-    }
+    fun asBinder(): IBinder = binder
 
     private fun runAdbTcpBindCommand(port: Int): Int {
-        val cmd = "setprop service.adb.tcp.port $port; setprop ctl.restart adbd || (stop adbd; start adbd)"
+        val safePort = port.coerceIn(1, 65535)
+        val cmd = "setprop service.adb.tcp.port $safePort; setprop ctl.restart adbd || (stop adbd; start adbd)"
         val process = Runtime.getRuntime().exec(arrayOf("sh", "-c", cmd))
         val stdoutThread = Thread {
             try { process.inputStream.use { it.readBytes() } } catch (_: Exception) {}
