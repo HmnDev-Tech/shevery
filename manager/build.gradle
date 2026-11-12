@@ -233,7 +233,7 @@ dependencies {
 
     implementation 'org.bouncycastle:bcpkix-jdk18on:1.85'
 
-    implementation 'io.github.iamr0s:Dhizuku-API:2.5.4'
+    implementation 'io.github.iamr0s:Dhizuku-API:2.7.0'
 
     implementation 'com.squareup.okhttp3:okhttp:4.12.0'
     implementation 'org.jetbrains.kotlinx:kotlinx-serialization-json:1.11.0'

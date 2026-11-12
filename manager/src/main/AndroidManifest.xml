@@ -285,6 +285,13 @@
             android:permission="com.hamondev.shevery.permission.PRIVILEGED_API" />
 
         <service
+            android:name=".dhizuku.DhizukuUserServiceHostService"
+            android:directBootAware="true"
+            android:enabled="true"
+            android:exported="false"
+            android:process=":dhizuku_user_service" />
+
+        <service
             android:name=".settings.UsbDebuggingHideService"
             android:enabled="true"
             android:exported="false"
