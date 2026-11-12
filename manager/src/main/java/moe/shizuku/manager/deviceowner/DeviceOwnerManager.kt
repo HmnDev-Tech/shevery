@@ -23,33 +23,95 @@ object DeviceOwnerManager {
         val description: String
     )
 
-    val ALL_SCOPES: List<DelegatedScope> = listOf(
-        DelegatedScope(
-            scopeName = DevicePolicyManager.DELEGATION_APP_RESTRICTIONS,
-            label = "App Restrictions",
-            description = "Allows configuring managed configurations and app restrictions"
-        ),
-        DelegatedScope(
-            scopeName = DevicePolicyManager.DELEGATION_BLOCK_UNINSTALL,
-            label = "Block Uninstall",
-            description = "Allows preventing specified applications from being uninstalled"
-        ),
-        DelegatedScope(
-            scopeName = DevicePolicyManager.DELEGATION_PERMISSION_GRANT,
-            label = "Permission Granting",
-            description = "Allows granting or revoking runtime permissions without user prompts"
-        ),
-        DelegatedScope(
-            scopeName = DevicePolicyManager.DELEGATION_PACKAGE_ACCESS,
-            label = "Package Access (Freeze)",
-            description = "Allows hiding, unhiding, and suspending applications"
-        ),
-        DelegatedScope(
-            scopeName = DevicePolicyManager.DELEGATION_ENABLE_SYSTEM_APP,
-            label = "Enable System Apps",
-            description = "Allows enabling pre-installed disabled system applications"
-        )
-    )
+    val ALL_SCOPES: List<DelegatedScope> by lazy {
+        buildList {
+            if (Build.VERSION.SDK_INT >= Build.VERSION_CODES.O) {
+                add(
+                    DelegatedScope(
+                        scopeName = DevicePolicyManager.DELEGATION_APP_RESTRICTIONS,
+                        label = "App Restrictions",
+                        description = "Allows configuring managed configurations and app restrictions"
+                    )
+                )
+                add(
+                    DelegatedScope(
+                        scopeName = DevicePolicyManager.DELEGATION_BLOCK_UNINSTALL,
+                        label = "Block Uninstall",
+                        description = "Allows preventing specified applications from being uninstalled"
+                    )
+                )
+                add(
+                    DelegatedScope(
+                        scopeName = DevicePolicyManager.DELEGATION_PERMISSION_GRANT,
+                        label = "Permission Granting",
+                        description = "Allows granting or revoking runtime permissions without user prompts"
+                    )
+                )
+                add(
+                    DelegatedScope(
+                        scopeName = DevicePolicyManager.DELEGATION_PACKAGE_ACCESS,
+                        label = "Package Access (Freeze)",
+                        description = "Allows hiding, unhiding, and suspending applications"
+                    )
+                )
+                add(
+                    DelegatedScope(
+                        scopeName = DevicePolicyManager.DELEGATION_ENABLE_SYSTEM_APP,
+                        label = "Enable System Apps",
+                        description = "Allows enabling pre-installed disabled system applications"
+                    )
+                )
+                add(
+                    DelegatedScope(
+                        scopeName = DevicePolicyManager.DELEGATION_CERT_INSTALL,
+                        label = "Certificate Installation",
+                        description = "Allows installing and managing CA and user certificates"
+                    )
+                )
+            }
+            if (Build.VERSION.SDK_INT >= Build.VERSION_CODES.P) {
+                add(
+                    DelegatedScope(
+                        scopeName = DevicePolicyManager.DELEGATION_INSTALL_EXISTING_PACKAGE,
+                        label = "Install Existing Package",
+                        description = "Allows installing existing packages for the current user profile"
+                    )
+                )
+                add(
+                    DelegatedScope(
+                        scopeName = DevicePolicyManager.DELEGATION_KEEP_UNINSTALLED_PACKAGES,
+                        label = "Keep Uninstalled Packages",
+                        description = "Allows keeping APKs of uninstalled packages cached on the device"
+                    )
+                )
+            }
+            if (Build.VERSION.SDK_INT >= Build.VERSION_CODES.Q) {
+                add(
+                    DelegatedScope(
+                        scopeName = DevicePolicyManager.DELEGATION_NETWORK_LOGGING,
+                        label = "Network Logging",
+                        description = "Allows enabling network logging and retrieving network activity logs"
+                    )
+                )
+                add(
+                    DelegatedScope(
+                        scopeName = DevicePolicyManager.DELEGATION_CERT_SELECTION,
+                        label = "Certificate Selection",
+                        description = "Allows selecting KeyChain certificates on behalf of requesting apps"
+                    )
+                )
+            }
+            if (Build.VERSION.SDK_INT >= Build.VERSION_CODES.S) {
+                add(
+                    DelegatedScope(
+                        scopeName = DevicePolicyManager.DELEGATION_SECURITY_LOGGING,
+                        label = "Security Logging",
+                        description = "Allows enabling security logging and retrieving security audit logs"
+                    )
+                )
+            }
+        }
+    }
 
     fun getDpm(context: Context): DevicePolicyManager {
         return context.getSystemService(Context.DEVICE_POLICY_SERVICE) as DevicePolicyManager
