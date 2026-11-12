@@ -28,6 +28,17 @@ const CLIENT_NAME: &[u8] = b"adb pair client";
 const SERVER_NAME: &[u8] = b"adb pair server";
 const HKDF_INFO: &[u8] = b"adb pairing_auth aes-128-gcm key";
 
+#[inline]
+fn zeroize_slice(buf: &mut [u8]) {
+    for b in buf.iter_mut() {
+        // Safety: b is a valid mutable reference to an initialized u8 within buf.
+        unsafe {
+            std::ptr::write_volatile(b, 0);
+        }
+    }
+    std::sync::atomic::compiler_fence(std::sync::atomic::Ordering::SeqCst);
+}
+
 pub struct PairingContext {
     is_client: bool,
     my_msg: [u8; 32],
@@ -39,6 +50,15 @@ pub struct PairingContext {
     dec_sequence: u64,
 }
 
+impl Drop for PairingContext {
+    fn drop(&mut self) {
+        zeroize_slice(&mut self.password_hash);
+        self.private_scalar = Scalar::ZERO;
+        self.password_scalar = Scalar::ZERO;
+        self.cipher = None;
+    }
+}
+
 impl PairingContext {
     pub fn new(is_client: bool, password: &[u8]) -> Option<Self> {
         let point_m = CompressedEdwardsY(M_BYTES).decompress()?;
@@ -47,6 +67,7 @@ impl PairingContext {
         let mut private_tmp = [0u8; 64];
         rand::thread_rng().fill_bytes(&mut private_tmp);
         let private_scalar = Scalar::from_bytes_mod_order_wide(&private_tmp) * Scalar::from(8u64);
+        zeroize_slice(&mut private_tmp);
         let p_point = EdwardsPoint::mul_base(&private_scalar);
 
         let password_hash: [u8; 64] = Sha512::digest(password).into();
@@ -102,7 +123,7 @@ impl PairingContext {
 
         let q_ext = q_star - peer_mask;
         let dh_shared = q_ext * self.private_scalar;
-        let dh_shared_encoded = *dh_shared.compress().as_bytes();
+        let mut dh_shared_encoded = *dh_shared.compress().as_bytes();
 
         let mut hasher = Sha512::new();
         let update_with_prefix = |hasher: &mut Sha512, data: &[u8]| {
@@ -124,43 +145,71 @@ impl PairingContext {
         }
         update_with_prefix(&mut hasher, &dh_shared_encoded);
         update_with_prefix(&mut hasher, &self.password_hash);
+        zeroize_slice(&mut dh_shared_encoded);
 
-        let key_material = hasher.finalize();
+        let mut key_material = hasher.finalize();
 
         let hk = Hkdf::<Sha256>::new(None, &key_material);
+        zeroize_slice(key_material.as_mut_slice());
         let mut key = [0u8; 16];
         if hk.expand(HKDF_INFO, &mut key).is_err() {
+            zeroize_slice(&mut key);
             return false;
         }
 
-        self.cipher = Some(Aes128Gcm::new_from_slice(&key).unwrap());
+        let cipher = Aes128Gcm::new_from_slice(&key).ok();
+        zeroize_slice(&mut key);
+        self.cipher = match cipher {
+            Some(c) => Some(c),
+            None => return false,
+        };
         true
     }
 
     pub fn encrypt(&mut self, plaintext: &[u8]) -> Option<Vec<u8>> {
         let cipher = self.cipher.as_ref()?;
+        let seq = self.enc_sequence;
+        let next_seq = seq.checked_add(1)?;
         let mut nonce_bytes = [0u8; 12];
-        nonce_bytes[..8].copy_from_slice(&self.enc_sequence.to_le_bytes());
+        nonce_bytes[..8].copy_from_slice(&seq.to_le_bytes());
         let nonce = Nonce::from_slice(&nonce_bytes);
 
         let ciphertext = cipher.encrypt(nonce, plaintext).ok()?;
-        self.enc_sequence += 1;
+        self.enc_sequence = next_seq;
         Some(ciphertext)
     }
 
     pub fn decrypt(&mut self, ciphertext: &[u8]) -> Option<Vec<u8>> {
         let cipher = self.cipher.as_ref()?;
+        let seq = self.dec_sequence;
+        let next_seq = seq.checked_add(1)?;
         let mut nonce_bytes = [0u8; 12];
-        nonce_bytes[..8].copy_from_slice(&self.dec_sequence.to_le_bytes());
+        nonce_bytes[..8].copy_from_slice(&seq.to_le_bytes());
         let nonce = Nonce::from_slice(&nonce_bytes);
 
         let plaintext = cipher.decrypt(nonce, ciphertext).ok()?;
-        self.dec_sequence += 1;
+        self.dec_sequence = next_seq;
         Some(plaintext)
     }
 }
 
 // ---------------- JNI Implementation ----------------
+
+#[no_mangle]
+pub unsafe extern "C" fn jni_AdbPairingClient_available(
+    _raw_env: *mut JNIEnv,
+    _class: jclass,
+) -> jboolean {
+    JNI_TRUE
+}
+
+#[no_mangle]
+pub unsafe extern "system" fn Java_moe_shizuku_manager_adb_AdbPairingClient_available(
+    _raw_env: *mut JNIEnv,
+    _class: jclass,
+) -> jboolean {
+    JNI_TRUE
+}
 
 #[no_mangle]
 pub unsafe extern "C" fn jni_PairingContext_Constructor(
@@ -175,15 +224,17 @@ pub unsafe extern "C" fn jni_PairingContext_Constructor(
     };
 
     let pswd_arr = JByteArray::from_raw(j_password);
-    let password = match env.convert_byte_array(&pswd_arr) {
+    let mut password = match env.convert_byte_array(&pswd_arr) {
         Ok(p) => p,
         Err(_) => return 0,
     };
 
-    match PairingContext::new(is_client != 0, &password) {
+    let res = match PairingContext::new(is_client != 0, &password) {
         Some(ctx) => Box::into_raw(Box::new(ctx)) as jlong,
         None => 0,
-    }
+    };
+    zeroize_slice(&mut password);
+    res
 }
 
 #[no_mangle]
@@ -361,6 +412,28 @@ pub extern "system" fn JNI_OnLoad(vm: *mut jni::sys::JavaVM, _reserved: *mut c_v
             class,
             methods.as_ptr(),
             methods.len() as jint,
+        ) != 0
+        {
+            return JNI_ERR;
+        }
+
+        let client_class_name = CString::new("moe/shizuku/manager/adb/AdbPairingClient").unwrap();
+        let client_class = (**env).FindClass.unwrap()(env, client_class_name.as_ptr());
+        if client_class.is_null() {
+            return JNI_ERR;
+        }
+
+        let client_methods = [JNINativeMethod {
+            name: b"available\0".as_ptr() as *mut _,
+            signature: b"()Z\0".as_ptr() as *mut _,
+            fnPtr: jni_AdbPairingClient_available as *mut _,
+        }];
+
+        if (**env).RegisterNatives.unwrap()(
+            env,
+            client_class,
+            client_methods.as_ptr(),
+            client_methods.len() as jint,
         ) != 0
         {
             return JNI_ERR;
