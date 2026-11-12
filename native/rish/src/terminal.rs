@@ -45,7 +45,7 @@ pub fn prepare() -> jbyte {
     }
 
     if (atty & ATTY_OUT) != 0 {
-        // Safety: Masking SIGWINCH on the calling thread so window changes are delivered via self-pipe.
+        // Safety: Masking SIGWINCH on the calling thread until self-pipe and handler are installed in start().
         // Invariant: sigset_t structure is properly initialized with sigemptyset and sigaddset.
         unsafe {
             let mut winch: libc::sigset_t = std::mem::zeroed();
@@ -143,10 +143,14 @@ pub fn start(tty: jbyte, stdin_pipe: jint, stdout_pipe: jint, stderr_pipe: jint)
         }
     });
 
-    // Safety: Installing SIGWINCH signal handler.
+    // Safety: Installing SIGWINCH signal handler and unblocking SIGWINCH after WINCH_PIPE is ready.
     // Invariant: sigwinch_handler is async-signal-safe, writing only to the non-blocking pipe.
     unsafe {
         libc::signal(libc::SIGWINCH, sigwinch_handler as *const () as usize);
+        let mut winch: libc::sigset_t = std::mem::zeroed();
+        libc::sigemptyset(&mut winch);
+        libc::sigaddset(&mut winch, libc::SIGWINCH);
+        libc::pthread_sigmask(libc::SIG_UNBLOCK, &winch, std::ptr::null_mut());
     }
 
     tty_fd

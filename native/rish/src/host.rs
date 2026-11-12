@@ -42,6 +42,41 @@ fn parse_block(data: &[u8], count: usize) -> Vec<CString> {
     result
 }
 
+unsafe fn cleanup_fds(
+    ptmx: c_int,
+    stdin_pipe: [c_int; 2],
+    stdout_pipe: [c_int; 2],
+    stderr_pipe: [c_int; 2],
+    stdin_read: c_int,
+    stdout_write: c_int,
+    stderr_write: c_int,
+) {
+    if ptmx != -1 {
+        libc::close(ptmx);
+    }
+    if stdin_pipe[0] != -1 {
+        libc::close(stdin_pipe[0]);
+        libc::close(stdin_pipe[1]);
+    }
+    if stdout_pipe[0] != -1 {
+        libc::close(stdout_pipe[0]);
+        libc::close(stdout_pipe[1]);
+    }
+    if stderr_pipe[0] != -1 {
+        libc::close(stderr_pipe[0]);
+        libc::close(stderr_pipe[1]);
+    }
+    if stdin_read != -1 {
+        libc::close(stdin_read);
+    }
+    if stdout_write != -1 {
+        libc::close(stdout_write);
+    }
+    if stderr_write != -1 {
+        libc::close(stderr_write);
+    }
+}
+
 pub fn start_host(
     mut env: JNIEnv,
     arg_block: JByteArray,
@@ -62,6 +97,9 @@ pub fn start_host(
     let ptmx = if tty != 0 {
         let fd = open_ptmx();
         if fd == -1 {
+            unsafe {
+                cleanup_fds(-1, [-1; 2], [-1; 2], [-1; 2], stdin_read, stdout_write, stderr_write);
+            }
             let _ = env.throw_new("java/lang/IllegalStateException", "Unable to open ptmx");
             return std::ptr::null_mut();
         }
@@ -75,21 +113,43 @@ pub fn start_host(
     let mut stderr_pipe = [-1; 2];
 
     // Safety: Creating pipe2 descriptors with flag 0 as needed for non-tty pipes.
-    unsafe {
-        if !in_tty {
-            libc::pipe2(stdin_pipe.as_mut_ptr(), 0);
+    let pipe_failed = unsafe {
+        (!in_tty && libc::pipe2(stdin_pipe.as_mut_ptr(), 0) != 0)
+            || (!out_tty && libc::pipe2(stdout_pipe.as_mut_ptr(), 0) != 0)
+            || (!err_tty && libc::pipe2(stderr_pipe.as_mut_ptr(), 0) != 0)
+    };
+    if pipe_failed {
+        unsafe {
+            cleanup_fds(
+                ptmx,
+                stdin_pipe,
+                stdout_pipe,
+                stderr_pipe,
+                stdin_read,
+                stdout_write,
+                stderr_write,
+            );
         }
-        if !out_tty {
-            libc::pipe2(stdout_pipe.as_mut_ptr(), 0);
-        }
-        if !err_tty {
-            libc::pipe2(stderr_pipe.as_mut_ptr(), 0);
-        }
+        let _ = env.throw_new("java/lang/IllegalStateException", "Unable to create pipe");
+        return std::ptr::null_mut();
     }
 
     let arg_bytes = match env.convert_byte_array(&arg_block) {
         Ok(b) => b,
-        Err(_) => return std::ptr::null_mut(),
+        Err(_) => {
+            unsafe {
+                cleanup_fds(
+                    ptmx,
+                    stdin_pipe,
+                    stdout_pipe,
+                    stderr_pipe,
+                    stdin_read,
+                    stdout_write,
+                    stderr_write,
+                );
+            }
+            return std::ptr::null_mut();
+        }
     };
     let parsed_args = parse_block(&arg_bytes, argc as usize);
 
@@ -114,30 +174,15 @@ pub fn start_host(
     let pid = unsafe { libc::fork() };
     if pid == -1 {
         unsafe {
-            if ptmx != -1 {
-                libc::close(ptmx);
-            }
-            if stdin_pipe[0] != -1 {
-                libc::close(stdin_pipe[0]);
-                libc::close(stdin_pipe[1]);
-            }
-            if stdout_pipe[0] != -1 {
-                libc::close(stdout_pipe[0]);
-                libc::close(stdout_pipe[1]);
-            }
-            if stderr_pipe[0] != -1 {
-                libc::close(stderr_pipe[0]);
-                libc::close(stderr_pipe[1]);
-            }
-            if stdin_read != -1 {
-                libc::close(stdin_read);
-            }
-            if stdout_write != -1 {
-                libc::close(stdout_write);
-            }
-            if stderr_write != -1 {
-                libc::close(stderr_write);
-            }
+            cleanup_fds(
+                ptmx,
+                stdin_pipe,
+                stdout_pipe,
+                stderr_pipe,
+                stdin_read,
+                stdout_write,
+                stderr_write,
+            );
         }
         let _ = env.throw_new("java/lang/IllegalStateException", "Unable to fork");
         return std::ptr::null_mut();
@@ -246,6 +291,8 @@ pub fn start_host(
                 None::<fn(bool)>,
             );
             unsafe { libc::close(stderr_pipe[1]) };
+        } else if stderr_write != -1 {
+            unsafe { libc::close(stderr_write) };
         }
 
         match env.new_int_array(2) {
@@ -258,10 +305,20 @@ pub fn start_host(
         }
     } else {
         // Child process
-        // Safety: Creating a new session, changing working directory, opening slave pts, dup2 into stdio, execvp.
+        // Safety: Creating a new session, closing parent remote descriptors, opening slave pts, setting controlling terminal, dup2 into stdio, execvp.
         unsafe {
             if libc::setsid() < 0 {
                 libc::exit(1);
+            }
+
+            if stdin_read > 2 {
+                libc::close(stdin_read);
+            }
+            if stdout_write > 2 {
+                libc::close(stdout_write);
+            }
+            if stderr_write > 2 {
+                libc::close(stderr_write);
             }
 
             if let Some(dir) = dir_str {
@@ -282,12 +339,22 @@ pub fn start_host(
                     libc::exit(1);
                 }
                 pts = libc::open(pts_slave.as_ptr() as *const libc::c_char, libc::O_RDWR);
+                if pts < 0 {
+                    libc::exit(1);
+                }
+                if ptmx > 2 {
+                    libc::close(ptmx);
+                }
+                let _ = libc::ioctl(pts, libc::TIOCSCTTY as _, 0);
             }
 
             if in_tty {
                 libc::dup2(pts, libc::STDIN_FILENO);
             } else {
                 libc::dup2(stdin_pipe[0], libc::STDIN_FILENO);
+                if stdin_pipe[0] > 2 {
+                    libc::close(stdin_pipe[0]);
+                }
                 libc::close(stdin_pipe[1]);
             }
 
@@ -295,6 +362,9 @@ pub fn start_host(
                 libc::dup2(pts, libc::STDOUT_FILENO);
             } else {
                 libc::dup2(stdout_pipe[1], libc::STDOUT_FILENO);
+                if stdout_pipe[1] > 2 {
+                    libc::close(stdout_pipe[1]);
+                }
                 libc::close(stdout_pipe[0]);
             }
 
@@ -302,10 +372,13 @@ pub fn start_host(
                 libc::dup2(pts, libc::STDERR_FILENO);
             } else {
                 libc::dup2(stderr_pipe[1], libc::STDERR_FILENO);
+                if stderr_pipe[1] > 2 {
+                    libc::close(stderr_pipe[1]);
+                }
                 libc::close(stderr_pipe[0]);
             }
 
-            if pts != -1 {
+            if pts > 2 {
                 libc::close(pts);
             }
 

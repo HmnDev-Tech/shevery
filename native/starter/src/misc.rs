@@ -84,8 +84,10 @@ pub fn kill_old_processes(server_name: &str) {
         }
 
         let cmdline_path = format!("/proc/{}/cmdline", pid);
-        let cmdline = fs::read_to_string(&cmdline_path).unwrap_or_default();
-        let proc_name = cmdline.split('\0').next().unwrap_or("").trim();
+        let cmdline_bytes = fs::read(&cmdline_path).unwrap_or_default();
+        let first_arg = cmdline_bytes.split(|&b| b == 0).next().unwrap_or(&[]);
+        let proc_name_cow = String::from_utf8_lossy(first_arg);
+        let proc_name = proc_name_cow.trim();
 
         let is_server = proc_name == server_name;
         let mut is_old_supervisor = proc_name.contains("libshizuku.so");
