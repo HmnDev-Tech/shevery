@@ -574,9 +574,13 @@ object StealthApkGenerator {
                 if (strOffset + 2 + byteLen <= out.size) {
                     val str = String(out, strOffset + 2, byteLen, Charsets.UTF_8)
                     if (str == STEALTH_LABEL_PLACEHOLDER) {
-                        val newBytes = appName.toByteArray(Charsets.UTF_8)
-                            .let { if (it.size > byteLen) appName.take(byteLen / 2).toByteArray(Charsets.UTF_8) else it }
-                        val newCharLen = appName.length.coerceAtMost(newBytes.size)
+                        var trimmed = appName
+                        var newBytes = trimmed.toByteArray(Charsets.UTF_8)
+                        while (newBytes.size > byteLen && trimmed.isNotEmpty()) {
+                            trimmed = trimmed.dropLast(1)
+                            newBytes = trimmed.toByteArray(Charsets.UTF_8)
+                        }
+                        val newCharLen = trimmed.length.coerceAtMost(byteLen)
                         out[strOffset] = newCharLen.toByte()
                         out[strOffset + 1] = newBytes.size.toByte()
                         for (k in 0..byteLen) out[strOffset + 2 + k] = 0
