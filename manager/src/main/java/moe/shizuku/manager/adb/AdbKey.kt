@@ -298,6 +298,13 @@ private fun BigInteger.toAdbEncoded(): IntArray {
 }
 
 private fun RSAPublicKey.adbEncoded(name: String): ByteArray {
+    if (AdbProtocolNative.isAvailable) {
+        AdbProtocolNative.nativeEncodeRsaPublicKey(
+            modulus.toByteArray(),
+            publicExponent.toInt(),
+            name.toByteArray(Charsets.UTF_8)
+        )?.let { return it }
+    }
     // https://cs.android.com/android/platform/superproject/+/android-10.0.0_r30:system/core/libcrypto_utils/android_pubkey.c
 
     /*
