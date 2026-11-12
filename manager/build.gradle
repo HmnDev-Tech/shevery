@@ -281,6 +281,8 @@ tasks.configureEach { task ->
 def buildRustManager = tasks.register("buildRustManager") {
     inputs.dir(rootProject.file("native/adb/src"))
     inputs.file(rootProject.file("native/adb/Cargo.toml"))
+    inputs.dir(rootProject.file("native/rish/src"))
+    inputs.file(rootProject.file("native/rish/Cargo.toml"))
     inputs.dir(rootProject.file("native/starter/src"))
     inputs.file(rootProject.file("native/starter/Cargo.toml"))
     inputs.file(rootProject.file("native/Cargo.toml"))
@@ -328,7 +330,7 @@ def buildRustManager = tasks.register("buildRustManager") {
                 "-t", "x86_64",
                 "-P", "24",
                 "-o", rustJniLibsDir.absolutePath.toString(),
-                "build", "--release", "-p", "rust-adb", "-p", "rust-starter"
+                "build", "--release", "-p", "rust-adb", "-p", "rust-rish", "-p", "rust-starter"
         ]
         def pb = new ProcessBuilder(cmd)
         pb.directory(nativeDir)

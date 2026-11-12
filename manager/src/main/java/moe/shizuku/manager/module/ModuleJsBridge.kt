@@ -317,6 +317,7 @@ class ModuleJsBridge(
     }
 
     private fun readStreamTail(fd: ParcelFileDescriptor): String {
+        ModuleNative.readPfdTail(fd, MAX_OUTPUT_CHARS)?.let { return it }
         return ParcelFileDescriptor.AutoCloseInputStream(fd).reader(Charsets.UTF_8).use { reader ->
             val buffer = CharArray(DEFAULT_BUFFER_SIZE)
             val tail = StringBuilder()

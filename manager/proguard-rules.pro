@@ -78,3 +78,10 @@
 -keep class * extends androidx.startup.Initializer { *; }
 -keep class androidx.work.WorkManagerInitializer { *; }
 
+
+# Keep Rust JNI bridge classes and methods
+-keep class moe.shizuku.manager.adb.AdbPairingClient { native <methods>; }
+-keep class moe.shizuku.manager.adb.PairingContext { native <methods>; }
+-keep class moe.shizuku.manager.adb.AdbProtocolNative { native <methods>; }
+-keep class moe.shizuku.manager.stealth.StealthNative { native <methods>; }
+-keep class moe.shizuku.manager.module.ModuleNative { native <methods>; }

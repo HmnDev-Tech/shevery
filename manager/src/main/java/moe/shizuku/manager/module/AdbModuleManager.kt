@@ -709,7 +709,8 @@ object AdbModuleManager {
                 }
             } else {
                 try {
-                    stdout = readStreamTail(ParcelFileDescriptor.AutoCloseInputStream(stdoutPfd))
+                    stdout = ModuleNative.readPfdTail(stdoutPfd, MAX_OUTPUT_CHARS)
+                        ?: readStreamTail(ParcelFileDescriptor.AutoCloseInputStream(stdoutPfd))
                 } catch (ignore: Exception) { }
             }
         }
@@ -746,7 +747,8 @@ object AdbModuleManager {
                 }
             } else {
                 try {
-                    stderr = readStreamTail(ParcelFileDescriptor.AutoCloseInputStream(stderrPfd))
+                    stderr = ModuleNative.readPfdTail(stderrPfd, MAX_OUTPUT_CHARS)
+                        ?: readStreamTail(ParcelFileDescriptor.AutoCloseInputStream(stderrPfd))
                 } catch (ignore: Exception) { }
             }
         }
@@ -917,6 +919,9 @@ object AdbModuleManager {
      */
     private fun moduleFingerprint(directory: File): String? {
         if (!directory.isDirectory) return null
+        if (ModuleNative.isAvailable) {
+            ModuleNative.nativeModuleFingerprint(directory.absolutePath)?.let { return it }
+        }
         return try {
             val digest = MessageDigest.getInstance("SHA-256")
             val files = directory.walkTopDown()

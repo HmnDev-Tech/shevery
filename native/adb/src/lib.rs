@@ -1,11 +1,15 @@
+pub mod module_io;
+pub mod protocol;
+pub mod stealth;
+
 use aes_gcm::aead::{Aead, KeyInit};
 use aes_gcm::{Aes128Gcm, Nonce};
 use curve25519_dalek::edwards::{CompressedEdwardsY, EdwardsPoint};
 use curve25519_dalek::scalar::Scalar;
 use hkdf::Hkdf;
-use jni::objects::JByteArray;
+use jni::objects::{JByteArray, JString};
 use jni::sys::{
-    jboolean, jbyteArray, jclass, jint, jlong, jobject, JNIEnv, JNINativeMethod, JNI_ERR,
+    jboolean, jbyteArray, jclass, jint, jlong, jobject, jstring, JNIEnv, JNINativeMethod, JNI_ERR,
     JNI_FALSE, JNI_TRUE, JNI_VERSION_1_6,
 };
 use rand::RngCore;
@@ -314,7 +318,10 @@ pub unsafe extern "C" fn jni_PairingContext_Encrypt(
     // Safety: Transmuting non-zero pointer created by Box::into_raw.
     let ctx = &mut *(ptr as *mut PairingContext);
     match ctx.encrypt(&in_bytes) {
-        Some(ct) => env.byte_array_from_slice(&ct).map(|a| a.into_raw()).unwrap_or(std::ptr::null_mut()),
+        Some(ct) => env
+            .byte_array_from_slice(&ct)
+            .map(|a| a.into_raw())
+            .unwrap_or(std::ptr::null_mut()),
         None => std::ptr::null_mut(),
     }
 }
@@ -343,7 +350,10 @@ pub unsafe extern "C" fn jni_PairingContext_Decrypt(
     // Safety: Transmuting non-zero pointer created by Box::into_raw.
     let ctx = &mut *(ptr as *mut PairingContext);
     match ctx.decrypt(&in_bytes) {
-        Some(pt) => env.byte_array_from_slice(&pt).map(|a| a.into_raw()).unwrap_or(std::ptr::null_mut()),
+        Some(pt) => env
+            .byte_array_from_slice(&pt)
+            .map(|a| a.into_raw())
+            .unwrap_or(std::ptr::null_mut()),
         None => std::ptr::null_mut(),
     }
 }
@@ -354,6 +364,358 @@ pub unsafe extern "C" fn jni_PairingContext_Destroy(_env: *mut JNIEnv, _obj: job
         // Safety: Reconstructing Box to deallocate PairingContext allocated in Constructor.
         // Invariant: Pointer was created by Box::into_raw and is now consumed and dropped.
         let _ = Box::from_raw(ptr as *mut PairingContext);
+    }
+}
+
+// ---------------- AdbProtocolNative JNI ----------------
+
+#[no_mangle]
+pub unsafe extern "system" fn Java_moe_shizuku_manager_adb_AdbProtocolNative_nativeEncodeMessage(
+    raw_env: *mut JNIEnv,
+    _class: jclass,
+    command: jint,
+    arg0: jint,
+    arg1: jint,
+    j_data: jbyteArray,
+) -> jbyteArray {
+    let env = match jni::JNIEnv::from_raw(raw_env as *mut _) {
+        Ok(e) => e,
+        Err(_) => return std::ptr::null_mut(),
+    };
+    let data_vec = if j_data.is_null() {
+        None
+    } else {
+        let arr = JByteArray::from_raw(j_data);
+        match env.convert_byte_array(&arr) {
+            Ok(v) => Some(v),
+            Err(_) => return std::ptr::null_mut(),
+        }
+    };
+    let encoded = protocol::encode_adb_message(command, arg0, arg1, data_vec.as_deref());
+    env.byte_array_from_slice(&encoded)
+        .map(|a| a.into_raw())
+        .unwrap_or(std::ptr::null_mut())
+}
+
+#[no_mangle]
+pub unsafe extern "system" fn Java_moe_shizuku_manager_adb_AdbProtocolNative_nativeChecksum(
+    raw_env: *mut JNIEnv,
+    _class: jclass,
+    j_data: jbyteArray,
+) -> jint {
+    if j_data.is_null() {
+        return 0;
+    }
+    let env = match jni::JNIEnv::from_raw(raw_env as *mut _) {
+        Ok(e) => e,
+        Err(_) => return 0,
+    };
+    let arr = JByteArray::from_raw(j_data);
+    match env.convert_byte_array(&arr) {
+        Ok(v) => protocol::checksum_adb_data(&v),
+        Err(_) => 0,
+    }
+}
+
+#[no_mangle]
+pub unsafe extern "system" fn Java_moe_shizuku_manager_adb_AdbProtocolNative_nativeValidateMessage(
+    raw_env: *mut JNIEnv,
+    _class: jclass,
+    command: jint,
+    data_length: jint,
+    data_crc32: jint,
+    magic: jint,
+    j_data: jbyteArray,
+) -> jboolean {
+    let env = match jni::JNIEnv::from_raw(raw_env as *mut _) {
+        Ok(e) => e,
+        Err(_) => return JNI_FALSE,
+    };
+    let data_vec = if j_data.is_null() {
+        None
+    } else {
+        let arr = JByteArray::from_raw(j_data);
+        match env.convert_byte_array(&arr) {
+            Ok(v) => Some(v),
+            Err(_) => return JNI_FALSE,
+        }
+    };
+    if protocol::validate_adb_message(command, data_length, data_crc32, magic, data_vec.as_deref())
+    {
+        JNI_TRUE
+    } else {
+        JNI_FALSE
+    }
+}
+
+#[no_mangle]
+pub unsafe extern "system" fn Java_moe_shizuku_manager_adb_AdbProtocolNative_nativeEncodeRsaPublicKey(
+    raw_env: *mut JNIEnv,
+    _class: jclass,
+    j_modulus_be: jbyteArray,
+    exponent: jint,
+    j_name: jbyteArray,
+) -> jbyteArray {
+    if j_modulus_be.is_null() || j_name.is_null() {
+        return std::ptr::null_mut();
+    }
+    let env = match jni::JNIEnv::from_raw(raw_env as *mut _) {
+        Ok(e) => e,
+        Err(_) => return std::ptr::null_mut(),
+    };
+    let mod_arr = JByteArray::from_raw(j_modulus_be);
+    let name_arr = JByteArray::from_raw(j_name);
+    let modulus = match env.convert_byte_array(&mod_arr) {
+        Ok(v) => v,
+        Err(_) => return std::ptr::null_mut(),
+    };
+    let name = match env.convert_byte_array(&name_arr) {
+        Ok(v) => v,
+        Err(_) => return std::ptr::null_mut(),
+    };
+    match protocol::encode_adb_rsa_pubkey(&modulus, exponent, &name) {
+        Some(encoded) => env
+            .byte_array_from_slice(&encoded)
+            .map(|a| a.into_raw())
+            .unwrap_or(std::ptr::null_mut()),
+        None => std::ptr::null_mut(),
+    }
+}
+
+// ---------------- StealthNative JNI ----------------
+
+#[no_mangle]
+pub unsafe extern "system" fn Java_moe_shizuku_manager_stealth_StealthNative_nativeSwapFiltered(
+    raw_env: *mut JNIEnv,
+    _class: jclass,
+    j_data: jbyteArray,
+    j_old: jbyteArray,
+    j_repl: jbyteArray,
+    is_utf16: jboolean,
+) -> jbyteArray {
+    if j_data.is_null() || j_old.is_null() || j_repl.is_null() {
+        return std::ptr::null_mut();
+    }
+    let env = match jni::JNIEnv::from_raw(raw_env as *mut _) {
+        Ok(e) => e,
+        Err(_) => return std::ptr::null_mut(),
+    };
+    let data = match env.convert_byte_array(&JByteArray::from_raw(j_data)) {
+        Ok(v) => v,
+        Err(_) => return std::ptr::null_mut(),
+    };
+    let old = match env.convert_byte_array(&JByteArray::from_raw(j_old)) {
+        Ok(v) => v,
+        Err(_) => return std::ptr::null_mut(),
+    };
+    let repl = match env.convert_byte_array(&JByteArray::from_raw(j_repl)) {
+        Ok(v) => v,
+        Err(_) => return std::ptr::null_mut(),
+    };
+    let swapped = stealth::swap_filtered(&data, &old, &repl, is_utf16 != 0);
+    env.byte_array_from_slice(&swapped)
+        .map(|a| a.into_raw())
+        .unwrap_or(std::ptr::null_mut())
+}
+
+#[no_mangle]
+pub unsafe extern "system" fn Java_moe_shizuku_manager_stealth_StealthNative_nativePatchManifestLabel(
+    raw_env: *mut JNIEnv,
+    _class: jclass,
+    j_axml: jbyteArray,
+    j_app_name: jstring,
+) -> jbyteArray {
+    if j_axml.is_null() || j_app_name.is_null() {
+        return std::ptr::null_mut();
+    }
+    let mut env = match jni::JNIEnv::from_raw(raw_env as *mut _) {
+        Ok(e) => e,
+        Err(_) => return std::ptr::null_mut(),
+    };
+    let axml = match env.convert_byte_array(&JByteArray::from_raw(j_axml)) {
+        Ok(v) => v,
+        Err(_) => return std::ptr::null_mut(),
+    };
+    let jstr = JString::from_raw(j_app_name);
+    let app_name: String = match env.get_string(&jstr) {
+        Ok(s) => s.into(),
+        Err(_) => return std::ptr::null_mut(),
+    };
+    let patched = stealth::patch_manifest_label(&axml, &app_name);
+    env.byte_array_from_slice(&patched)
+        .map(|a| a.into_raw())
+        .unwrap_or(std::ptr::null_mut())
+}
+
+#[no_mangle]
+pub unsafe extern "system" fn Java_moe_shizuku_manager_stealth_StealthNative_nativeFixDex(
+    raw_env: *mut JNIEnv,
+    _class: jclass,
+    j_dex: jbyteArray,
+) -> jbyteArray {
+    if j_dex.is_null() {
+        return std::ptr::null_mut();
+    }
+    let env = match jni::JNIEnv::from_raw(raw_env as *mut _) {
+        Ok(e) => e,
+        Err(_) => return std::ptr::null_mut(),
+    };
+    let dex = match env.convert_byte_array(&JByteArray::from_raw(j_dex)) {
+        Ok(v) => v,
+        Err(_) => return std::ptr::null_mut(),
+    };
+    let fixed = stealth::fix_dex_header(&dex);
+    env.byte_array_from_slice(&fixed)
+        .map(|a| a.into_raw())
+        .unwrap_or(std::ptr::null_mut())
+}
+
+#[no_mangle]
+pub unsafe extern "system" fn Java_moe_shizuku_manager_stealth_StealthNative_nativeCrc32(
+    raw_env: *mut JNIEnv,
+    _class: jclass,
+    j_data: jbyteArray,
+) -> jlong {
+    if j_data.is_null() {
+        return 0;
+    }
+    let env = match jni::JNIEnv::from_raw(raw_env as *mut _) {
+        Ok(e) => e,
+        Err(_) => return 0,
+    };
+    let data = match env.convert_byte_array(&JByteArray::from_raw(j_data)) {
+        Ok(v) => v,
+        Err(_) => return 0,
+    };
+    stealth::crc32_ieee(&data) as jlong
+}
+
+#[no_mangle]
+pub unsafe extern "system" fn Java_moe_shizuku_manager_stealth_StealthNative_nativeSha256(
+    raw_env: *mut JNIEnv,
+    _class: jclass,
+    j_data: jbyteArray,
+) -> jbyteArray {
+    if j_data.is_null() {
+        return std::ptr::null_mut();
+    }
+    let env = match jni::JNIEnv::from_raw(raw_env as *mut _) {
+        Ok(e) => e,
+        Err(_) => return std::ptr::null_mut(),
+    };
+    let data = match env.convert_byte_array(&JByteArray::from_raw(j_data)) {
+        Ok(v) => v,
+        Err(_) => return std::ptr::null_mut(),
+    };
+    let digest = stealth::sha256_digest(&data);
+    env.byte_array_from_slice(&digest)
+        .map(|a| a.into_raw())
+        .unwrap_or(std::ptr::null_mut())
+}
+
+#[no_mangle]
+pub unsafe extern "system" fn Java_moe_shizuku_manager_stealth_StealthNative_nativeComputeApkV2Digest(
+    raw_env: *mut JNIEnv,
+    _class: jclass,
+    j_s1: jbyteArray,
+    j_s2: jbyteArray,
+    j_eocd: jbyteArray,
+) -> jbyteArray {
+    if j_s1.is_null() || j_s2.is_null() || j_eocd.is_null() {
+        return std::ptr::null_mut();
+    }
+    let env = match jni::JNIEnv::from_raw(raw_env as *mut _) {
+        Ok(e) => e,
+        Err(_) => return std::ptr::null_mut(),
+    };
+    let s1 = match env.convert_byte_array(&JByteArray::from_raw(j_s1)) {
+        Ok(v) => v,
+        Err(_) => return std::ptr::null_mut(),
+    };
+    let s2 = match env.convert_byte_array(&JByteArray::from_raw(j_s2)) {
+        Ok(v) => v,
+        Err(_) => return std::ptr::null_mut(),
+    };
+    let eocd = match env.convert_byte_array(&JByteArray::from_raw(j_eocd)) {
+        Ok(v) => v,
+        Err(_) => return std::ptr::null_mut(),
+    };
+    let digest = stealth::compute_apk_v2_top_digest(&s1, &s2, &eocd);
+    env.byte_array_from_slice(&digest)
+        .map(|a| a.into_raw())
+        .unwrap_or(std::ptr::null_mut())
+}
+
+// ---------------- ModuleNative JNI ----------------
+
+#[no_mangle]
+pub unsafe extern "system" fn Java_moe_shizuku_manager_module_ModuleNative_nativeModuleFingerprint(
+    raw_env: *mut JNIEnv,
+    _class: jclass,
+    j_dir_path: jstring,
+) -> jstring {
+    if j_dir_path.is_null() {
+        return std::ptr::null_mut();
+    }
+    let mut env = match jni::JNIEnv::from_raw(raw_env as *mut _) {
+        Ok(e) => e,
+        Err(_) => return std::ptr::null_mut(),
+    };
+    let jstr = JString::from_raw(j_dir_path);
+    let dir_path: String = match env.get_string(&jstr) {
+        Ok(s) => s.into(),
+        Err(_) => return std::ptr::null_mut(),
+    };
+    match module_io::compute_module_fingerprint(&dir_path) {
+        Some(hex) => env
+            .new_string(hex)
+            .map(|s| s.into_raw())
+            .unwrap_or(std::ptr::null_mut()),
+        None => std::ptr::null_mut(),
+    }
+}
+
+#[no_mangle]
+pub unsafe extern "system" fn Java_moe_shizuku_manager_module_ModuleNative_nativeReadFdTail(
+    raw_env: *mut JNIEnv,
+    _class: jclass,
+    fd: jint,
+    max_chars: jint,
+) -> jstring {
+    let env = match jni::JNIEnv::from_raw(raw_env as *mut _) {
+        Ok(e) => e,
+        Err(_) => {
+            if fd >= 0 {
+                libc::close(fd);
+            }
+            return std::ptr::null_mut();
+        }
+    };
+    let text = module_io::read_fd_tail(fd, max_chars.max(0) as usize);
+    env.new_string(text)
+        .map(|s| s.into_raw())
+        .unwrap_or(std::ptr::null_mut())
+}
+
+unsafe fn register_optional_class(
+    env: *mut JNIEnv,
+    class_name: &str,
+    methods: &[JNINativeMethod],
+) {
+    let Ok(c_name) = CString::new(class_name) else {
+        return;
+    };
+    let cls = (**env).FindClass.unwrap()(env, c_name.as_ptr());
+    if cls.is_null() {
+        if let Some(clear) = (**env).ExceptionClear {
+            clear(env);
+        }
+        return;
+    }
+    if (**env).RegisterNatives.unwrap()(env, cls, methods.as_ptr(), methods.len() as jint) != 0 {
+        if let Some(clear) = (**env).ExceptionClear {
+            clear(env);
+        }
     }
 }
 
@@ -417,27 +779,106 @@ pub extern "system" fn JNI_OnLoad(vm: *mut jni::sys::JavaVM, _reserved: *mut c_v
             return JNI_ERR;
         }
 
-        let client_class_name = CString::new("moe/shizuku/manager/adb/AdbPairingClient").unwrap();
-        let client_class = (**env).FindClass.unwrap()(env, client_class_name.as_ptr());
-        if client_class.is_null() {
-            return JNI_ERR;
-        }
-
         let client_methods = [JNINativeMethod {
             name: b"available\0".as_ptr() as *mut _,
             signature: b"()Z\0".as_ptr() as *mut _,
             fnPtr: jni_AdbPairingClient_available as *mut _,
         }];
-
-        if (**env).RegisterNatives.unwrap()(
+        register_optional_class(
             env,
-            client_class,
-            client_methods.as_ptr(),
-            client_methods.len() as jint,
-        ) != 0
-        {
-            return JNI_ERR;
-        }
+            "moe/shizuku/manager/adb/AdbPairingClient",
+            &client_methods,
+        );
+
+        let protocol_methods = [
+            JNINativeMethod {
+                name: b"nativeEncodeMessage\0".as_ptr() as *mut _,
+                signature: b"(III[B)[B\0".as_ptr() as *mut _,
+                fnPtr: Java_moe_shizuku_manager_adb_AdbProtocolNative_nativeEncodeMessage
+                    as *mut _,
+            },
+            JNINativeMethod {
+                name: b"nativeChecksum\0".as_ptr() as *mut _,
+                signature: b"([B)I\0".as_ptr() as *mut _,
+                fnPtr: Java_moe_shizuku_manager_adb_AdbProtocolNative_nativeChecksum as *mut _,
+            },
+            JNINativeMethod {
+                name: b"nativeValidateMessage\0".as_ptr() as *mut _,
+                signature: b"(IIII[B)Z\0".as_ptr() as *mut _,
+                fnPtr: Java_moe_shizuku_manager_adb_AdbProtocolNative_nativeValidateMessage
+                    as *mut _,
+            },
+            JNINativeMethod {
+                name: b"nativeEncodeRsaPublicKey\0".as_ptr() as *mut _,
+                signature: b"([BI[B)[B\0".as_ptr() as *mut _,
+                fnPtr: Java_moe_shizuku_manager_adb_AdbProtocolNative_nativeEncodeRsaPublicKey
+                    as *mut _,
+            },
+        ];
+        register_optional_class(
+            env,
+            "moe/shizuku/manager/adb/AdbProtocolNative",
+            &protocol_methods,
+        );
+
+        let stealth_methods = [
+            JNINativeMethod {
+                name: b"nativeSwapFiltered\0".as_ptr() as *mut _,
+                signature: b"([B[B[BZ)[B\0".as_ptr() as *mut _,
+                fnPtr: Java_moe_shizuku_manager_stealth_StealthNative_nativeSwapFiltered as *mut _,
+            },
+            JNINativeMethod {
+                name: b"nativePatchManifestLabel\0".as_ptr() as *mut _,
+                signature: b"([BLjava/lang/String;)[B\0".as_ptr() as *mut _,
+                fnPtr: Java_moe_shizuku_manager_stealth_StealthNative_nativePatchManifestLabel
+                    as *mut _,
+            },
+            JNINativeMethod {
+                name: b"nativeFixDex\0".as_ptr() as *mut _,
+                signature: b"([B)[B\0".as_ptr() as *mut _,
+                fnPtr: Java_moe_shizuku_manager_stealth_StealthNative_nativeFixDex as *mut _,
+            },
+            JNINativeMethod {
+                name: b"nativeCrc32\0".as_ptr() as *mut _,
+                signature: b"([B)J\0".as_ptr() as *mut _,
+                fnPtr: Java_moe_shizuku_manager_stealth_StealthNative_nativeCrc32 as *mut _,
+            },
+            JNINativeMethod {
+                name: b"nativeSha256\0".as_ptr() as *mut _,
+                signature: b"([B)[B\0".as_ptr() as *mut _,
+                fnPtr: Java_moe_shizuku_manager_stealth_StealthNative_nativeSha256 as *mut _,
+            },
+            JNINativeMethod {
+                name: b"nativeComputeApkV2Digest\0".as_ptr() as *mut _,
+                signature: b"([B[B[B)[B\0".as_ptr() as *mut _,
+                fnPtr: Java_moe_shizuku_manager_stealth_StealthNative_nativeComputeApkV2Digest
+                    as *mut _,
+            },
+        ];
+        register_optional_class(
+            env,
+            "moe/shizuku/manager/stealth/StealthNative",
+            &stealth_methods,
+        );
+
+        let module_methods = [
+            JNINativeMethod {
+                name: b"nativeModuleFingerprint\0".as_ptr() as *mut _,
+                signature: b"(Ljava/lang/String;)Ljava/lang/String;\0".as_ptr() as *mut _,
+                fnPtr: Java_moe_shizuku_manager_module_ModuleNative_nativeModuleFingerprint
+                    as *mut _,
+            },
+            JNINativeMethod {
+                name: b"nativeReadFdTail\0".as_ptr() as *mut _,
+                signature: b"(II)Ljava/lang/String;\0".as_ptr() as *mut _,
+                fnPtr: Java_moe_shizuku_manager_module_ModuleNative_nativeReadFdTail as *mut _,
+            },
+        ];
+        register_optional_class(
+            env,
+            "moe/shizuku/manager/module/ModuleNative",
+            &module_methods,
+        );
 
         JNI_VERSION_1_6
     }
@@ -469,5 +910,36 @@ mod tests {
         let senc = server.encrypt(smsg).expect("server encrypt");
         let sdec = client.decrypt(&senc).expect("client decrypt");
         assert_eq!(sdec, smsg);
+    }
+
+    #[test]
+    fn test_adb_protocol_framing() {
+        let payload = b"host::\0";
+        let pkt = protocol::encode_adb_message(0x4e584e43, 0x01000000, 4096, Some(payload));
+        assert_eq!(pkt.len(), 24 + payload.len());
+        let crc = protocol::checksum_adb_data(payload);
+        assert!(protocol::validate_adb_message(
+            0x4e584e43,
+            payload.len() as i32,
+            crc,
+            0x4e584e43 ^ -1,
+            Some(payload)
+        ));
+    }
+
+    #[test]
+    fn test_stealth_swap_and_dex() {
+        let src = b"com.hamondev.shevery/com.hamondev.shevery.tasker.Plugin";
+        let out = stealth::swap_filtered(src, b"com.hamondev.shevery", b"com.abcdefgh.ijklmno", false);
+        assert_eq!(
+            &out[..],
+            b"com.abcdefgh.ijklmno/com.hamondev.shevery.tasker.Plugin"
+        );
+
+        let mut fake_dex = vec![0u8; 64];
+        fake_dex[0..8].copy_from_slice(b"dex\n035\0");
+        let fixed = stealth::fix_dex_header(&fake_dex);
+        assert_eq!(fixed.len(), 64);
+        assert_ne!(&fixed[12..32], &[0u8; 20]);
     }
 }
