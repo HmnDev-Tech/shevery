@@ -63,6 +63,14 @@ jobs:
             -storepass android -alias androiddebugkey -keypass android \
             -dname "CN=Android Debug,O=Android,C=US" -keyalg RSA -keysize 2048 -validity 10000
 
+      - name: Set up Rust toolchain
+        uses: dtolnay/rust-toolchain@stable
+        with:
+          targets: aarch64-linux-android, armv7-linux-androideabi, x86_64-linux-android, i686-linux-android
+
+      - name: Install cargo-ndk
+        run: cargo install cargo-ndk
+
       - name: Build debug APK
         run: |
           chmod +x gradlew 2>/dev/null || true

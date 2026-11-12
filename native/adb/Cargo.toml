@@ -1,0 +1,17 @@
+[package]
+name = "rust-adb"
+version = "0.1.0"
+edition = "2021"
+
+[lib]
+name = "adb"
+crate-type = ["cdylib"]
+
+[dependencies]
+jni = { version = "0.21", default-features = false }
+aes-gcm = "0.10"
+curve25519-dalek = { version = "4", default-features = false, features = ["alloc"] }
+hkdf = "0.12"
+sha2 = { version = "0.10", default-features = false }
+rand = { version = "0.8", default-features = false, features = ["std", "std_rng"] }
+libc = "0.2"

@@ -8,17 +8,34 @@ plugins {
     id('dev.rikka.tools.refine')
 }
 
+def findCargo = {
+    def userHome = System.getProperty("user.home")
+    def candidates = [
+            "cargo",
+            "${userHome}/.cargo/bin/cargo",
+            "${userHome}/.local/bin/cargo"
+    ]
+    for (cand in candidates) {
+        if (cand == "cargo") {
+            try {
+                def p = "which cargo".execute()
+                if (p.waitFor() == 0) return cand
+            } catch (Exception ignored) {}
+        } else if (file(cand).canExecute()) {
+            return cand
+        }
+    }
+    return "cargo"
+}
+
+def rustJniLibsDir = file("$buildDir/intermediates/rustJniLibs")
+
 android {
     namespace 'moe.shizuku.manager'
     defaultConfig {
         applicationId "com.hamondev.shevery"
         versionCode rootProject.ext.versionCode
         versionName rootProject.ext.versionName
-        externalNativeBuild {
-            cmake {
-                arguments '-DANDROID_STL=none'
-            }
-        }
     }
     buildFeatures {
         buildConfig true
@@ -27,6 +44,9 @@ android {
         aidl true
     }
     sourceSets {
+        main {
+            jniLibs.srcDirs += [rustJniLibsDir]
+        }
         debug.assets.srcDir(file("$buildDir/generated/rish/debug/assets"))
         release.assets.srcDir(file("$buildDir/generated/rish/release/assets"))
         debug.assets.srcDir(file("$buildDir/generated/stub/debug/assets"))
@@ -45,12 +65,6 @@ android {
             shrinkResources true
             vcsInfo.include false
             proguardFiles 'proguard-rules.pro'
-        }
-    }
-    externalNativeBuild {
-        cmake {
-            path 'src/main/jni/CMakeLists.txt'
-            version = "3.22.1"
         }
     }
     packagingOptions {
@@ -227,9 +241,6 @@ dependencies {
     implementation 'dev.rikka.rikkax.lifecycle:lifecycle-shared-viewmodel:1.0.1'
     implementation 'dev.rikka.rikkax.lifecycle:lifecycle-viewmodel-lazy:2.0.0'
 
-    implementation 'io.github.vvb2060.ndk:boringssl:20251124-lto-ndk29'
-    implementation 'org.lsposed.libcxx:libcxx:29.0.14206865'
-
     implementation 'org.lsposed.hiddenapibypass:hiddenapibypass:6.1'
 
     implementation 'org.bouncycastle:bcpkix-jdk18on:1.85'
@@ -265,4 +276,96 @@ tasks.configureEach { task ->
             }
         }
     }
+}
+
+def buildRustManager = tasks.register("buildRustManager") {
+    inputs.dir(rootProject.file("native/adb/src"))
+    inputs.file(rootProject.file("native/adb/Cargo.toml"))
+    inputs.dir(rootProject.file("native/starter/src"))
+    inputs.file(rootProject.file("native/starter/Cargo.toml"))
+    inputs.file(rootProject.file("native/Cargo.toml"))
+    if (rootProject.file("native/Cargo.lock").exists()) {
+        inputs.file(rootProject.file("native/Cargo.lock"))
+    }
+    outputs.dir(rustJniLibsDir)
+
+    doLast {
+        def nativeDir = rootProject.file("native")
+        def userHome = System.getProperty("user.home")
+        def cargoBin = "${userHome}/.cargo/bin"
+        def localBin = "${userHome}/.local/bin"
+        def currentPath = System.getenv("PATH") ?: ""
+        def envMap = [
+                "PATH": "${cargoBin}:${localBin}:${currentPath}"
+        ]
+        def ndkHome = System.getenv("ANDROID_NDK_HOME") ?: System.getenv("ANDROID_NDK_ROOT")
+        if (!ndkHome) {
+            def sdkHome = androidSdkDirectory()
+            def defaultNdk = file("${sdkHome}/ndk/29.0.14206865")
+            if (defaultNdk.isDirectory()) {
+                envMap["ANDROID_NDK_HOME"] = defaultNdk.absolutePath
+            } else {
+                def ndkParent = file("${sdkHome}/ndk")
+                if (ndkParent.isDirectory()) {
+                    def subdirs = ndkParent.listFiles()
+                    if (subdirs && subdirs.length > 0) {
+                        envMap["ANDROID_NDK_HOME"] = subdirs[0].absolutePath
+                    }
+                }
+            }
+        } else {
+            envMap["ANDROID_NDK_HOME"] = ndkHome
+        }
+
+        rustJniLibsDir.mkdirs()
+
+        def cmd = [
+                findCargo().toString(),
+                "ndk",
+                "-t", "arm64-v8a",
+                "-t", "armeabi-v7a",
+                "-t", "x86",
+                "-t", "x86_64",
+                "-P", "24",
+                "-o", rustJniLibsDir.absolutePath.toString(),
+                "build", "--release", "-p", "rust-adb", "-p", "rust-starter"
+        ]
+        def pb = new ProcessBuilder(cmd)
+        pb.directory(nativeDir)
+        envMap.each { k, v ->
+            pb.environment().put(k.toString(), v.toString())
+        }
+        pb.redirectErrorStream(true)
+        def process = pb.start()
+        def output = process.inputStream.text
+        int exitCode = process.waitFor()
+        if (exitCode != 0) {
+            throw new GradleException("cargo-ndk build failed with exit code ${exitCode}:\n${output}")
+        }
+
+        def abiMap = [
+                "arm64-v8a": "aarch64-linux-android",
+                "armeabi-v7a": "armv7-linux-androideabi",
+                "x86": "i686-linux-android",
+                "x86_64": "x86_64-linux-android"
+        ]
+        abiMap.each { abi, triple ->
+            def srcBinary = rootProject.file("native/target/${triple}/release/libshizuku")
+            def dstDir = file("${rustJniLibsDir}/${abi}")
+            dstDir.mkdirs()
+            def dstFile = file("${dstDir}/libshizuku.so")
+            java.nio.file.Files.copy(
+                    srcBinary.toPath(),
+                    dstFile.toPath(),
+                    java.nio.file.StandardCopyOption.REPLACE_EXISTING
+            )
+        }
+    }
+}
+
+tasks.matching { it.name.startsWith("merge") && it.name.endsWith("JniLibFolders") }.configureEach {
+    dependsOn(buildRustManager)
+}
+tasks.named("preBuild").configure {
+    dependsOn(buildRustManager)
 }
