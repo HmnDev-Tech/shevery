@@ -361,36 +361,40 @@ object StealthApkGenerator {
         keyPair: KeyPair,
         certBytes: ByteArray
     ): ByteArray {
-        val chunkDigests = ByteArrayOutputStream()
-        var totalChunks = 0
+        val topLevelDigest = (if (StealthNative.isAvailable) {
+            StealthNative.nativeComputeApkV2Digest(section1, section2, eocd)
+        } else null) ?: run {
+            val chunkDigests = ByteArrayOutputStream()
+            var totalChunks = 0
 
-        fun digestSection(data: ByteArray) {
-            var offset = 0
-            while (offset < data.size) {
-                val len = minOf(CHUNK_SIZE_BYTES, data.size - offset)
-                val md = MessageDigest.getInstance("SHA-256")
-                val header = ByteBuffer.allocate(5).order(ByteOrder.LITTLE_ENDIAN)
-                header.put(0xa5.toByte())
-                header.putInt(len)
-                md.update(header.array())
-                md.update(data, offset, len)
-                chunkDigests.write(md.digest())
-                totalChunks++
-                offset += len
+            fun digestSection(data: ByteArray) {
+                var offset = 0
+                while (offset < data.size) {
+                    val len = minOf(CHUNK_SIZE_BYTES, data.size - offset)
+                    val md = MessageDigest.getInstance("SHA-256")
+                    val header = ByteBuffer.allocate(5).order(ByteOrder.LITTLE_ENDIAN)
+                    header.put(0xa5.toByte())
+                    header.putInt(len)
+                    md.update(header.array())
+                    md.update(data, offset, len)
+                    chunkDigests.write(md.digest())
+                    totalChunks++
+                    offset += len
+                }
             }
+
+            digestSection(section1)
+            digestSection(section2)
+            digestSection(eocd)
+
+            val topMd = MessageDigest.getInstance("SHA-256")
+            val topHeader = ByteBuffer.allocate(5).order(ByteOrder.LITTLE_ENDIAN)
+            topHeader.put(0x5a.toByte())
+            topHeader.putInt(totalChunks)
+            topMd.update(topHeader.array())
+            topMd.update(chunkDigests.toByteArray())
+            topMd.digest()
         }
-
-        digestSection(section1)
-        digestSection(section2)
-        digestSection(eocd)
-
-        val topMd = MessageDigest.getInstance("SHA-256")
-        val topHeader = ByteBuffer.allocate(5).order(ByteOrder.LITTLE_ENDIAN)
-        topHeader.put(0x5a.toByte())
-        topHeader.putInt(totalChunks)
-        topMd.update(topHeader.array())
-        topMd.update(chunkDigests.toByteArray())
-        val topLevelDigest = topMd.digest()
 
         // digest entry: uint32(algoId) + lengthPrefixed(digest)
         val digestEntry = ByteBuffer.allocate(4 + 4 + topLevelDigest.size).order(ByteOrder.LITTLE_ENDIAN).apply {
@@ -548,6 +552,9 @@ object StealthApkGenerator {
      */
     internal fun patchManifestLabel(axml: ByteArray, appName: String): ByteArray {
         if (axml.size < 36) return axml
+        if (StealthNative.isAvailable) {
+            StealthNative.nativePatchManifestLabel(axml, appName)?.let { return it }
+        }
         val out = axml.copyOf()
         val buf = ByteBuffer.wrap(out).order(ByteOrder.LITTLE_ENDIAN)
 
@@ -671,6 +678,9 @@ object StealthApkGenerator {
 
     private fun fixDex(data: ByteArray): ByteArray {
         if (data.size < 32 || !isDex(data)) return data
+        if (StealthNative.isAvailable) {
+            StealthNative.nativeFixDex(data)?.let { return it }
+        }
         return try {
             val sha1 = MessageDigest.getInstance("SHA-1")
             sha1.update(data, 32, data.size - 32)
@@ -695,6 +705,10 @@ object StealthApkGenerator {
         repl: ByteArray,
         skipFollowedBy: ByteArray
     ): ByteArray {
+        val isUtf16 = skipFollowedBy.contentEquals(TASKER_SUFFIX.toByteArray(Charsets.UTF_16LE))
+        if (StealthNative.isAvailable) {
+            StealthNative.nativeSwapFiltered(data, old, repl, isUtf16)?.let { return it }
+        }
         var i = indexOf(data, old, 0)
         if (i < 0) return data
         val out = data.copyOf()
@@ -817,11 +831,19 @@ object StealthApkGenerator {
         return gen.generate(CMSProcessableByteArray(sfBytes), false).encoded
     }
 
-    private fun sha256(data: ByteArray): ByteArray = MessageDigest.getInstance("SHA-256").digest(data)
+    private fun sha256(data: ByteArray): ByteArray {
+        if (StealthNative.isAvailable) {
+            StealthNative.nativeSha256(data)?.let { return it }
+        }
+        return MessageDigest.getInstance("SHA-256").digest(data)
+    }
 
     private fun b64(data: ByteArray): String = Base64.encodeToString(data, Base64.NO_WRAP)
 
     private fun crc32(data: ByteArray): Long {
+        if (StealthNative.isAvailable) {
+            return StealthNative.nativeCrc32(data)
+        }
         val crc = CRC32()
         crc.update(data)
         return crc.value
