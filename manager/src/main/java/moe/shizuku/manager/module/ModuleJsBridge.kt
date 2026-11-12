@@ -151,6 +151,9 @@ class ModuleJsBridge(
 
         val trusted = ModuleSettings.isModuleTrusted(module.id)
         val mode = ModuleSettings.getAccessMode()
+        if (!module.declaresShellBridge && !trusted) {
+            return shellError("Permission denied: module.prop must declare usesShellBridge=true.")
+        }
         if (!ModuleSettings.canExposeWebBridge(module)) {
             return shellError("Permission denied: WebUI shell bridge is blocked by module access policy.")
         }
@@ -174,11 +177,11 @@ class ModuleJsBridge(
             val service = IShizukuService.Stub.asInterface(binder)
             AdbModuleManager.ensureAdbShim(service)
             val cwd = resolveModuleDirectory(options.cwd)
-            val env = buildEnvironment(mode, options.extraEnv)
+            val env = buildEnvironment(mode, cwd, options.extraEnv)
             val wrappedCommand = buildString {
                 appendLine("export PATH=\"/data/local/tmp/shevery/bin:/product/bin:/apex/com.android.runtime/bin:/apex/com.android.art/bin:/system_ext/bin:/system/bin:/system/xbin:/odm/bin:/vendor/bin:/vendor/xbin:/sbin:/data/adb/apatch:/data/adb/ksu/bin:\$PATH\"")
                 appendLine("ui_print() { echo \"\$@\"; }")
-                appendLine("cd \"${cwd.absolutePath}\" 2>/dev/null || cd /data/local/tmp 2>/dev/null || true")
+                appendLine("cd \"\$SHIZUKU_EXEC_CWD\" 2>/dev/null || cd /data/local/tmp 2>/dev/null || true")
                 appendLine(command)
             }
             val remote = service.newProcess(
@@ -239,22 +242,45 @@ class ModuleJsBridge(
 
     private fun buildEnvironment(
         mode: ModuleSettings.AccessMode,
+        cwd: File,
         extraEnv: Map<String, String>
     ): Array<String> {
-        val env = linkedMapOf(
-            "MODDIR" to module.directory.absolutePath,
-            "ASH_STANDALONE" to "1",
-            "SHIZUKU_MODULE_ID" to module.id,
-            "SHIZUKU_MODULE_MODE" to mode.value,
-            "SHIZUKU_MODULE_TRUSTED" to if (ModuleSettings.isModuleTrusted(module.id)) "1" else "0",
-            "SHIZUKU_MODULE_BACKGROUND" to if (ModuleSettings.canRunBackground(module)) "1" else "0",
-            "AXERON" to "true",
-            "AXERONVER" to "1.0.0",
-            "MODPATH" to module.directory.absolutePath,
-            "ARCH" to (android.os.Build.SUPPORTED_ABIS.firstOrNull() ?: "arm64-v8a"),
-            "PATH" to "/data/local/tmp/shevery/bin:/product/bin:/apex/com.android.runtime/bin:/apex/com.android.art/bin:/system_ext/bin:/system/bin:/system/xbin:/odm/bin:/vendor/bin:/vendor/xbin:/sbin:/data/adb/apatch:/data/adb/ksu/bin"
+        val reservedKeys = setOf(
+            "MODDIR",
+            "MODPATH",
+            "SHIZUKU_EXEC_CWD",
+            "ASH_STANDALONE",
+            "SHIZUKU_MODULE_ID",
+            "SHIZUKU_MODULE_MODE",
+            "SHIZUKU_MODULE_TRUSTED",
+            "SHIZUKU_MODULE_BACKGROUND",
+            "AXERON",
+            "AXERONVER",
+            "ARCH",
+            "PATH",
+            "IFS",
+            "ENV",
+            "BASH_ENV"
         )
-        extraEnv.forEach { (key, value) -> env[key] = value }
+        val env = linkedMapOf<String, String>()
+        extraEnv.forEach { (key, value) ->
+            val upper = key.uppercase()
+            if (upper !in reservedKeys && !upper.startsWith("LD_") && !upper.startsWith("SHIZUKU_")) {
+                env[key] = value
+            }
+        }
+        env["MODDIR"] = module.directory.absolutePath
+        env["MODPATH"] = module.directory.absolutePath
+        env["SHIZUKU_EXEC_CWD"] = cwd.absolutePath
+        env["ASH_STANDALONE"] = "1"
+        env["SHIZUKU_MODULE_ID"] = module.id
+        env["SHIZUKU_MODULE_MODE"] = mode.value
+        env["SHIZUKU_MODULE_TRUSTED"] = if (ModuleSettings.isModuleTrusted(module.id)) "1" else "0"
+        env["SHIZUKU_MODULE_BACKGROUND"] = if (ModuleSettings.canRunBackground(module)) "1" else "0"
+        env["AXERON"] = "true"
+        env["AXERONVER"] = "1.0.0"
+        env["ARCH"] = android.os.Build.SUPPORTED_ABIS.firstOrNull() ?: "arm64-v8a"
+        env["PATH"] = "/data/local/tmp/shevery/bin:/product/bin:/apex/com.android.runtime/bin:/apex/com.android.art/bin:/system_ext/bin:/system/bin:/system/xbin:/odm/bin:/vendor/bin:/vendor/xbin:/sbin:/data/adb/apatch:/data/adb/ksu/bin"
         return env.map { (key, value) -> "$key=$value" }.toTypedArray()
     }
 
