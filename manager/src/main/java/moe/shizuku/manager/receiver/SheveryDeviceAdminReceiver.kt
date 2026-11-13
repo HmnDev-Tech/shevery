@@ -56,4 +56,14 @@ class SheveryDeviceAdminReceiver : DeviceAdminReceiver() {
         Log.i(TAG, "Ownership transfer complete")
         LOGGER.i("Ownership transfer complete")
     }
+
+    override fun onLockTaskModeEntering(context: Context, intent: Intent, pkg: String) {
+        super.onLockTaskModeEntering(context, intent, pkg)
+        moe.shizuku.manager.dhizuku.DhizukuProvider.notifyLockTaskModeChanged(true, pkg)
+    }
+
+    override fun onLockTaskModeExiting(context: Context, intent: Intent) {
+        super.onLockTaskModeExiting(context, intent)
+        moe.shizuku.manager.dhizuku.DhizukuProvider.notifyLockTaskModeChanged(false, "")
+    }
 }

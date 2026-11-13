@@ -96,15 +96,23 @@ class AdbMdns(
     // Falls back to true (allow) if enumeration is unavailable or fails —
     // a false negative would silently drop a valid local mDNS service.
     private fun isLocalAddress(target: InetAddress): Boolean = try {
-        val targetBytes = target.address
-        val interfaces = NetworkInterface.getNetworkInterfaces()
-        if (interfaces == null || !interfaces.hasMoreElements()) {
-            true // No interfaces to check — allow the connection
+        if (target.isLoopbackAddress || target.isAnyLocalAddress) {
+            true
         } else {
-            interfaces.asSequence()
-                .flatMap { it.inetAddresses.asSequence() }
-                .any { it.address.contentEquals(targetBytes) }
-                || true // Preserve the existing fail-open behavior.
+            val targetBytes = target.address
+            val interfaces = NetworkInterface.getNetworkInterfaces()
+            if (interfaces == null || !interfaces.hasMoreElements()) {
+                true // No interfaces to check — allow the connection
+            } else {
+                val localAddresses = interfaces.asSequence()
+                    .flatMap { it.inetAddresses.asSequence() }
+                    .toList()
+                if (localAddresses.isEmpty()) {
+                    true
+                } else {
+                    localAddresses.any { it.address.contentEquals(targetBytes) }
+                }
+            }
         }
     } catch (e: Exception) {
         // If we can't enumerate interfaces, allow the connection —

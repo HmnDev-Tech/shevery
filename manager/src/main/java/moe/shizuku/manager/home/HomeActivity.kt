@@ -54,13 +54,17 @@ import androidx.compose.material.icons.Icons
 import androidx.compose.material.icons.rounded.Apps
 import androidx.compose.material.icons.rounded.Home
 import androidx.compose.material.icons.rounded.NearMe
+import androidx.compose.material.icons.rounded.Refresh
 import androidx.compose.material.icons.rounded.Settings
 import androidx.compose.material.icons.rounded.Terminal
 import androidx.compose.material.icons.rounded.Wifi
+import androidx.compose.foundation.text.KeyboardOptions
 import androidx.compose.material3.AlertDialog
 import androidx.compose.material3.Button
 import androidx.compose.material3.ButtonDefaults
 import androidx.compose.material3.Checkbox
+import androidx.compose.material3.OutlinedTextField
+import androidx.compose.ui.text.input.KeyboardType
 import androidx.compose.material3.pulltorefresh.PullToRefreshBox
 import androidx.compose.material3.pulltorefresh.PullToRefreshDefaults
 import androidx.compose.material3.pulltorefresh.rememberPullToRefreshState
@@ -124,6 +128,8 @@ import moe.shizuku.manager.BuildConfig
 import moe.shizuku.manager.Helps
 import moe.shizuku.manager.R
 import moe.shizuku.manager.ShizukuSettings
+import moe.shizuku.manager.settings.DeveloperOptionsHideManager
+import moe.shizuku.manager.settings.DeveloperOptionsHideService
 import moe.shizuku.manager.settings.UsbDebuggingHideManager
 import moe.shizuku.manager.settings.UsbDebuggingHideService
 import moe.shizuku.manager.settings.SettingsSection
@@ -281,6 +287,17 @@ abstract class HomeActivity : AppActivity() {
 
             var showTcpPromptDialog by rememberSaveable { mutableStateOf(false) }
             var doNotRemindChecked by rememberSaveable { mutableStateOf(false) }
+            var tcpPromptPortInput by rememberSaveable {
+                mutableStateOf(
+                    if (ShizukuSettings.getPreferences().contains(ShizukuSettings.TCP_MODE_PORT) &&
+                        !ShizukuSettings.isTcpPortRandomized()
+                    ) {
+                        ShizukuSettings.getTcpModePort().toString()
+                    } else {
+                        ShizukuSettings.randomTcpPort().toString()
+                    }
+                )
+            }
             var showStopDialog by rememberSaveable { mutableStateOf(false) }
             var showAdbCommandDialog by rememberSaveable { mutableStateOf(false) }
             var showWadbNotEnabledDialog by rememberSaveable { mutableStateOf(false) }
@@ -744,6 +761,7 @@ abstract class HomeActivity : AppActivity() {
                 }
 
                 if (showTcpPromptDialog && !ShizukuSettings.isTcpMode()) {
+                    val parsedPromptPort = tcpPromptPortInput.trim().toIntOrNull()?.takeIf { it in 1..65535 }
                     AlertDialog(
                         onDismissRequest = {
                             hasPromptedTcpDialogThisSession = true
@@ -763,6 +781,34 @@ abstract class HomeActivity : AppActivity() {
                                     text = stringResource(R.string.tcp_prompt_dialog_message),
                                     style = MaterialTheme.typography.bodyMedium,
                                     color = MaterialTheme.colorScheme.onSurfaceVariant
+                                )
+                                OutlinedTextField(
+                                    value = tcpPromptPortInput,
+                                    onValueChange = { value ->
+                                        tcpPromptPortInput = value.filter { it.isDigit() }.take(5)
+                                    },
+                                    label = { Text(stringResource(R.string.dialog_adb_port)) },
+                                    supportingText = if (parsedPromptPort == null) {
+                                        { Text(stringResource(R.string.dialog_adb_invalid_port)) }
+                                    } else {
+                                        null
+                                    },
+                                    isError = parsedPromptPort == null,
+                                    singleLine = true,
+                                    keyboardOptions = KeyboardOptions(keyboardType = KeyboardType.Number),
+                                    trailingIcon = {
+                                        IconButton(
+                                            onClick = {
+                                                tcpPromptPortInput = ShizukuSettings.randomTcpPort().toString()
+                                            }
+                                        ) {
+                                            Icon(
+                                                imageVector = Icons.Rounded.Refresh,
+                                                contentDescription = stringResource(R.string.settings_tcp_port_randomize_action)
+                                            )
+                                        }
+                                    },
+                                    modifier = Modifier.fillMaxWidth()
                                 )
                                 Row(
                                     modifier = Modifier
@@ -786,17 +832,23 @@ abstract class HomeActivity : AppActivity() {
                         },
                         confirmButton = {
                             Button(
+                                enabled = parsedPromptPort != null,
                                 onClick = {
+                                    val chosenPort = parsedPromptPort ?: return@Button
                                     hasPromptedTcpDialogThisSession = true
                                     if (doNotRemindChecked) {
                                         ShizukuSettings.setTcpModePromptSuppressed(true)
+                                        ShizukuSettings.setTcpPortRandomized(false)
+                                    } else {
+                                        ShizukuSettings.setTcpPortRandomized(true)
                                     }
+                                    ShizukuSettings.setTcpModePort(chosenPort)
                                     showTcpPromptDialog = false
                                     ShizukuSettings.setTcpMode(true)
 
                                     lifecycleScope.launch(Dispatchers.IO) {
-                                        val isAlreadyOn5555 = EnvironmentUtils.isAdbPortLive(AdbStarter.TCP_MODE_PORT)
-                                        if (isAlreadyOn5555) {
+                                        val isAlreadyOnTarget = EnvironmentUtils.isAdbPortLive(chosenPort)
+                                        if (isAlreadyOnTarget) {
                                             withContext(Dispatchers.Main) {
                                                 Toast.makeText(this@HomeActivity, R.string.settings_tcp_mode, Toast.LENGTH_SHORT).show()
                                             }
@@ -1036,6 +1088,8 @@ abstract class HomeActivity : AppActivity() {
         super.onResume()
         UsbDebuggingHideManager.restore(this)
         UsbDebuggingHideService.refresh(this)
+        DeveloperOptionsHideManager.restore(this)
+        DeveloperOptionsHideService.refresh(this)
         if (SecuritySettings.isActionProtected(SecuritySettings.ProtectedAction.APP_OPEN) && !AuthManager.isAppOpenSessionValid()) {
             isAppUnlocked.value = false
         }
@@ -1265,6 +1319,21 @@ private fun HomeScreen(
     val watchdogEnabled = ModuleSettings.isWatchdogEnabled()
     val tcpMode = ShizukuSettings.isTcpMode()
     val launchMode = ShizukuSettings.getLastLaunchMode()
+    var showHomeDiagnostics by remember {
+        mutableStateOf(ModuleSettings.isHomeDiagnosticsShown())
+    }
+    DisposableEffect(Unit) {
+        val prefs = ShizukuSettings.getPreferences()
+        val listener = android.content.SharedPreferences.OnSharedPreferenceChangeListener { _, key ->
+            if (key == ModuleSettings.KEY_SHOW_HOME_DIAGNOSTICS) {
+                showHomeDiagnostics = ModuleSettings.isHomeDiagnosticsShown()
+            }
+        }
+        prefs.registerOnSharedPreferenceChangeListener(listener)
+        onDispose {
+            prefs.unregisterOnSharedPreferenceChangeListener(listener)
+        }
+    }
 
     // Experimental (Extras > Experimental): uptime itself is recorded by the
     // process-scoped [ServiceUptime] tracker (backed by the state machine, so it
@@ -1522,6 +1591,36 @@ private fun HomeScreen(
                 AutomationCard(
                     onViewIntents = { showAutomationSheet = true }
                 )
+            }
+
+            if (showHomeDiagnostics) {
+                item {
+                    val diagnostics = remember(
+                        context,
+                        status,
+                        grantedCount,
+                        localNetworkPermissionState,
+                        isRooted,
+                        watchdogEnabled,
+                        tcpMode,
+                        launchMode
+                    ) {
+                        buildDiagnostics(
+                            context = context,
+                            status = status,
+                            grantedCount = grantedCount,
+                            localNetworkPermissionState = localNetworkPermissionState,
+                            isRooted = isRooted,
+                            watchdogEnabled = watchdogEnabled,
+                            tcpMode = tcpMode,
+                            launchMode = launchMode
+                        )
+                    }
+                    DiagnosticsCard(
+                        diagnostics = diagnostics,
+                        onCopyDiagnostics = onCopyDiagnostics
+                    )
+                }
             }
         }
     }
@@ -2421,7 +2520,7 @@ private fun buildDiagnostics(
         appendLine("${context.getString(R.string.diagnostics_authorized_apps)}: $grantedCount")
         appendLine("${context.getString(R.string.diagnostics_local_network)}: $localNetwork")
         appendLine("${context.getString(R.string.diagnostics_error_protect)}: ${onOff(watchdogEnabled)}")
-        appendLine("${context.getString(R.string.diagnostics_tcp_mode)}: ${onOff(tcpMode)}")
+        appendLine("${context.getString(R.string.diagnostics_tcp_mode)}: ${onOff(tcpMode)}${if (tcpMode) " (${ShizukuSettings.getTcpModePort()})" else ""}")
         appendLine("${context.getString(R.string.diagnostics_launch_mode)}: $lastLaunch")
         appendLine("${context.getString(R.string.diagnostics_root)}: ${if (isRooted) context.getString(R.string.diagnostics_available) else context.getString(R.string.diagnostics_unavailable)}")
     }.trim()

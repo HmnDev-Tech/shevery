@@ -1,0 +1,11 @@
+[package]
+name = "rust-starter"
+version = "0.1.0"
+edition = "2021"
+
+[[bin]]
+name = "libshizuku"
+path = "src/main.rs"
+
+[dependencies]
+libc = "0.2"

@@ -425,6 +425,7 @@ object StubManager {
         val candidatePorts = sequenceOf(
             EnvironmentUtils.getLiveAdbTcpPort(),
             EnvironmentUtils.getAdbTcpPort(),
+            ShizukuSettings.getTcpModePort(),
             5555
         )
             .filter { it > 0 }

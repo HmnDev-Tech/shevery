@@ -11,9 +11,13 @@ import android.content.pm.PackageManager
 import androidx.annotation.DrawableRes
 import androidx.annotation.StringRes
 import androidx.compose.foundation.lazy.LazyListScope
+import androidx.compose.foundation.text.KeyboardOptions
 import androidx.compose.material.icons.Icons
 import androidx.compose.material.icons.rounded.ChevronRight
+import androidx.compose.material.icons.rounded.Refresh
 import androidx.compose.material3.Icon
+import androidx.compose.material3.IconButton
+import androidx.compose.ui.text.input.KeyboardType
 import moe.shizuku.manager.about.AboutActivity
 import moe.shizuku.manager.about.ShizukuApp
 import moe.shizuku.manager.about.ShizukuApps
@@ -266,6 +270,14 @@ fun SettingsScreen(
     var tcpMode by remember {
         mutableStateOf(ShizukuSettings.isTcpMode())
     }
+    var tcpModePort by remember {
+        mutableIntStateOf(ShizukuSettings.getTcpModePort())
+    }
+    var tcpPortRandomized by remember {
+        mutableStateOf(ShizukuSettings.isTcpPortRandomized())
+    }
+    var showTcpPortDialog by remember { mutableStateOf(false) }
+    var tcpPortInput by remember { mutableStateOf(ShizukuSettings.getTcpModePort().toString()) }
     var languageTag by remember {
         mutableStateOf(prefs.getString(LANGUAGE, "SYSTEM") ?: "SYSTEM")
     }
@@ -353,6 +365,7 @@ fun SettingsScreen(
     var expHaptics by remember { mutableStateOf(ModuleSettings.isServiceStateHapticsEnabled()) }
     var expUptime by remember { mutableStateOf(ModuleSettings.isServiceUptimeShown()) }
     var expKeepScreen by remember { mutableStateOf(ModuleSettings.isKeepScreenOnWhileStarting()) }
+    var showHomeDiagnostics by remember { mutableStateOf(ModuleSettings.isHomeDiagnosticsShown()) }
     var showUnsafeDialog by remember { mutableStateOf(false) }
     var showRevokeDialog by remember { mutableStateOf(false) }
     var recreateTick by remember { mutableIntStateOf(0) }
@@ -506,6 +519,10 @@ fun SettingsScreen(
                 expHaptics = ModuleSettings.isServiceStateHapticsEnabled()
                 expUptime = ModuleSettings.isServiceUptimeShown()
                 expKeepScreen = ModuleSettings.isKeepScreenOnWhileStarting()
+                showHomeDiagnostics = ModuleSettings.isHomeDiagnosticsShown()
+                tcpMode = ShizukuSettings.isTcpMode()
+                tcpModePort = ShizukuSettings.getTcpModePort()
+                tcpPortRandomized = ShizukuSettings.isTcpPortRandomized()
                 agentSafetyMode = ModuleSettings.getAgentSafetyMode()
                 agentMaxSteps = ModuleSettings.getAgentMaxSteps()
                 agentAskShell = ModuleSettings.isAgentAskShell()
@@ -633,6 +650,8 @@ fun SettingsScreen(
                             startOnBoot = startOnBoot,
                             adbStartOnBoot = adbStartOnBoot,
                             tcpMode = tcpMode,
+                            tcpModePort = tcpModePort,
+                            tcpPortRandomized = tcpPortRandomized,
                             watchdog = watchdog,
                             notifyDeath = notifyDeath,
                             wifiReassert = wifiReassert,
@@ -709,6 +728,14 @@ fun SettingsScreen(
                                 } else {
                                     applyTcpMode(enabled)
                                 }
+                            },
+                            onOpenTcpPortDialog = {
+                                tcpPortInput = ShizukuSettings.getTcpModePort().toString()
+                                showTcpPortDialog = true
+                            },
+                            onTcpPortRandomizeChange = { enabled ->
+                                ShizukuSettings.setTcpPortRandomized(enabled)
+                                tcpPortRandomized = ShizukuSettings.isTcpPortRandomized()
                             }
                         )
                         SettingsSection.APPEARANCE -> appearanceSectionContent(
@@ -852,6 +879,7 @@ fun SettingsScreen(
                             expHaptics = expHaptics,
                             expUptime = expUptime,
                             expKeepScreen = expKeepScreen,
+                            showHomeDiagnostics = showHomeDiagnostics,
                             onNotifyRecoveryChange = { value ->
                                 notifyRecovery = value
                                 ModuleSettings.setNotifyOnRecovery(value)
@@ -879,6 +907,10 @@ fun SettingsScreen(
                             onExpKeepScreenChange = { value ->
                                 expKeepScreen = value
                                 ModuleSettings.setKeepScreenOnWhileStarting(value)
+                            },
+                            onShowHomeDiagnosticsChange = { value ->
+                                showHomeDiagnostics = value
+                                ModuleSettings.setHomeDiagnosticsShown(value)
                             },
                             onOpenAccessibility = {
                                 context.startActivity(Intent(context, AccessibilityManagerActivity::class.java))
@@ -1043,6 +1075,74 @@ fun SettingsScreen(
             },
             dismissButton = {
                 TextButton(onClick = { pendingTcpModeChange = null }) {
+                    Text(stringResource(android.R.string.cancel))
+                }
+            },
+            containerColor = MaterialTheme.colorScheme.surfaceContainerHigh,
+            shape = MaterialTheme.shapes.extraLarge
+        )
+    }
+
+    if (showTcpPortDialog) {
+        val parsedPort = tcpPortInput.trim().toIntOrNull()?.takeIf { it in 1..65535 }
+        AlertDialog(
+            onDismissRequest = { showTcpPortDialog = false },
+            title = { Text(stringResource(R.string.settings_tcp_port_title)) },
+            text = {
+                Column(verticalArrangement = Arrangement.spacedBy(12.dp)) {
+                    Text(
+                        text = stringResource(R.string.settings_tcp_port_dialog_message),
+                        style = MaterialTheme.typography.bodyMedium,
+                        color = MaterialTheme.colorScheme.onSurfaceVariant
+                    )
+                    OutlinedTextField(
+                        value = tcpPortInput,
+                        onValueChange = { value ->
+                            tcpPortInput = value.filter { it.isDigit() }.take(5)
+                        },
+                        label = { Text(stringResource(R.string.dialog_adb_port)) },
+                        supportingText = if (parsedPort == null) {
+                            { Text(stringResource(R.string.dialog_adb_invalid_port)) }
+                        } else {
+                            null
+                        },
+                        isError = parsedPort == null,
+                        singleLine = true,
+                        keyboardOptions = KeyboardOptions(keyboardType = KeyboardType.Number),
+                        trailingIcon = {
+                            IconButton(
+                                onClick = {
+                                    tcpPortInput = ShizukuSettings.randomTcpPort().toString()
+                                }
+                            ) {
+                                Icon(
+                                    imageVector = Icons.Rounded.Refresh,
+                                    contentDescription = stringResource(R.string.settings_tcp_port_randomize_action)
+                                )
+                            }
+                        },
+                        modifier = Modifier.fillMaxWidth()
+                    )
+                }
+            },
+            confirmButton = {
+                TextButton(
+                    enabled = parsedPort != null,
+                    onClick = {
+                        val port = parsedPort ?: return@TextButton
+                        showTcpPortDialog = false
+                        ShizukuSettings.setTcpModePort(port)
+                        tcpModePort = ShizukuSettings.getTcpModePort()
+                        if (tcpMode && tcpModeNeedsRestart(true)) {
+                            pendingTcpModeChange = true
+                        }
+                    }
+                ) {
+                    Text(stringResource(android.R.string.ok))
+                }
+            },
+            dismissButton = {
+                TextButton(onClick = { showTcpPortDialog = false }) {
                     Text(stringResource(android.R.string.cancel))
                 }
             },
@@ -1336,6 +1436,8 @@ private fun LazyListScope.applicationSectionContent(
     startOnBoot: Boolean,
     adbStartOnBoot: Boolean,
     tcpMode: Boolean,
+    tcpModePort: Int,
+    tcpPortRandomized: Boolean,
     watchdog: Boolean,
     notifyDeath: Boolean,
     wifiReassert: Boolean,
@@ -1350,7 +1452,9 @@ private fun LazyListScope.applicationSectionContent(
     onNotifyDeathChange: (Boolean) -> Unit,
     onWifiReassertChange: (Boolean) -> Unit,
     onAutoDisableUsbDebuggingChange: (Boolean) -> Unit,
-    onTcpModeChange: (Boolean) -> Unit
+    onTcpModeChange: (Boolean) -> Unit,
+    onOpenTcpPortDialog: () -> Unit,
+    onTcpPortRandomizeChange: (Boolean) -> Unit
 ) {
     item {
         SettingsGroup(title = stringResource(R.string.settings_application)) {
@@ -1429,6 +1533,19 @@ private fun LazyListScope.applicationSectionContent(
                 summary = stringResource(R.string.settings_tcp_mode_summary),
                 checked = tcpMode,
                 onCheckedChange = onTcpModeChange
+            )
+            SettingsRow(
+                icon = R.drawable.ic_baseline_link_24,
+                title = stringResource(R.string.settings_tcp_port_title),
+                summary = stringResource(R.string.settings_tcp_port_summary, tcpModePort),
+                onClick = onOpenTcpPortDialog
+            )
+            SwitchSettingsRow(
+                icon = R.drawable.ic_baseline_link_24,
+                title = stringResource(R.string.settings_tcp_port_randomize_title),
+                summary = stringResource(R.string.settings_tcp_port_randomize_summary),
+                checked = tcpPortRandomized,
+                onCheckedChange = onTcpPortRandomizeChange
             )
         }
     }
@@ -1862,6 +1979,7 @@ private fun LazyListScope.extrasSectionContent(
     expHaptics: Boolean,
     expUptime: Boolean,
     expKeepScreen: Boolean,
+    showHomeDiagnostics: Boolean,
     onNotifyRecoveryChange: (Boolean) -> Unit,
     onAutoRefreshChange: (Boolean) -> Unit,
     onVerboseLoggingChange: (Boolean) -> Unit,
@@ -1869,6 +1987,7 @@ private fun LazyListScope.extrasSectionContent(
     onExpHapticsChange: (Boolean) -> Unit,
     onExpUptimeChange: (Boolean) -> Unit,
     onExpKeepScreenChange: (Boolean) -> Unit,
+    onShowHomeDiagnosticsChange: (Boolean) -> Unit,
     onOpenAccessibility: () -> Unit,
     onRestartService: () -> Unit,
     onClearUpdateBanner: () -> Unit,
@@ -1921,6 +2040,15 @@ private fun LazyListScope.extrasSectionContent(
                 summary = stringResource(R.string.usb_debugging_hide_open_summary),
                 onClick = {
                     context.startActivity(Intent(context, UsbDebuggingHideActivity::class.java))
+                }
+            )
+            GroupDivider()
+            SettingsRow(
+                icon = R.drawable.ic_adb_24dp,
+                title = stringResource(R.string.developer_options_hide_title),
+                summary = stringResource(R.string.developer_options_hide_open_summary),
+                onClick = {
+                    context.startActivity(Intent(context, DeveloperOptionsHideActivity::class.java))
                 }
             )
         }
@@ -2001,6 +2129,14 @@ private fun LazyListScope.extrasSectionContent(
                 summary = stringResource(R.string.lab_exp_keep_screen_summary),
                 checked = expKeepScreen,
                 onCheckedChange = onExpKeepScreenChange
+            )
+            GroupDivider()
+            SwitchSettingsRow(
+                icon = R.drawable.ic_outline_info_24,
+                title = stringResource(R.string.lab_home_diagnostics_title),
+                summary = stringResource(R.string.lab_home_diagnostics_summary),
+                checked = showHomeDiagnostics,
+                onCheckedChange = onShowHomeDiagnosticsChange
             )
         }
     }

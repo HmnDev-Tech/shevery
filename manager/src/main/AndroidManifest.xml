@@ -142,6 +142,10 @@
             android:exported="false"
             android:label="@string/usb_debugging_hide_title" />
         <activity
+            android:name=".settings.DeveloperOptionsHideActivity"
+            android:exported="false"
+            android:label="@string/developer_options_hide_title" />
+        <activity
             android:name=".settings.NetworkFirewallActivity"
             android:exported="false"
             android:label="@string/network_firewall_title" />
@@ -281,6 +285,13 @@
             android:permission="com.hamondev.shevery.permission.PRIVILEGED_API" />
 
         <service
+            android:name=".dhizuku.DhizukuUserServiceHostService"
+            android:directBootAware="true"
+            android:enabled="true"
+            android:exported="false"
+            android:process=":dhizuku_user_service" />
+
+        <service
             android:name=".settings.UsbDebuggingHideService"
             android:enabled="true"
             android:exported="false"
@@ -289,6 +300,17 @@
             <property
                 android:name="android.app.PROPERTY_SPECIAL_USE_FGS_SUBTYPE"
                 android:value="Temporarily changes USB debugging while configured apps are in the foreground." />
+        </service>
+
+        <service
+            android:name=".settings.DeveloperOptionsHideService"
+            android:enabled="true"
+            android:exported="false"
+            android:foregroundServiceType="specialUse"
+            tools:targetApi="34">
+            <property
+                android:name="android.app.PROPERTY_SPECIAL_USE_FGS_SUBTYPE"
+                android:value="Temporarily changes Developer Options while configured apps are in the foreground." />
         </service>
 
         <service
@@ -357,6 +379,16 @@
             android:exported="true">
             <intent-filter>
                 <action android:name="android.intent.action.BOOT_COMPLETED" />
+            </intent-filter>
+        </receiver>
+
+        <receiver
+            android:name=".receiver.FirewallPackageReceiver"
+            android:enabled="true"
+            android:exported="true">
+            <intent-filter>
+                <action android:name="android.intent.action.PACKAGE_ADDED" />
+                <data android:scheme="package" />
             </intent-filter>
         </receiver>
 

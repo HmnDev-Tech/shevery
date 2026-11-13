@@ -37,6 +37,9 @@ class AdbMessage(
             data)
 
     internal fun validate(): Boolean {
+        if (AdbProtocolNative.isAvailable) {
+            return AdbProtocolNative.nativeValidateMessage(command, data_length, data_crc32, magic, data)
+        }
         if (command != magic xor -0x1) return false
         if (data_length != 0 && crc32(data) != data_crc32) return false
         return true
@@ -47,6 +50,12 @@ class AdbMessage(
     }
 
     fun toByteArray(): ByteArray {
+        if (AdbProtocolNative.isAvailable &&
+            data_length == (data?.size ?: 0) &&
+            magic == (command xor -1)
+        ) {
+            AdbProtocolNative.nativeEncodeMessage(command, arg0, arg1, data)?.let { return it }
+        }
         val length = HEADER_LENGTH + (data?.size ?: 0)
         return ByteBuffer.allocate(length).apply {
             order(ByteOrder.LITTLE_ENDIAN)
@@ -119,6 +128,9 @@ class AdbMessage(
 
         private fun crc32(data: ByteArray?): Int {
             if (data == null) return 0
+            if (AdbProtocolNative.isAvailable) {
+                return AdbProtocolNative.nativeChecksum(data)
+            }
             var res = 0
             for (b in data) {
                 if (b >= 0)

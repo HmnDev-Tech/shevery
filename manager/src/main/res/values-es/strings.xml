@@ -905,7 +905,7 @@ Listo para comandos.]]></string>
     <string name="settings_device_owner_title"><![CDATA[Propietario del dispositivo]]></string>
     <string name="settings_security_summary"><![CDATA[Autenticación biométrica y acciones protegidas]]></string>
     <string name="settings_security_title"><![CDATA[Seguridad]]></string>
-    <string name="settings_stealth_version"><![CDATA[Versión sigilosa]]></string>
+    <string name="settings_stealth_version"><![CDATA[Versión sigilosa (bugged)]]></string>
     <string name="settings_stealth_version_summary"><![CDATA[Copia disfrazada con un nombre de paquete aleatorio. Guarda el archivo APK en Descargas]]></string>
     <string name="settings_stealth_dialog_title"><![CDATA[Guardar APK sigiloso]]></string>
     <string name="settings_stealth_dialog_message"><![CDATA[Nombre del paquete: %1$s\nVersión de la aplicación: %2$s\n\nLa copia sigilosa declara las mismas autoridades de Shizuku, así que desinstale el Shevery normal antes de instalarla.]]></string>
