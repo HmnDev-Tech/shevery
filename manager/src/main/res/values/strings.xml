@@ -628,6 +628,8 @@ Wi-Fi is required for the first restart because Shevery must connect to the curr
     <string name="settings_motion_blur_intensity_summary">Max blur radius while swiping: %1$d%%</string>
     <string name="settings_motion_blur_strength">Motion blur strength</string>
     <string name="settings_motion_blur_strength_summary">How fast blur ramps up with swipe speed: %1$d%%</string>
+    <string name="settings_autoscale_app">Autoscale app (Experimental)</string>
+    <string name="settings_autoscale_app_summary">Adapt app dimensions and text scaling to the app\'s own layout targets instead of the device\'s display scaling</string>
 
     <!-- Comput Console -->
     <string name="comput_title">Comput</string>

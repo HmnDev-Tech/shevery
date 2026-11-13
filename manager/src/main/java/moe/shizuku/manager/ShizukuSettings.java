@@ -212,6 +212,7 @@ public class ShizukuSettings {
     public static final String MOTION_BLUR_ENABLED = "motion_blur_enabled";
     public static final String MOTION_BLUR_INTENSITY = "motion_blur_intensity";
     public static final String MOTION_BLUR_STRENGTH = "motion_blur_strength";
+    public static final String AUTOSCALE_APP = "autoscale_app";
 
     public static boolean isSwipeBetweenTabs() {
         return getPreferences().getBoolean(SWIPE_BETWEEN_TABS, true);
@@ -243,6 +244,14 @@ public class ShizukuSettings {
 
     public static void setMotionBlurStrength(int value) {
         getPreferences().edit().putInt(MOTION_BLUR_STRENGTH, Math.max(0, Math.min(100, value))).apply();
+    }
+
+    public static boolean isAutoscaleAppEnabled() {
+        return getPreferences().getBoolean(AUTOSCALE_APP, false);
+    }
+
+    public static void setAutoscaleAppEnabled(boolean enabled) {
+        getPreferences().edit().putBoolean(AUTOSCALE_APP, enabled).apply();
     }
 
     public static final String SHIZUKU_WHITELIST_MODE = "shizuku_whitelist_mode";

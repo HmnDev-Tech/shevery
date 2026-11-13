@@ -6,6 +6,7 @@
 
 package moe.shizuku.manager.ui.compose
 
+import android.content.SharedPreferences
 import android.os.Build
 import androidx.annotation.DrawableRes
 import androidx.annotation.StringRes
@@ -129,6 +130,7 @@ import androidx.compose.runtime.Composable
 import androidx.compose.runtime.getValue
 import androidx.compose.runtime.mutableStateMapOf
 import androidx.compose.runtime.remember
+import androidx.compose.runtime.setValue
 import androidx.compose.ui.Alignment
 import androidx.compose.ui.Modifier
 import androidx.compose.ui.draw.alpha
@@ -142,11 +144,14 @@ import androidx.compose.ui.graphics.vector.ImageVector
 import androidx.compose.ui.layout.boundsInParent
 import androidx.compose.ui.layout.onGloballyPositioned
 import androidx.compose.ui.platform.LocalContext
+import androidx.compose.ui.platform.LocalDensity
+import androidx.compose.ui.platform.LocalWindowInfo
 import androidx.compose.ui.res.painterResource
 import androidx.compose.ui.res.stringResource
 import androidx.compose.ui.text.font.FontFamily
 import androidx.compose.ui.text.font.FontWeight
 import androidx.compose.ui.text.style.TextOverflow
+import androidx.compose.ui.unit.Density
 import androidx.compose.ui.unit.LayoutDirection
 import androidx.compose.ui.unit.Dp
 import androidx.compose.ui.unit.dp
@@ -376,11 +381,52 @@ fun ShizukuExpressiveTheme(content: @Composable () -> Unit) {
         baseScheme
     }
 
-    MaterialExpressiveTheme(
-        colorScheme = colorScheme,
-        motionScheme = MotionScheme.expressive(),
-        content = content
-    )
+    var autoscaleApp by remember { mutableStateOf(ShizukuSettings.isAutoscaleAppEnabled()) }
+    DisposableEffect(Unit) {
+        val prefs = ShizukuSettings.getPreferences()
+        val listener = SharedPreferences.OnSharedPreferenceChangeListener { _, key ->
+            if (key == ShizukuSettings.AUTOSCALE_APP) {
+                autoscaleApp = ShizukuSettings.isAutoscaleAppEnabled()
+            }
+        }
+        prefs.registerOnSharedPreferenceChangeListener(listener)
+        onDispose { prefs.unregisterOnSharedPreferenceChangeListener(listener) }
+    }
+
+    val baseDensity = LocalDensity.current
+    val windowSize = LocalWindowInfo.current.containerSize
+    val adaptedDensity = remember(autoscaleApp, baseDensity, windowSize, context) {
+        if (!autoscaleApp) {
+            baseDensity
+        } else {
+            val dm = context.resources.displayMetrics
+            val widthPx = if (windowSize.width > 0) windowSize.width else dm.widthPixels
+            val heightPx = if (windowSize.height > 0) windowSize.height else dm.heightPixels
+            val minDimPx = minOf(widthPx, heightPx).toFloat()
+            if (minDimPx <= 0f || baseDensity.density <= 0f) {
+                baseDensity
+            } else {
+                val minDimDp = minDimPx / baseDensity.density
+                val targetDensity = if (minDimDp < 600f) {
+                    (minDimPx / 412f).coerceIn(
+                        baseDensity.density * 0.75f,
+                        baseDensity.density * 1.35f
+                    )
+                } else {
+                    baseDensity.density
+                }
+                Density(density = targetDensity, fontScale = 1.0f)
+            }
+        }
+    }
+
+    CompositionLocalProvider(LocalDensity provides adaptedDensity) {
+        MaterialExpressiveTheme(
+            colorScheme = colorScheme,
+            motionScheme = MotionScheme.expressive(),
+            content = content
+        )
+    }
 }
 
 @Composable

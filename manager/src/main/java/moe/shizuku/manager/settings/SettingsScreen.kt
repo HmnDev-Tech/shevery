@@ -305,6 +305,9 @@ fun SettingsScreen(
     var motionBlurStrength by remember {
         mutableIntStateOf(ShizukuSettings.getMotionBlurStrength())
     }
+    var autoscaleApp by remember {
+        mutableStateOf(ShizukuSettings.isAutoscaleAppEnabled())
+    }
     var showLanguageDialog by remember { mutableStateOf(false) }
     var showNightDialog by remember { mutableStateOf(false) }
     var showModuleModeDialog by remember { mutableStateOf(false) }
@@ -511,6 +514,7 @@ fun SettingsScreen(
                 motionBlur = ShizukuSettings.isMotionBlurEnabled()
                 motionBlurIntensity = ShizukuSettings.getMotionBlurIntensity()
                 motionBlurStrength = ShizukuSettings.getMotionBlurStrength()
+                autoscaleApp = ShizukuSettings.isAutoscaleAppEnabled()
                 connectorEnabled = ModuleSettings.isConnectorEnabled()
                 verboseLogging = ModuleSettings.isVerboseLogging()
                 notifyRecovery = ModuleSettings.isNotifyOnRecovery()
@@ -782,6 +786,11 @@ fun SettingsScreen(
                             onMotionBlurStrengthChange = { value ->
                                 ShizukuSettings.setMotionBlurStrength(value)
                                 motionBlurStrength = value
+                            },
+                            autoscaleApp = autoscaleApp,
+                            onAutoscaleAppChange = { enabled ->
+                                ShizukuSettings.setAutoscaleAppEnabled(enabled)
+                                autoscaleApp = enabled
                             }
                         )
                         SettingsSection.SECURITY -> {
@@ -1570,7 +1579,9 @@ private fun LazyListScope.appearanceSectionContent(
     onSwipeBetweenTabsChange: (Boolean) -> Unit,
     onMotionBlurChange: (Boolean) -> Unit,
     onMotionBlurIntensityChange: (Int) -> Unit,
-    onMotionBlurStrengthChange: (Int) -> Unit
+    onMotionBlurStrengthChange: (Int) -> Unit,
+    autoscaleApp: Boolean,
+    onAutoscaleAppChange: (Boolean) -> Unit
 ) {
     item {
         SettingsGroup(title = stringResource(R.string.settings_language)) {
@@ -1651,6 +1662,14 @@ private fun LazyListScope.appearanceSectionContent(
                     onValueChange = onMotionBlurStrengthChange
                 )
             }
+            GroupDivider()
+            SwitchSettingsRow(
+                icon = R.drawable.ic_system_icon,
+                title = stringResource(R.string.settings_autoscale_app),
+                summary = stringResource(R.string.settings_autoscale_app_summary),
+                checked = autoscaleApp,
+                onCheckedChange = onAutoscaleAppChange
+            )
         }
     }
 }
