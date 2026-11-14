@@ -102,6 +102,16 @@
     <string name="home_diagnostics_title">Diagnostics</string>
     <string name="home_diagnostics_copy">Copy diagnostics</string>
     <string name="home_diagnostics_copied">Diagnostics copied.</string>
+    <string name="home_diagnostics_smart_logs_title">Shevery Smart Logs</string>
+    <string name="home_diagnostics_smart_logs_subtitle">App-only diagnostics and filtered logs for GitHub issues</string>
+    <string name="home_diagnostics_smart_logs_loading">Collecting Shevery logs…</string>
+    <string name="home_diagnostics_smart_logs_empty">No log entries captured for this session yet.</string>
+    <string name="home_diagnostics_smart_logs_copy">Copy logs</string>
+    <string name="home_diagnostics_smart_logs_download">Download .log</string>
+    <string name="home_diagnostics_smart_logs_copied">Shevery logs copied to clipboard.</string>
+    <string name="home_diagnostics_smart_logs_saved">Shevery logs saved.</string>
+    <string name="home_diagnostics_smart_logs_save_failed">Failed to save logs: %1$s</string>
+    <string name="home_diagnostics_tap_hint">Tap card to view, copy, or download Shevery app logs</string>
     <string name="home_modules_description">Install and manage ADB-backed modules</string>
 
     <!-- Home - Adb permissions limited -->

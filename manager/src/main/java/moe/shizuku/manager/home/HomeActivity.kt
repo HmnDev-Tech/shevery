@@ -1322,6 +1322,7 @@ private fun HomeScreen(
     var showHomeDiagnostics by remember {
         mutableStateOf(ModuleSettings.isHomeDiagnosticsShown())
     }
+    var diagnosticsDialogText by remember { mutableStateOf<String?>(null) }
     DisposableEffect(Unit) {
         val prefs = ShizukuSettings.getPreferences()
         val listener = android.content.SharedPreferences.OnSharedPreferenceChangeListener { _, key ->
@@ -1618,7 +1619,8 @@ private fun HomeScreen(
                     }
                     DiagnosticsCard(
                         diagnostics = diagnostics,
-                        onCopyDiagnostics = onCopyDiagnostics
+                        onCopyDiagnostics = onCopyDiagnostics,
+                        onOpenLogs = { diagnosticsDialogText = diagnostics }
                     )
                 }
             }
@@ -1639,6 +1641,13 @@ private fun HomeScreen(
                 showAutomationSheet = false
                 onOpenAutomationSettings()
             }
+        )
+    }
+
+    diagnosticsDialogText?.let { summary ->
+        SheverySmartLogsDialog(
+            diagnosticsSummary = summary,
+            onDismiss = { diagnosticsDialogText = null }
         )
     }
 }
@@ -1966,13 +1975,20 @@ private fun LocalNetworkPermissionCard(
 @Composable
 private fun DiagnosticsCard(
     diagnostics: String,
-    onCopyDiagnostics: (String) -> Unit
+    onCopyDiagnostics: (String) -> Unit,
+    onOpenLogs: () -> Unit
 ) {
     HomeCard(
         icon = R.drawable.ic_outline_info_24,
         title = stringResource(R.string.home_diagnostics_title),
-        body = diagnostics
+        body = diagnostics,
+        onClick = onOpenLogs
     ) {
+        Text(
+            text = stringResource(R.string.home_diagnostics_tap_hint),
+            style = MaterialTheme.typography.bodySmall,
+            color = MaterialTheme.colorScheme.primary
+        )
         HomeButtons(
             listOf(
                 HomeButtonSpec(
@@ -1980,6 +1996,12 @@ private fun DiagnosticsCard(
                     icon = R.drawable.ic_content_copy_24,
                     primary = true,
                     onClick = { onCopyDiagnostics(diagnostics) }
+                ),
+                HomeButtonSpec(
+                    label = R.string.home_diagnostics_smart_logs_title,
+                    icon = R.drawable.ic_terminal_24,
+                    primary = false,
+                    onClick = onOpenLogs
                 )
             )
         )
