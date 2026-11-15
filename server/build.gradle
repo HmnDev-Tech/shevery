@@ -11,8 +11,9 @@ android {
 }
 
 dependencies {
-    implementation "androidx.annotation:annotation:1.11.0-alpha01"
-    implementation 'com.google.code.gson:gson:2.14.0'
+    implementation "androidx.annotation:annotation:1.11.0"
+    implementation 'com.google.code.gson:gson:2.15.0'
+    implementation 'org.lsposed.hiddenapibypass:hiddenapibypass:6.2'
     api 'dev.rikka.rikkax.parcelablelist:parcelablelist:2.0.1'
 
     implementation project(':aidl')

@@ -8,4 +8,4 @@ name = "libshizuku"
 path = "src/main.rs"
 
 [dependencies]
-libc = "0.2"
+libc = "0.2.191"
