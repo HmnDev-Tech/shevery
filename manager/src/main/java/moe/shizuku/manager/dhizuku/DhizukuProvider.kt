@@ -26,7 +26,7 @@ import com.rosan.dhizuku.aidl.IDhizukuUserServiceConnection
 import com.rosan.dhizuku.shared.DhizukuVariables
 import moe.shizuku.manager.BuildConfig
 import moe.shizuku.manager.deviceowner.DeviceOwnerManager
-import moe.shizuku.manager.utils.Logger.LOGGER
+import moe.shizuku.manager.utils.Logger.Companion.LOGGER
 import rikka.shizuku.server.util.ParcelFileDescriptorUtil
 import java.io.File
 import java.io.IOException

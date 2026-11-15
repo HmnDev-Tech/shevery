@@ -62,6 +62,22 @@ pub fn switch_mnt_ns(pid: libc::pid_t) -> i32 {
     }
 }
 
+pub fn parse_cmdline_process_name(bytes: &[u8]) -> String {
+    let first_arg = bytes.split(|&b| b == 0).next().unwrap_or(&[]);
+    String::from_utf8_lossy(first_arg).trim().to_string()
+}
+
+pub fn is_matching_target_process(
+    proc_name: &str,
+    exe_target: Option<&str>,
+    server_name: &str,
+) -> bool {
+    if proc_name == server_name || proc_name.contains("libshizuku.so") {
+        return true;
+    }
+    exe_target.is_some_and(|target| target.contains("libshizuku.so"))
+}
+
 pub fn kill_old_processes(server_name: &str) {
     // Safety: getpid has no preconditions or side effects.
     let my_pid = unsafe { libc::getpid() };
@@ -85,23 +101,18 @@ pub fn kill_old_processes(server_name: &str) {
 
         let cmdline_path = format!("/proc/{}/cmdline", pid);
         let cmdline_bytes = fs::read(&cmdline_path).unwrap_or_default();
-        let first_arg = cmdline_bytes.split(|&b| b == 0).next().unwrap_or(&[]);
-        let proc_name_cow = String::from_utf8_lossy(first_arg);
-        let proc_name = proc_name_cow.trim();
+        let proc_name = parse_cmdline_process_name(&cmdline_bytes);
 
-        let is_server = proc_name == server_name;
-        let mut is_old_supervisor = proc_name.contains("libshizuku.so");
-
-        if !is_server && !is_old_supervisor {
+        let exe_target = if proc_name != server_name && !proc_name.contains("libshizuku.so") {
             let exe_path = format!("/proc/{}/exe", pid);
-            if let Ok(target) = fs::read_link(exe_path) {
-                if target.to_string_lossy().contains("libshizuku.so") {
-                    is_old_supervisor = true;
-                }
-            }
-        }
+            fs::read_link(exe_path)
+                .ok()
+                .map(|p| p.to_string_lossy().into_owned())
+        } else {
+            None
+        };
 
-        if !is_server && !is_old_supervisor {
+        if !is_matching_target_process(&proc_name, exe_target.as_deref(), server_name) {
             continue;
         }
 
@@ -123,4 +134,42 @@ pub fn kill_old_processes(server_name: &str) {
         }
     }
     let _ = std::io::stdout().flush();
+}
+
+#[cfg(test)]
+mod tests {
+    use super::*;
+
+    #[test]
+    fn parse_cmdline_process_name_extracts_first_trimmed_argument() {
+        assert_eq!(
+            parse_cmdline_process_name(b"shizuku_server\0--apk=/data/app/base.apk\0"),
+            "shizuku_server"
+        );
+        assert_eq!(
+            parse_cmdline_process_name(b"  /data/local/tmp/starter \0"),
+            "/data/local/tmp/starter"
+        );
+        assert_eq!(parse_cmdline_process_name(b""), "");
+    }
+
+    #[test]
+    fn is_matching_target_process_matches_name_or_libshizuku_exe() {
+        assert!(is_matching_target_process("shizuku_server", None, "shizuku_server"));
+        assert!(is_matching_target_process(
+            "/data/local/tmp/libshizuku.so",
+            None,
+            "shizuku_server"
+        ));
+        assert!(is_matching_target_process(
+            "app_process64",
+            Some("/data/app/lib/arm64/libshizuku.so"),
+            "shizuku_server"
+        ));
+        assert!(!is_matching_target_process(
+            "com.android.systemui",
+            Some("/system/bin/app_process64"),
+            "shizuku_server"
+        ));
+    }
 }

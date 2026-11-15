@@ -10,5 +10,7 @@ android {
 }
 
 dependencies {
+    implementation 'androidx.annotation:annotation:1.11.0'
     compileOnly libs.hidden.stub
+    testImplementation 'junit:junit:4.13.2'
 }

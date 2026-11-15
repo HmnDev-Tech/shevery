@@ -8,5 +8,5 @@ name = "rish"
 crate-type = ["cdylib"]
 
 [dependencies]
-jni = { version = "0.21", default-features = false }
-libc = "0.2"
+jni = { version = "0.21.1", default-features = false }
+libc = "0.2.191"

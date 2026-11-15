@@ -16,7 +16,9 @@ dependencies {
     implementation project(':server-shared')
     compileOnly project(':provider')
     compileOnly project(':api')
-    implementation 'androidx.annotation:annotation:1.11.0-alpha01'
+    implementation 'androidx.annotation:annotation:1.11.0'
+    implementation 'androidx.core:core:1.19.1'
+    implementation 'org.lsposed.hiddenapibypass:hiddenapibypass:6.2'
     implementation libs.hidden.compat
     compileOnly libs.hidden.stub
     implementation libs.refine.runtime

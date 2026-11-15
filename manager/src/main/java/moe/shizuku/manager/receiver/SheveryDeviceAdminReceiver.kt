@@ -6,7 +6,7 @@ import android.content.Context
 import android.content.Intent
 import android.os.PersistableBundle
 import android.util.Log
-import moe.shizuku.manager.utils.Logger.LOGGER
+import moe.shizuku.manager.utils.Logger.Companion.LOGGER
 
 class SheveryDeviceAdminReceiver : DeviceAdminReceiver() {
 

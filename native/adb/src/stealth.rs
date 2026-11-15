@@ -377,3 +377,71 @@ pub fn compute_apk_v2_top_digest(section1: &[u8], section2: &[u8], eocd: &[u8]) 
     top_hasher.update(&chunk_digests);
     top_hasher.finalize().into()
 }
+
+#[cfg(test)]
+mod tests {
+    use super::*;
+
+    #[test]
+    fn swap_filtered_preserves_protected_suffixes_ascii_and_utf16() {
+        let old = b"com.hamondev.shevery";
+        let repl = b"com.custompkg.masked";
+        assert_eq!(old.len(), repl.len());
+
+        let input = b"com.hamondev.shevery/main|com.hamondev.shevery.tasker|com.hamondev.shevery.api|com.hamondev.shevery.permission.PRIVILEGED_API";
+        let actual = swap_filtered(input, old, repl, false);
+        let expected = b"com.custompkg.masked/main|com.hamondev.shevery.tasker|com.hamondev.shevery.api|com.hamondev.shevery.permission.PRIVILEGED_API";
+        assert_eq!(actual.as_slice(), expected.as_slice());
+
+        let utf16_old: Vec<u8> = "com.hamondev.shevery"
+            .encode_utf16()
+            .flat_map(u16::to_le_bytes)
+            .collect();
+        let utf16_repl: Vec<u8> = "com.custompkg.masked"
+            .encode_utf16()
+            .flat_map(u16::to_le_bytes)
+            .collect();
+        let utf16_in: Vec<u8> = "com.hamondev.shevery.service|com.hamondev.shevery.api"
+            .encode_utf16()
+            .flat_map(u16::to_le_bytes)
+            .collect();
+        let utf16_expected: Vec<u8> = "com.custompkg.masked.service|com.hamondev.shevery.api"
+            .encode_utf16()
+            .flat_map(u16::to_le_bytes)
+            .collect();
+        assert_eq!(swap_filtered(&utf16_in, &utf16_old, &utf16_repl, true), utf16_expected);
+    }
+
+    #[test]
+    fn digests_and_dex_header_fix_match_standard_vectors() {
+        assert_eq!(
+            sha1_digest(b"abc"),
+            [
+                0xa9, 0x99, 0x3e, 0x36, 0x47, 0x06, 0x81, 0x6a, 0xba, 0x3e,
+                0x25, 0x71, 0x78, 0x50, 0xc2, 0x6c, 0x9c, 0xd0, 0xd8, 0x9d,
+            ]
+        );
+        assert_eq!(
+            sha256_digest(b"abc"),
+            [
+                0xba, 0x78, 0x16, 0xbf, 0x8f, 0x01, 0xcf, 0xea, 0x41, 0x41, 0x40, 0xde, 0x5d, 0xae, 0x22, 0x23,
+                0xb0, 0x03, 0x61, 0xa3, 0x96, 0x17, 0x7a, 0x9c, 0xb4, 0x10, 0xff, 0x61, 0xf2, 0x00, 0x15, 0xad,
+            ]
+        );
+        assert_eq!(adler32_checksum(b""), 1);
+        assert_eq!(adler32_checksum(b"ab"), 0x0126_00C4);
+        assert_eq!(crc32_ieee(b"123456789"), 0xCBF4_3926);
+
+        let mut dex = vec![0u8; 64];
+        dex[0..8].copy_from_slice(b"dex\n039\0");
+        dex[32..].fill(0x42);
+        let fixed = fix_dex_header(&dex);
+        assert_eq!(&fixed[12..32], sha1_digest(&fixed[32..]).as_slice());
+        let csum = u32::from_le_bytes(fixed[8..12].try_into().unwrap());
+        assert_eq!(csum, adler32_checksum(&fixed[12..]));
+
+        let top1 = compute_apk_v2_top_digest(b"sec1", b"sec2", b"eocd");
+        let top2 = compute_apk_v2_top_digest(b"sec1", b"secX", b"eocd");
+        assert_ne!(top1, top2);
+    }
+}

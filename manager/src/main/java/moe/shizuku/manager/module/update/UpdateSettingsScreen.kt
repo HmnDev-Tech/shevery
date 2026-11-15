@@ -15,6 +15,8 @@ import androidx.compose.material3.AlertDialog
 import androidx.compose.material3.DropdownMenuItem
 import androidx.compose.material3.ExperimentalMaterial3Api
 import androidx.compose.material3.ExperimentalMaterial3ExpressiveApi
+import androidx.compose.material3.ExposedDropdownMenu
+import androidx.compose.material3.ExposedDropdownMenuAnchorType
 import androidx.compose.material3.ExposedDropdownMenuBox
 import androidx.compose.material3.ExposedDropdownMenuDefaults
 import androidx.compose.material3.MaterialTheme
@@ -147,7 +149,7 @@ internal fun UpdateFrequencyDropdown(
         onExpandedChange = { expanded = !expanded }
     ) {
         SettingsRow(
-            modifier = Modifier.menuAnchor(),
+            modifier = Modifier.menuAnchor(ExposedDropdownMenuAnchorType.PrimaryNotEditable),
             icon = R.drawable.ic_outline_notifications_active_24,
             title = stringResource(R.string.update_settings_frequency_label),
             summary = stringResource(when (selected) {
@@ -202,7 +204,7 @@ private fun InstallModeDropdown(
         onExpandedChange = { expanded = !expanded }
     ) {
         SettingsRow(
-            modifier = Modifier.menuAnchor(),
+            modifier = Modifier.menuAnchor(ExposedDropdownMenuAnchorType.PrimaryNotEditable),
             icon = R.drawable.ic_system_update_24,
             title = stringResource(R.string.update_settings_install_mode_label),
             summary = stringResource(when (selected) {

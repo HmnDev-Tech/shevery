@@ -11,7 +11,7 @@ import android.os.PersistableBundle
 import android.provider.Settings
 import android.util.Log
 import moe.shizuku.manager.receiver.SheveryDeviceAdminReceiver
-import moe.shizuku.manager.utils.Logger.LOGGER
+import moe.shizuku.manager.utils.Logger.Companion.LOGGER
 
 object DeviceOwnerManager {
 

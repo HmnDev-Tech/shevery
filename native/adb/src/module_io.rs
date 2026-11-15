@@ -123,3 +123,51 @@ pub fn read_fd_tail(fd: i32, max_chars: usize) -> String {
         text.chars().skip(skip).collect()
     }
 }
+
+#[cfg(test)]
+mod tests {
+    use super::*;
+
+    #[test]
+    fn compute_module_fingerprint_ignores_disable_and_source_prop() {
+        assert!(compute_module_fingerprint("/nonexistent/shevery_module_path").is_none());
+
+        let base = std::env::temp_dir().join(format!("shevery_mod_test_{}", std::process::id()));
+        let _ = fs::remove_dir_all(&base);
+        fs::create_dir_all(base.join("system/bin")).unwrap();
+        fs::write(base.join("module.prop"), b"id=test_mod\nversion=1\n").unwrap();
+        fs::write(base.join("system/bin/helper"), b"payload").unwrap();
+        fs::write(base.join(DISABLE_FILE), b"").unwrap();
+        fs::write(base.join(SOURCE_PROP_FILE), b"source=v1").unwrap();
+
+        let fp1 = compute_module_fingerprint(base.to_str().unwrap()).unwrap();
+        assert_eq!(fp1.len(), 64);
+
+        fs::write(base.join(DISABLE_FILE), b"changed").unwrap();
+        fs::write(base.join(SOURCE_PROP_FILE), b"source=v2").unwrap();
+        let fp2 = compute_module_fingerprint(base.to_str().unwrap()).unwrap();
+        assert_eq!(fp1, fp2);
+
+        fs::write(base.join("module.prop"), b"id=test_mod\nversion=2\n").unwrap();
+        let fp3 = compute_module_fingerprint(base.to_str().unwrap()).unwrap();
+        assert_ne!(fp1, fp3);
+
+        let _ = fs::remove_dir_all(&base);
+    }
+
+    #[test]
+    fn read_fd_tail_truncates_to_last_chars_and_handles_invalid_fds() {
+        assert_eq!(read_fd_tail(-1, 16), "");
+
+        let mut fds = [-1 as libc::c_int; 2];
+        assert_eq!(unsafe { libc::pipe(fds.as_mut_ptr()) }, 0);
+        let msg = b"abcdefg";
+        let written = unsafe {
+            libc::write(fds[1], msg.as_ptr() as *const libc::c_void, msg.len())
+        };
+        assert_eq!(written, msg.len() as isize);
+        unsafe { libc::close(fds[1]) };
+
+        assert_eq!(read_fd_tail(fds[0], 4), "defg");
+    }
+}

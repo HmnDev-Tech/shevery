@@ -100,6 +100,7 @@ import moe.shizuku.manager.service.WatchdogManager
 import moe.shizuku.manager.starter.StarterActivity
 import moe.shizuku.manager.utils.CustomTabsHelper
 import moe.shizuku.manager.utils.EnvironmentUtils
+import moe.shizuku.manager.ui.compose.ExpressiveSwitch
 import moe.shizuku.manager.ui.compose.GroupDivider
 import moe.shizuku.manager.ui.compose.MonospaceLog
 import moe.shizuku.manager.ui.compose.SectionHeader
@@ -108,6 +109,7 @@ import moe.shizuku.manager.ui.compose.SettingsRow
 import moe.shizuku.manager.ui.compose.ShizukuLazyScaffold
 import moe.shizuku.manager.ui.compose.SwitchSettingsRow
 import moe.shizuku.manager.ui.compose.htmlToPlainText
+import moe.shizuku.manager.home.SheverySmartLogsDialog
 import rikka.core.util.ResourceUtils
 import rikka.core.util.ClipboardUtils
 import rikka.material.app.LocaleDelegate
@@ -305,10 +307,14 @@ fun SettingsScreen(
     var motionBlurStrength by remember {
         mutableIntStateOf(ShizukuSettings.getMotionBlurStrength())
     }
+    var autoscaleApp by remember {
+        mutableStateOf(ShizukuSettings.isAutoscaleAppEnabled())
+    }
     var showLanguageDialog by remember { mutableStateOf(false) }
     var showNightDialog by remember { mutableStateOf(false) }
     var showModuleModeDialog by remember { mutableStateOf(false) }
     var showCustomPermissionsDialog by remember { mutableStateOf(false) }
+    var showDiagnosticsLogsDialog by remember { mutableStateOf(false) }
     var pendingTcpModeChange by remember { mutableStateOf<Boolean?>(null) }
 
     var moduleAccessMode by remember {
@@ -511,6 +517,7 @@ fun SettingsScreen(
                 motionBlur = ShizukuSettings.isMotionBlurEnabled()
                 motionBlurIntensity = ShizukuSettings.getMotionBlurIntensity()
                 motionBlurStrength = ShizukuSettings.getMotionBlurStrength()
+                autoscaleApp = ShizukuSettings.isAutoscaleAppEnabled()
                 connectorEnabled = ModuleSettings.isConnectorEnabled()
                 verboseLogging = ModuleSettings.isVerboseLogging()
                 notifyRecovery = ModuleSettings.isNotifyOnRecovery()
@@ -782,6 +789,11 @@ fun SettingsScreen(
                             onMotionBlurStrengthChange = { value ->
                                 ShizukuSettings.setMotionBlurStrength(value)
                                 motionBlurStrength = value
+                            },
+                            autoscaleApp = autoscaleApp,
+                            onAutoscaleAppChange = { enabled ->
+                                ShizukuSettings.setAutoscaleAppEnabled(enabled)
+                                autoscaleApp = enabled
                             }
                         )
                         SettingsSection.SECURITY -> {
@@ -912,6 +924,7 @@ fun SettingsScreen(
                                 showHomeDiagnostics = value
                                 ModuleSettings.setHomeDiagnosticsShown(value)
                             },
+                            onOpenDiagnosticsLogs = { showDiagnosticsLogsDialog = true },
                             onOpenAccessibility = {
                                 context.startActivity(Intent(context, AccessibilityManagerActivity::class.java))
                             },
@@ -992,6 +1005,12 @@ fun SettingsScreen(
                 }
             }
         }
+    }
+
+    if (showDiagnosticsLogsDialog) {
+        SheverySmartLogsDialog(
+            onDismiss = { showDiagnosticsLogsDialog = false }
+        )
     }
 
     if (showLanguageDialog) {
@@ -1570,7 +1589,9 @@ private fun LazyListScope.appearanceSectionContent(
     onSwipeBetweenTabsChange: (Boolean) -> Unit,
     onMotionBlurChange: (Boolean) -> Unit,
     onMotionBlurIntensityChange: (Int) -> Unit,
-    onMotionBlurStrengthChange: (Int) -> Unit
+    onMotionBlurStrengthChange: (Int) -> Unit,
+    autoscaleApp: Boolean,
+    onAutoscaleAppChange: (Boolean) -> Unit
 ) {
     item {
         SettingsGroup(title = stringResource(R.string.settings_language)) {
@@ -1651,6 +1672,14 @@ private fun LazyListScope.appearanceSectionContent(
                     onValueChange = onMotionBlurStrengthChange
                 )
             }
+            GroupDivider()
+            SwitchSettingsRow(
+                icon = R.drawable.ic_system_icon,
+                title = stringResource(R.string.settings_autoscale_app),
+                summary = stringResource(R.string.settings_autoscale_app_summary),
+                checked = autoscaleApp,
+                onCheckedChange = onAutoscaleAppChange
+            )
         }
     }
 }
@@ -1988,6 +2017,7 @@ private fun LazyListScope.extrasSectionContent(
     onExpUptimeChange: (Boolean) -> Unit,
     onExpKeepScreenChange: (Boolean) -> Unit,
     onShowHomeDiagnosticsChange: (Boolean) -> Unit,
+    onOpenDiagnosticsLogs: () -> Unit,
     onOpenAccessibility: () -> Unit,
     onRestartService: () -> Unit,
     onClearUpdateBanner: () -> Unit,
@@ -2131,12 +2161,28 @@ private fun LazyListScope.extrasSectionContent(
                 onCheckedChange = onExpKeepScreenChange
             )
             GroupDivider()
-            SwitchSettingsRow(
+            SettingsRow(
                 icon = R.drawable.ic_outline_info_24,
                 title = stringResource(R.string.lab_home_diagnostics_title),
-                summary = stringResource(R.string.lab_home_diagnostics_summary),
-                checked = showHomeDiagnostics,
-                onCheckedChange = onShowHomeDiagnosticsChange
+                summary = if (showHomeDiagnostics) {
+                    stringResource(R.string.lab_home_diagnostics_summary) + "\n" +
+                        stringResource(R.string.home_diagnostics_tap_hint)
+                } else {
+                    stringResource(R.string.lab_home_diagnostics_summary)
+                },
+                onClick = {
+                    if (showHomeDiagnostics) {
+                        onOpenDiagnosticsLogs()
+                    } else {
+                        onShowHomeDiagnosticsChange(true)
+                    }
+                },
+                trailing = {
+                    ExpressiveSwitch(
+                        checked = showHomeDiagnostics,
+                        onCheckedChange = onShowHomeDiagnosticsChange
+                    )
+                }
             )
         }
     }

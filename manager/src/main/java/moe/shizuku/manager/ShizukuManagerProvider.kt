@@ -10,7 +10,7 @@ import androidx.core.os.bundleOf
 import com.hamondev.shevery.api.SheveryApiConstants
 import com.hamondev.shevery.api.SheveryPrivilege
 import moe.shizuku.api.BinderContainer
-import moe.shizuku.manager.utils.Logger.LOGGER
+import moe.shizuku.manager.utils.Logger.Companion.LOGGER
 import rikka.shizuku.Shizuku
 import rikka.shizuku.ShizukuApiConstants.USER_SERVICE_ARG_TOKEN
 import rikka.shizuku.ShizukuProvider
@@ -25,6 +25,17 @@ class ShizukuManagerProvider : ShizukuProvider() {
         private const val EXTRA_BINDER_SHEVERY = SheveryApiConstants.EXTRA_BINDER
         private const val METHOD_SEND_USER_SERVICE = SheveryApiConstants.METHOD_SEND_USER_SERVICE
         private const val METHOD_REQUEST_BINDER = SheveryApiConstants.METHOD_REQUEST_BINDER
+
+        @JvmStatic
+        fun isTrustedBinderSenderUid(callingUid: Int, myUid: Int): Boolean =
+            callingUid == 0 || callingUid == 2000 || callingUid == myUid
+
+        @JvmStatic
+        fun enforceTrustedBinderSenderUid(callingUid: Int, myUid: Int) {
+            if (!isTrustedBinderSenderUid(callingUid, myUid)) {
+                throw SecurityException("Unauthorized binder delivery from uid=$callingUid")
+            }
+        }
     }
 
     override fun onCreate(): Boolean {
@@ -117,8 +128,9 @@ class ShizukuManagerProvider : ShizukuProvider() {
         return when (method) {
             METHOD_SEND_BINDER -> {
                 if (!isCallerTrusted()) {
-                    LOGGER.w("ShizukuManagerProvider: rejected sendBinder from uid ${Binder.getCallingUid()}")
-                    return null
+                    val callingUid = Binder.getCallingUid()
+                    LOGGER.w("ShizukuManagerProvider: rejected sendBinder from uid $callingUid")
+                    throw SecurityException("Unauthorized binder delivery from uid=$callingUid")
                 }
                 try {
                     extras.classLoader = BinderContainer::class.java.classLoader
@@ -149,6 +161,11 @@ class ShizukuManagerProvider : ShizukuProvider() {
                 }
             }
             METHOD_SEND_USER_SERVICE -> {
+                if (!isCallerTrusted()) {
+                    val callingUid = Binder.getCallingUid()
+                    LOGGER.w("ShizukuManagerProvider: rejected sendUserService from uid $callingUid")
+                    throw SecurityException("Unauthorized binder delivery from uid=$callingUid")
+                }
             try {
                 extras.classLoader = BinderContainer::class.java.classLoader
 

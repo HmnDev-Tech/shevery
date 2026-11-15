@@ -182,3 +182,53 @@ pub fn transfer_async<F>(
         transfer(in_fd, out_fd, close_in, close_out, watch_out, cb);
     });
 }
+
+#[cfg(test)]
+mod tests {
+    use super::*;
+    use std::sync::{Arc, Mutex};
+
+    #[test]
+    fn atty_bitmask_combines_all_streams() {
+        assert_eq!(ATTY_ALL, ATTY_IN | ATTY_OUT | ATTY_ERR);
+    }
+
+    #[test]
+    fn write_full_and_transfer_copy_data_across_pipes() {
+        let mut in_pipe = [-1 as c_int; 2];
+        let mut out_pipe = [-1 as c_int; 2];
+        assert_eq!(unsafe { libc::pipe(in_pipe.as_mut_ptr()) }, 0);
+        assert_eq!(unsafe { libc::pipe(out_pipe.as_mut_ptr()) }, 0);
+
+        let payload = b"rish-stream-data";
+        assert!(write_full(in_pipe[1], payload));
+        unsafe { libc::close(in_pipe[1]) };
+
+        let failed_flag = Arc::new(Mutex::new(None));
+        let flag_clone = failed_flag.clone();
+        transfer(
+            in_pipe[0],
+            out_pipe[1],
+            true,
+            true,
+            false,
+            Some(Box::new(move |failed| {
+                *flag_clone.lock().unwrap() = Some(failed);
+            })),
+        );
+        assert_eq!(*failed_flag.lock().unwrap(), Some(false));
+
+        let mut received = [0u8; 64];
+        let n = unsafe {
+            libc::read(
+                out_pipe[0],
+                received.as_mut_ptr() as *mut libc::c_void,
+                received.len(),
+            )
+        };
+        unsafe { libc::close(out_pipe[0]) };
+
+        assert_eq!(n, payload.len() as isize);
+        assert_eq!(&received[..n as usize], payload);
+    }
+}
