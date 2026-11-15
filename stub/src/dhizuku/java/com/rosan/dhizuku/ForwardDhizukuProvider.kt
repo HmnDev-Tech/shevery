@@ -4,14 +4,20 @@ import android.content.ContentProvider
 import android.content.ContentValues
 import android.database.Cursor
 import android.net.Uri
+import android.os.Binder
 import android.os.Build
 import android.os.Bundle
+import android.os.Process
 
 class ForwardDhizukuProvider : ContentProvider() {
 
     override fun onCreate(): Boolean = true
 
     override fun call(method: String, arg: String?, extras: Bundle?): Bundle? {
+        if (method == METHOD_SEND_BINDER || method == METHOD_SEND_USER_SERVICE) {
+            enforceCallingUid(Binder.getCallingUid(), Process.myUid())
+            return null
+        }
         try {
             val ctx = context ?: return null
             return if (Build.VERSION.SDK_INT >= Build.VERSION_CODES.Q) {
@@ -48,5 +54,18 @@ class ForwardDhizukuProvider : ContentProvider() {
 
     companion object {
         const val SHEVERY_AUTHORITY = "com.hamondev.shevery.dhizuku_server.provider"
+        const val METHOD_SEND_BINDER = "sendBinder"
+        const val METHOD_SEND_USER_SERVICE = "sendUserService"
+
+        @JvmStatic
+        fun isTrustedCallingUid(callingUid: Int, myUid: Int): Boolean =
+            callingUid == 0 || callingUid == 2000 || callingUid == myUid
+
+        @JvmStatic
+        fun enforceCallingUid(callingUid: Int, myUid: Int) {
+            if (!isTrustedCallingUid(callingUid, myUid)) {
+                throw SecurityException("Unauthorized binder delivery from uid=$callingUid")
+            }
+        }
     }
 }

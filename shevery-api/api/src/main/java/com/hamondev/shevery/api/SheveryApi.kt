@@ -1,5 +1,8 @@
 package com.hamondev.shevery.api
 
+import android.os.Binder
+import android.os.Process
+
 /**
  * Identity and permission contract of the native Shevery API.
  *
@@ -31,4 +34,20 @@ object SheveryApi {
 
     @JvmStatic
     fun getUserId(uid: Int): Int = uid / PER_USER_RANGE
+
+    @JvmStatic
+    fun isTrustedProviderCallerUid(callingUid: Int, myUid: Int): Boolean =
+        callingUid == 0 || callingUid == 2000 || callingUid == myUid
+
+    @JvmStatic
+    fun enforceCallingUid(callingUid: Int, myUid: Int) {
+        if (!isTrustedProviderCallerUid(callingUid, myUid)) {
+            throw SecurityException("Unauthorized binder delivery from uid=$callingUid")
+        }
+    }
+
+    @JvmStatic
+    fun enforceCallingUid() {
+        enforceCallingUid(Binder.getCallingUid(), Process.myUid())
+    }
 }

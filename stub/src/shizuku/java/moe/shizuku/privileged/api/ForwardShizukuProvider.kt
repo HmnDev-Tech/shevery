@@ -4,8 +4,10 @@ import android.content.ContentProvider
 import android.content.ContentValues
 import android.database.Cursor
 import android.net.Uri
+import android.os.Binder
 import android.os.Build
 import android.os.Bundle
+import android.os.Process
 import moe.shizuku.api.BinderContainer
 
 /**
@@ -20,6 +22,9 @@ class ForwardShizukuProvider : ContentProvider() {
     override fun onCreate(): Boolean = true
 
     override fun call(method: String, arg: String?, extras: Bundle?): Bundle? {
+        if (method != METHOD_REQUEST_BINDER) {
+            enforceCallingUid(Binder.getCallingUid(), Process.myUid())
+        }
         val ctx = context ?: return null
         extras?.classLoader = BinderContainer::class.java.classLoader
         val forwardExtras = (extras?.let(::Bundle) ?: Bundle()).apply {
@@ -81,5 +86,17 @@ class ForwardShizukuProvider : ContentProvider() {
         const val SHEVERY_PROVIDER_AUTHORITY = "$SHEVERY_PACKAGE.shevery"
         const val SHEVERY_LEGACY_PROVIDER_AUTHORITY = "$SHEVERY_PACKAGE.shizuku"
         const val SHEVERY_CONNECTOR_AUTHORITY = "$SHEVERY_PACKAGE.connector"
+        const val METHOD_REQUEST_BINDER = "requestBinder"
+
+        @JvmStatic
+        fun isTrustedCallingUid(callingUid: Int, myUid: Int): Boolean =
+            callingUid == 0 || callingUid == 2000 || callingUid == myUid
+
+        @JvmStatic
+        fun enforceCallingUid(callingUid: Int, myUid: Int) {
+            if (!isTrustedCallingUid(callingUid, myUid)) {
+                throw SecurityException("Unauthorized binder delivery from uid=$callingUid")
+            }
+        }
     }
 }
