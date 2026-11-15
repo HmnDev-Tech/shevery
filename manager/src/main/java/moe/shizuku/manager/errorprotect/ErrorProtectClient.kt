@@ -4,7 +4,7 @@ import android.os.IBinder
 import android.os.Parcel
 import java.util.concurrent.atomic.AtomicBoolean
 import moe.shizuku.manager.ShizukuSettings
-import moe.shizuku.manager.utils.Logger.LOGGER
+import moe.shizuku.manager.utils.Logger.Companion.LOGGER
 import rikka.shizuku.Shizuku
 import rikka.shizuku.ShizukuApiConstants
 import rikka.shizuku.server.ServerConstants

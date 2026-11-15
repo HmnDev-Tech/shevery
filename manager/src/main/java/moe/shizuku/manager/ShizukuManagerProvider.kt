@@ -10,7 +10,7 @@ import androidx.core.os.bundleOf
 import com.hamondev.shevery.api.SheveryApiConstants
 import com.hamondev.shevery.api.SheveryPrivilege
 import moe.shizuku.api.BinderContainer
-import moe.shizuku.manager.utils.Logger.LOGGER
+import moe.shizuku.manager.utils.Logger.Companion.LOGGER
 import rikka.shizuku.Shizuku
 import rikka.shizuku.ShizukuApiConstants.USER_SERVICE_ARG_TOKEN
 import rikka.shizuku.ShizukuProvider

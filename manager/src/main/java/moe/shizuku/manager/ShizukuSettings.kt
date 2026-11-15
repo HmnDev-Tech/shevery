@@ -85,7 +85,8 @@ object ShizukuSettings {
     }
 
     @JvmStatic
-    fun initialize(context: Context) {
+    fun initialize(context: Context?) {
+        if (context == null) return
         sAppContext = context.applicationContext ?: context
         if (sPreferences == null) {
             sPreferences = getSettingsStorageContext(context)

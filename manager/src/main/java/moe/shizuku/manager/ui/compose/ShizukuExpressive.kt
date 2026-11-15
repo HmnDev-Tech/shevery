@@ -253,7 +253,7 @@ fun ExpressiveFloatingNavigationBar(
                                     Modifier
                                 }
                             ),
-                        colors = ToggleButtonDefaults.toggleButtonColors(
+                        colors = ToggleButtonDefaults.colors(
                             checkedContainerColor = Color.Transparent,
                             checkedContentColor = MaterialTheme.colorScheme.onPrimary,
                             containerColor = Color.Transparent,

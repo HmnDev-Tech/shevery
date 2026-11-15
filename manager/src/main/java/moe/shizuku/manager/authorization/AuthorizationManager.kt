@@ -9,7 +9,7 @@ import moe.shizuku.manager.BuildConfig
 import moe.shizuku.manager.Manifest
 import moe.shizuku.manager.ShizukuSettings
 import moe.shizuku.manager.compat.StubManager
-import moe.shizuku.manager.utils.Logger.LOGGER
+import moe.shizuku.manager.utils.Logger.Companion.LOGGER
 import moe.shizuku.manager.utils.ShizukuSystemApis
 import rikka.parcelablelist.ParcelableListSlice
 import rikka.shizuku.Shizuku

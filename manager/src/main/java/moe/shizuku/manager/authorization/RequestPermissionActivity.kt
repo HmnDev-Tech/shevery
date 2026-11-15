@@ -41,7 +41,7 @@ import moe.shizuku.manager.security.SecuritySettings
 import moe.shizuku.manager.ui.compose.ShizukuExpressiveTheme
 import moe.shizuku.manager.ui.compose.htmlToPlainText
 import moe.shizuku.manager.utils.CustomTabsHelper
-import moe.shizuku.manager.utils.Logger.LOGGER
+import moe.shizuku.manager.utils.Logger.Companion.LOGGER
 import rikka.shizuku.Shizuku
 import rikka.shizuku.ShizukuApiConstants.REQUEST_PERMISSION_REPLY_ALLOWED
 import rikka.shizuku.ShizukuApiConstants.REQUEST_PERMISSION_REPLY_IS_ONETIME

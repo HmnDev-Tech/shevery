@@ -14,7 +14,7 @@ import kotlinx.coroutines.flow.stateIn
 import moe.shizuku.manager.BuildConfig
 import moe.shizuku.manager.Manifest
 import moe.shizuku.manager.model.ServiceStatus
-import moe.shizuku.manager.utils.Logger.LOGGER
+import moe.shizuku.manager.utils.Logger.Companion.LOGGER
 import moe.shizuku.manager.utils.ShizukuStateMachine
 import moe.shizuku.manager.utils.ShizukuSystemApis
 import rikka.lifecycle.Resource
