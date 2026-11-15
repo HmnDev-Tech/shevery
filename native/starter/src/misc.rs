@@ -135,3 +135,41 @@ pub fn kill_old_processes(server_name: &str) {
     }
     let _ = std::io::stdout().flush();
 }
+
+#[cfg(test)]
+mod tests {
+    use super::*;
+
+    #[test]
+    fn parse_cmdline_process_name_extracts_first_trimmed_argument() {
+        assert_eq!(
+            parse_cmdline_process_name(b"shizuku_server\0--apk=/data/app/base.apk\0"),
+            "shizuku_server"
+        );
+        assert_eq!(
+            parse_cmdline_process_name(b"  /data/local/tmp/starter \0"),
+            "/data/local/tmp/starter"
+        );
+        assert_eq!(parse_cmdline_process_name(b""), "");
+    }
+
+    #[test]
+    fn is_matching_target_process_matches_name_or_libshizuku_exe() {
+        assert!(is_matching_target_process("shizuku_server", None, "shizuku_server"));
+        assert!(is_matching_target_process(
+            "/data/local/tmp/libshizuku.so",
+            None,
+            "shizuku_server"
+        ));
+        assert!(is_matching_target_process(
+            "app_process64",
+            Some("/data/app/lib/arm64/libshizuku.so"),
+            "shizuku_server"
+        ));
+        assert!(!is_matching_target_process(
+            "com.android.systemui",
+            Some("/system/bin/app_process64"),
+            "shizuku_server"
+        ));
+    }
+}

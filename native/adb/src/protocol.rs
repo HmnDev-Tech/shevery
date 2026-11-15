@@ -175,3 +175,64 @@ pub fn encode_adb_rsa_pubkey(modulus_be: &[u8], exponent: i32, name: &[u8]) -> O
     out.push(0);
     Some(out)
 }
+
+#[cfg(test)]
+mod tests {
+    use super::*;
+
+    #[test]
+    fn checksum_adb_data_sums_bytes_wrapping() {
+        assert_eq!(checksum_adb_data(&[]), 0);
+        assert_eq!(checksum_adb_data(b"hello"), 532);
+        assert_eq!(checksum_adb_data(&[0xFF, 0xFF, 0xFF, 0xFF]), 1020);
+    }
+
+    #[test]
+    fn encode_and_validate_adb_message_roundtrip() {
+        const CMD_CNXN: i32 = 0x4E584E43;
+        let payload = b"host::features=shell_v2";
+        let encoded = encode_adb_message(CMD_CNXN, 0x0100_0000, 1024 * 1024, Some(payload));
+
+        assert_eq!(encoded.len(), HEADER_LENGTH + payload.len());
+        let cmd = i32::from_le_bytes(encoded[0..4].try_into().unwrap());
+        let arg0 = i32::from_le_bytes(encoded[4..8].try_into().unwrap());
+        let arg1 = i32::from_le_bytes(encoded[8..12].try_into().unwrap());
+        let len = i32::from_le_bytes(encoded[12..16].try_into().unwrap());
+        let crc = i32::from_le_bytes(encoded[16..20].try_into().unwrap());
+        let magic = i32::from_le_bytes(encoded[20..24].try_into().unwrap());
+
+        assert_eq!(cmd, CMD_CNXN);
+        assert_eq!(arg0, 0x0100_0000);
+        assert_eq!(arg1, 1024 * 1024);
+        assert_eq!(len, payload.len() as i32);
+        assert!(validate_adb_message(cmd, len, crc, magic, Some(&encoded[HEADER_LENGTH..])));
+
+        assert!(!validate_adb_message(cmd, len, crc, magic ^ 1, Some(&encoded[HEADER_LENGTH..])));
+        assert!(!validate_adb_message(cmd, -1, crc, magic, Some(&encoded[HEADER_LENGTH..])));
+        assert!(!validate_adb_message(cmd, len, crc ^ 1, magic, Some(&encoded[HEADER_LENGTH..])));
+        assert!(!validate_adb_message(cmd, len, crc, magic, None));
+
+        let empty = encode_adb_message(CMD_CNXN, 0, 0, None);
+        assert_eq!(empty.len(), HEADER_LENGTH);
+        assert!(validate_adb_message(CMD_CNXN, 0, 0, CMD_CNXN ^ -1, None));
+    }
+
+    #[test]
+    fn encode_adb_rsa_pubkey_validates_modulus_and_formats_b64_line() {
+        assert!(encode_adb_rsa_pubkey(&[0u8; 256], 65537, b"host").is_none());
+        assert!(encode_adb_rsa_pubkey(&[0xABu8; 257], 65537, b"host").is_none());
+
+        let mut even_mod = vec![0x80u8; 256];
+        even_mod[255] = 0x10;
+        assert!(encode_adb_rsa_pubkey(&even_mod, 65537, b"host").is_none());
+
+        let mut odd_mod = vec![0u8, 0u8];
+        odd_mod.extend(std::iter::repeat(0xA5u8).take(255));
+        odd_mod.push(0xB7u8);
+        let encoded = encode_adb_rsa_pubkey(&odd_mod, 65537, b"shevery@device").unwrap();
+
+        assert!(encoded.ends_with(b" shevery@device\0"));
+        let b64_len = ((RSA_PUBLIC_KEY_SIZE + 2) / 3) * 4;
+        assert_eq!(encoded.len(), b64_len + 1 + b"shevery@device".len() + 1);
+    }
+}

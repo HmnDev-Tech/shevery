@@ -438,3 +438,20 @@ pub fn wait_for(pid: jint) -> jint {
         }
     }
 }
+
+#[cfg(test)]
+mod tests {
+    use super::*;
+
+    #[test]
+    fn parse_block_splits_nul_terminated_entries_up_to_count() {
+        let parsed = parse_block(b"-c\0id -u\0extra\0", 2);
+        assert_eq!(parsed.len(), 2);
+        assert_eq!(parsed[0].to_str().unwrap(), "-c");
+        assert_eq!(parsed[1].to_str().unwrap(), "id -u");
+
+        let partial = parse_block(b"FOO=bar\0UNTERMINATED", 4);
+        assert_eq!(partial.len(), 1);
+        assert_eq!(partial[0].to_str().unwrap(), "FOO=bar");
+    }
+}

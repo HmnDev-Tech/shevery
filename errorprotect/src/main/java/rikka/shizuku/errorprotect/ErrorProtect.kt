@@ -131,6 +131,37 @@ object ErrorProtect {
     @JvmStatic
     fun getTotalRebinds(): Int = totalRebinds.get()
 
+    @JvmStatic
+    internal fun computeBackoffDelayMs(attempts: Int): Long {
+        val shift = attempts.coerceIn(0, 4)
+        return minOf(BACKOFF_BASE_MS * (1L shl shift), MAX_BACKOFF_MS)
+    }
+
+    @JvmStatic
+    internal fun isHeartbeatOverdue(nowMs: Long, lastBeatMs: Long, timeoutMs: Long): Boolean =
+        lastBeatMs > 0L && (nowMs - lastBeatMs) >= timeoutMs
+
+    @JvmStatic
+    internal fun computeNextCheckDelayMs(
+        nowMs: Long,
+        lastBeatMs: Long,
+        timeoutMs: Long,
+        pollIntervalMs: Long
+    ): Long {
+        if (lastBeatMs <= 0L) {
+            return pollIntervalMs
+        }
+        val remainingUntilTimeout = (timeoutMs - (nowMs - lastBeatMs)).coerceAtLeast(MIN_CHECK_DELAY_MS)
+        return minOf(pollIntervalMs, remainingUntilTimeout)
+    }
+
+    @JvmStatic
+    internal fun isCriticalService(name: String): Boolean = name in CRITICAL_SERVICES
+
+    @JvmStatic
+    internal fun shouldTerminateOnExhaustedRebinds(name: String, nextAttempt: Int): Boolean =
+        nextAttempt >= MAX_REBIND_ATTEMPTS && isCriticalService(name)
+
     private fun unlinkAllServices() {
         for ((name, recipient) in deathRecipients) {
             bindings[name]?.let { binder ->
@@ -226,7 +257,7 @@ object ErrorProtect {
         val nextAttempt = attempts + 1
         if (nextAttempt >= MAX_REBIND_ATTEMPTS) {
             rebindAttempts.remove(name)
-            if (name in CRITICAL_SERVICES) {
+            if (shouldTerminateOnExhaustedRebinds(name, nextAttempt)) {
                 Log.e(
                     TAG,
                     "Critical service '$name' failed to recover after $MAX_REBIND_ATTEMPTS attempts; terminating server for starter recovery"
@@ -239,8 +270,7 @@ object ErrorProtect {
         }
 
         rebindAttempts[name] = nextAttempt
-        val shift = attempts.coerceAtMost(4)
-        val delay = minOf(BACKOFF_BASE_MS * (1L shl shift), MAX_BACKOFF_MS)
+        val delay = computeBackoffDelayMs(attempts)
         Log.w(TAG, "Rebind attempt $nextAttempt/$MAX_REBIND_ATTEMPTS for '$name' failed; retrying in ${delay}ms")
         scheduleRebind(name, delay)
     }
@@ -250,19 +280,14 @@ object ErrorProtect {
 
         val now = SystemClock.uptimeMillis()
         val beat = lastBeatTime.get()
-        var nextCheckDelay = pollIntervalMs
-
-        if (beat > 0L) {
+        if (isHeartbeatOverdue(now, beat, timeoutMs)) {
             val elapsed = now - beat
-            if (elapsed >= timeoutMs) {
-                Log.e(TAG, "Main thread heartbeat overdue by ${elapsed}ms (timeout=${timeoutMs}ms)")
-                dumpMainThreadStackTrace()
-                terminateForRecovery("heartbeat_timeout:${elapsed}ms")
-                return
-            }
-            val remainingUntilTimeout = (timeoutMs - elapsed).coerceAtLeast(MIN_CHECK_DELAY_MS)
-            nextCheckDelay = minOf(pollIntervalMs, remainingUntilTimeout)
+            Log.e(TAG, "Main thread heartbeat overdue by ${elapsed}ms (timeout=${timeoutMs}ms)")
+            dumpMainThreadStackTrace()
+            terminateForRecovery("heartbeat_timeout:${elapsed}ms")
+            return
         }
+        val nextCheckDelay = computeNextCheckDelayMs(now, beat, timeoutMs, pollIntervalMs)
 
         for (name in CRITICAL_SERVICES) {
             if (!started.get()) return
