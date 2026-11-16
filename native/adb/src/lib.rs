@@ -28,8 +28,11 @@ const N_BYTES: [u8; 32] = [
     0xc7, 0x78,
 ];
 
-const CLIENT_NAME: &[u8] = b"adb pair client";
-const SERVER_NAME: &[u8] = b"adb pair server";
+// AOSP/BoringSSL pass these names with sizeof(), i.e. including the trailing NUL
+// (16 bytes). Omitting the NUL changes the SPAKE2 transcript hash, derives a
+// different AES key, and makes every correct pairing code fail to decrypt.
+const CLIENT_NAME: &[u8] = b"adb pair client\0";
+const SERVER_NAME: &[u8] = b"adb pair server\0";
 const HKDF_INFO: &[u8] = b"adb pairing_auth aes-128-gcm key";
 
 #[inline]
@@ -560,11 +563,10 @@ pub unsafe extern "system" fn Java_moe_shizuku_manager_stealth_StealthNative_nat
         Ok(e) => e,
         Err(_) => return std::ptr::null_mut(),
     };
-    let dex = match env.convert_byte_array(&JByteArray::from_raw(j_dex)) {
+    let fixed = stealth::fix_dex_header(&match env.convert_byte_array(&JByteArray::from_raw(j_dex)) {
         Ok(v) => v,
         Err(_) => return std::ptr::null_mut(),
-    };
-    let fixed = stealth::fix_dex_header(&dex);
+    });
     env.byte_array_from_slice(&fixed)
         .map(|a| a.into_raw())
         .unwrap_or(std::ptr::null_mut())
