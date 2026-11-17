@@ -2,7 +2,10 @@
 
 package moe.shizuku.manager.about
 
+import android.content.ClipData
+import android.content.ClipboardManager
 import android.os.Bundle
+import android.widget.Toast
 import androidx.activity.compose.setContent
 import androidx.compose.foundation.Image
 import androidx.compose.foundation.background
@@ -53,6 +56,7 @@ class AboutActivity : AppActivity() {
         setContent {
             val scope = rememberCoroutineScope()
             var isCheckingUpdate by remember { mutableStateOf(false) }
+            var showSupportDialog by remember { mutableStateOf(false) }
             var appUpdateResult by remember { mutableStateOf<SheveryAppUpdateResult?>(null) }
 
             ShizukuExpressiveTheme {
@@ -121,7 +125,7 @@ class AboutActivity : AppActivity() {
                     }
 
                     item {
-                        AboutLinksGroup()
+                        AboutLinksGroup(onSupportClick = { showSupportDialog = true })
                     }
 
                     item {
@@ -154,6 +158,10 @@ class AboutActivity : AppActivity() {
                         containerColor = MaterialTheme.colorScheme.surfaceContainerHigh,
                         shape = MaterialTheme.shapes.extraLarge
                     )
+                }
+
+                if (showSupportDialog) {
+                    SupportDialog(onDismiss = { showSupportDialog = false })
                 }
 
                 appUpdateResult?.let { result ->
@@ -289,7 +297,7 @@ class AboutActivity : AppActivity() {
     }
 
     @Composable
-    private fun AboutLinksGroup() {
+    private fun AboutLinksGroup(onSupportClick: () -> Unit) {
         val context = this@AboutActivity
         SettingsGroup(title = "Resources & Community") {
             SettingsRow(
@@ -302,6 +310,13 @@ class AboutActivity : AppActivity() {
             )
             GroupDivider()
             SettingsRow(
+                icon = R.drawable.ic_outline_favorite_24,
+                title = "Support the project",
+                summary = "Crypto: TON, TRON, EVM",
+                onClick = onSupportClick
+            )
+            GroupDivider()
+            SettingsRow(
                 icon = R.drawable.ic_outline_info_24,
                 title = "Channel",
                 summary = "Join the community channel",
@@ -310,5 +325,51 @@ class AboutActivity : AppActivity() {
                 }
             )
         }
+    }
+
+    @Composable
+    private fun SupportDialog(onDismiss: () -> Unit) {
+        val wallets = listOf(
+            Triple("TON", "TON, USDT (TON), Jettons", "UQBgVFTqbaG5WbOUpvFXbUBX05PWaS2tsoAb8BvPdcOU1WYN"),
+            Triple("TRON (TRC-20)", "TRX, USDT (TRC-20)", "TPwfJNxhueYLZJUCpnpasm4h1QDqnZPsKL"),
+            Triple("EVM (Ethereum, BSC, Polygon, Arbitrum, Base)", "ETH, BNB, POL, USDT, USDC", "0xe6d48DB4f8d874A0Fd0807ca48E6c75426F6060c")
+        )
+        AlertDialog(
+            onDismissRequest = onDismiss,
+            title = { Text("Support the project") },
+            text = {
+                Column(verticalArrangement = Arrangement.spacedBy(12.dp)) {
+                    Text(
+                        text = "If you find this project useful, you can support its development via cryptocurrency transfers. Tap an address to copy it.",
+                        style = MaterialTheme.typography.bodyMedium
+                    )
+                    wallets.forEach { (network, assets, address) ->
+                        Column(
+                            modifier = Modifier
+                                .fillMaxWidth()
+                                .clip(RoundedCornerShape(12.dp))
+                                .clickable {
+                                    getSystemService(ClipboardManager::class.java)
+                                        .setPrimaryClip(ClipData.newPlainText(network, address))
+                                    Toast.makeText(this@AboutActivity, "Copied: $network", Toast.LENGTH_SHORT).show()
+                                }
+                                .padding(vertical = 4.dp)
+                        ) {
+                            Text(network, style = MaterialTheme.typography.titleSmall, fontWeight = FontWeight.Bold)
+                            Text(assets, style = MaterialTheme.typography.bodySmall, color = MaterialTheme.colorScheme.onSurfaceVariant)
+                            Text(address, style = MaterialTheme.typography.bodySmall, color = MaterialTheme.colorScheme.primary)
+                        }
+                    }
+                    Text(
+                        text = "Verify the network before sending funds. Transfers sent to an unsupported network cannot be recovered.",
+                        style = MaterialTheme.typography.bodySmall,
+                        color = MaterialTheme.colorScheme.onSurfaceVariant
+                    )
+                }
+            },
+            confirmButton = { TextButton(onClick = onDismiss) { Text(stringResource(android.R.string.ok)) } },
+            containerColor = MaterialTheme.colorScheme.surfaceContainerHigh,
+            shape = MaterialTheme.shapes.extraLarge
+        )
     }
 }
