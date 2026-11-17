@@ -255,6 +255,7 @@ dependencies {
     testImplementation 'junit:junit:4.13.2'
     testImplementation 'org.jetbrains.kotlinx:kotlinx-coroutines-test:1.11.0'
     testImplementation 'io.mockk:mockk:1.14.12'
+    testImplementation 'org.robolectric:robolectric:4.18'
 }
 
 apply from: rootProject.file('signing.gradle')

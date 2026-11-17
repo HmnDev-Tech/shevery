@@ -60,6 +60,7 @@ import rikka.shizuku.ShizukuApiConstants;
 import rikka.shizuku.errorprotect.ErrorProtect;
 import rikka.shizuku.server.api.IContentProviderUtils;
 import rikka.shizuku.server.util.Android17Compat;
+import rikka.shizuku.server.util.ClientPackageValidator;
 import rikka.shizuku.server.util.HandlerUtil;
 import rikka.shizuku.server.util.ManagerApplicationLookup;
 import rikka.shizuku.server.util.UserHandleCompat;
@@ -353,9 +354,11 @@ public class ShizukuService extends Service<ShizukuUserServiceManager, ShizukuCl
         ClientRecord clientRecord = null;
 
         List<String> packages = PackageManagerApis.getPackagesForUidNoThrow(callingUid);
-        if (!packages.contains(requestPackageName)) {
-            LOGGER.w("Request package " + requestPackageName + "does not belong to uid " + callingUid);
-            throw new SecurityException("Request package " + requestPackageName + "does not belong to uid " + callingUid);
+        try {
+            ClientPackageValidator.enforcePackageOwnership(callingUid, requestPackageName, packages);
+        } catch (SecurityException e) {
+            LOGGER.w(e.getMessage());
+            throw e;
         }
 
         isManager = MANAGER_APPLICATION_ID.equals(requestPackageName);
