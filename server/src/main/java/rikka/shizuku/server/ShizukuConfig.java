@@ -26,7 +26,7 @@ public class ShizukuConfig {
         public final int uid;
 
         @SerializedName("flags")
-        public int flags;
+        public volatile int flags;
 
         @SerializedName("packages")
         public List<String> packages;

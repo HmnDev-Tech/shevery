@@ -3,15 +3,14 @@ package rikka.shizuku.server
 import android.os.FileObserver
 import android.util.Log
 import java.io.File
-import java.util.*
 
 interface ApkChangedListener {
     fun onApkChanged()
 }
 
-private val observers = Collections.synchronizedMap(HashMap<String, ApkChangedObserver>())
-
 object ApkChangedObservers {
+
+    private val observers = mutableMapOf<String, ApkChangedObserver>()
 
     @JvmStatic
     fun start(apkPath: String, listener: ApkChangedListener) {
@@ -19,71 +18,44 @@ object ApkChangedObservers {
         // so we need to watch the parent folder
 
         val path = File(apkPath).parent!!
-        val observer = observers.getOrPut(path) {
-            ApkChangedObserver(path).apply {
-                startWatching()
+        synchronized(observers) {
+            val observer = observers.getOrPut(path) { ApkChangedObserver(path) }
+            if (observer.listeners.add(listener)) {
+                observer.startWatching()
             }
         }
-        observer.addListener(listener)
     }
 
     @JvmStatic
     fun stop(listener: ApkChangedListener) {
-        val pathToRemove = mutableListOf<String>()
-
         synchronized(observers) {
-            for ((path, observer) in observers) {
-                observer.removeListener(listener)
-
-                if (!observer.hasListeners()) {
-                    pathToRemove.add(path)
+            val iterator = observers.values.iterator()
+            while (iterator.hasNext()) {
+                val observer = iterator.next()
+                observer.listeners.remove(listener)
+                if (observer.listeners.isEmpty()) {
+                    iterator.remove()
+                    observer.stopWatching()
                 }
             }
         }
+    }
 
-        for (path in pathToRemove) {
-            observers.remove(path)?.stopWatching()
+    private class ApkChangedObserver(private val directory: String) : FileObserver(directory, DELETE) {
+        val listeners = mutableSetOf<ApkChangedListener>()
+
+        override fun onEvent(event: Int, path: String?) {
+            Log.d("ShizukuServer", "onEvent: ${eventToString(event)} $path")
+            if (event and DELETE == 0 || path != "base.apk") return
+
+            val snapshot = synchronized(ApkChangedObservers.observers) {
+                if (ApkChangedObservers.observers[directory] !== this) return
+                ApkChangedObservers.observers.remove(directory)
+                stopWatching()
+                listeners.toList()
+            }
+            snapshot.forEach { it.onApkChanged() }
         }
-    }
-}
-
-class ApkChangedObserver(private val path: String) : FileObserver(path, DELETE) {
-
-    private val listeners = mutableSetOf<ApkChangedListener>()
-
-    fun addListener(listener: ApkChangedListener): Boolean {
-        return listeners.add(listener)
-    }
-
-    fun removeListener(listener: ApkChangedListener): Boolean {
-        return listeners.remove(listener)
-    }
-
-    fun hasListeners(): Boolean {
-        return listeners.isNotEmpty()
-    }
-
-    override fun onEvent(event: Int, path: String?) {
-        Log.d("ShizukuServer", "onEvent: ${eventToString(event)} $path")
-
-        if ((event and 0x00008000 /* IN_IGNORED */) != 0 || path == null) {
-            return
-        }
-
-        if (path == "base.apk") {
-            stopWatching()
-            ArrayList(listeners).forEach { it.onApkChanged() }
-        }
-    }
-
-    override fun startWatching() {
-        super.startWatching()
-        Log.d("ShizukuServer", "start watching $path")
-    }
-
-    override fun stopWatching() {
-        super.stopWatching()
-        Log.d("ShizukuServer", "stop watching $path")
     }
 }
 

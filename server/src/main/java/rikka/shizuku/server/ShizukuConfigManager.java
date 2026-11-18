@@ -92,7 +92,9 @@ public class ShizukuConfigManager extends ConfigManager {
 
         @Override
         public void run() {
-            write(config);
+            synchronized (ShizukuConfigManager.this) {
+                write(config);
+            }
         }
     };
 
@@ -183,8 +185,7 @@ public class ShizukuConfigManager extends ConfigManager {
                 // PRIVILEGED_API is a signature-level permission.
                 // Only grant if the system permission is actually held (e.g. system signature app).
                 if (allowed) {
-                    updateLocked(uid, packages, ConfigManager.MASK_PERMISSION, ConfigManager.FLAG_ALLOWED);
-                    changed = true;
+                    changed |= updateLocked(uid, packages, ConfigManager.MASK_PERMISSION, ConfigManager.FLAG_ALLOWED);
                 }
             }
         }
@@ -216,17 +217,19 @@ public class ShizukuConfigManager extends ConfigManager {
         }
     }
 
-    private void updateLocked(int uid, List<String> packages, int mask, int values) {
+    private boolean updateLocked(int uid, List<String> packages, int mask, int values) {
         ShizukuConfig.PackageEntry entry = findLocked(uid);
+        boolean changed = false;
         if (entry == null) {
             entry = new ShizukuConfig.PackageEntry(uid, mask & values);
             config.packages.add(entry);
+            changed = true;
         } else {
             int newValue = (entry.flags & ~mask) | (mask & values);
-            if (newValue == entry.flags) {
-                return;
+            if (newValue != entry.flags) {
+                entry.flags = newValue;
+                changed = true;
             }
-            entry.flags = newValue;
         }
         if (packages != null) {
             for (String packageName : packages) {
@@ -234,15 +237,18 @@ public class ShizukuConfigManager extends ConfigManager {
                     continue;
                 }
                 entry.packages.add(packageName);
+                changed = true;
             }
         }
-        scheduleWriteLocked();
+        return changed;
     }
 
     @Override
     public void update(int uid, List<String> packages, int mask, int values) {
         synchronized (this) {
-            updateLocked(uid, packages, mask, values);
+            if (updateLocked(uid, packages, mask, values)) {
+                scheduleWriteLocked();
+            }
         }
     }
 
