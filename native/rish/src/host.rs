@@ -112,11 +112,11 @@ pub fn start_host(
     let mut stdout_pipe = [-1; 2];
     let mut stderr_pipe = [-1; 2];
 
-    // Safety: Creating pipe2 descriptors with flag 0 as needed for non-tty pipes.
+    // Create both ends with close-on-exec so another concurrent fork cannot inherit them.
     let pipe_failed = unsafe {
-        (!in_tty && libc::pipe2(stdin_pipe.as_mut_ptr(), 0) != 0)
-            || (!out_tty && libc::pipe2(stdout_pipe.as_mut_ptr(), 0) != 0)
-            || (!err_tty && libc::pipe2(stderr_pipe.as_mut_ptr(), 0) != 0)
+        (!in_tty && libc::pipe2(stdin_pipe.as_mut_ptr(), libc::O_CLOEXEC) != 0)
+            || (!out_tty && libc::pipe2(stdout_pipe.as_mut_ptr(), libc::O_CLOEXEC) != 0)
+            || (!err_tty && libc::pipe2(stderr_pipe.as_mut_ptr(), libc::O_CLOEXEC) != 0)
     };
     if pipe_failed {
         unsafe {
@@ -165,7 +165,7 @@ pub fn start_host(
     let dir_str = if !dir_block.is_null() {
         env.convert_byte_array(&dir_block)
             .ok()
-            .and_then(|b| CString::new(b).ok())
+            .and_then(|bytes| CString::from_vec_with_nul(bytes).ok())
     } else {
         None
     };
@@ -197,19 +197,6 @@ pub fn start_host(
                 kill_child(pid);
             }
         };
-
-        // Safety: Configuring FD_CLOEXEC on host-side pipes.
-        unsafe {
-            if !in_tty {
-                libc::fcntl(stdin_pipe[1], libc::F_SETFD, libc::FD_CLOEXEC);
-            }
-            if !out_tty {
-                libc::fcntl(stdout_pipe[0], libc::F_SETFD, libc::FD_CLOEXEC);
-            }
-            if !err_tty {
-                libc::fcntl(stderr_pipe[0], libc::F_SETFD, libc::FD_CLOEXEC);
-            }
-        }
 
         let dup_pty = move || -> c_int {
             // Safety: Duplicating ptmx descriptor with F_DUPFD_CLOEXEC.
