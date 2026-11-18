@@ -636,10 +636,6 @@ fun ComputScreen(
                 .fillMaxSize()
                 .padding(innerPadding)
         ) {
-            SnackbarHost(
-                hostState = snackbarHostState,
-                modifier = Modifier.align(Alignment.BottomCenter)
-            )
             LazyColumn(
                 state = listState,
                 modifier = Modifier
@@ -1073,6 +1069,18 @@ fun ComputScreen(
                 )
             }
         }
+            SnackbarHost(
+                hostState = snackbarHostState,
+                modifier = Modifier
+                    .align(Alignment.BottomCenter)
+                    .padding(
+                        bottom = if (navBarState.value) {
+                            88.dp + WindowInsets.navigationBars.asPaddingValues().calculateBottomPadding()
+                        } else {
+                            0.dp
+                        }
+                    )
+            )
     }
 
     // Modal BottomSheet for Commandium AI Studio
