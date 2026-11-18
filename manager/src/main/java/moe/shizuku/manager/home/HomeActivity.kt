@@ -139,6 +139,7 @@ import moe.shizuku.manager.app.AppActivity
 import moe.shizuku.manager.deviceowner.DeviceOwnerManager
 import moe.shizuku.manager.management.ApplicationManagementActivity
 import moe.shizuku.manager.module.AdbModuleManager
+import moe.shizuku.manager.module.InstallZipModuleActivity
 import moe.shizuku.manager.module.update.SheveryAppUpdateDialog
 import moe.shizuku.manager.module.update.SheveryAppUpdateResult
 import moe.shizuku.manager.management.appsViewModel
@@ -174,7 +175,6 @@ import moe.shizuku.manager.compat.StubManager
 import moe.shizuku.manager.utils.ShizukuStateMachine
 import androidx.lifecycle.lifecycleScope
 import kotlinx.coroutines.*
-import java.io.File
 
 abstract class HomeActivity : AppActivity() {
 
@@ -426,9 +426,9 @@ abstract class HomeActivity : AppActivity() {
             LaunchedEffect(incomingZip) {
                 val path = incomingZip ?: return@LaunchedEffect
                 incomingZipPath.value = null
-                if (!consumedZipPaths.add(path)) return@LaunchedEffect
+                val zipFile = InstallZipModuleActivity.takeConfirmedArchive(path)
+                    ?: return@LaunchedEffect
                 selectedTab = 1
-                val zipFile = File(path)
                 AdbModuleManager.launchInstallFromUri(
                     context = applicationContext,
                     uri = Uri.fromFile(zipFile),
@@ -1232,7 +1232,6 @@ abstract class HomeActivity : AppActivity() {
         const val EXTRA_ZIP_PATH = "moe.shizuku.manager.extra.ZIP_PATH"
 
         /** Main-thread only: guards against re-installing the same shared ZIP after a config change. */
-        private val consumedZipPaths = mutableSetOf<String>()
     }
 }
 

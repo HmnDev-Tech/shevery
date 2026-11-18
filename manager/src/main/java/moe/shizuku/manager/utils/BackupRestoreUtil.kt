@@ -1,27 +1,31 @@
 package moe.shizuku.manager.utils
 
 import android.content.Context
+import android.content.SharedPreferences
+import kotlinx.coroutines.sync.withLock
 import moe.shizuku.manager.ShizukuSettings
 import moe.shizuku.manager.authorization.AuthorizationManager
 import moe.shizuku.manager.module.AdbModuleManager
+import moe.shizuku.manager.module.ModuleSettings
 import org.json.JSONArray
 import org.json.JSONObject
-import java.io.BufferedInputStream
+import rikka.shizuku.Shizuku
 import java.io.ByteArrayOutputStream
 import java.io.File
 import java.io.InputStream
 import java.io.OutputStream
 import java.util.zip.ZipEntry
-import java.util.zip.ZipInputStream
+import java.util.zip.ZipFile
 import java.util.zip.ZipOutputStream
 
 object BackupRestoreUtil {
 
     private const val MAX_ENTRIES = 4096
     private const val MAX_TOTAL_BYTES = 128L * 1024L * 1024L
-    private const val MAX_JSON_BYTES = 2 * 1024 * 1024
+    private const val MAX_JSON_BYTES = 2L * 1024L * 1024L
+    private const val MAX_ARCHIVE_BYTES = 144L * 1024L * 1024L
 
-    fun backup(context: Context, outputStream: OutputStream) {
+    suspend fun backup(context: Context, outputStream: OutputStream) = AdbModuleManager.storageMutex.withLock {
         val zipOutputStream = ZipOutputStream(outputStream)
         try {
             // 1. Backup Settings (the connector token has its own file and is never exported)
@@ -29,7 +33,7 @@ object BackupRestoreUtil {
             val allPrefs = ShizukuSettings.getPreferences().all
             for ((key, value) in allPrefs) {
                 if (value == null) continue
-                if (key == ShizukuSettings.AUTH_TOKEN) continue
+                if (isLocalOnlySetting(key)) continue
                 val entryObj = JSONObject()
                 when (value) {
                     is Boolean -> {
@@ -70,151 +74,149 @@ object BackupRestoreUtil {
             zipOutputStream.closeEntry()
 
             // 2. Backup Allowed Apps
-            val allowedAppsJson = JSONArray()
-            for (pi in AuthorizationManager.getPackages()) {
-                val uid = pi.applicationInfo?.uid ?: continue
-                if (AuthorizationManager.granted(pi.packageName, uid)) {
-                    allowedAppsJson.put(pi.packageName)
+            if (Shizuku.pingBinder()) {
+                val allowedAppsJson = JSONArray()
+                for (pi in AuthorizationManager.getPackages()) {
+                    val uid = pi.applicationInfo?.uid ?: continue
+                    if (!AuthorizationManager.isOneTime(uid) && AuthorizationManager.granted(pi.packageName, uid)) {
+                        allowedAppsJson.put(pi.packageName)
+                    }
                 }
+                zipOutputStream.putNextEntry(ZipEntry("allowed_apps.json"))
+                zipOutputStream.write(allowedAppsJson.toString(2).toByteArray(Charsets.UTF_8))
+                zipOutputStream.closeEntry()
             }
-            zipOutputStream.putNextEntry(ZipEntry("allowed_apps.json"))
-            zipOutputStream.write(allowedAppsJson.toString(2).toByteArray(Charsets.UTF_8))
-            zipOutputStream.closeEntry()
 
             // 3. Backup Modules
             val modulesRoot = AdbModuleManager.modulesRoot(context)
             if (modulesRoot.exists() && modulesRoot.isDirectory) {
-                modulesRoot.walkTopDown().forEach { file ->
-                    if (file == modulesRoot) return@forEach
-                    val relativePath = file.relativeTo(modulesRoot).path.replace('\\', '/')
-                    val entryName = "modules/$relativePath" + if (file.isDirectory) "/" else ""
-                    zipOutputStream.putNextEntry(ZipEntry(entryName))
-                    if (file.isFile) {
-                        file.inputStream().use { input ->
-                            input.copyTo(zipOutputStream)
+                modulesRoot.walkTopDown()
+                    .onEnter { it.parentFile != modulesRoot || !it.name.startsWith(".") }
+                    .forEach { file ->
+                        if (file == modulesRoot) return@forEach
+                        val relativePath = file.relativeTo(modulesRoot).path.replace('\\', '/')
+                        val entryName = "modules/$relativePath" + if (file.isDirectory) "/" else ""
+                        zipOutputStream.putNextEntry(ZipEntry(entryName))
+                        if (file.isFile) {
+                            file.inputStream().use { input ->
+                                input.copyTo(zipOutputStream)
+                            }
                         }
+                        zipOutputStream.closeEntry()
                     }
-                    zipOutputStream.closeEntry()
-                }
             }
         } finally {
             zipOutputStream.finish()
         }
     }
 
-    /**
-     * Restore is transactional: the archive is fully validated and extracted into a
-     * staging directory first. Existing modules and preferences are replaced only after
-     * that succeeds, so a truncated or malicious archive cannot destroy current data.
-     */
-    fun restore(context: Context, inputStream: InputStream) {
-        val modulesRoot = AdbModuleManager.modulesRoot(context)
-        val parent = modulesRoot.parentFile ?: error("Modules root has no parent directory.")
-        val staging = File(parent, ".restore-${System.nanoTime()}")
-        staging.deleteRecursively()
-        check(staging.mkdirs()) { "Unable to create the restore staging directory." }
+    suspend fun restore(context: Context, inputStream: InputStream) {
+        val archive = File.createTempFile("shevery-backup-", ".zip", context.cacheDir)
+        try {
+            archive.outputStream().use { inputStream.copyZipBytesTo(it, MAX_ARCHIVE_BYTES) }
+            AdbModuleManager.storageMutex.withLock { restoreArchive(context, archive) }
+        } finally {
+            archive.delete()
+        }
+    }
 
-        var entryCount = 0
+    private fun restoreArchive(context: Context, archive: File) {
+        val modulesRoot = AdbModuleManager.modulesRoot(context)
+        val parent = checkNotNull(modulesRoot.parentFile)
+        val staging = File(parent, ".restore-${System.nanoTime()}")
+        check(staging.mkdir()) { "Unable to create the restore staging directory." }
+
         var extractedBytes = 0L
+        val extractedPaths = mutableSetOf<String>()
         var hasModules = false
-        var settingsJson: JSONObject? = null
-        var allowedApps: JSONArray? = null
+        var settings: SharedPreferences.Editor? = null
+        var allowedApps: Set<String>? = null
 
         try {
-            ZipInputStream(BufferedInputStream(inputStream)).use { zip ->
-                while (true) {
-                    val entry = zip.nextEntry ?: break
-                    entryCount++
-                    require(entryCount <= MAX_ENTRIES) { "Backup contains too many entries." }
-
-                    val cleanName = entry.name.replace('\\', '/').trim('/')
-                    require(cleanName.isNotEmpty()) { "Backup contains an empty entry name." }
-                    require(!cleanName.startsWith("/") && !cleanName.contains("../")) {
+            ZipFile(archive).use { zip ->
+                require(zip.size() in 1..MAX_ENTRIES) { "Backup has an invalid number of entries." }
+                for (entry in zip.entries().asSequence()) {
+                    val cleanName = entry.name.replace('\\', '/').trimEnd('/')
+                    require(cleanName.split('/').none { it.isBlank() || it == "." || it == ".." }) {
                         "Unsafe path in backup: ${entry.name}"
                     }
-
+                    require(extractedPaths.add(cleanName)) { "Duplicate backup entry: ${entry.name}" }
                     when {
                         cleanName == "settings.json" -> {
-                            settingsJson = JSONObject(readEntryText(zip, MAX_JSON_BYTES))
+                            settings = prepareSettings(JSONObject(readEntryText(zip, entry)))
                         }
                         cleanName == "allowed_apps.json" -> {
-                            allowedApps = JSONArray(readEntryText(zip, MAX_JSON_BYTES))
+                            val apps = JSONArray(readEntryText(zip, entry))
+                            allowedApps = (0 until apps.length()).map { apps.getString(it) }.toSet()
                         }
                         cleanName.startsWith("modules/") -> {
+                            val relativePath = cleanName.removePrefix("modules/")
+                            // Older backups could include leftover installation directories.
+                            if (relativePath.startsWith(".")) continue
                             hasModules = true
-                            val relativePath = cleanName.substring("modules/".length)
-                            if (relativePath.isNotEmpty()) {
-                                val outFile = File(staging, relativePath)
-                                ensureInside(staging, outFile)
-                                if (entry.isDirectory) {
-                                    outFile.mkdirs()
-                                } else {
-                                    outFile.parentFile?.mkdirs()
-                                    extractedBytes += copyEntry(
-                                        zip,
-                                        outFile,
-                                        MAX_TOTAL_BYTES - extractedBytes
-                                    )
+                            val outFile = File(staging, relativePath)
+                            ensureInside(staging, outFile)
+                            if (entry.isDirectory) {
+                                check(outFile.isDirectory || outFile.mkdirs())
+                            } else {
+                                val directory = checkNotNull(outFile.parentFile)
+                                check(directory.isDirectory || directory.mkdirs())
+                                extractedBytes += outFile.outputStream().use {
+                                    zip.copyVerifiedEntryTo(entry, it, MAX_TOTAL_BYTES - extractedBytes)
                                 }
                             }
                         }
                     }
-
-                    zip.closeEntry()
                 }
+            }
+            require(settings != null || allowedApps != null || hasModules) { "No Shevery backup data found." }
+            check(allowedApps == null || Shizuku.pingBinder()) {
+                "Start the Shevery service before restoring app permissions."
             }
 
             if (hasModules) {
-                val backup = File(parent, ".modules-before-restore")
-                backup.deleteRecursively()
-                if (modulesRoot.exists()) {
-                    check(modulesRoot.renameTo(backup)) {
-                        "Unable to stage the current modules directory."
+                staging.listFiles().orEmpty().forEach { directory ->
+                    if (directory.resolve("module.prop").exists()) {
+                        val module = requireNotNull(AdbModuleManager.readModule(directory)) {
+                            "Invalid module metadata in ${directory.name}."
+                        }
+                        require(module.id == directory.name) { "Module ID does not match its directory." }
+                        val action = module.actionScript?.relativeTo(directory)?.path
+                        AdbModuleManager.markScriptsExecutable(directory, action)
                     }
                 }
-                if (!staging.renameTo(modulesRoot)) {
-                    if (backup.exists()) backup.renameTo(modulesRoot)
-                    error("Unable to activate the restored modules directory.")
+                staging.setReadable(true, false)
+                staging.setExecutable(true, false)
+                synchronized(AdbModuleManager) {
+                    val backup = File(parent, AdbModuleManager.MODULES_RESTORE_BACKUP)
+                    check(backup.deleteRecursively()) { "Unable to clear the old restore directory." }
+                    // Full Trust must be granted to the restored content by the current user.
+                    ModuleSettings.clearTrustedModules(persistNow = true)
+                    check(modulesRoot.renameTo(backup)) { "Unable to stage the current modules directory." }
+                    if (!staging.renameTo(modulesRoot)) {
+                        check(backup.renameTo(modulesRoot)) { "Unable to recover modules from ${backup.name}." }
+                        error("Unable to activate the restored modules directory.")
+                    }
+                    backup.deleteRecursively()
                 }
-                backup.deleteRecursively()
-                markScriptsExecutable(modulesRoot)
+                AdbModuleManager.notifyModulesChanged()
             }
 
-            settingsJson?.let { applySettings(it) }
+            settings?.let { check(it.commit()) { "Unable to save restored settings." } }
             allowedApps?.let { applyAllowedApps(it) }
-        } catch (t: Throwable) {
+        } finally {
             staging.deleteRecursively()
-            throw t
         }
     }
 
-    private fun readEntryText(input: InputStream, maxBytes: Int): String {
+    private fun readEntryText(zip: ZipFile, entry: ZipEntry): String {
         val out = ByteArrayOutputStream()
-        val buffer = ByteArray(4096)
-        while (true) {
-            val read = input.read(buffer)
-            if (read <= 0) break
-            require(out.size() + read <= maxBytes) { "Backup metadata is too large." }
-            out.write(buffer, 0, read)
-        }
+        zip.copyVerifiedEntryTo(entry, out, MAX_JSON_BYTES)
         return out.toString("UTF-8")
     }
 
-    private fun copyEntry(input: InputStream, outFile: File, remaining: Long): Long {
-        require(remaining > 0L) { "Backup is too large." }
-        var written = 0L
-        outFile.outputStream().use { output ->
-            val buffer = ByteArray(8192)
-            while (true) {
-                val read = input.read(buffer)
-                if (read <= 0) break
-                written += read
-                require(written <= remaining) { "Backup is too large." }
-                output.write(buffer, 0, read)
-            }
-        }
-        return written
-    }
+    private fun isLocalOnlySetting(key: String): Boolean =
+        key == ShizukuSettings.AUTH_TOKEN || key == ModuleSettings.KEY_TRUSTED_MODULES
 
     private fun ensureInside(root: File, file: File) {
         val rootPath = root.canonicalFile.toPath()
@@ -222,13 +224,13 @@ object BackupRestoreUtil {
         require(filePath.startsWith(rootPath)) { "Path escapes the restore directory." }
     }
 
-    private fun applySettings(json: JSONObject) {
+    private fun prepareSettings(json: JSONObject): SharedPreferences.Editor {
         val editor = ShizukuSettings.getPreferences().edit()
         editor.clear()
         val keys = json.keys()
         while (keys.hasNext()) {
             val key = keys.next()
-            if (key == ShizukuSettings.AUTH_TOKEN) continue
+            if (isLocalOnlySetting(key)) continue
             val entryObj = json.getJSONObject(key)
             when (entryObj.getString("type")) {
                 "Boolean" -> editor.putBoolean(key, entryObj.getBoolean("value"))
@@ -244,16 +246,13 @@ object BackupRestoreUtil {
                     }
                     editor.putStringSet(key, set)
                 }
+                else -> error("Unsupported setting type for $key.")
             }
         }
-        editor.commit()
+        return editor
     }
 
-    private fun applyAllowedApps(array: JSONArray) {
-        val allowedSet = mutableSetOf<String>()
-        for (i in 0 until array.length()) {
-            allowedSet.add(array.getString(i))
-        }
+    private fun applyAllowedApps(allowedSet: Set<String>) {
         for (pi in AuthorizationManager.getPackages()) {
             val uid = pi.applicationInfo?.uid ?: continue
             if (allowedSet.contains(pi.packageName)) {
@@ -262,11 +261,5 @@ object BackupRestoreUtil {
                 AuthorizationManager.revoke(pi.packageName, uid)
             }
         }
-    }
-
-    private fun markScriptsExecutable(directory: File) {
-        directory.walkTopDown()
-            .filter { it.isFile && it.extension == "sh" }
-            .forEach { it.setExecutable(true, false) }
     }
 }
