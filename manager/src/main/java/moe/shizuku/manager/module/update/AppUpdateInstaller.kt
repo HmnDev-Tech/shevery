@@ -173,12 +173,7 @@ object AppUpdateInstaller {
             }
         }
         val filter = IntentFilter(ACTION_INSTALL_STATUS)
-        val flags = if (Build.VERSION.SDK_INT >= Build.VERSION_CODES.TIRAMISU) {
-            ContextCompat.RECEIVER_NOT_EXPORTED
-        } else {
-            0
-        }
-        ContextCompat.registerReceiver(context, receiver, filter, flags)
+        ContextCompat.registerReceiver(context, receiver, filter, ContextCompat.RECEIVER_NOT_EXPORTED)
         return Closeable { runCatching { context.unregisterReceiver(receiver) } }
     }
 

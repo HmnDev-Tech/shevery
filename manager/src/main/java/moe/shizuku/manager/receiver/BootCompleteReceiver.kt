@@ -151,16 +151,11 @@ class BootCompleteReceiver : BroadcastReceiver() {
         }
 
         try {
-            val receiverFlags = if (Build.VERSION.SDK_INT >= Build.VERSION_CODES.S) {
-                ContextCompat.RECEIVER_EXPORTED
-            } else {
-                0 // No flag needed on pre-S
-            }
             ContextCompat.registerReceiver(
                 appContext,
                 unlockReceiver,
                 IntentFilter(Intent.ACTION_USER_PRESENT),
-                receiverFlags
+                ContextCompat.RECEIVER_EXPORTED
             )
         } catch (e: Exception) {
             Log.w(AppConstants.TAG, "Failed to register unlock receiver", e)
