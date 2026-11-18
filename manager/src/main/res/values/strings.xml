@@ -416,6 +416,7 @@ Wi-Fi is required for the first restart because Shevery must connect to the curr
     <string name="network_firewall_change_failed">Could not apply the firewall rule. Check that Shevery is running with Shizuku permission.</string>
     <string name="network_firewall_auto_on_install_title">Auto-firewall app on install (Experimental)</string>
     <string name="network_firewall_auto_on_install_summary">Automatically block network access for newly installed apps</string>
+    <string name="network_firewall_system_uid_unsupported">System UID cannot be blocked</string>
     <string name="settings_service_group">Service Maintenance</string>
     <string name="settings_application">Application</string>
     <string name="settings_appearance">Appearance</string>
