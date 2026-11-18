@@ -57,21 +57,26 @@ class NetworkFirewallActivity : AppActivity() {
             val scope = rememberCoroutineScope()
             var refresh by remember { mutableStateOf(0) }
             var apps by remember { mutableStateOf(emptyList<FirewallApp>()) }
-            var blocked by remember { mutableStateOf(NetworkFirewallManager.blockedPackages()) }
+            var blocked by remember { mutableStateOf(emptySet<String>()) }
             var autoFirewallOnInstall by remember {
                 mutableStateOf(NetworkFirewallManager.isAutoFirewallOnInstall())
             }
             var searchQuery by rememberSaveable { mutableStateOf("") }
             var changing by remember { mutableStateOf(emptySet<String>()) }
             LifecycleEventEffect(Lifecycle.Event.ON_RESUME) {
-                blocked = NetworkFirewallManager.blockedPackages()
                 autoFirewallOnInstall = NetworkFirewallManager.isAutoFirewallOnInstall()
                 refresh++
             }
             androidx.compose.runtime.LaunchedEffect(refresh) {
-                apps = withContext(Dispatchers.IO) { loadApps() }
-                NetworkFirewallManager.retainInstalledPackages(apps.map { it.packageName }.toSet())
-                blocked = NetworkFirewallManager.blockedPackages()
+                val (installed, effectiveRules) = withContext(Dispatchers.IO) {
+                    val installed = loadApps()
+                    val rules = NetworkFirewallManager.effectiveBlockedPackages(
+                        installed.map { it.packageName }.toSet()
+                    )
+                    installed to rules
+                }
+                apps = installed
+                blocked = effectiveRules
             }
             val filteredApps = remember(apps, blocked, searchQuery) {
                 val query = searchQuery.trim()
@@ -186,7 +191,7 @@ class NetworkFirewallActivity : AppActivity() {
                                     }
                                     changing = changing - app.packageName
                                     if (applied) {
-                                        blocked = NetworkFirewallManager.blockedPackages()
+                                        refresh++
                                     } else {
                                         Toast.makeText(
                                             context,
