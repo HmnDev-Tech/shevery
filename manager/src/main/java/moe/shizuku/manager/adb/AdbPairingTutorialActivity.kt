@@ -12,16 +12,22 @@ import android.util.Log
 import android.widget.Toast
 import androidx.activity.compose.setContent
 import androidx.annotation.RequiresApi
+import androidx.compose.foundation.layout.Arrangement
+import androidx.compose.foundation.layout.Row
 import androidx.compose.material3.Button
+import androidx.compose.material3.OutlinedButton
 import androidx.compose.material3.FilledTonalButton
 import androidx.compose.material3.Text
 import androidx.compose.runtime.getValue
 import androidx.compose.runtime.mutableStateOf
+import androidx.compose.runtime.remember
 import androidx.compose.runtime.setValue
 import androidx.compose.ui.res.stringResource
+import androidx.compose.ui.unit.dp
 import moe.shizuku.manager.AppConstants
 import moe.shizuku.manager.R
 import moe.shizuku.manager.app.AppActivity
+import moe.shizuku.manager.home.AdbPairDialog
 import moe.shizuku.manager.ui.compose.ExpressiveCard
 import moe.shizuku.manager.ui.compose.ShizukuExpressiveTheme
 import moe.shizuku.manager.ui.compose.ShizukuLazyScaffold
@@ -43,6 +49,8 @@ class AdbPairingTutorialActivity : AppActivity() {
         }
 
         setContent {
+            var showManualPairingDialog by remember { mutableStateOf(false) }
+
             ShizukuExpressiveTheme {
                 ShizukuLazyScaffold(
                     title = stringResource(R.string.adb_pairing_tutorial_title),
@@ -73,8 +81,13 @@ class AdbPairingTutorialActivity : AppActivity() {
                                 body = stringResource(R.string.adb_pairing_tutorial_content_notification_blocked),
                                 danger = true
                             ) {
-                                Button(onClick = ::openNotificationSettings) {
-                                    Text(stringResource(R.string.notification_settings))
+                                Row(horizontalArrangement = Arrangement.spacedBy(8.dp)) {
+                                    Button(onClick = ::openNotificationSettings) {
+                                        Text(stringResource(R.string.notification_settings))
+                                    }
+                                    OutlinedButton(onClick = { showManualPairingDialog = true }) {
+                                        Text(stringResource(R.string.adb_pairing_manual_input))
+                                    }
                                 }
                             }
                         }
@@ -110,7 +123,12 @@ class AdbPairingTutorialActivity : AppActivity() {
                             StepRow(
                                 number = 2,
                                 title = stringResource(R.string.adb_pairing_tutorial_content_enter_pairing_code),
-                                body = stringResource(R.string.adb_pairing_tutorial_content_notification)
+                                body = stringResource(R.string.adb_pairing_tutorial_content_notification),
+                                action = {
+                                    FilledTonalButton(onClick = { showManualPairingDialog = true }) {
+                                        Text(stringResource(R.string.adb_pairing_manual_input))
+                                    }
+                                }
                             )
                         }
                         item {
@@ -125,6 +143,23 @@ class AdbPairingTutorialActivity : AppActivity() {
                             )
                         }
                     }
+                }
+
+                if (showManualPairingDialog) {
+                    AdbPairDialog(
+                        inPairingWindow = true,
+                        allowManualInput = true,
+                        onDismissRequest = { showManualPairingDialog = false },
+                        onPairSuccess = {
+                            showManualPairingDialog = false
+                            Toast.makeText(
+                                this@AdbPairingTutorialActivity,
+                                R.string.notification_adb_pairing_succeed_title,
+                                Toast.LENGTH_SHORT
+                            ).show()
+                            finish()
+                        }
+                    )
                 }
             }
         }

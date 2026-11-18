@@ -39,7 +39,7 @@ class AdbPairingService : Service() {
             return Intent(context, AdbPairingService::class.java).setAction(startAction)
         }
 
-        private fun stopIntent(context: Context): Intent {
+        fun stopIntent(context: Context): Intent {
             return Intent(context, AdbPairingService::class.java).setAction(stopAction)
         }
 
@@ -153,8 +153,8 @@ class AdbPairingService : Service() {
                 return@launch
             }
 
-            AdbPairingClient(host, port, code, key).runCatching {
-                start()
+            runCatching {
+                AdbPairingClient(host, port, code, key).use { it.start() }
             }.onFailure {
                 handleResult(false, it)
             }.onSuccess {

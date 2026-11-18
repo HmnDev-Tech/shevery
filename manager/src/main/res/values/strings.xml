@@ -49,6 +49,7 @@
     <string name="dialog_adb_pairing_title">Pair with device</string>
     <string name="dialog_adb_pairing_discovery">Searching for pairing service</string>
     <string name="dialog_adb_pairing_paring_code">Pairing code</string>
+    <string name="adb_pairing_manual_input">Manual input</string>
     <string name="paring_code_is_wrong">Pairing code is wrong.</string>
     <string name="cannot_connect_port">Can\'t connect to wireless debugging service.</string>
     <string name="dialog_wireless_adb_not_enabled">Wireless debugging is not enabled.\nNote, before Android 11, to enable wireless debugging, computer connection is a must.</string>
