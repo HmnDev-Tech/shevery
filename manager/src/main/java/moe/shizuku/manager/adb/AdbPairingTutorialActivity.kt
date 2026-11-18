@@ -26,6 +26,7 @@ import moe.shizuku.manager.ui.compose.ExpressiveCard
 import moe.shizuku.manager.ui.compose.ShizukuExpressiveTheme
 import moe.shizuku.manager.ui.compose.ShizukuLazyScaffold
 import moe.shizuku.manager.ui.compose.StepRow
+import moe.shizuku.manager.utils.SettingsHelper
 import rikka.compatibility.DeviceCompatibility
 
 @RequiresApi(Build.VERSION_CODES.R)
@@ -130,13 +131,7 @@ class AdbPairingTutorialActivity : AppActivity() {
     }
 
     private fun openDeveloperOptions() {
-        val intent = Intent(Settings.ACTION_APPLICATION_DEVELOPMENT_SETTINGS)
-        intent.flags = Intent.FLAG_ACTIVITY_NEW_TASK or Intent.FLAG_ACTIVITY_CLEAR_TASK
-        intent.putExtra(":settings:fragment_args_key", "toggle_adb_wireless")
-        try {
-            startActivity(intent)
-        } catch (_: ActivityNotFoundException) {
-        }
+        SettingsHelper.launchWirelessDebugging(this)
     }
 
     private fun openNotificationSettings() {

@@ -44,6 +44,7 @@ import moe.shizuku.manager.adb.AdbArm
 import moe.shizuku.manager.adb.AdbMdns
 import moe.shizuku.manager.adb.AdbStarter
 import moe.shizuku.manager.utils.EnvironmentUtils
+import moe.shizuku.manager.utils.SettingsHelper
 
 @RequiresApi(Build.VERSION_CODES.R)
 @Composable
@@ -149,14 +150,7 @@ fun AdbDiscoveryDialog(
                 }
                 Button(
                     onClick = {
-                        val intent = Intent(Settings.ACTION_APPLICATION_DEVELOPMENT_SETTINGS).apply {
-                            flags = Intent.FLAG_ACTIVITY_NEW_TASK or Intent.FLAG_ACTIVITY_CLEAR_TASK
-                            putExtra(":settings:fragment_args_key", "toggle_adb_wireless")
-                        }
-                        try {
-                            context.startActivity(intent)
-                        } catch (_: ActivityNotFoundException) {
-                        }
+                        SettingsHelper.launchWirelessDebugging(context)
                     }
                 ) {
                     Text(stringResource(R.string.development_settings))
