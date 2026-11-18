@@ -17,6 +17,7 @@ import java.io.FileOutputStream;
 import java.io.IOException;
 import java.io.InputStreamReader;
 import java.util.ArrayList;
+import java.util.Collections;
 import java.util.LinkedHashSet;
 import java.util.List;
 import java.util.Set;
@@ -123,20 +124,7 @@ public class ShizukuConfigManager extends ConfigManager {
                 continue;
             }
 
-            if (entry.packages.isEmpty()) {
-                entry.packages.addAll(packages);
-                changed = true;
-                continue;
-            }
-
-            boolean packagesChanged = true;
-
-            for (String packageName : entry.packages) {
-                if (packages.contains(packageName)) {
-                    packagesChanged = false;
-                    break;
-                }
-            }
+            boolean packagesChanged = Collections.disjoint(entry.packages, packages);
 
             final int rawSize = entry.packages.size();
             Set<String> s = new LinkedHashSet<>(entry.packages);
@@ -176,15 +164,16 @@ public class ShizukuConfigManager extends ConfigManager {
                     continue;
                 }
 
-                List<String> packages = new ArrayList<>();
-                packages.add(pi.packageName);
-
                 // CRITICAL: NEVER revoke an existing grant during startup reconciliation.
                 // Shevery manages client app grants internally via Application Management (shizuku.json).
                 // checkPermission returns PERMISSION_DENIED for standard third-party apps because
                 // PRIVILEGED_API is a signature-level permission.
                 // Only grant if the system permission is actually held (e.g. system signature app).
                 if (allowed) {
+                    List<String> packages = PackageManagerApis.getPackagesForUidNoThrow(uid);
+                    if (!packages.contains(pi.packageName)) {
+                        continue;
+                    }
                     changed |= updateLocked(uid, packages, ConfigManager.MASK_PERMISSION, ConfigManager.FLAG_ALLOWED);
                 }
             }
@@ -213,12 +202,37 @@ public class ShizukuConfigManager extends ConfigManager {
     @Nullable
     public ShizukuConfig.PackageEntry find(int uid) {
         synchronized (this) {
-            return findLocked(uid);
+            ShizukuConfig.PackageEntry entry = findLocked(uid);
+            if (entry == null) {
+                return null;
+            }
+
+            // An installed package can reuse an uninstalled package's UID while the server runs.
+            List<String> currentPackages = PackageManagerApis.getPackagesForUidNoThrow(uid);
+            if (currentPackages.isEmpty()) {
+                return null;
+            }
+            if (Collections.disjoint(entry.packages, currentPackages)) {
+                LOGGER.i("remove config for uid %d since the packages for it changed", uid);
+                removeLocked(uid);
+                return null;
+            }
+            return entry;
         }
     }
 
     private boolean updateLocked(int uid, List<String> packages, int mask, int values) {
         ShizukuConfig.PackageEntry entry = findLocked(uid);
+        if (packages == null || packages.isEmpty()) {
+            // Refuse to create or grant an entry with no confirmed package identity.
+            if (entry == null || (mask & values & FLAG_ALLOWED) != 0) {
+                return false;
+            }
+            packages = Collections.emptyList();
+        } else if (entry != null && Collections.disjoint(entry.packages, packages)) {
+            config.packages.remove(entry);
+            entry = null;
+        }
         boolean changed = false;
         if (entry == null) {
             entry = new ShizukuConfig.PackageEntry(uid, mask & values);
@@ -231,14 +245,12 @@ public class ShizukuConfigManager extends ConfigManager {
                 changed = true;
             }
         }
-        if (packages != null) {
-            for (String packageName : packages) {
-                if (entry.packages.contains(packageName)) {
-                    continue;
-                }
-                entry.packages.add(packageName);
-                changed = true;
+        for (String packageName : packages) {
+            if (entry.packages.contains(packageName)) {
+                continue;
             }
+            entry.packages.add(packageName);
+            changed = true;
         }
         return changed;
     }

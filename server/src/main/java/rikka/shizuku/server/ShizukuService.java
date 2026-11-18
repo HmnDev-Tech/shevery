@@ -458,6 +458,14 @@ public class ShizukuService extends Service<ShizukuUserServiceManager, ShizukuCl
         LOGGER.i("dispatchPermissionConfirmationResult: uid=%d, pid=%d, requestCode=%d, allowed=%s, onetime=%s",
                 requestUid, requestPid, requestCode, Boolean.toString(allowed), Boolean.toString(onetime));
 
+        List<String> packages = PackageManagerApis.getPackagesForUidNoThrow(requestUid);
+        List<ClientRecord> records = clientManager.findClients(requestUid);
+        records.removeIf(record -> !packages.contains(record.packageName) || !record.client.asBinder().pingBinder());
+        if (requestPid > 0 && records.stream().noneMatch(record -> record.pid == requestPid)) {
+            LOGGER.w("Ignoring permission confirmation for a client that is no longer attached");
+            return;
+        }
+
         int capabilities = 0;
         if (allowed) {
             ConfigPackageEntry entry = configManager.find(requestUid);
@@ -467,13 +475,10 @@ public class ShizukuService extends Service<ShizukuUserServiceManager, ShizukuCl
             }
         }
 
-        List<ClientRecord> records = clientManager.findClients(requestUid);
-        List<String> packages = new ArrayList<>();
         if (records.isEmpty()) {
             LOGGER.w("dispatchPermissionConfirmationResult: no client for uid %d was found", requestUid);
         } else {
             for (ClientRecord record : records) {
-                packages.add(record.packageName);
                 record.allowed = allowed;
                 record.capabilities = capabilities;
                 if (record.pid == requestPid) {
@@ -490,7 +495,7 @@ public class ShizukuService extends Service<ShizukuUserServiceManager, ShizukuCl
             int userId = UserHandleCompat.getUserId(requestUid);
             BinderSender.invalidateUid(requestUid);
 
-            for (String packageName : PackageManagerApis.getPackagesForUidNoThrow(requestUid)) {
+            for (String packageName : packages) {
                 PackageInfo pi = Android17Compat.getPackageInfo(packageName, PackageManager.GET_PERMISSIONS, userId);
                 if (pi == null) continue;
                 String targetPermission = ServerConstants.resolveClientPermission(pi.requestedPermissions);
