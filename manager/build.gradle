@@ -244,6 +244,7 @@ dependencies {
     implementation 'org.lsposed.hiddenapibypass:hiddenapibypass:6.2'
 
     implementation 'org.bouncycastle:bcpkix-jdk18on:1.87'
+    implementation 'com.android.tools.smali:smali-dexlib2:3.0.10'
 
     implementation 'io.github.iamr0s:Dhizuku-API:2.7.0'
 
