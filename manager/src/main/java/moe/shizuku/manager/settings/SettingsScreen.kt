@@ -77,6 +77,9 @@ import androidx.compose.ui.res.stringResource
 import androidx.compose.ui.unit.dp
 import kotlinx.coroutines.delay
 import moe.shizuku.manager.R
+import moe.shizuku.manager.guide.GuideTopic
+import moe.shizuku.manager.guide.ShakeGuideHost
+import moe.shizuku.manager.guide.rememberShakeGuideEnabled
 import moe.shizuku.manager.ShizukuSettings
 import moe.shizuku.manager.ShizukuSettings.LANGUAGE
 import moe.shizuku.manager.ShizukuSettings.NIGHT_MODE
@@ -202,6 +205,24 @@ sealed interface SettingsNav {
     data object Recommendations : SettingsNav
 }
 
+
+internal fun SettingsNav.guideTopic(): GuideTopic? = when (this) {
+    SettingsNav.Hub, SettingsNav.ContributorsCredits, SettingsNav.Recommendations -> null
+    SettingsNav.UpdateSettings -> GuideTopic.UPDATES
+    SettingsNav.CompatStubs -> GuideTopic.COMPAT_STUBS
+    SettingsNav.DeviceOwnerTransfer, SettingsNav.DeviceOwnerDelegation -> GuideTopic.DEVICE_OWNER
+    is SettingsNav.Section -> when (section) {
+        SettingsSection.APPLICATION, SettingsSection.APPEARANCE, SettingsSection.BACKUPS -> GuideTopic.SETTINGS
+        SettingsSection.SECURITY -> GuideTopic.SECURITY
+        SettingsSection.DEVICE_OWNER -> GuideTopic.DEVICE_OWNER
+        SettingsSection.MODULES -> GuideTopic.MODULE_POLICY
+        SettingsSection.UPDATES -> GuideTopic.UPDATES
+        SettingsSection.AI -> GuideTopic.COMMANDIUM
+        SettingsSection.AUTOMATION -> GuideTopic.CONNECTORS
+        SettingsSection.EXTRAS -> GuideTopic.FAQ
+        SettingsSection.ABOUT -> null
+    }
+}
 
 @Composable
 fun SettingsScreen(
@@ -565,6 +586,12 @@ fun SettingsScreen(
             delay(260)
             activity?.recreate()
         }
+    }
+
+    ShakeGuideHost(nav.guideTopic())
+    val shakeGuideEnabled = rememberShakeGuideEnabled()
+    val hasAccelerometer = remember(packageManager) {
+        packageManager.hasSystemFeature(PackageManager.FEATURE_SENSOR_ACCELEROMETER)
     }
 
     AnimatedContent(
@@ -959,6 +986,21 @@ fun SettingsScreen(
                     bottomInset = 112.dp,
                     listState = listState
                 ) {
+                    item {
+                        SettingsGroup(title = "") {
+                            SwitchSettingsRow(
+                                icon = R.drawable.ic_help_outline_24dp,
+                                title = stringResource(R.string.shake_for_guide_title),
+                                summary = stringResource(
+                                    if (hasAccelerometer) R.string.shake_for_guide_summary
+                                    else R.string.guide_shake_unavailable
+                                ),
+                                checked = shakeGuideEnabled,
+                                enabled = hasAccelerometer || shakeGuideEnabled,
+                                onCheckedChange = ShizukuSettings::setShakeForGuideEnabled
+                            )
+                        }
+                    }
                     item {
                         SettingsGroup(title = "") {
                             SettingsSection.entries.forEachIndexed { index, section ->

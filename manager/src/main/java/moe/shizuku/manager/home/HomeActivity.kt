@@ -127,6 +127,9 @@ import androidx.core.content.ContextCompat
 import moe.shizuku.manager.BuildConfig
 import moe.shizuku.manager.Helps
 import moe.shizuku.manager.R
+import moe.shizuku.manager.guide.GuideTopic
+import moe.shizuku.manager.guide.LocalShakeGuideActive
+import moe.shizuku.manager.guide.ShakeGuideHost
 import moe.shizuku.manager.ShizukuSettings
 import moe.shizuku.manager.settings.DeveloperOptionsHideManager
 import moe.shizuku.manager.settings.DeveloperOptionsHideService
@@ -721,7 +724,11 @@ abstract class HomeActivity : AppActivity() {
                                     modifier = Modifier.fillMaxSize()
                                         .then(if (horizontalBlur > 0.dp) Modifier.blur(horizontalBlur) else Modifier)
                                 ) {
-                                    tabContent(page)
+                                    CompositionLocalProvider(
+                                        LocalShakeGuideActive provides (page == pagerState.currentPage)
+                                    ) {
+                                        tabContent(page)
+                                    }
                                 }
                             }
                         } else {
@@ -732,7 +739,11 @@ abstract class HomeActivity : AppActivity() {
                                 },
                                 label = "tab_transition"
                             ) { targetTab ->
-                                tabContent(targetTab)
+                                CompositionLocalProvider(
+                                    LocalShakeGuideActive provides (targetTab == selectedTab)
+                                ) {
+                                    tabContent(targetTab)
+                                }
                             }
                         }
                     }
@@ -776,6 +787,7 @@ abstract class HomeActivity : AppActivity() {
                             )
                         },
                         text = {
+                            ShakeGuideHost(GuideTopic.WIRELESS_DEBUGGING)
                             Column(verticalArrangement = Arrangement.spacedBy(16.dp)) {
                                 Text(
                                     text = stringResource(R.string.tcp_prompt_dialog_message),
@@ -904,6 +916,7 @@ abstract class HomeActivity : AppActivity() {
                             )
                         },
                         text = {
+                            ShakeGuideHost(GuideTopic.STARTUP)
                             Text(
                                 text = stringResource(R.string.dialog_stop_message),
                                 style = MaterialTheme.typography.bodyMedium,
@@ -958,6 +971,7 @@ abstract class HomeActivity : AppActivity() {
                             )
                         },
                         text = {
+                            ShakeGuideHost(GuideTopic.STARTUP)
                             Column(verticalArrangement = Arrangement.spacedBy(16.dp)) {
                                 MonospaceLog(text = Starter.adbCommand)
                                 Text(
@@ -1015,6 +1029,7 @@ abstract class HomeActivity : AppActivity() {
                     AlertDialog(
                         onDismissRequest = { showWadbNotEnabledDialog = false },
                         text = {
+                            ShakeGuideHost(GuideTopic.WIRELESS_DEBUGGING)
                             Text(
                                 text = stringResource(R.string.dialog_wireless_adb_not_enabled),
                                 style = MaterialTheme.typography.bodyMedium,
@@ -1298,6 +1313,7 @@ private fun HomeScreen(
     onOpenCompatStubs: () -> Unit = {},
     listState: LazyListState = rememberLazyListState()
 ) {
+    ShakeGuideHost(GuideTopic.STARTUP)
     val context = LocalContext.current
     val status = serviceResource?.data ?: ServiceStatus()
     val grantedCount = grantedResource?.data ?: 0
@@ -2059,6 +2075,7 @@ private fun AutomationBottomSheet(
         onDismissRequest = onDismiss,
         sheetState = rememberModalBottomSheetState(skipPartiallyExpanded = true)
     ) {
+        ShakeGuideHost(GuideTopic.INTENTS)
         Column(
             modifier = Modifier
                 .fillMaxWidth()

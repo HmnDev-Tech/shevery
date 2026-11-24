@@ -39,6 +39,8 @@ import androidx.compose.ui.unit.dp
 import kotlinx.coroutines.Dispatchers
 import kotlinx.coroutines.withContext
 import moe.shizuku.manager.R
+import moe.shizuku.manager.guide.GuideTopic
+import moe.shizuku.manager.guide.ShakeGuideHost
 import moe.shizuku.manager.ShizukuSettings
 import moe.shizuku.manager.adb.AdbArm
 import moe.shizuku.manager.adb.AdbMdns
@@ -106,6 +108,7 @@ fun AdbDiscoveryDialog(
             Text(stringResource(R.string.dialog_adb_discovery))
         },
         text = {
+            ShakeGuideHost(GuideTopic.WIRELESS_DEBUGGING)
             Column(
                 modifier = Modifier
                     .fillMaxWidth()

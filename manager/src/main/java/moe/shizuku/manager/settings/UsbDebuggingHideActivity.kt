@@ -19,6 +19,8 @@ import androidx.lifecycle.compose.LifecycleEventEffect
 import kotlinx.coroutines.Dispatchers
 import kotlinx.coroutines.withContext
 import moe.shizuku.manager.R
+import moe.shizuku.manager.guide.GuideTopic
+import moe.shizuku.manager.guide.ShakeGuideHost
 import moe.shizuku.manager.adb.AdbArm
 import moe.shizuku.manager.app.AppActivity
 import moe.shizuku.manager.ui.compose.GroupDivider
@@ -57,6 +59,7 @@ class UsbDebuggingHideActivity : AppActivity() {
             }
 
             ShizukuExpressiveTheme {
+                ShakeGuideHost(GuideTopic.USB_DEBUGGING)
                 ShizukuLazyScaffold(
                     title = stringResource(R.string.usb_debugging_hide_title),
                     onNavigateUp = { finish() }

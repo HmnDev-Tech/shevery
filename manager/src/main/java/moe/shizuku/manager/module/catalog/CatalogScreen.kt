@@ -99,6 +99,8 @@ import kotlinx.coroutines.withContext
 import okhttp3.OkHttpClient
 import okhttp3.Request
 import moe.shizuku.manager.R
+import moe.shizuku.manager.guide.GuideTopic
+import moe.shizuku.manager.guide.ShakeGuideHost
 import moe.shizuku.manager.module.AdbModuleManager
 import moe.shizuku.manager.module.ModuleSettings
 import moe.shizuku.manager.module.discovery.DiscoveredModule
@@ -210,6 +212,7 @@ fun CatalogScreen(onNavigateUp: () -> Unit) {
     }
 
     ShizukuExpressiveTheme {
+        ShakeGuideHost(GuideTopic.CATALOG)
         AnimatedContent(
             targetState = detailModule,
             transitionSpec = {

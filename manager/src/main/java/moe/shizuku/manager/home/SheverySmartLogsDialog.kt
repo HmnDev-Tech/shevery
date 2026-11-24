@@ -58,6 +58,8 @@ import kotlinx.coroutines.launch
 import kotlinx.coroutines.withContext
 import moe.shizuku.manager.BuildConfig
 import moe.shizuku.manager.R
+import moe.shizuku.manager.guide.GuideTopic
+import moe.shizuku.manager.guide.ShakeGuideHost
 import moe.shizuku.manager.ShizukuSettings
 import moe.shizuku.manager.module.ModuleSettings
 import moe.shizuku.manager.ui.compose.ShizukuIcon
@@ -312,6 +314,7 @@ fun SheverySmartLogsDialog(
             }
         },
         text = {
+            ShakeGuideHost(GuideTopic.FAQ)
             Column(
                 modifier = Modifier.fillMaxWidth(),
                 verticalArrangement = Arrangement.spacedBy(10.dp)

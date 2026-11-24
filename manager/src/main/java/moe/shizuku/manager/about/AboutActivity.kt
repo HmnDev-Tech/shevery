@@ -33,6 +33,7 @@ import moe.shizuku.manager.module.update.SheveryAppUpdateDialog
 import moe.shizuku.manager.module.update.SheveryAppUpdateResult
 import moe.shizuku.manager.module.update.SheveryUpdateChecker
 import moe.shizuku.manager.R
+import moe.shizuku.manager.guide.ShakeGuideHost
 import moe.shizuku.manager.app.AppActivity
 import moe.shizuku.manager.ui.compose.ShizukuExpressiveTheme
 import moe.shizuku.manager.ui.compose.ShizukuLazyScaffold
@@ -56,6 +57,7 @@ class AboutActivity : AppActivity() {
             var appUpdateResult by remember { mutableStateOf<SheveryAppUpdateResult?>(null) }
 
             ShizukuExpressiveTheme {
+                ShakeGuideHost()
                 ShizukuLazyScaffold(
                     title = stringResource(R.string.action_about),
                     onNavigateUp = { finish() }

@@ -36,6 +36,8 @@ import kotlinx.coroutines.delay
 import kotlinx.coroutines.launch
 import moe.shizuku.manager.AppConstants.EXTRA
 import moe.shizuku.manager.R
+import moe.shizuku.manager.guide.GuideTopic
+import moe.shizuku.manager.guide.ShakeGuideHost
 import moe.shizuku.manager.ShizukuSettings
 import moe.shizuku.manager.adb.AdbArm
 import moe.shizuku.manager.adb.AdbStarter
@@ -132,6 +134,7 @@ class StarterActivity : AppActivity() {
             }
 
             ShizukuExpressiveTheme {
+                ShakeGuideHost(GuideTopic.STARTUP)
                 ShizukuLazyScaffold(
                     title = stringResource(R.string.starter),
                     onNavigateUp = { finish() },

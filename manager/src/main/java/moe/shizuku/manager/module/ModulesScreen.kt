@@ -110,6 +110,8 @@ import androidx.compose.ui.window.Dialog
 import androidx.compose.ui.window.DialogProperties
 import kotlinx.coroutines.launch
 import moe.shizuku.manager.R
+import moe.shizuku.manager.guide.GuideTopic
+import moe.shizuku.manager.guide.ShakeGuideHost
 import moe.shizuku.manager.module.catalog.TokenStore
 import moe.shizuku.manager.module.discovery.ModuleDiscoveryManager
 import moe.shizuku.manager.module.update.UpdateChecker
@@ -325,6 +327,7 @@ fun ModulesScreen(
             }
         )
     } else {
+        ShakeGuideHost(GuideTopic.MODULES)
         ShizukuLazyScaffold(
             title = stringResource(R.string.modules_title),
             onNavigateUp = null,
