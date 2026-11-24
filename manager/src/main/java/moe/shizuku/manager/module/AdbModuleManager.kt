@@ -66,6 +66,15 @@ object AdbModuleManager {
     }
 
     // Live output for streaming module actions and installations (KernelSU Next style)
+    private val serviceProcesses = mutableMapOf<String, moe.shizuku.server.IRemoteProcess>()
+    private val _runningServices = MutableStateFlow(setOf<String>())
+    val runningServices = _runningServices.asStateFlow()
+
+    fun stopService(moduleId: String): Boolean {
+        val process = synchronized(serviceProcesses) { serviceProcesses[moduleId] } ?: return false
+        return runCatching { process.destroy() }.isSuccess
+    }
+
     private val _liveOutput = MutableStateFlow<LiveModuleOutput?>(null)
     val liveOutput: StateFlow<LiveModuleOutput?> = _liveOutput.asStateFlow()
     private val sessionLogLock = Any()
@@ -287,7 +296,7 @@ object AdbModuleManager {
         check(ModuleSettings.canRunService(module)) { "serviceScript is blocked by module access policy." }
         check(ModuleSettings.canRunBackground(module)) { "Background actions are disabled." }
         val script = module.serviceScript?.takeIf { it.isFile } ?: error("This module has no service script.")
-        runModuleScript(module, script, module.lastServiceLog)
+        runModuleScriptStreaming(module, script, module.lastServiceLog, kind = ConsoleKind.SERVICE)
     }
 
     suspend fun runServiceStreaming(module: AdbModule): ModuleActionResult = withContext(Dispatchers.IO) {
@@ -665,147 +674,158 @@ object AdbModuleManager {
             appendLine("cd \"\$MODDIR\" 2>/dev/null || cd /data/local/tmp 2>/dev/null || true")
             appendLine(scriptContent)
         }
-        val remote = service.newProcess(
-            arrayOf("sh", "-c", wrappedScript),
-            env,
-            "/data/local/tmp"
-        )
-
-        runCatching { ParcelFileDescriptor.AutoCloseOutputStream(remote.getOutputStream()).close() }
-        val stdoutPfd = remote.getInputStream()
-        val stderrPfd = remote.getErrorStream()
-        var stdout = ""
-        var stderr = ""
-        val stdoutThread = Thread {
-            if (live) {
-                val collected = StringBuilder()
-                try {
-                    ParcelFileDescriptor.AutoCloseInputStream(stdoutPfd).bufferedReader(Charsets.UTF_8).use { r ->
-                        val buffer = CharArray(256)
-                        while (true) {
-                            val read = r.read(buffer)
-                            if (read <= 0) break
-                            val chunk = String(buffer, 0, read)
-                            val snapshot = synchronized(streamingBuffer) {
-                                collected.appendBounded(chunk)
-                                streamingBuffer.appendBounded(chunk)
-                                stdout = collected.toString()
-                                streamingBuffer.toString()
-                            }
-                            updateLiveOutput(
-                                module = module,
-                                text = snapshot.takeLast(MAX_OUTPUT_CHARS),
-                                running = true,
-                                kind = kind,
-                                subtitle = script.name,
-                                succeeded = false,
-                                exitCode = null
-                            )
-                        }
-                    }
-                } catch (ignore: Exception) {
-                } finally {
-                    stdout = collected.toString()
-                }
-            } else {
-                try {
-                    stdout = ModuleNative.readPfdTail(stdoutPfd, MAX_OUTPUT_CHARS)
-                        ?: readStreamTail(ParcelFileDescriptor.AutoCloseInputStream(stdoutPfd))
-                } catch (ignore: Exception) { }
+        fun startProcess() = service.newProcess(arrayOf("sh", "-c", wrappedScript), env, "/data/local/tmp")
+        val isService = kind == ConsoleKind.SERVICE
+        val remote = if (isService) synchronized(serviceProcesses) {
+            check(module.id !in serviceProcesses) { "Module service is already running." }
+            startProcess().also {
+                serviceProcesses[module.id] = it
+                _runningServices.value = serviceProcesses.keys.toSet()
             }
-        }
-        val stderrThread = Thread {
-            if (live) {
-                val collected = StringBuilder()
-                try {
-                    ParcelFileDescriptor.AutoCloseInputStream(stderrPfd).bufferedReader(Charsets.UTF_8).use { r ->
-                        val buffer = CharArray(256)
-                        while (true) {
-                            val read = r.read(buffer)
-                            if (read <= 0) break
-                            val chunk = String(buffer, 0, read)
-                            val snapshot = synchronized(streamingBuffer) {
-                                collected.appendBounded(chunk)
-                                streamingBuffer.appendBounded(chunk)
-                                stderr = collected.toString()
-                                streamingBuffer.toString()
+        } else startProcess()
+        try {
+            runCatching { ParcelFileDescriptor.AutoCloseOutputStream(remote.getOutputStream()).close() }
+            val stdoutPfd = remote.getInputStream()
+            val stderrPfd = remote.getErrorStream()
+            var stdout = ""
+            var stderr = ""
+            val stdoutThread = Thread {
+                if (live) {
+                    val collected = StringBuilder()
+                    try {
+                        ParcelFileDescriptor.AutoCloseInputStream(stdoutPfd).bufferedReader(Charsets.UTF_8).use { r ->
+                            val buffer = CharArray(256)
+                            while (true) {
+                                val read = r.read(buffer)
+                                if (read <= 0) break
+                                val chunk = String(buffer, 0, read)
+                                val snapshot = synchronized(streamingBuffer) {
+                                    collected.appendBounded(chunk)
+                                    streamingBuffer.appendBounded(chunk)
+                                    stdout = collected.toString()
+                                    streamingBuffer.toString()
+                                }
+                                updateLiveOutput(
+                                    module = module,
+                                    text = snapshot.takeLast(MAX_OUTPUT_CHARS),
+                                    running = true,
+                                    kind = kind,
+                                    subtitle = script.name,
+                                    succeeded = false,
+                                    exitCode = null
+                                )
                             }
-                            updateLiveOutput(
-                                module = module,
-                                text = snapshot.takeLast(MAX_OUTPUT_CHARS),
-                                running = true,
-                                kind = kind,
-                                subtitle = script.name,
-                                succeeded = false,
-                                exitCode = null
-                            )
                         }
+                    } catch (ignore: Exception) {
+                    } finally {
+                        stdout = collected.toString()
                     }
-                } catch (ignore: Exception) {
-                } finally {
-                    stderr = collected.toString()
-                }
-            } else {
-                try {
-                    stderr = ModuleNative.readPfdTail(stderrPfd, MAX_OUTPUT_CHARS)
-                        ?: readStreamTail(ParcelFileDescriptor.AutoCloseInputStream(stderrPfd))
-                } catch (ignore: Exception) { }
-            }
-        }
-        stdoutThread.start()
-        stderrThread.start()
-        val finished = remote.waitForTimeout(SCRIPT_TIMEOUT_SECONDS, TimeUnit.SECONDS.name)
-        val exitCode = if (finished) {
-            remote.exitValue()
-        } else {
-            remote.destroy()
-            try { stdoutPfd.close() } catch (ignore: Exception) {}
-            try { stderrPfd.close() } catch (ignore: Exception) {}
-            124
-        }
-        stdoutThread.join(3000)
-        stderrThread.join(3000)
-
-        if (live) {
-            val footer = buildString {
-                if (streamingBuffer.isNotEmpty() && !streamingBuffer.endsWith("\n")) {
-                    appendLine()
-                }
-                if (stdout.isBlank() && stderr.isBlank()) {
-                    appendLine("(Process completed with no console output)")
-                }
-                appendLine("---------------------------------------------------------")
-                if (!finished) {
-                    appendLine("[!] Process timed out after ${SCRIPT_TIMEOUT_SECONDS}s (exit code 124)")
-                } else if (exitCode == 0) {
-                    appendLine("[✓] Process finished with exit code 0")
                 } else {
-                    appendLine("[!] Process exited with code $exitCode")
+                    try {
+                        stdout = ModuleNative.readPfdTail(stdoutPfd, MAX_OUTPUT_CHARS)
+                            ?: readStreamTail(ParcelFileDescriptor.AutoCloseInputStream(stdoutPfd))
+                    } catch (ignore: Exception) { }
                 }
-                appendLine("*********************************************************")
             }
-            val snapshot = synchronized(streamingBuffer) {
-                streamingBuffer.appendBounded(footer)
-                streamingBuffer.toString()
+            val stderrThread = Thread {
+                if (live) {
+                    val collected = StringBuilder()
+                    try {
+                        ParcelFileDescriptor.AutoCloseInputStream(stderrPfd).bufferedReader(Charsets.UTF_8).use { r ->
+                            val buffer = CharArray(256)
+                            while (true) {
+                                val read = r.read(buffer)
+                                if (read <= 0) break
+                                val chunk = String(buffer, 0, read)
+                                val snapshot = synchronized(streamingBuffer) {
+                                    collected.appendBounded(chunk)
+                                    streamingBuffer.appendBounded(chunk)
+                                    stderr = collected.toString()
+                                    streamingBuffer.toString()
+                                }
+                                updateLiveOutput(
+                                    module = module,
+                                    text = snapshot.takeLast(MAX_OUTPUT_CHARS),
+                                    running = true,
+                                    kind = kind,
+                                    subtitle = script.name,
+                                    succeeded = false,
+                                    exitCode = null
+                                )
+                            }
+                        }
+                    } catch (ignore: Exception) {
+                    } finally {
+                        stderr = collected.toString()
+                    }
+                } else {
+                    try {
+                        stderr = ModuleNative.readPfdTail(stderrPfd, MAX_OUTPUT_CHARS)
+                            ?: readStreamTail(ParcelFileDescriptor.AutoCloseInputStream(stderrPfd))
+                    } catch (ignore: Exception) { }
+                }
             }
-            updateLiveOutput(
-                module = module,
-                text = snapshot.takeLast(MAX_OUTPUT_CHARS),
-                running = false,
-                kind = kind,
-                subtitle = script.name,
-                succeeded = finished && exitCode == 0,
-                exitCode = exitCode
-            )
-        }
+            stdoutThread.start()
+            stderrThread.start()
+            val finished = remote.waitForTimeout(SCRIPT_TIMEOUT_SECONDS, TimeUnit.SECONDS.name)
+            val exitCode = if (finished) {
+                remote.exitValue()
+            } else {
+                remote.destroy()
+                try { stdoutPfd.close() } catch (ignore: Exception) {}
+                try { stderrPfd.close() } catch (ignore: Exception) {}
+                124
+            }
+            stdoutThread.join(3000)
+            stderrThread.join(3000)
 
-        val result = ModuleActionResult(
-            exitCode = exitCode,
-            stdout = stdout.takeLast(MAX_OUTPUT_CHARS),
-            stderr = stderr.takeLast(MAX_OUTPUT_CHARS)
-        )
-        writeLastLog(logFile, module, script, result, finished)
-        return result
+            if (live) {
+                val footer = buildString {
+                    if (streamingBuffer.isNotEmpty() && !streamingBuffer.endsWith("\n")) {
+                        appendLine()
+                    }
+                    if (stdout.isBlank() && stderr.isBlank()) {
+                        appendLine("(Process completed with no console output)")
+                    }
+                    appendLine("---------------------------------------------------------")
+                    if (!finished) {
+                        appendLine("[!] Process timed out after ${SCRIPT_TIMEOUT_SECONDS}s (exit code 124)")
+                    } else if (exitCode == 0) {
+                        appendLine("[✓] Process finished with exit code 0")
+                    } else {
+                        appendLine("[!] Process exited with code $exitCode")
+                    }
+                    appendLine("*********************************************************")
+                }
+                val snapshot = synchronized(streamingBuffer) {
+                    streamingBuffer.appendBounded(footer)
+                    streamingBuffer.toString()
+                }
+                updateLiveOutput(
+                    module = module,
+                    text = snapshot.takeLast(MAX_OUTPUT_CHARS),
+                    running = false,
+                    kind = kind,
+                    subtitle = script.name,
+                    succeeded = finished && exitCode == 0,
+                    exitCode = exitCode
+                )
+            }
+
+            val result = ModuleActionResult(
+                exitCode = exitCode,
+                stdout = stdout.takeLast(MAX_OUTPUT_CHARS),
+                stderr = stderr.takeLast(MAX_OUTPUT_CHARS)
+            )
+            writeLastLog(logFile, module, script, result, finished)
+            return result
+        } finally {
+            if (isService) synchronized(serviceProcesses) {
+                serviceProcesses.remove(module.id)
+                _runningServices.value = serviceProcesses.keys.toSet()
+            }
+            runCatching { remote.destroy() }
+        }
     }
 
     private fun beginConsoleSession(

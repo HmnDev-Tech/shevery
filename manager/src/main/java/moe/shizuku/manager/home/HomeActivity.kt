@@ -686,7 +686,11 @@ abstract class HomeActivity : AppActivity() {
                                     )
                                 },
                                     listState = modulesListState,
-                                    modulesState = cachedModules
+                                    modulesState = cachedModules,
+                                    onOpenModuleSettings = {
+                                        settingsTargetSection = SettingsSection.MODULES
+                                        selectedTab = 3
+                                    }
                                 )
                                 2 -> moe.shizuku.manager.logs.ComputScreen(listState = computListState)
                                 3 -> moe.shizuku.manager.settings.SettingsScreen(

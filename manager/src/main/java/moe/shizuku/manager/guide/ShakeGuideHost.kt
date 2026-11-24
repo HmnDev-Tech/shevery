@@ -49,8 +49,8 @@ internal fun rememberShakeGuideEnabled(): Boolean {
 }
 
 @Composable
-internal fun ShakeGuideHost(topic: GuideTopic? = null) {
-    if (!LocalShakeGuideActive.current || !rememberShakeGuideEnabled()) return
+internal fun ShakeGuideHost(topic: GuideTopic? = null, enabled: Boolean = true) {
+    if (!enabled || !LocalShakeGuideActive.current || !rememberShakeGuideEnabled()) return
 
     val context = LocalContext.current
     val view = LocalView.current
@@ -69,8 +69,19 @@ internal fun ShakeGuideHost(topic: GuideTopic? = null) {
         onPauseOrDispose { ShakeHostStack.resumedHosts.remove(token) }
     }
 
-    val detector = remember(context, token) {
-        ShakeDetector(context.applicationContext) {
+    val prefs = ShizukuSettings.getPreferences()
+    var sensitivity by remember(prefs) { mutableStateOf(ShizukuSettings.shakeSensitivity()) }
+    DisposableEffect(prefs) {
+        val listener = SharedPreferences.OnSharedPreferenceChangeListener { _, key ->
+            if (key == ShizukuSettings.SHAKE_SENSITIVITY || key == null) {
+                sensitivity = ShizukuSettings.shakeSensitivity()
+            }
+        }
+        prefs.registerOnSharedPreferenceChangeListener(listener)
+        onDispose { prefs.unregisterOnSharedPreferenceChangeListener(listener) }
+    }
+    val detector = remember(context, token, sensitivity) {
+        ShakeDetector(context.applicationContext, ShakeSensitivity.entries[sensitivity]) {
             if (currentView.hasWindowFocus() && ShakeHostStack.isTop(token) &&
                 ShakeHostStack.sheetOwner == null && ShizukuSettings.isShakeForGuideEnabled()
             ) {

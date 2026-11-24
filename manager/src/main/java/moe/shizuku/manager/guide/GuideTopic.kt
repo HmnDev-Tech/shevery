@@ -13,6 +13,7 @@ internal enum class GuideTopic(
     @param:StringRes val caution: Int,
     val url: String?
 ) {
+    LAB(R.string.lab_title, R.string.lab_guide_overview, R.string.lab_guide_steps, R.string.lab_guide_limits, null),
     STARTUP(
         R.string.guide_startup_title,
         R.string.guide_startup_overview,

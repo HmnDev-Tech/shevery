@@ -92,6 +92,24 @@ class ShizukuSettingsTest {
     }
 
     @Test
+    fun labPreferencesDefaultAndPersist() {
+        val prefs = InMemorySharedPreferences()
+        ShizukuSettings.setPreferencesForTesting(prefs)
+        assertEquals(1, ShizukuSettings.shakeSensitivity())
+        assertFalse(ShizukuSettings.reducedExpressiveMotion())
+
+        ShizukuSettings.setShakeSensitivity(8)
+        ShizukuSettings.setReducedExpressiveMotion(true)
+        assertEquals(2, ShizukuSettings.shakeSensitivity())
+        assertTrue(ShizukuSettings.reducedExpressiveMotion())
+
+        ShizukuSettings.setShakeSensitivity(-1)
+        ShizukuSettings.setReducedExpressiveMotion(false)
+        assertEquals(0, ShizukuSettings.shakeSensitivity())
+        assertFalse(ShizukuSettings.reducedExpressiveMotion())
+    }
+
+    @Test
     fun settingsValidatePortsClampBlurAndPersistLaunchMode() {
         val prefs = InMemorySharedPreferences()
         val auth = InMemorySharedPreferences()

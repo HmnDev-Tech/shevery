@@ -23,6 +23,7 @@ class GuideMappingTest {
             SettingsSection.BACKUPS to GuideTopic.SETTINGS,
             SettingsSection.AUTOMATION to GuideTopic.CONNECTORS,
             SettingsSection.EXTRAS to GuideTopic.FAQ,
+            SettingsSection.LAB to GuideTopic.LAB,
             SettingsSection.ABOUT to null
         )
 

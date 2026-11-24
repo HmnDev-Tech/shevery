@@ -8,6 +8,15 @@
 package moe.shizuku.manager.module
 
 
+import androidx.compose.foundation.BorderStroke
+import androidx.compose.foundation.background
+import androidx.compose.material3.FloatingActionButton
+import androidx.compose.material3.LinearProgressIndicator
+import androidx.compose.material3.LinearWavyProgressIndicator
+import androidx.compose.ui.draw.alpha
+import androidx.compose.ui.graphics.Brush
+import moe.shizuku.manager.ui.compose.LocalReducedMotion
+
 import android.content.ClipData
 import android.content.ClipboardManager
 import android.content.Context
@@ -17,7 +26,6 @@ import androidx.activity.compose.rememberLauncherForActivityResult
 import androidx.activity.result.contract.ActivityResultContracts
 import androidx.annotation.DrawableRes
 import androidx.annotation.StringRes
-import androidx.compose.animation.AnimatedContent
 import androidx.compose.animation.AnimatedVisibility
 import androidx.compose.animation.animateColorAsState
 import androidx.compose.animation.animateContentSize
@@ -28,7 +36,6 @@ import androidx.compose.animation.fadeOut
 import androidx.compose.animation.shrinkVertically
 import androidx.compose.foundation.ExperimentalFoundationApi
 import androidx.compose.foundation.Image
-import androidx.compose.foundation.background
 import androidx.compose.foundation.combinedClickable
 import androidx.compose.foundation.horizontalScroll
 import androidx.compose.foundation.layout.Arrangement
@@ -57,6 +64,11 @@ import androidx.compose.foundation.shape.RoundedCornerShape
 import androidx.compose.foundation.text.selection.SelectionContainer
 import androidx.compose.foundation.verticalScroll
 import androidx.compose.material.icons.Icons
+import androidx.compose.material.icons.rounded.DeleteForever
+import androidx.compose.material.icons.rounded.Download
+import androidx.compose.material.icons.rounded.Shortcut
+import androidx.compose.material.icons.rounded.Stop
+import androidx.compose.material.icons.rounded.Wysiwyg
 import androidx.compose.material.icons.rounded.Apps
 import androidx.compose.material.icons.rounded.CheckCircle
 import androidx.compose.material.icons.rounded.Close
@@ -66,7 +78,6 @@ import androidx.compose.material.icons.rounded.Refresh
 import androidx.compose.material.icons.rounded.Terminal
 import androidx.compose.material.icons.rounded.Warning
 import androidx.compose.material3.AlertDialog
-import androidx.compose.material3.AssistChip
 import androidx.compose.material3.Button
 import androidx.compose.material3.ButtonDefaults
 import androidx.compose.material3.ExperimentalMaterial3Api
@@ -75,7 +86,6 @@ import androidx.compose.material3.FilledTonalButton
 import androidx.compose.material3.HorizontalDivider
 import androidx.compose.material3.Icon
 import androidx.compose.material3.IconButton
-import androidx.compose.material3.LinearProgressIndicator
 import androidx.compose.material3.LoadingIndicator
 import androidx.compose.material3.MaterialTheme
 import androidx.compose.material3.OutlinedButton
@@ -108,6 +118,8 @@ import androidx.compose.ui.unit.dp
 import androidx.compose.ui.unit.sp
 import androidx.compose.ui.window.Dialog
 import androidx.compose.ui.window.DialogProperties
+import kotlinx.coroutines.Dispatchers
+import kotlinx.coroutines.withContext
 import kotlinx.coroutines.launch
 import moe.shizuku.manager.R
 import moe.shizuku.manager.guide.GuideTopic
@@ -127,16 +139,20 @@ private val MODULE_MIME_TYPES = arrayOf(
     "application/x-zip-compressed"
 )
 
+internal fun activeModuleCount(modules: List<AdbModule>): Int = modules.count { it.enabled }
+
 @Composable
 fun ModulesScreen(
     onOpenWebUi: (String) -> Unit,
     onCreateShortcut: ((AdbModule) -> Unit)? = null,
     listState: LazyListState = rememberLazyListState(),
-    modulesState: MutableState<List<AdbModule>>
+    modulesState: MutableState<List<AdbModule>>,
+    onOpenModuleSettings: () -> Unit = {}
 ) {
     val context = LocalContext.current
     val view = LocalView.current
     val scope = rememberCoroutineScope()
+    var savedLogs by remember { mutableStateOf<String?>(null) }
     var showCatalog by remember { mutableStateOf(false) }
     var modules by modulesState
     var checkingUpdates by remember { mutableStateOf(false) }
@@ -147,6 +163,7 @@ fun ModulesScreen(
     var aiExplanation by remember { mutableStateOf<String?>(null) }
     var aiLoading by remember { mutableStateOf(false) }
     val liveOutput by AdbModuleManager.liveOutput.collectAsState()
+    val runningServices by AdbModuleManager.runningServices.collectAsState()
     val reloadTick by AdbModuleManager.modulesReloadTick.collectAsState()
     var liveLogHidden by remember { mutableStateOf(false) }
 
@@ -339,35 +356,45 @@ fun ModulesScreen(
                 checkAllUpdates()
             },
             actions = {
-                ModuleTabsSwitcher(
-                    selectedTab = ModuleTab.INSTALLED,
-                    onSelectInstalled = {},
-                    onSelectCatalog = { showCatalog = true }
-                )
-                Spacer(modifier = Modifier.size(8.dp))
-                FilledTonalButton(
-                    modifier = Modifier.height(36.dp),
-                    contentPadding = ButtonDefaults.ButtonWithIconContentPadding,
-                    onClick = {
-                        zipLauncher.launch(MODULE_MIME_TYPES)
+                TextButton(onClick = { showCatalog = true }) { Text(stringResource(R.string.modules_catalog)) }
+                androidx.compose.material3.IconButton(onClick = onOpenModuleSettings) {
+                    ShizukuIcon(R.drawable.ic_settings_outline_24dp,
+                        contentDescription = stringResource(R.string.modules_settings_title))
+                }
+            },
+            floatingActionButton = {
+                Row(horizontalArrangement = Arrangement.spacedBy(8.dp),
+                    modifier = Modifier.padding(bottom = 76.dp)) {
+                    if (listState.firstVisibleItemIndex > 0) {
+                        FloatingActionButton(onClick = { scope.launch { listState.animateScrollToItem(0) } }) {
+                            ShizukuIcon(R.drawable.ic_outline_arrow_upward_24,
+                                contentDescription = stringResource(R.string.modules_scroll_top))
+                        }
                     }
-                ) {
-                    ShizukuIcon(
-                        R.drawable.ic_outline_arrow_upward_24,
-                        modifier = Modifier
-                            .padding(end = 6.dp)
-                            .size(16.dp)
-                    )
-                    Text(stringResource(R.string.modules_install_zip))
+                    FloatingActionButton(onClick = { zipLauncher.launch(MODULE_MIME_TYPES) }) {
+                        ShizukuIcon(R.drawable.ic_adb_24dp, contentDescription = stringResource(R.string.modules_install_zip))
+                    }
                 }
             }
         ) {
             item {
-                AnimatedContent(targetState = modules.isEmpty(), label = "module-empty-state") { empty ->
-                    if (empty) {
-                        EmptyModulesCard(onInstall = { zipLauncher.launch(MODULE_MIME_TYPES) })
+                val active = activeModuleCount(modules)
+                val policy = ModuleSettings.getAccessMode().labelRes
+                val ready = com.hamondev.shevery.api.SheveryPrivilege.pingBinder() || rikka.shizuku.Shizuku.pingBinder()
+                val busy = checkingUpdates || updatingModuleId != null || liveOutput?.running == true
+                moe.shizuku.manager.ui.compose.ExpressiveCard(
+                    icon = R.drawable.ic_adb_24dp,
+                    title = stringResource(if (ready) R.string.modules_status_ready else R.string.modules_status_offline),
+                    body = stringResource(R.string.modules_status_summary, active, modules.size, stringResource(policy))
+                ) {
+                    if (busy) {
+                        if (LocalReducedMotion.current) LinearProgressIndicator(Modifier.fillMaxWidth())
+                        else LinearWavyProgressIndicator(Modifier.fillMaxWidth())
                     }
                 }
+            }
+            if (modules.isEmpty()) item {
+                EmptyModulesCard(onInstall = { zipLauncher.launch(MODULE_MIME_TYPES) })
             }
             items(modules, key = { it.id }) { module ->
                 ModuleCard(
@@ -410,12 +437,36 @@ fun ModulesScreen(
                             reload()
                         }
                     },
+                    serviceRunning = module.id in runningServices,
+                    onStopService = { scope.launch(Dispatchers.IO) { AdbModuleManager.stopService(module.id) } },
+                    onLogs = {
+                        scope.launch {
+                            savedLogs = withContext(Dispatchers.IO) {
+                                listOf(module.lastActionLog, module.lastServiceLog).mapNotNull {
+                                    runCatching {
+                                        if (!it.isFile) null else it.bufferedReader().use { reader ->
+                                            val chars = CharArray(24_000)
+                                            val count = reader.read(chars)
+                                            if (count < 0) null else String(chars, 0, count)
+                                        }
+                                    }.getOrNull()
+                                }.joinToString("\n\n")
+                            }
+                        }
+                    },
                     onUpdateModule = { updateModule(module) }
                 )
             }
         }
     }
 
+    savedLogs?.let { logs ->
+        AlertDialog(onDismissRequest = { savedLogs = null },
+            title = { Text(stringResource(R.string.modules_saved_logs)) },
+            text = { Text(logs.ifBlank { stringResource(R.string.modules_no_saved_logs) },
+                Modifier.heightIn(max = 380.dp).verticalScroll(rememberScrollState())) },
+            confirmButton = { TextButton(onClick = { savedLogs = null }) { Text(stringResource(android.R.string.ok)) } })
+    }
     liveOutput?.takeIf { !liveLogHidden }?.let { live ->
         ModuleLiveConsoleDialog(
             live = live,
@@ -589,9 +640,12 @@ private fun ModuleCard(
     onCreateShortcut: () -> Unit,
     onDelete: () -> Unit,
     onTrustChange: (Boolean) -> Unit,
-    onUpdateModule: () -> Unit
+    onUpdateModule: () -> Unit,
+    serviceRunning: Boolean,
+    onStopService: () -> Unit,
+    onLogs: () -> Unit
 ) {
-    var expanded by remember(module.id) { mutableStateOf(true) }
+    var expanded by remember(module.id) { mutableStateOf(false) }
     var showTrustAction by remember(module.id, trusted) { mutableStateOf(false) }
     val containerColor by animateColorAsState(
         targetValue = if (trusted) {
@@ -612,52 +666,21 @@ private fun ModuleCard(
                 onClick = { expanded = !expanded },
                 onLongClick = {
                     expanded = true
-                    showTrustAction = !showTrustAction
+                    showTrustAction = true
                 }
             )
             .animateContentSize(animationSpec = tween(280)),
         shape = MaterialTheme.shapes.extraLarge,
         color = containerColor,
+        border = BorderStroke(1.dp, MaterialTheme.colorScheme.outlineVariant),
         tonalElevation = 1.dp
     ) {
-        Column {
-            ModuleBanner(module)
+        Box {
+            ModuleBanner(module, containerColor)
             Column(
                 modifier = Modifier.padding(horizontal = 18.dp, vertical = 16.dp),
                 verticalArrangement = Arrangement.spacedBy(10.dp)
             ) {
-                module.updateInfo?.let { updateInfo ->
-                    Surface(
-                        color = MaterialTheme.colorScheme.primaryContainer,
-                        shape = MaterialTheme.shapes.medium,
-                        modifier = Modifier.fillMaxWidth()
-                    ) {
-                        Row(
-                            modifier = Modifier.padding(horizontal = 12.dp, vertical = 8.dp),
-                            horizontalArrangement = Arrangement.SpaceBetween,
-                            verticalAlignment = Alignment.CenterVertically
-                        ) {
-                            Text(
-                                text = stringResource(R.string.modules_update_available, updateInfo.newVersion),
-                                style = MaterialTheme.typography.labelLarge,
-                                color = MaterialTheme.colorScheme.onPrimaryContainer
-                            )
-                            Button(
-                                onClick = onUpdateModule,
-                                enabled = !updating,
-                                contentPadding = PaddingValues(horizontal = 12.dp, vertical = 4.dp),
-                                modifier = Modifier.height(32.dp)
-                            ) {
-                                if (updating) {
-                                    LoadingIndicator(modifier = Modifier.size(16.dp))
-                                } else {
-                                    Text(stringResource(R.string.modules_update_button))
-                                }
-                            }
-                        }
-                    }
-                }
-
                 Row(
                     horizontalArrangement = Arrangement.spacedBy(14.dp),
                     verticalAlignment = Alignment.CenterVertically
@@ -690,7 +713,7 @@ private fun ModuleCard(
                         overflow = TextOverflow.Ellipsis
                     )
                 }
-                ModuleChips(module, trusted)
+                ModuleChips(module, trusted, serviceRunning)
                 AnimatedVisibility(
                     visible = busy,
                     enter = fadeIn(tween(180)) + expandVertically(tween(180)),
@@ -705,6 +728,11 @@ private fun ModuleCard(
                 ) {
                     ModuleActions(
                         module = module,
+                        serviceRunning = serviceRunning,
+                        onStopService = onStopService,
+                        onLogs = onLogs,
+                        updating = updating,
+                        onUpdateModule = onUpdateModule,
                         busy = busy,
                         onRunAction = onRunAction,
                         onRunService = onRunService,
@@ -727,38 +755,48 @@ private fun ModuleCard(
 
 
 @Composable
-private fun ModuleChips(module: AdbModule, trusted: Boolean) {
+private fun ModuleChips(module: AdbModule, trusted: Boolean, serviceRunning: Boolean) {
     FlowRow(
         horizontalArrangement = Arrangement.spacedBy(8.dp),
         verticalArrangement = Arrangement.spacedBy(8.dp)
     ) {
-        AssistChip(
-            onClick = {},
-            label = { Text(module.id) }
-        )
-        AssistChip(onClick = {}, label = { Text(module.formattedSize) })
-        if (trusted) {
-            AssistChip(onClick = {}, label = { Text(stringResource(R.string.modules_full_trust)) })
+        val labels = mutableListOf<String>()
+        with(labels) {
+            add(module.formattedSize)
+            add(stringResource(if (trusted) R.string.modules_full_trust else R.string.modules_standard_trust))
+            if (!module.enabled) add(stringResource(R.string.modules_status_disabled))
+            if (module.hasWebUi) add(stringResource(R.string.modules_open_webui))
+            if (module.hasAction) add(stringResource(R.string.modules_run_action))
+            if (module.hasService) add(stringResource(if (serviceRunning) R.string.modules_service_running else R.string.modules_service_stopped))
+            module.updateInfo?.let { add(stringResource(R.string.modules_update_available, it.newVersion)) }
+        }
+        labels.forEach { label ->
+            Surface(shape = MaterialTheme.shapes.small, color = MaterialTheme.colorScheme.surfaceContainerHighest) {
+                Text(label, Modifier.padding(horizontal = 8.dp, vertical = 4.dp), style = MaterialTheme.typography.labelMedium)
+            }
         }
     }
 }
 
 @Composable
-private fun ModuleBanner(module: AdbModule) {
+private fun ModuleBanner(module: AdbModule, surface: androidx.compose.ui.graphics.Color) {
     val bannerFile = module.banner
     if (bannerFile != null && bannerFile.exists()) {
-        val bitmap = remember(bannerFile.lastModified()) {
-            BitmapFactory.decodeFile(bannerFile.absolutePath)
+        val bitmap by androidx.compose.runtime.produceState<android.graphics.Bitmap?>(null, bannerFile, bannerFile.lastModified()) {
+            value = withContext(Dispatchers.IO) { BitmapFactory.decodeFile(bannerFile.absolutePath) }
         }
-        if (bitmap != null) {
+        bitmap?.let { image ->
+            Box(Modifier.fillMaxWidth().height(110.dp)) {
             Image(
-                bitmap = bitmap.asImageBitmap(),
+                bitmap = image.asImageBitmap(),
                 contentDescription = null,
                 modifier = Modifier
                     .fillMaxWidth()
-                    .height(110.dp),
+                    .height(110.dp).alpha(0.18f),
                 contentScale = ContentScale.Crop
             )
+            Box(Modifier.matchParentSize().background(Brush.verticalGradient(listOf(androidx.compose.ui.graphics.Color.Transparent, surface))))
+            }
         }
     }
 }
@@ -792,6 +830,11 @@ private fun RunningRow() {
 @Composable
 private fun ModuleActions(
     module: AdbModule,
+    serviceRunning: Boolean,
+    onStopService: () -> Unit,
+    onLogs: () -> Unit,
+    updating: Boolean,
+    onUpdateModule: () -> Unit,
     busy: Boolean,
     trusted: Boolean,
     showTrustAction: Boolean,
@@ -808,43 +851,46 @@ private fun ModuleActions(
     ) {
         ModuleButton(
             label = R.string.modules_run_action,
-            icon = R.drawable.ic_outline_play_arrow_24,
-            primary = true,
+            icon = Icons.Rounded.Terminal,
             enabled = !busy && module.enabled && module.hasAction && ModuleSettings.canRunAction(module),
             onClick = onRunAction
         )
         ModuleButton(
             label = R.string.modules_open_webui,
-            icon = R.drawable.ic_outline_open_in_new_24,
+            icon = Icons.Rounded.Wysiwyg,
             enabled = !busy && module.hasWebUi,
             onClick = onOpenWebUi
         )
         ModuleButton(
             label = R.string.modules_shortcut,
-            icon = R.drawable.ic_shortcut_24dp,
+            icon = Icons.Rounded.Shortcut,
             enabled = !busy && module.hasWebUi,
             onClick = onCreateShortcut
         )
         ModuleButton(
-            label = R.string.modules_run_service,
-            icon = R.drawable.ic_terminal_24,
-            enabled = !busy &&
+            label = if (serviceRunning) R.string.modules_stop_service else R.string.modules_run_service,
+            icon = if (serviceRunning) Icons.Rounded.Stop else Icons.Rounded.PlayArrow,
+            enabled = serviceRunning || (!busy &&
                     module.enabled &&
                     module.hasService &&
                     ModuleSettings.canRunService(module) &&
-                    ModuleSettings.canRunBackground(module),
-            onClick = onRunService
+                    ModuleSettings.canRunBackground(module)),
+            onClick = if (serviceRunning) onStopService else onRunService
         )
         ModuleButton(
             label = R.string.modules_delete,
-            icon = R.drawable.ic_delete_24,
+            icon = Icons.Rounded.DeleteForever,
             enabled = !busy,
             onClick = onDelete
         )
+        ModuleButton(R.string.modules_saved_logs, Icons.Rounded.Terminal, onClick = onLogs)
+        if (module.updateInfo != null) {
+            ModuleButton(R.string.modules_update_button, Icons.Rounded.Download, enabled = !updating && !busy, onClick = onUpdateModule)
+        }
         if (showTrustAction) {
             ModuleButton(
                 label = if (trusted) R.string.modules_untrust else R.string.modules_trust,
-                icon = R.drawable.ic_outline_check_circle_24,
+                icon = Icons.Rounded.CheckCircle,
                 enabled = !busy,
                 onClick = { onTrustChange(!trusted) }
             )
@@ -855,39 +901,17 @@ private fun ModuleActions(
 @Composable
 private fun ModuleButton(
     @StringRes label: Int,
-    @DrawableRes icon: Int,
-    enabled: Boolean,
-    primary: Boolean = false,
+    icon: androidx.compose.ui.graphics.vector.ImageVector,
+    enabled: Boolean = true,
     onClick: () -> Unit
 ) {
-    if (primary) {
-        Button(
-            onClick = onClick,
-            enabled = enabled,
-            contentPadding = ButtonDefaults.ButtonWithIconContentPadding
-        ) {
-            ShizukuIcon(
-                icon,
-                modifier = Modifier
-                    .padding(end = 6.dp)
-                    .size(18.dp)
-            )
-            Text(stringResource(label))
-        }
-    } else {
-        OutlinedButton(
-            onClick = onClick,
-            enabled = enabled,
-            contentPadding = ButtonDefaults.ButtonWithIconContentPadding
-        ) {
-            ShizukuIcon(
-                icon,
-                modifier = Modifier
-                    .padding(end = 6.dp)
-                    .size(18.dp)
-            )
-            Text(stringResource(label))
-        }
+    FilledTonalButton(
+        onClick = onClick,
+        enabled = enabled,
+        contentPadding = ButtonDefaults.ButtonWithIconContentPadding
+    ) {
+        Icon(icon, contentDescription = null, modifier = Modifier.padding(end = 6.dp).size(18.dp))
+        Text(stringResource(label))
     }
 }
 

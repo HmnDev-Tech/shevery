@@ -7,9 +7,13 @@ import android.hardware.SensorEventListener
 import android.hardware.SensorManager
 import kotlin.math.sqrt
 
-internal class ShakeDetector(context: Context, private val onShake: () -> Unit) : SensorEventListener {
+internal class ShakeDetector(
+    context: Context,
+    sensitivity: ShakeSensitivity = ShakeSensitivity.NORMAL,
+    private val onShake: () -> Unit
+) : SensorEventListener {
     private val sensorManager = context.getSystemService(SensorManager::class.java)
-    private val gesture = ShakeGesture()
+    private val gesture = ShakeGesture(sensitivity)
     private var listening = false
 
     fun start() {

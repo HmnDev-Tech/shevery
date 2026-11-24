@@ -35,6 +35,21 @@ object ShizukuSettings {
     const val LAST_ADB_PORT = "last_adb_port"
     const val AUTO_DISABLE_USB_DEBUGGING = "auto_disable_usb_debugging"
     const val START_ON_BOOT_ADB = "start_on_boot_adb"
+    const val SHAKE_SENSITIVITY = "shake_sensitivity"
+    const val REDUCED_EXPRESSIVE_MOTION = "reduced_expressive_motion"
+
+    fun shakeSensitivity(): Int = getPreferences().getInt(SHAKE_SENSITIVITY, 1).coerceIn(0, 2)
+
+    fun setShakeSensitivity(value: Int) {
+        getPreferences().edit().putInt(SHAKE_SENSITIVITY, value.coerceIn(0, 2)).apply()
+    }
+
+    fun reducedExpressiveMotion(): Boolean = getPreferences().getBoolean(REDUCED_EXPRESSIVE_MOTION, false)
+
+    fun setReducedExpressiveMotion(value: Boolean) {
+        getPreferences().edit().putBoolean(REDUCED_EXPRESSIVE_MOTION, value).apply()
+    }
+
     const val SHAKE_FOR_GUIDE = "shake_for_guide"
     const val USE_CLASSIC_NAV = "use_classic_nav"
 

@@ -1,6 +1,24 @@
-@file:OptIn(androidx.compose.material3.ExperimentalMaterial3ExpressiveApi::class)
+@file:OptIn(androidx.compose.material3.ExperimentalMaterial3ExpressiveApi::class, androidx.compose.material3.ExperimentalMaterial3ExpressiveApi::class)
 
 package moe.shizuku.manager.about
+
+import androidx.compose.animation.core.Animatable
+import androidx.compose.animation.core.LinearEasing
+import androidx.compose.animation.core.animateFloat
+import androidx.compose.animation.core.infiniteRepeatable
+import androidx.compose.animation.core.rememberInfiniteTransition
+import androidx.compose.animation.core.tween
+import androidx.compose.material3.MaterialShapes
+import androidx.compose.ui.graphics.Outline
+import androidx.compose.ui.graphics.Path
+import androidx.compose.ui.graphics.Shape
+import androidx.compose.ui.graphics.graphicsLayer
+import androidx.compose.ui.platform.LocalView
+import androidx.graphics.shapes.Morph
+import moe.shizuku.manager.Helps
+import moe.shizuku.manager.ui.compose.ExpressiveSegmentedSection
+import moe.shizuku.manager.ui.compose.ExpressiveSegmentedItem
+import moe.shizuku.manager.ui.compose.LocalReducedMotion
 
 import android.os.Bundle
 import androidx.activity.compose.setContent
@@ -49,7 +67,7 @@ class AboutActivity : AppActivity() {
     override fun onCreate(savedInstanceState: Bundle?) {
         super.onCreate(savedInstanceState)
 
-        val versionName = packageManager.getPackageInfo(packageName, 0).versionName ?: "Unknown"
+        val versionName = packageManager.getPackageInfo(packageName, 0).versionName ?: getString(R.string.about_version_unknown)
 
         setContent {
             val scope = rememberCoroutineScope()
@@ -129,7 +147,7 @@ class AboutActivity : AppActivity() {
                     item {
                         Spacer(modifier = Modifier.height(24.dp))
                         Text(
-                            text = "Open Source Project",
+                            text = stringResource(R.string.about_open_source),
                             style = MaterialTheme.typography.bodySmall,
                             color = MaterialTheme.colorScheme.onSurfaceVariant.copy(alpha = 0.7f),
                             textAlign = TextAlign.Center,
@@ -191,22 +209,48 @@ class AboutActivity : AppActivity() {
         ) {
             Column(horizontalAlignment = Alignment.CenterHorizontally) {
                 if (appIcon != null) {
-                    Image(
-                        bitmap = appIcon,
-                        contentDescription = "App Icon",
-                        modifier = Modifier
-                            .size(96.dp)
-                            .clip(RoundedCornerShape(24.dp))
-                            .clickable {
+                    val shapes = remember {
+                        listOf(MaterialShapes.Cookie9Sided, MaterialShapes.Cookie12Sided, MaterialShapes.Burst, MaterialShapes.Sunny)
+                    }
+                    val reduced = LocalReducedMotion.current
+                    val view = LocalView.current
+                    val scope = rememberCoroutineScope()
+                    var current by remember { mutableIntStateOf(0) }
+                    var changing by remember { mutableStateOf(false) }
+                    val progress = remember { Animatable(0f) }
+                    val spec = MaterialTheme.motionScheme.defaultSpatialSpec<Float>()
+                    val angle = if (reduced) 0f else {
+                        val rotation = rememberInfiniteTransition(label = "about-badge")
+                        val angle by rotation.animateFloat(0f, 360f, infiniteRepeatable(tween(24_000, easing = LinearEasing)), label = "rotation")
+                        angle
+                    }
+                    val shape = remember(current) { Morph(shapes[current], shapes[(current + 1) % shapes.size]) }
+                    val badge = cookieShape { shape.asCubics(progress.value.coerceIn(0f, 1f)) }
+                    Box(
+                        Modifier.size(112.dp).clickable {
+                            if (!changing) {
+                                changing = true
+                                view.performHapticFeedback(android.view.HapticFeedbackConstants.CLOCK_TICK)
+                                scope.launch {
+                                    if (!reduced) progress.animateTo(1f, spec)
+                                    current = (current + 1) % shapes.size
+                                    progress.snapTo(0f)
+                                    changing = false
+                                }
                                 iconTaps++
                                 if (iconTaps >= ABOUT_ICON_TAP_THRESHOLD) {
                                     iconTaps = 0
                                     CustomTabsHelper.launchUrlOrCopy(context, ABOUT_ICON_TAP_URL)
                                 }
                             }
-                    )
+                        },
+                        contentAlignment = Alignment.Center
+                    ) {
+                        Box(Modifier.size(104.dp).graphicsLayer { rotationZ = angle }
+                            .clip(badge).background(MaterialTheme.colorScheme.tertiaryContainer))
+                        Image(appIcon, contentDescription = stringResource(R.string.app_name), modifier = Modifier.size(64.dp))
+                    }
                 }
-
                 Spacer(modifier = Modifier.height(16.dp))
 
                 Text(
@@ -218,21 +262,26 @@ class AboutActivity : AppActivity() {
 
                 Spacer(modifier = Modifier.height(8.dp))
 
-                Surface(
-                    shape = RoundedCornerShape(16.dp),
-                    color = MaterialTheme.colorScheme.surfaceContainerHighest,
-                    modifier = Modifier.padding(top = 8.dp)
-                ) {
-                    Text(
-                        text = "Version $versionName",
-                        style = MaterialTheme.typography.bodyMedium,
-                        fontWeight = FontWeight.Bold,
-                        color = MaterialTheme.colorScheme.onSurface,
-                        modifier = Modifier.padding(horizontal = 16.dp, vertical = 6.dp)
-                    )
-                }
+                AboutBadge(stringResource(R.string.about_version_value, versionName), MaterialShapes.Cookie4Sided)
+                AboutBadge(stringResource(R.string.about_build_value, moe.shizuku.manager.BuildConfig.VERSION_CODE), MaterialShapes.Cookie6Sided)
+                AboutBadge(stringResource(R.string.about_license_value), MaterialShapes.Clover4Leaf)
 
             }
+        }
+    }
+
+    @Composable
+    private fun AboutBadge(label: String, polygon: androidx.graphics.shapes.RoundedPolygon) {
+        androidx.compose.foundation.layout.Row(
+            modifier = Modifier.padding(top = 8.dp),
+            verticalAlignment = Alignment.CenterVertically,
+            horizontalArrangement = androidx.compose.foundation.layout.Arrangement.spacedBy(8.dp)
+        ) {
+            val badge = remember(polygon) {
+                cookieShape { polygon.cubics }
+            }
+            Box(Modifier.size(16.dp).clip(badge).background(MaterialTheme.colorScheme.primary))
+            Text(label, style = MaterialTheme.typography.labelLarge)
         }
     }
 
@@ -247,14 +296,14 @@ class AboutActivity : AppActivity() {
         ) {
             Column(modifier = Modifier.padding(24.dp)) {
                 Text(
-                    text = "What is Shizuku?",
+                    text = stringResource(R.string.about_description_title),
                     style = MaterialTheme.typography.titleMedium,
                     fontWeight = FontWeight.Bold,
                     color = MaterialTheme.colorScheme.primary,
                     modifier = Modifier.padding(bottom = 8.dp)
                 )
                 Text(
-                    text = "Shizuku is a powerful and secure service that bridges normal user-space applications with privileged system APIs directly through root or ADB bindings.",
+                    text = stringResource(R.string.about_description_body),
                     style = MaterialTheme.typography.bodyMedium,
                     lineHeight = 20.sp,
                     color = MaterialTheme.colorScheme.onSurfaceVariant
@@ -274,14 +323,14 @@ class AboutActivity : AppActivity() {
         ) {
             Column(modifier = Modifier.padding(24.dp)) {
                 Text(
-                    text = "Versioning",
+                    text = stringResource(R.string.about_versioning),
                     style = MaterialTheme.typography.titleMedium,
                     fontWeight = FontWeight.Bold,
                     color = MaterialTheme.colorScheme.primary,
                     modifier = Modifier.padding(bottom = 8.dp)
                 )
                 Text(
-                    text = "Starting with 14.0, Shevery no longer uses the old \"14.0 rXX\" revision scheme. Releases advance as 14.0, 14.1, 14.2, … up to 14.9, then continue at 15.0–15.9, and so on. The internal git commit count used for versionCode is unchanged.",
+                    text = stringResource(R.string.about_versioning_summary),
                     style = MaterialTheme.typography.bodyMedium,
                     lineHeight = 20.sp,
                     color = MaterialTheme.colorScheme.onSurfaceVariant
@@ -293,24 +342,39 @@ class AboutActivity : AppActivity() {
     @Composable
     private fun AboutLinksGroup() {
         val context = this@AboutActivity
-        SettingsGroup(title = "Resources & Community") {
-            SettingsRow(
-                icon = R.drawable.ic_baseline_link_24,
-                title = stringResource(R.string.about_source_code_button),
-                summary = "github.com/HmnDev-Tech/shevery",
-                onClick = {
-                    CustomTabsHelper.launchUrlOrCopy(context, "https://github.com/HmnDev-Tech/shevery")
-               }
-            )
-            GroupDivider()
-            SettingsRow(
-                icon = R.drawable.ic_outline_info_24,
-                title = "Channel",
-                summary = "Join the community channel",
-                onClick = {
-                    CustomTabsHelper.launchUrlOrCopy(context, "https://t.me/hmndevtech")
-                }
-            )
+        val links = listOf(
+            R.string.about_source_code_button to "https://github.com/HmnDev-Tech/shevery",
+            R.string.about_wiki to Helps.SHEVERY_WIKI,
+            R.string.about_releases to "https://github.com/HmnDev-Tech/shevery/releases",
+            R.string.about_telegram to "https://t.me/hmndevtech",
+            R.string.about_donate to "https://github.com/HmnDev-Tech/shevery/blob/main/DONATE.md",
+            R.string.about_credits to "https://github.com/HmnDev-Tech/shevery/graphs/contributors"
+        )
+        ExpressiveSegmentedSection(stringResource(R.string.about_resources)) {
+            links.forEachIndexed { index, (label, url) ->
+                ExpressiveSegmentedItem(index, links.size, R.drawable.ic_baseline_link_24,
+                    stringResource(label), onClick = { CustomTabsHelper.launchUrlOrCopy(context, url) })
+            }
         }
     }
+}
+
+private fun polygonOutline(cubics: List<androidx.graphics.shapes.Cubic>, width: Float, height: Float): Outline {
+    val path = Path()
+    val start = cubics.first()
+    path.moveTo(start.anchor0X * width, start.anchor0Y * height)
+    cubics.forEach { cubic ->
+        path.cubicTo(cubic.control0X * width, cubic.control0Y * height,
+            cubic.control1X * width, cubic.control1Y * height, cubic.anchor1X * width, cubic.anchor1Y * height)
+    }
+    path.close()
+    return Outline.Generic(path)
+}
+
+private fun cookieShape(cubics: () -> List<androidx.graphics.shapes.Cubic>): Shape = object : Shape {
+    override fun createOutline(
+        size: androidx.compose.ui.geometry.Size,
+        layoutDirection: androidx.compose.ui.unit.LayoutDirection,
+        density: androidx.compose.ui.unit.Density
+    ): Outline = polygonOutline(cubics(), size.width, size.height)
 }
