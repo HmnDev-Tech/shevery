@@ -26,6 +26,8 @@ import androidx.compose.ui.res.stringResource
 import androidx.compose.ui.unit.dp
 import moe.shizuku.manager.AppConstants
 import moe.shizuku.manager.R
+import moe.shizuku.manager.guide.GuideTopic
+import moe.shizuku.manager.guide.ShakeGuideHost
 import moe.shizuku.manager.app.AppActivity
 import moe.shizuku.manager.home.AdbPairDialog
 import moe.shizuku.manager.ui.compose.ExpressiveCard
@@ -52,6 +54,7 @@ class AdbPairingTutorialActivity : AppActivity() {
             var showManualPairingDialog by remember { mutableStateOf(false) }
 
             ShizukuExpressiveTheme {
+                ShakeGuideHost(GuideTopic.WIRELESS_DEBUGGING)
                 ShizukuLazyScaffold(
                     title = stringResource(R.string.adb_pairing_tutorial_title),
                     onNavigateUp = { finish() }

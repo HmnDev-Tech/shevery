@@ -46,6 +46,8 @@ import kotlinx.coroutines.Dispatchers
 import kotlinx.coroutines.launch
 import kotlinx.coroutines.withContext
 import moe.shizuku.manager.R
+import moe.shizuku.manager.guide.GuideTopic
+import moe.shizuku.manager.guide.ShakeGuideHost
 import moe.shizuku.manager.ShizukuSettings
 import moe.shizuku.manager.adb.AdbInvalidPairingCodeException
 import moe.shizuku.manager.adb.AdbKey
@@ -112,6 +114,7 @@ fun AdbPairDialog(
             )
         },
         text = {
+            ShakeGuideHost(GuideTopic.WIRELESS_DEBUGGING)
             Column(
                 modifier = Modifier
                     .fillMaxWidth()

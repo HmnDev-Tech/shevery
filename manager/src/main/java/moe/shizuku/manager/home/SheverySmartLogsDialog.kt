@@ -58,6 +58,8 @@ import kotlinx.coroutines.launch
 import kotlinx.coroutines.withContext
 import moe.shizuku.manager.BuildConfig
 import moe.shizuku.manager.R
+import moe.shizuku.manager.guide.GuideTopic
+import moe.shizuku.manager.guide.ShakeGuideHost
 import moe.shizuku.manager.ShizukuSettings
 import moe.shizuku.manager.module.ModuleSettings
 import moe.shizuku.manager.ui.compose.ShizukuIcon
@@ -241,6 +243,7 @@ private fun extractWarningsAndErrors(lines: List<String>): List<String> {
 @Composable
 fun SheverySmartLogsDialog(
     diagnosticsSummary: String? = null,
+    snapshotOnly: Boolean = false,
     onDismiss: () -> Unit
 ) {
     val context = LocalContext.current
@@ -249,10 +252,10 @@ fun SheverySmartLogsDialog(
     var isLoading by remember { mutableStateOf(true) }
     var logsText by remember { mutableStateOf("") }
 
-    LaunchedEffect(refreshTick, diagnosticsSummary) {
+    LaunchedEffect(refreshTick, diagnosticsSummary, snapshotOnly) {
         isLoading = true
         logsText = withContext(Dispatchers.IO) {
-            collectSheverySmartLogs(context, diagnosticsSummary)
+            if (snapshotOnly) diagnosticsSummary.orEmpty() else collectSheverySmartLogs(context, diagnosticsSummary)
         }
         isLoading = false
     }
@@ -297,10 +300,10 @@ fun SheverySmartLogsDialog(
                 verticalAlignment = Alignment.CenterVertically
             ) {
                 Text(
-                    text = stringResource(R.string.home_diagnostics_smart_logs_title),
+                    text = stringResource(if (snapshotOnly) R.string.lab_ipc_title else R.string.home_diagnostics_smart_logs_title),
                     modifier = Modifier.weight(1f)
                 )
-                IconButton(
+                if (!snapshotOnly) IconButton(
                     onClick = { refreshTick++ },
                     enabled = !isLoading
                 ) {
@@ -312,12 +315,13 @@ fun SheverySmartLogsDialog(
             }
         },
         text = {
+            ShakeGuideHost(GuideTopic.FAQ)
             Column(
                 modifier = Modifier.fillMaxWidth(),
                 verticalArrangement = Arrangement.spacedBy(10.dp)
             ) {
                 Text(
-                    text = stringResource(R.string.home_diagnostics_smart_logs_subtitle),
+                    text = stringResource(if (snapshotOnly) R.string.lab_ipc_summary else R.string.home_diagnostics_smart_logs_subtitle),
                     style = MaterialTheme.typography.bodySmall,
                     color = MaterialTheme.colorScheme.onSurfaceVariant
                 )

@@ -38,6 +38,8 @@ import androidx.compose.ui.unit.dp
 import androidx.core.graphics.drawable.toBitmap
 import moe.shizuku.manager.Helps
 import moe.shizuku.manager.R
+import moe.shizuku.manager.guide.GuideTopic
+import moe.shizuku.manager.guide.ShakeGuideHost
 import moe.shizuku.manager.app.AppActivity
 import moe.shizuku.manager.authorization.AuthorizationManager
 import moe.shizuku.manager.ui.compose.GroupDivider
@@ -230,6 +232,7 @@ class AppDetailActivity : AppActivity() {
             }
 
             ShizukuExpressiveTheme {
+                ShakeGuideHost(GuideTopic.AUTHORIZATION)
                 ShizukuLazyScaffold(
                     title = label,
                     onNavigateUp = { finish() }

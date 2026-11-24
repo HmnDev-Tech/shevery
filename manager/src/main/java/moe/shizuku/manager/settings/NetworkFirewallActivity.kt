@@ -35,6 +35,8 @@ import kotlinx.coroutines.Dispatchers
 import kotlinx.coroutines.launch
 import kotlinx.coroutines.withContext
 import moe.shizuku.manager.R
+import moe.shizuku.manager.guide.GuideTopic
+import moe.shizuku.manager.guide.ShakeGuideHost
 import moe.shizuku.manager.app.AppActivity
 import moe.shizuku.manager.ui.compose.GroupDivider
 import moe.shizuku.manager.ui.compose.SettingsGroup
@@ -98,6 +100,7 @@ class NetworkFirewallActivity : AppActivity() {
             val serverRunning = Shizuku.pingBinder()
 
             ShizukuExpressiveTheme {
+                ShakeGuideHost(GuideTopic.FIREWALL)
                 ShizukuLazyScaffold(
                     title = stringResource(R.string.network_firewall_title),
                     onNavigateUp = { finish() }

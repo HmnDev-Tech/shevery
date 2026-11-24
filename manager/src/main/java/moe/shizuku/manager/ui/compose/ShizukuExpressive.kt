@@ -6,6 +6,11 @@
 
 package moe.shizuku.manager.ui.compose
 
+import androidx.compose.animation.core.animateDpAsState
+import androidx.compose.foundation.interaction.MutableInteractionSource
+import androidx.compose.foundation.interaction.collectIsPressedAsState
+import androidx.compose.material3.ListItemDefaults
+import androidx.compose.foundation.selection.toggleable
 import android.content.SharedPreferences
 import android.os.Build
 import androidx.annotation.DrawableRes
@@ -349,6 +354,8 @@ fun RefreshedNavigationBar(
     }
 }
 
+internal val LocalReducedMotion = androidx.compose.runtime.staticCompositionLocalOf { false }
+
 @Composable
 fun ShizukuExpressiveTheme(content: @Composable () -> Unit) {
     val context = LocalContext.current
@@ -371,11 +378,19 @@ fun ShizukuExpressiveTheme(content: @Composable () -> Unit) {
             tertiary = Color(0xFF8C4A62)
         )
     }
-    val colorScheme = if (dark && ThemeHelper.isBlackNightTheme(context)) {
+    var blackNight by remember { mutableStateOf(ThemeHelper.isBlackNightTheme(context)) }
+    var reducedMotion by remember { mutableStateOf(ShizukuSettings.reducedExpressiveMotion()) }
+    val colorScheme = if (dark && blackNight) {
         baseScheme.copy(
             background = Color.Black,
             surface = Color.Black,
-            surfaceContainer = Color(0xFF0B0B0B)
+            surfaceDim = Color.Black,
+            surfaceBright = Color(0xFF070707),
+            surfaceContainerLowest = Color.Black,
+            surfaceContainerLow = Color(0xFF070707),
+            surfaceContainer = Color(0xFF070707),
+            surfaceContainerHigh = Color(0xFF070707),
+            surfaceContainerHighest = Color(0xFF070707)
         )
     } else {
         baseScheme
@@ -385,6 +400,8 @@ fun ShizukuExpressiveTheme(content: @Composable () -> Unit) {
     DisposableEffect(Unit) {
         val prefs = ShizukuSettings.getPreferences()
         val listener = SharedPreferences.OnSharedPreferenceChangeListener { _, key ->
+            if (key == ThemeHelper.KEY_BLACK_NIGHT_THEME || key == null) blackNight = ThemeHelper.isBlackNightTheme(context)
+            if (key == ShizukuSettings.REDUCED_EXPRESSIVE_MOTION || key == null) reducedMotion = ShizukuSettings.reducedExpressiveMotion()
             if (key == ShizukuSettings.AUTOSCALE_APP) {
                 autoscaleApp = ShizukuSettings.isAutoscaleAppEnabled()
             }
@@ -420,10 +437,10 @@ fun ShizukuExpressiveTheme(content: @Composable () -> Unit) {
         }
     }
 
-    CompositionLocalProvider(LocalDensity provides adaptedDensity) {
+    CompositionLocalProvider(LocalDensity provides adaptedDensity, LocalReducedMotion provides reducedMotion) {
         MaterialExpressiveTheme(
             colorScheme = colorScheme,
-            motionScheme = MotionScheme.expressive(),
+            motionScheme = if (reducedMotion) MotionScheme.standard() else MotionScheme.expressive(),
             content = content
         )
     }
@@ -550,16 +567,15 @@ fun ShizukuLazyScaffold(
                         content = content
                     )
                 }
-                PullToRefreshDefaults.LoadingIndicator(
-                    state = pullToRefreshState,
-                    isRefreshing = isRefreshing,
-                    modifier = Modifier
-                        .align(Alignment.TopCenter)
-                        // The expressive Scaffold lays content out edge-to-edge from the window
-                        // top, so without the top bar padding the indicator used to hover over
-                        // the toolbar/status bar. Keep it centered below the app bar (tab line).
-                        .padding(top = innerPadding.calculateTopPadding() + 12.dp)
-                )
+                val indicatorModifier = Modifier.align(Alignment.TopCenter)
+                    .padding(top = innerPadding.calculateTopPadding() + 12.dp)
+                if (LocalReducedMotion.current) {
+                    PullToRefreshDefaults.Indicator(pullToRefreshState, isRefreshing, indicatorModifier)
+                } else {
+                    PullToRefreshDefaults.LoadingIndicator(
+                        state = pullToRefreshState, isRefreshing = isRefreshing, modifier = indicatorModifier
+                    )
+                }
             }
         } else {
             LazyColumn(
@@ -949,4 +965,67 @@ private fun roundedIconFor(@DrawableRes icon: Int): ImageVector? {
         R.drawable.ic_backup_24dp -> Icons.Rounded.Backup
         else -> null
     }
+}
+
+
+@Composable
+fun ExpressiveSegmentedSection(title: String, content: @Composable () -> Unit) {
+    Column(verticalArrangement = Arrangement.spacedBy(ListItemDefaults.SegmentedGap)) {
+        if (title.isNotBlank()) SectionHeader(title)
+        content()
+    }
+}
+
+@Composable
+fun ExpressiveSegmentedItem(
+    index: Int,
+    count: Int,
+    @DrawableRes icon: Int?,
+    title: String,
+    summary: String? = null,
+    enabled: Boolean = true,
+    checked: Boolean? = null,
+    onClick: () -> Unit
+) {
+    val interactions = remember { MutableInteractionSource() }
+    val pressed by interactions.collectIsPressedAsState()
+    val motion = MaterialTheme.motionScheme
+    val top by animateDpAsState(
+        if (pressed) 28.dp else if (index == 0) 24.dp else 4.dp,
+        motion.fastSpatialSpec(), label = "segment-top"
+    )
+    val bottom by animateDpAsState(
+        if (pressed) 28.dp else if (index == count - 1) 24.dp else 4.dp,
+        motion.fastSpatialSpec(), label = "segment-bottom"
+    )
+    val shape = RoundedCornerShape(topStart = top, topEnd = top, bottomStart = bottom, bottomEnd = bottom)
+    val interaction = if (checked == null) {
+        Modifier.clickable(interactionSource = interactions, indication = androidx.compose.foundation.LocalIndication.current,
+            enabled = enabled, onClick = onClick)
+    } else {
+        Modifier.toggleable(value = checked, interactionSource = interactions,
+            indication = androidx.compose.foundation.LocalIndication.current, enabled = enabled,
+            role = Role.Switch, onValueChange = { onClick() })
+    }
+    Surface(shape = shape, color = MaterialTheme.colorScheme.surfaceContainerHigh) {
+        SettingsRow(icon, title, modifier = interaction, summary = summary, enabled = enabled, trailing = {
+            if (checked != null) {
+                Box(Modifier.clearAndSetSemantics {}) { ExpressiveSwitch(checked = checked, onCheckedChange = null, enabled = enabled) }
+            }
+        })
+    }
+}
+
+@Composable
+fun ExpressiveSegmentedToggle(
+    index: Int,
+    count: Int,
+    @DrawableRes icon: Int?,
+    title: String,
+    checked: Boolean,
+    summary: String? = null,
+    onCheckedChange: (Boolean) -> Unit
+) {
+    ExpressiveSegmentedItem(index, count, icon, title, summary, checked = checked,
+        onClick = { onCheckedChange(!checked) })
 }
