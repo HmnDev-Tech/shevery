@@ -7,6 +7,8 @@ import androidx.lifecycle.ViewModel
 import androidx.lifecycle.viewModelScope
 import kotlinx.coroutines.CancellationException
 import kotlinx.coroutines.Dispatchers
+import kotlinx.coroutines.Job
+import kotlinx.coroutines.ensureActive
 import kotlinx.coroutines.launch
 import kotlinx.coroutines.flow.SharingStarted
 import kotlinx.coroutines.flow.StateFlow
@@ -60,17 +62,39 @@ class HomeViewModel : ViewModel() {
             Shizuku.checkRemotePermission("android.permission.GRANT_RUNTIME_PERMISSIONS") == PackageManager.PERMISSION_GRANTED
 
         ShizukuSystemApis.checkPermission(Manifest.permission.PRIVILEGED_API, BuildConfig.APPLICATION_ID, 0)
-        return ServiceStatus(uid, apiVersion, patchVersion, seContext, permissionTest)
+        return ServiceStatus(uid, apiVersion, patchVersion, seContext, permissionTest, readServerPid())
     }
 
+    private fun readServerPid(): Int? = runCatching {
+        val binder = Shizuku.getBinder() ?: return null
+        val service = moe.shizuku.server.IShizukuService.Stub.asInterface(binder)
+        // The Shizuku service directly spawns this short-lived child process.
+        val remote = service.newProcess(arrayOf("sh", "-c", "printf '%s' \"\$PPID\""), null, null)
+        try {
+            if (!remote.waitForTimeout(1, java.util.concurrent.TimeUnit.SECONDS.name) || remote.exitValue() != 0) {
+                return null
+            }
+            android.os.ParcelFileDescriptor.AutoCloseInputStream(remote.inputStream).bufferedReader().use {
+                it.readText().toIntOrNull()?.takeIf { pid -> pid > 0 }
+            }
+        } finally {
+            runCatching { remote.destroy() }
+        }
+    }.getOrNull()
+
+    private var reloadJob: Job? = null
+
     fun reload() {
-        viewModelScope.launch(Dispatchers.IO) {
+        reloadJob?.cancel()
+        reloadJob = viewModelScope.launch(Dispatchers.IO) {
             try {
                 val status = load()
+                ensureActive()
                 _serviceStatus.postValue(Resource.success(status))
             } catch (e: CancellationException) {
-
+                throw e
             } catch (e: Throwable) {
+                ensureActive()
                 _serviceStatus.postValue(Resource.error(e, ServiceStatus()))
             }
         }

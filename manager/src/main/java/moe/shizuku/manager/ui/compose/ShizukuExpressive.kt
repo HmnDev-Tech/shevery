@@ -39,6 +39,9 @@ import androidx.compose.foundation.layout.PaddingValues
 import androidx.compose.foundation.layout.Row
 import androidx.compose.foundation.layout.RowScope
 import androidx.compose.foundation.layout.WindowInsets
+import androidx.compose.foundation.layout.widthIn
+import androidx.compose.foundation.layout.consumeWindowInsets
+import androidx.compose.foundation.layout.safeDrawing
 import androidx.compose.foundation.layout.WindowInsetsSides
 import androidx.compose.foundation.layout.asPaddingValues
 import androidx.compose.foundation.layout.calculateEndPadding
@@ -58,38 +61,6 @@ import androidx.compose.foundation.lazy.LazyListState
 import androidx.compose.foundation.lazy.rememberLazyListState
 import androidx.compose.foundation.shape.CircleShape
 import androidx.compose.foundation.shape.RoundedCornerShape
-import androidx.compose.material.icons.Icons
-import androidx.compose.material.icons.automirrored.rounded.ArrowBack
-import androidx.compose.material.icons.automirrored.rounded.HelpOutline
-import androidx.compose.material.icons.automirrored.rounded.OpenInNew
-import androidx.compose.material.icons.automirrored.rounded.Shortcut
-import androidx.compose.material.icons.rounded.AdminPanelSettings
-import androidx.compose.material.icons.rounded.Apps
-import androidx.compose.material.icons.rounded.Backup
-import androidx.compose.material.icons.rounded.Cancel
-import androidx.compose.material.icons.rounded.Check
-import androidx.compose.material.icons.rounded.CheckCircle
-import androidx.compose.material.icons.rounded.Close
-import androidx.compose.material.icons.rounded.Code
-import androidx.compose.material.icons.rounded.ContentCopy
-import androidx.compose.material.icons.rounded.DarkMode
-import androidx.compose.material.icons.rounded.DeveloperMode
-import androidx.compose.material.icons.rounded.Info
-import androidx.compose.material.icons.rounded.LooksOne
-import androidx.compose.material.icons.rounded.Link
-import androidx.compose.material.icons.rounded.LightMode
-import androidx.compose.material.icons.rounded.MoreVert
-import androidx.compose.material.icons.rounded.NotificationsActive
-import androidx.compose.material.icons.rounded.PlayArrow
-import androidx.compose.material.icons.rounded.Refresh
-import androidx.compose.material.icons.rounded.School
-import androidx.compose.material.icons.rounded.Settings
-import androidx.compose.material.icons.rounded.SettingsBackupRestore
-import androidx.compose.material.icons.rounded.SystemUpdate
-import androidx.compose.material.icons.rounded.Terminal
-import androidx.compose.material.icons.rounded.Translate
-import androidx.compose.material.icons.rounded.Warning
-import androidx.compose.material.icons.rounded.Wifi
 import androidx.compose.material3.ButtonDefaults
 import androidx.compose.runtime.CompositionLocalProvider
 import androidx.compose.material3.ExperimentalMaterial3Api
@@ -145,7 +116,6 @@ import androidx.compose.ui.geometry.Offset
 import androidx.compose.ui.geometry.Rect
 import androidx.compose.ui.geometry.Size
 import androidx.compose.ui.graphics.Color
-import androidx.compose.ui.graphics.vector.ImageVector
 import androidx.compose.ui.layout.boundsInParent
 import androidx.compose.ui.layout.onGloballyPositioned
 import androidx.compose.ui.platform.LocalContext
@@ -171,7 +141,7 @@ val LocalFloatingNavBarVisible = compositionLocalOf<MutableState<Boolean>> {
 
 data class NavItem(
     val title: String,
-    val icon: ImageVector
+    @param:DrawableRes val icon: Int
 )
 
 @Composable
@@ -272,7 +242,7 @@ fun ExpressiveFloatingNavigationBar(
                     ) {
                         Row(verticalAlignment = Alignment.CenterVertically) {
                             Icon(
-                                imageVector = item.icon,
+                                painter = painterResource(item.icon),
                                 contentDescription = item.title
                             )
                             AnimatedVisibility(
@@ -329,7 +299,7 @@ fun RefreshedNavigationBar(
                     onClick = { if (!selected) onItemSelected(index) },
                     icon = {
                         Icon(
-                            imageVector = item.icon,
+                            painter = painterResource(item.icon),
                             contentDescription = item.title
                         )
                     },
@@ -432,7 +402,7 @@ fun ShizukuExpressiveTheme(content: @Composable () -> Unit) {
                 } else {
                     baseDensity.density
                 }
-                Density(density = targetDensity, fontScale = 1.0f)
+                Density(density = targetDensity, fontScale = baseDensity.fontScale)
             }
         }
     }
@@ -470,7 +440,7 @@ fun ShizukuScaffold(
 
     Scaffold(
         modifier = modifier,
-        contentWindowInsets = WindowInsets(0.dp),
+        contentWindowInsets = WindowInsets.safeDrawing.only(WindowInsetsSides.Horizontal),
         bottomBar = bottomBar,
         floatingActionButton = floatingActionButton,
         topBar = {
@@ -521,6 +491,7 @@ fun ShizukuLazyScaffold(
     motionBlurEnabled: Boolean = ShizukuSettings.isMotionBlurEnabled(),
     motionBlurIntensity: Int = ShizukuSettings.getMotionBlurIntensity(),
     motionBlurStrength: Int = ShizukuSettings.getMotionBlurStrength(),
+    maxContentWidth: Dp = Dp.Unspecified,
     content: LazyListScope.() -> Unit
 ) {
     ShizukuScaffold(
@@ -541,8 +512,10 @@ fun ShizukuLazyScaffold(
                 navigationBarPadding.calculateBottomPadding() + bottomInset
         )
         val listModifier = Modifier
+            .then(if (maxContentWidth != Dp.Unspecified) Modifier.widthIn(max = maxContentWidth) else Modifier)
             .fillMaxSize()
             .padding(innerPadding)
+            .consumeWindowInsets(innerPadding)
             .scrollMotionBlur(
                 listState = listState,
                 enabled = motionBlurEnabled,
@@ -578,13 +551,15 @@ fun ShizukuLazyScaffold(
                 }
             }
         } else {
-            LazyColumn(
-                state = listState,
-                modifier = listModifier,
-                contentPadding = resolvedContentPadding,
-                verticalArrangement = verticalArrangement,
-                content = content
-            )
+            Box(Modifier.fillMaxSize(), contentAlignment = Alignment.TopCenter) {
+                LazyColumn(
+                    state = listState,
+                    modifier = listModifier,
+                    contentPadding = resolvedContentPadding,
+                    verticalArrangement = verticalArrangement,
+                    content = content
+                )
+            }
         }
     }
 }
@@ -779,7 +754,7 @@ fun SwitchSettingsRow(
         title = title,
         modifier = modifier,
         summary = summary,
-        stateDescription = if (checked) "On" else "Off",
+        stateDescription = stringResource(if (checked) R.string.settings_state_on else R.string.settings_state_off),
         enabled = enabled,
         onClick = { if (enabled) onCheckedChange(!checked) },
         trailing = {
@@ -892,7 +867,7 @@ fun ExpressiveSwitch(
         thumbContent = if (checked) {
             {
                 Icon(
-                    imageVector = Icons.Rounded.Check,
+                    painter = painterResource(R.drawable.ic_symbol_check_24),
                     contentDescription = null,
                     modifier = Modifier.size(SwitchDefaults.IconSize)
                 )
@@ -910,61 +885,12 @@ fun ShizukuIcon(
     modifier: Modifier = Modifier,
     tint: Color = LocalContentColor.current
 ) {
-    val imageVector = roundedIconFor(icon)
-    if (imageVector != null) {
-        Icon(
-            imageVector = imageVector,
-            contentDescription = contentDescription,
-            modifier = modifier,
-            tint = tint
-        )
-    } else {
-        Icon(
-            painter = painterResource(icon),
-            contentDescription = contentDescription,
-            modifier = modifier,
-            tint = tint
-        )
-    }
-}
-
-private fun roundedIconFor(@DrawableRes icon: Int): ImageVector? {
-    return when (icon) {
-        R.drawable.ic_arrow_back_24 -> Icons.AutoMirrored.Rounded.ArrowBack
-        R.drawable.ic_action_settings_24dp,
-        R.drawable.ic_settings_outline_24dp -> Icons.Rounded.Settings
-        R.drawable.ic_server_restart -> Icons.Rounded.Refresh
-        R.drawable.ic_more_vert_24 -> Icons.Rounded.MoreVert
-        R.drawable.ic_close_24 -> Icons.Rounded.Close
-        R.drawable.ic_outline_info_24,
-        R.drawable.ic_action_about_24dp -> Icons.Rounded.Info
-        R.drawable.ic_system_icon -> Icons.Rounded.Apps
-        R.drawable.ic_warning_24 -> Icons.Rounded.Warning
-        R.drawable.ic_help_outline_24dp -> Icons.AutoMirrored.Rounded.HelpOutline
-        R.drawable.ic_outline_translate_24 -> Icons.Rounded.Translate
-        R.drawable.ic_baseline_link_24 -> Icons.Rounded.Link
-        R.drawable.ic_outline_dark_mode_24 -> Icons.Rounded.DarkMode
-        R.drawable.ic_outline_light_mode_24 -> Icons.Rounded.LightMode
-        R.drawable.ic_outline_notifications_active_24 -> Icons.Rounded.NotificationsActive
-        R.drawable.ic_outline_open_in_new_24 -> Icons.AutoMirrored.Rounded.OpenInNew
-        R.drawable.ic_shortcut_24dp -> Icons.AutoMirrored.Rounded.Shortcut
-        R.drawable.ic_outline_play_arrow_24,
-        R.drawable.ic_server_start_24dp -> Icons.Rounded.PlayArrow
-        R.drawable.ic_content_copy_24 -> Icons.Rounded.ContentCopy
-        R.drawable.ic_terminal_24 -> Icons.Rounded.Terminal
-        R.drawable.ic_code_24dp -> Icons.Rounded.Code
-        R.drawable.ic_server_ok_24dp -> Icons.Rounded.CheckCircle
-        R.drawable.ic_server_error_24dp -> Icons.Rounded.Cancel
-        R.drawable.ic_wadb_24 -> Icons.Rounded.Wifi
-        R.drawable.ic_numeric_1_circle_outline_24 -> Icons.Rounded.LooksOne
-        R.drawable.ic_adb_24dp -> Icons.Rounded.DeveloperMode
-        R.drawable.ic_learn_more_24dp -> Icons.Rounded.School
-        R.drawable.ic_root_24dp -> Icons.Rounded.AdminPanelSettings
-        R.drawable.ic_system_update_24 -> Icons.Rounded.SystemUpdate
-        R.drawable.ic_settings_backup_restore_24dp -> Icons.Rounded.SettingsBackupRestore
-        R.drawable.ic_backup_24dp -> Icons.Rounded.Backup
-        else -> null
-    }
+    Icon(
+        painter = painterResource(icon),
+        contentDescription = contentDescription,
+        modifier = modifier,
+        tint = tint
+    )
 }
 
 

@@ -7,7 +7,8 @@ data class ServiceStatus(
         val apiVersion: Int = -1,
         val patchVersion: Int = -1,
         val seContext: String? = null,
-        val permission: Boolean = false
+        val permission: Boolean = false,
+        val pid: Int? = null
 ) {
     val isRunning: Boolean
         get() = uid != -1 && Shizuku.pingBinder()

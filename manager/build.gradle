@@ -188,6 +188,19 @@ configurations.configureEach {
     exclude group: 'androidx.profileinstaller', module: 'profileinstaller'
 }
 
+// Preserve the provider jar signature on the JVM test classpath. The Android
+// artifact transform can rewrite signed classes before Robolectric loads them.
+def bouncyCastleVersion = '1.87'
+def jvmCryptoProvider = configurations.create('jvmCryptoProvider') {
+    canBeConsumed = false
+    transitive = false
+}
+gradle.projectsEvaluated {
+    tasks.withType(Test).configureEach {
+        classpath = classpath.filter { !it.name.startsWith('bcprov-jdk18on-') } + jvmCryptoProvider
+    }
+}
+
 dependencies {
     implementation 'org.jetbrains.kotlinx:kotlinx-coroutines-core:1.11.0'
     implementation 'org.jetbrains.kotlinx:kotlinx-coroutines-android:1.11.0'
@@ -206,12 +219,12 @@ dependencies {
     compileOnly libs.hidden.stub
 
     implementation 'androidx.webkit:webkit:1.18.0'
-    implementation platform('androidx.compose:compose-bom:2026.09.00')
+    implementation platform('androidx.compose:compose-bom:2026.11.01')
     implementation 'androidx.compose.animation:animation'
     implementation 'androidx.compose.foundation:foundation'
     implementation 'androidx.compose.material:material-icons-core'
     implementation 'androidx.compose.material:material-icons-extended'
-    implementation 'androidx.compose.material3:material3:1.5.0-rc01'
+    implementation 'androidx.compose.material3:material3:1.5.0'
     implementation 'androidx.compose.runtime:runtime'
     implementation 'androidx.compose.runtime:runtime-livedata'
     implementation 'androidx.compose.ui:ui'
@@ -222,9 +235,9 @@ dependencies {
     implementation 'androidx.browser:browser:1.10.0'
     implementation 'androidx.core:core-ktx:1.19.1'
     implementation 'androidx.fragment:fragment-ktx:1.9.1'
-    implementation 'androidx.lifecycle:lifecycle-runtime-compose:2.11.0'
-    implementation 'androidx.lifecycle:lifecycle-viewmodel-ktx:2.11.0'
-    implementation 'androidx.lifecycle:lifecycle-livedata-ktx:2.11.0'
+    implementation 'androidx.lifecycle:lifecycle-runtime-compose:2.11.1'
+    implementation 'androidx.lifecycle:lifecycle-viewmodel-ktx:2.11.1'
+    implementation 'androidx.lifecycle:lifecycle-livedata-ktx:2.11.1'
     implementation 'androidx.preference:preference-ktx:1.2.1'
     implementation 'androidx.work:work-runtime-ktx:2.12.0'
 
@@ -243,7 +256,8 @@ dependencies {
 
     implementation 'org.lsposed.hiddenapibypass:hiddenapibypass:6.2'
 
-    implementation 'org.bouncycastle:bcpkix-jdk18on:1.87'
+    implementation "org.bouncycastle:bcpkix-jdk18on:${bouncyCastleVersion}"
+    add("jvmCryptoProvider", "org.bouncycastle:bcprov-jdk18on:${bouncyCastleVersion}")
     implementation 'com.android.tools.smali:smali-dexlib2:3.0.10'
 
     implementation 'io.github.iamr0s:Dhizuku-API:2.7.0'
@@ -251,12 +265,13 @@ dependencies {
     implementation 'com.squareup.okhttp3:okhttp:5.5.1'
     implementation 'org.jetbrains.kotlinx:kotlinx-serialization-json:1.13.0'
     implementation 'androidx.security:security-crypto:1.1.0'
-    implementation 'androidx.biometric:biometric:1.4.0-beta01'
-    implementation 'io.coil-kt:coil-compose:2.7.0'
+    implementation 'androidx.biometric:biometric:1.4.0-rc01'
+    implementation 'io.coil-kt.coil3:coil-compose:3.6.3'
+    implementation 'io.coil-kt.coil3:coil-network-okhttp:3.6.3'
     testImplementation 'junit:junit:4.13.2'
     testImplementation 'org.jetbrains.kotlinx:kotlinx-coroutines-test:1.11.0'
     testImplementation 'io.mockk:mockk:1.14.12'
-    testImplementation 'org.robolectric:robolectric:4.18'
+    testImplementation 'org.robolectric:robolectric:4.18.1'
 }
 
 apply from: rootProject.file('signing.gradle')

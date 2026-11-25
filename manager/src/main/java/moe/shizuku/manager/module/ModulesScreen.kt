@@ -13,8 +13,6 @@ import androidx.compose.foundation.background
 import androidx.compose.material3.FloatingActionButton
 import androidx.compose.material3.LinearProgressIndicator
 import androidx.compose.material3.LinearWavyProgressIndicator
-import androidx.compose.ui.draw.alpha
-import androidx.compose.ui.graphics.Brush
 import moe.shizuku.manager.ui.compose.LocalReducedMotion
 
 import android.content.ClipData
@@ -29,7 +27,6 @@ import androidx.annotation.StringRes
 import androidx.compose.animation.AnimatedVisibility
 import androidx.compose.animation.animateColorAsState
 import androidx.compose.animation.animateContentSize
-import androidx.compose.animation.core.tween
 import androidx.compose.animation.expandVertically
 import androidx.compose.animation.fadeIn
 import androidx.compose.animation.fadeOut
@@ -63,20 +60,6 @@ import androidx.compose.foundation.rememberScrollState
 import androidx.compose.foundation.shape.RoundedCornerShape
 import androidx.compose.foundation.text.selection.SelectionContainer
 import androidx.compose.foundation.verticalScroll
-import androidx.compose.material.icons.Icons
-import androidx.compose.material.icons.rounded.DeleteForever
-import androidx.compose.material.icons.rounded.Download
-import androidx.compose.material.icons.rounded.Shortcut
-import androidx.compose.material.icons.rounded.Stop
-import androidx.compose.material.icons.rounded.Wysiwyg
-import androidx.compose.material.icons.rounded.Apps
-import androidx.compose.material.icons.rounded.CheckCircle
-import androidx.compose.material.icons.rounded.Close
-import androidx.compose.material.icons.rounded.ContentCopy
-import androidx.compose.material.icons.rounded.PlayArrow
-import androidx.compose.material.icons.rounded.Refresh
-import androidx.compose.material.icons.rounded.Terminal
-import androidx.compose.material.icons.rounded.Warning
 import androidx.compose.material3.AlertDialog
 import androidx.compose.material3.Button
 import androidx.compose.material3.ButtonDefaults
@@ -106,10 +89,10 @@ import androidx.compose.ui.Modifier
 import androidx.compose.ui.draw.clip
 import androidx.compose.ui.graphics.Color
 import androidx.compose.ui.graphics.asImageBitmap
-import androidx.compose.ui.graphics.vector.ImageVector
 import androidx.compose.ui.layout.ContentScale
 import androidx.compose.ui.platform.LocalContext
 import androidx.compose.ui.platform.LocalView
+import androidx.compose.ui.res.painterResource
 import androidx.compose.ui.res.stringResource
 import androidx.compose.ui.text.font.FontFamily
 import androidx.compose.ui.text.font.FontWeight
@@ -277,7 +260,7 @@ fun ModulesScreen(
             }
         } else {
             updatingModuleId = null
-            Toast.makeText(context, "Update failed: No valid update source", Toast.LENGTH_LONG).show()
+            Toast.makeText(context, R.string.modules_update_no_source, Toast.LENGTH_LONG).show()
         }
     }
 
@@ -645,6 +628,7 @@ private fun ModuleCard(
     onStopService: () -> Unit,
     onLogs: () -> Unit
 ) {
+    val motion = MaterialTheme.motionScheme
     var expanded by remember(module.id) { mutableStateOf(false) }
     var showTrustAction by remember(module.id, trusted) { mutableStateOf(false) }
     val containerColor by animateColorAsState(
@@ -655,7 +639,7 @@ private fun ModuleCard(
         } else {
             MaterialTheme.colorScheme.surfaceContainerLowest
         },
-        animationSpec = tween(260),
+        animationSpec = motion.defaultEffectsSpec(),
         label = "module-container"
     )
     Surface(
@@ -669,14 +653,13 @@ private fun ModuleCard(
                     showTrustAction = true
                 }
             )
-            .animateContentSize(animationSpec = tween(280)),
+            .animateContentSize(animationSpec = motion.defaultSpatialSpec()),
         shape = MaterialTheme.shapes.extraLarge,
         color = containerColor,
         border = BorderStroke(1.dp, MaterialTheme.colorScheme.outlineVariant),
         tonalElevation = 1.dp
     ) {
         Box {
-            ModuleBanner(module, containerColor)
             Column(
                 modifier = Modifier.padding(horizontal = 18.dp, vertical = 16.dp),
                 verticalArrangement = Arrangement.spacedBy(10.dp)
@@ -716,36 +699,39 @@ private fun ModuleCard(
                 ModuleChips(module, trusted, serviceRunning)
                 AnimatedVisibility(
                     visible = busy,
-                    enter = fadeIn(tween(180)) + expandVertically(tween(180)),
-                    exit = fadeOut(tween(120)) + shrinkVertically(tween(120))
+                    enter = fadeIn(motion.fastEffectsSpec()) + expandVertically(motion.fastSpatialSpec()),
+                    exit = fadeOut(motion.fastEffectsSpec()) + shrinkVertically(motion.fastSpatialSpec())
                 ) {
                     RunningRow()
                 }
                 AnimatedVisibility(
                     visible = expanded,
-                    enter = fadeIn(tween(180)) + expandVertically(tween(220)),
-                    exit = fadeOut(tween(120)) + shrinkVertically(tween(160))
+                    enter = fadeIn(motion.fastEffectsSpec()) + expandVertically(motion.fastSpatialSpec()),
+                    exit = fadeOut(motion.fastEffectsSpec()) + shrinkVertically(motion.fastSpatialSpec())
                 ) {
-                    ModuleActions(
-                        module = module,
-                        serviceRunning = serviceRunning,
-                        onStopService = onStopService,
-                        onLogs = onLogs,
-                        updating = updating,
-                        onUpdateModule = onUpdateModule,
-                        busy = busy,
-                        onRunAction = onRunAction,
-                        onRunService = onRunService,
-                        onOpenWebUi = onOpenWebUi,
-                        onCreateShortcut = onCreateShortcut,
-                        onDelete = onDelete,
-                        trusted = trusted,
-                        showTrustAction = showTrustAction,
-                        onTrustChange = {
-                            showTrustAction = false
-                            onTrustChange(it)
-                        }
-                    )
+                    Column(verticalArrangement = Arrangement.spacedBy(12.dp)) {
+                        ModuleBanner(module)
+                        ModuleActions(
+                            module = module,
+                            serviceRunning = serviceRunning,
+                            onStopService = onStopService,
+                            onLogs = onLogs,
+                            updating = updating,
+                            onUpdateModule = onUpdateModule,
+                            busy = busy,
+                            onRunAction = onRunAction,
+                            onRunService = onRunService,
+                            onOpenWebUi = onOpenWebUi,
+                            onCreateShortcut = onCreateShortcut,
+                            onDelete = onDelete,
+                            trusted = trusted,
+                            showTrustAction = showTrustAction,
+                            onTrustChange = {
+                                showTrustAction = false
+                                onTrustChange(it)
+                            }
+                        )
+                    }
                 }
             }
         }
@@ -779,25 +765,18 @@ private fun ModuleChips(module: AdbModule, trusted: Boolean, serviceRunning: Boo
 }
 
 @Composable
-private fun ModuleBanner(module: AdbModule, surface: androidx.compose.ui.graphics.Color) {
-    val bannerFile = module.banner
-    if (bannerFile != null && bannerFile.exists()) {
-        val bitmap by androidx.compose.runtime.produceState<android.graphics.Bitmap?>(null, bannerFile, bannerFile.lastModified()) {
-            value = withContext(Dispatchers.IO) { BitmapFactory.decodeFile(bannerFile.absolutePath) }
-        }
-        bitmap?.let { image ->
-            Box(Modifier.fillMaxWidth().height(110.dp)) {
-            Image(
-                bitmap = image.asImageBitmap(),
-                contentDescription = null,
-                modifier = Modifier
-                    .fillMaxWidth()
-                    .height(110.dp).alpha(0.18f),
-                contentScale = ContentScale.Crop
-            )
-            Box(Modifier.matchParentSize().background(Brush.verticalGradient(listOf(androidx.compose.ui.graphics.Color.Transparent, surface))))
-            }
-        }
+private fun ModuleBanner(module: AdbModule) {
+    val banner = module.banner ?: return
+    val bitmap by androidx.compose.runtime.produceState<android.graphics.Bitmap?>(null, banner) {
+        value = withContext(Dispatchers.IO) { BitmapFactory.decodeFile(banner.absolutePath) }
+    }
+    bitmap?.let {
+        Image(
+            bitmap = it.asImageBitmap(),
+            contentDescription = null,
+            modifier = Modifier.fillMaxWidth().height(112.dp).clip(MaterialTheme.shapes.medium),
+            contentScale = ContentScale.Crop
+        )
     }
 }
 
@@ -812,6 +791,7 @@ private fun ModuleInfoLine(@StringRes label: Int, value: String) {
     )
 }
 
+@OptIn(ExperimentalMaterial3ExpressiveApi::class)
 @Composable
 private fun RunningRow() {
     Row(
@@ -851,25 +831,25 @@ private fun ModuleActions(
     ) {
         ModuleButton(
             label = R.string.modules_run_action,
-            icon = Icons.Rounded.Terminal,
+            icon = R.drawable.ic_terminal_24,
             enabled = !busy && module.enabled && module.hasAction && ModuleSettings.canRunAction(module),
             onClick = onRunAction
         )
         ModuleButton(
             label = R.string.modules_open_webui,
-            icon = Icons.Rounded.Wysiwyg,
+            icon = R.drawable.ic_symbol_wysiwyg_24,
             enabled = !busy && module.hasWebUi,
             onClick = onOpenWebUi
         )
         ModuleButton(
             label = R.string.modules_shortcut,
-            icon = Icons.Rounded.Shortcut,
+            icon = R.drawable.ic_shortcut_24dp,
             enabled = !busy && module.hasWebUi,
             onClick = onCreateShortcut
         )
         ModuleButton(
             label = if (serviceRunning) R.string.modules_stop_service else R.string.modules_run_service,
-            icon = if (serviceRunning) Icons.Rounded.Stop else Icons.Rounded.PlayArrow,
+            icon = if (serviceRunning) R.drawable.ic_symbol_stop_24 else R.drawable.ic_outline_play_arrow_24,
             enabled = serviceRunning || (!busy &&
                     module.enabled &&
                     module.hasService &&
@@ -879,18 +859,18 @@ private fun ModuleActions(
         )
         ModuleButton(
             label = R.string.modules_delete,
-            icon = Icons.Rounded.DeleteForever,
+            icon = R.drawable.ic_symbol_delete_forever_24,
             enabled = !busy,
             onClick = onDelete
         )
-        ModuleButton(R.string.modules_saved_logs, Icons.Rounded.Terminal, onClick = onLogs)
+        ModuleButton(R.string.modules_saved_logs, R.drawable.ic_terminal_24, onClick = onLogs)
         if (module.updateInfo != null) {
-            ModuleButton(R.string.modules_update_button, Icons.Rounded.Download, enabled = !updating && !busy, onClick = onUpdateModule)
+            ModuleButton(R.string.modules_update_button, R.drawable.ic_symbol_download_24, enabled = !updating && !busy, onClick = onUpdateModule)
         }
         if (showTrustAction) {
             ModuleButton(
                 label = if (trusted) R.string.modules_untrust else R.string.modules_trust,
-                icon = Icons.Rounded.CheckCircle,
+                icon = R.drawable.ic_outline_check_circle_24,
                 enabled = !busy,
                 onClick = { onTrustChange(!trusted) }
             )
@@ -901,7 +881,7 @@ private fun ModuleActions(
 @Composable
 private fun ModuleButton(
     @StringRes label: Int,
-    icon: androidx.compose.ui.graphics.vector.ImageVector,
+    @DrawableRes icon: Int,
     enabled: Boolean = true,
     onClick: () -> Unit
 ) {
@@ -910,13 +890,14 @@ private fun ModuleButton(
         enabled = enabled,
         contentPadding = ButtonDefaults.ButtonWithIconContentPadding
     ) {
-        Icon(icon, contentDescription = null, modifier = Modifier.padding(end = 6.dp).size(18.dp))
+        ShizukuIcon(icon, contentDescription = null, modifier = Modifier.padding(end = 6.dp).size(18.dp))
         Text(stringResource(label))
     }
 }
 
 
 
+@OptIn(ExperimentalMaterial3ExpressiveApi::class)
 @Composable
 fun ModuleLiveConsoleDialog(
     live: AdbModuleManager.LiveModuleOutput,
@@ -983,13 +964,13 @@ fun ModuleLiveConsoleDialog(
                             when {
                                 live.running -> LoadingIndicator(modifier = Modifier.size(22.dp))
                                 live.succeeded -> Icon(
-                                    imageVector = Icons.Rounded.CheckCircle,
+                                    painter = painterResource(R.drawable.ic_outline_check_circle_24),
                                     contentDescription = null,
                                     tint = MaterialTheme.colorScheme.onSecondaryContainer,
                                     modifier = Modifier.size(22.dp)
                                 )
                                 else -> Icon(
-                                    imageVector = Icons.Rounded.Warning,
+                                    painter = painterResource(R.drawable.ic_warning_24),
                                     contentDescription = null,
                                     tint = MaterialTheme.colorScheme.onErrorContainer,
                                     modifier = Modifier.size(22.dp)
@@ -1069,7 +1050,7 @@ fun ModuleLiveConsoleDialog(
                         }
                     ) {
                         Icon(
-                            imageVector = Icons.Rounded.ContentCopy,
+                            painter = painterResource(R.drawable.ic_content_copy_24),
                             contentDescription = stringResource(R.string.modules_recommand_copy),
                             modifier = Modifier.size(20.dp)
                         )
@@ -1093,7 +1074,7 @@ fun ModuleLiveConsoleDialog(
                         )
                     }
                 } else {
-                    HorizontalDivider(color = MaterialTheme.colorScheme.outlineVariant.copy(alpha = 0.4f))
+                    HorizontalDivider(color = MaterialTheme.colorScheme.outlineVariant)
                 }
 
                 // Live Terminal Output Area
@@ -1188,7 +1169,7 @@ fun ModuleLiveConsoleDialog(
                     }
                 }
 
-                HorizontalDivider(color = MaterialTheme.colorScheme.outlineVariant.copy(alpha = 0.4f))
+                HorizontalDivider(color = MaterialTheme.colorScheme.outlineVariant)
 
                 // Bottom Action Bar
                 Column(
@@ -1231,7 +1212,7 @@ fun ModuleLiveConsoleDialog(
                                 contentPadding = PaddingValues(horizontal = 12.dp, vertical = 6.dp)
                             ) {
                                 Icon(
-                                    imageVector = Icons.Rounded.Terminal,
+                                    painter = painterResource(R.drawable.ic_terminal_24),
                                     contentDescription = null,
                                     modifier = Modifier
                                         .padding(end = 6.dp)
@@ -1251,7 +1232,7 @@ fun ModuleLiveConsoleDialog(
                                     contentPadding = PaddingValues(horizontal = 12.dp, vertical = 6.dp)
                                 ) {
                                     Icon(
-                                        imageVector = Icons.Rounded.Refresh,
+                                        painter = painterResource(R.drawable.ic_server_restart),
                                         contentDescription = null,
                                         modifier = Modifier
                                             .padding(end = 6.dp)
@@ -1272,7 +1253,7 @@ fun ModuleLiveConsoleDialog(
                                     contentPadding = PaddingValues(horizontal = 12.dp, vertical = 6.dp)
                                 ) {
                                     Icon(
-                                        imageVector = Icons.Rounded.PlayArrow,
+                                        painter = painterResource(R.drawable.ic_outline_play_arrow_24),
                                         contentDescription = null,
                                         modifier = Modifier
                                             .padding(end = 6.dp)
@@ -1292,7 +1273,7 @@ fun ModuleLiveConsoleDialog(
                                 contentPadding = PaddingValues(horizontal = 14.dp, vertical = 6.dp)
                             ) {
                                 Icon(
-                                    imageVector = Icons.Rounded.Close,
+                                    painter = painterResource(R.drawable.ic_close_24),
                                     contentDescription = null,
                                     modifier = Modifier
                                         .padding(end = 6.dp)

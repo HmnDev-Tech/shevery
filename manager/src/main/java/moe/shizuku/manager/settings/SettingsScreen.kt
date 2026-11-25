@@ -1,4 +1,4 @@
-@file:OptIn(androidx.compose.material3.ExperimentalMaterial3Api::class)
+@file:OptIn(androidx.compose.material3.ExperimentalMaterial3Api::class, androidx.compose.material3.ExperimentalMaterial3ExpressiveApi::class)
 
 package moe.shizuku.manager.settings
 
@@ -12,9 +12,6 @@ import androidx.annotation.DrawableRes
 import androidx.annotation.StringRes
 import androidx.compose.foundation.lazy.LazyListScope
 import androidx.compose.foundation.text.KeyboardOptions
-import androidx.compose.material.icons.Icons
-import androidx.compose.material.icons.rounded.ChevronRight
-import androidx.compose.material.icons.rounded.Refresh
 import androidx.compose.material3.Icon
 import androidx.compose.material3.IconButton
 import androidx.compose.ui.text.input.KeyboardType
@@ -25,7 +22,6 @@ import android.os.Build
 import android.text.TextUtils
 import androidx.appcompat.app.AppCompatDelegate
 import androidx.compose.animation.AnimatedContent
-import androidx.compose.animation.core.tween
 import androidx.compose.animation.fadeIn
 import androidx.compose.animation.fadeOut
 import androidx.compose.animation.slideInHorizontally
@@ -73,6 +69,7 @@ import androidx.compose.ui.Modifier
 import androidx.compose.ui.platform.LocalContext
 import androidx.compose.ui.platform.LocalLifecycleOwner
 import androidx.compose.ui.res.stringArrayResource
+import androidx.compose.ui.res.painterResource
 import androidx.compose.ui.res.stringResource
 import androidx.compose.ui.unit.dp
 import kotlinx.coroutines.delay
@@ -498,9 +495,9 @@ fun SettingsScreen(
                     } ?: error("Failed to open output stream")
                 }
             }.onSuccess {
-                Toast.makeText(context, "Backup completed successfully", Toast.LENGTH_SHORT).show()
+                Toast.makeText(context, R.string.settings_backup_done, Toast.LENGTH_SHORT).show()
             }.onFailure {
-                Toast.makeText(context, "Backup failed: ${it.message}", Toast.LENGTH_LONG).show()
+                Toast.makeText(context, context.getString(R.string.settings_backup_error, it.localizedMessage.orEmpty()), Toast.LENGTH_LONG).show()
             }
         }
     }
@@ -517,7 +514,7 @@ fun SettingsScreen(
                     } ?: error("Failed to open input stream")
                 }
             }.onSuccess {
-                Toast.makeText(context, "Restore completed successfully", Toast.LENGTH_SHORT).show()
+                Toast.makeText(context, R.string.settings_restore_done, Toast.LENGTH_SHORT).show()
                 startOnBoot = ShizukuSettings.getStartOnBoot()
                 adbStartOnBoot = ShizukuSettings.getStartOnBootAdb()
                 watchdog = ModuleSettings.isWatchdogEnabled()
@@ -559,7 +556,7 @@ fun SettingsScreen(
                 agentAskModule = ModuleSettings.isAgentAskModuleService()
                 recreateTick++
             }.onFailure {
-                Toast.makeText(context, "Restore failed: ${it.message}", Toast.LENGTH_LONG).show()
+                Toast.makeText(context, context.getString(R.string.settings_restore_error, it.localizedMessage.orEmpty()), Toast.LENGTH_LONG).show()
             }
         }
     }
@@ -598,6 +595,7 @@ fun SettingsScreen(
         packageManager.hasSystemFeature(PackageManager.FEATURE_SENSOR_ACCELEROMETER)
     }
 
+    val motion = MaterialTheme.motionScheme
     AnimatedContent(
         targetState = nav,
         transitionSpec = {
@@ -619,18 +617,18 @@ fun SettingsScreen(
                 else -> true
             }
             if (forward) {
-                (slideInHorizontally(animationSpec = tween(300)) { fullWidth -> fullWidth } +
-                    fadeIn(animationSpec = tween(300)))
+                (slideInHorizontally(animationSpec = motion.defaultSpatialSpec()) { fullWidth -> fullWidth } +
+                    fadeIn(animationSpec = motion.defaultEffectsSpec()))
                     .togetherWith(
-                        slideOutHorizontally(animationSpec = tween(300)) { fullWidth -> -fullWidth / 4 } +
-                            fadeOut(animationSpec = tween(300))
+                        slideOutHorizontally(animationSpec = motion.defaultSpatialSpec()) { fullWidth -> -fullWidth / 4 } +
+                            fadeOut(animationSpec = motion.defaultEffectsSpec())
                     )
             } else {
-                (slideInHorizontally(animationSpec = tween(300)) { fullWidth -> -fullWidth / 4 } +
-                    fadeIn(animationSpec = tween(300)))
+                (slideInHorizontally(animationSpec = motion.defaultSpatialSpec()) { fullWidth -> -fullWidth / 4 } +
+                    fadeIn(animationSpec = motion.defaultEffectsSpec()))
                     .togetherWith(
-                        slideOutHorizontally(animationSpec = tween(300)) { fullWidth -> fullWidth } +
-                            fadeOut(animationSpec = tween(300))
+                        slideOutHorizontally(animationSpec = motion.defaultSpatialSpec()) { fullWidth -> fullWidth } +
+                            fadeOut(animationSpec = motion.defaultEffectsSpec())
                     )
             }
         },
@@ -955,11 +953,11 @@ fun SettingsScreen(
                             },
                             onRestartService = {
                                 WatchdogManager.attemptRestart(context, force = true)
-                                Toast.makeText(context, "Restart requested", Toast.LENGTH_SHORT).show()
+                                Toast.makeText(context, R.string.settings_restart_requested, Toast.LENGTH_SHORT).show()
                             },
                             onClearUpdateBanner = {
                                 ModuleSettings.clearPendingUpdate()
-                                Toast.makeText(context, "Update banner dismissed", Toast.LENGTH_SHORT).show()
+                                Toast.makeText(context, R.string.settings_banner_dismissed, Toast.LENGTH_SHORT).show()
                             },
                             onRevokeTrusted = { showRevokeDialog = true }
                         )
@@ -1169,7 +1167,7 @@ fun SettingsScreen(
                                 }
                             ) {
                                 Icon(
-                                    imageVector = Icons.Rounded.Refresh,
+                                    painter = painterResource(R.drawable.ic_server_restart),
                                     contentDescription = stringResource(R.string.settings_tcp_port_randomize_action)
                                 )
                             }
@@ -1466,7 +1464,7 @@ fun SettingsScreen(
                     onClick = {
                         showRevokeDialog = false
                         ModuleSettings.clearTrustedModules()
-                        Toast.makeText(context, "Trusted modules revoked", Toast.LENGTH_SHORT).show()
+                        Toast.makeText(context, R.string.settings_trust_revoked, Toast.LENGTH_SHORT).show()
                     }
                 ) {
                     Text(stringResource(android.R.string.ok))
@@ -2253,15 +2251,15 @@ private fun LazyListScope.aboutSectionContent(
             ExpressiveSegmentedItem(
                 index = 1, count = 3,
                 icon = R.drawable.ic_action_about_24dp,
-                title = "Contributors and Credits",
-                summary = "The people behind Shevery and the projects it is built on",
+                title = stringResource(R.string.settings_contributors_credits),
+                summary = stringResource(R.string.settings_contributors_summary),
                 onClick = onOpenContributorsCredits
             )
             ExpressiveSegmentedItem(
                 index = 2, count = 3,
                 icon = R.drawable.ic_learn_more_24dp,
-                title = "Recommendations",
-                summary = "Shizuku-powered apps picked for Shevery",
+                title = stringResource(R.string.settings_recommendations),
+                summary = stringResource(R.string.settings_recommendations_summary),
                 onClick = onOpenRecommendations
             )
         }
@@ -2366,12 +2364,12 @@ private fun ContributorRow(contributor: Contributor) {
 @Composable
 private fun ContributorsCreditsScreen(onNavigateUp: () -> Unit) {
     ShizukuLazyScaffold(
-        title = "Contributors and Credits",
+        title = stringResource(R.string.settings_contributors_credits),
         onNavigateUp = onNavigateUp,
         bottomInset = 112.dp
     ) {
         item {
-            SettingsGroup(title = "Contributors") {
+            SettingsGroup(title = stringResource(R.string.settings_contributors)) {
                 contributors.forEachIndexed { index, contributor ->
                     if (index > 0) GroupDivider()
                     ContributorRow(contributor)
@@ -2379,7 +2377,7 @@ private fun ContributorsCreditsScreen(onNavigateUp: () -> Unit) {
             }
         }
         item {
-            SettingsGroup(title = "Credits") {
+            SettingsGroup(title = stringResource(R.string.about_credits)) {
                 Text(
                     text = "Projects this fork is built on — code and ideas taken over with thanks, " +
                         "their authors did not commit to this repository.",
@@ -2413,12 +2411,12 @@ private fun RecommendationsScreen(onNavigateUp: () -> Unit) {
     }
 
     ShizukuLazyScaffold(
-        title = "Recommendations",
+        title = stringResource(R.string.settings_recommendations),
         onNavigateUp = onNavigateUp,
         bottomInset = 112.dp
     ) {
         item {
-            SettingsGroup(title = "Recommendations") {
+            SettingsGroup(title = stringResource(R.string.settings_recommendations)) {
                 Text(
                     text = if (isLive) {
                         "Shizuku-powered apps from GitHub. Tap Refresh to reload the list."
@@ -2439,7 +2437,7 @@ private fun RecommendationsScreen(onNavigateUp: () -> Unit) {
                         onClick = { refreshTick++ },
                         enabled = !isLoading
                     ) {
-                        Text(if (isLoading) "Loading…" else "Refresh")
+                        Text(if (isLoading) stringResource(R.string.settings_loading) else stringResource(R.string.home_refresh))
                     }
                     if (isLoading) {
                         CircularProgressIndicator(modifier = Modifier.size(20.dp), strokeWidth = 2.dp)

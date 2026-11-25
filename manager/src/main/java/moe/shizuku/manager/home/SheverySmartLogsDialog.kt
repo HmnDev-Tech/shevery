@@ -25,9 +25,6 @@ import androidx.compose.foundation.rememberScrollState
 import androidx.compose.foundation.shape.RoundedCornerShape
 import androidx.compose.foundation.text.selection.SelectionContainer
 import androidx.compose.foundation.verticalScroll
-import androidx.compose.material.icons.Icons
-import androidx.compose.material.icons.rounded.ContentCopy
-import androidx.compose.material.icons.rounded.Download
 import androidx.compose.material3.AlertDialog
 import androidx.compose.material3.Button
 import androidx.compose.material3.CircularProgressIndicator
@@ -49,6 +46,7 @@ import androidx.compose.runtime.setValue
 import androidx.compose.ui.Alignment
 import androidx.compose.ui.Modifier
 import androidx.compose.ui.platform.LocalContext
+import androidx.compose.ui.res.painterResource
 import androidx.compose.ui.res.stringResource
 import androidx.compose.ui.text.font.FontFamily
 import androidx.compose.ui.unit.dp
@@ -94,8 +92,8 @@ internal fun collectSheverySmartLogs(
 ): String {
     val timestamp = SimpleDateFormat("yyyy-MM-dd HH:mm:ss.SSS Z", Locale.US).format(Date())
     val versionName = runCatching {
-        context.packageManager.getPackageInfo(context.packageName, 0).versionName ?: "unknown"
-    }.getOrDefault("unknown")
+        context.packageManager.getPackageInfo(context.packageName, 0).versionName ?: BuildConfig.VERSION_NAME
+    }.getOrDefault(BuildConfig.VERSION_NAME)
 
     val myPid = Process.myPid().toString()
     val myUid = Process.myUid()
@@ -383,7 +381,7 @@ fun SheverySmartLogsDialog(
                     }
                 ) {
                     Icon(
-                        imageVector = Icons.Rounded.Download,
+                        painter = painterResource(R.drawable.ic_symbol_download_24),
                         contentDescription = null,
                         modifier = Modifier.size(16.dp)
                     )
@@ -402,7 +400,7 @@ fun SheverySmartLogsDialog(
                     }
                 ) {
                     Icon(
-                        imageVector = Icons.Rounded.ContentCopy,
+                        painter = painterResource(R.drawable.ic_content_copy_24),
                         contentDescription = null,
                         modifier = Modifier.size(16.dp)
                     )

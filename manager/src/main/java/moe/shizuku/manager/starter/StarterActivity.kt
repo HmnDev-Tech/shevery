@@ -95,6 +95,8 @@ class StarterActivity : AppActivity() {
                     val running = ShizukuStateMachine.awaitRunning(12_000L)
 
                     if (running || Shizuku.pingBinder()) {
+                        if (!startedWithRoot) wirelessSession = Shizuku.getBinder()?.let { java.lang.ref.WeakReference(it) }
+
                         moe.shizuku.manager.service.WatchdogManager.clearUserStopRequest(this@StarterActivity)
                         viewModel.appendOutput("Service started, this window will be automatically closed in 3 seconds")
                         delay(3000L)
@@ -212,6 +214,11 @@ class StarterActivity : AppActivity() {
     }
 
     companion object {
+
+        private var wirelessSession: java.lang.ref.WeakReference<android.os.IBinder>? = null
+
+        internal fun isWirelessSession(binder: android.os.IBinder?): Boolean =
+            binder != null && binder === wirelessSession?.get()
 
         const val EXTRA_IS_ROOT = "$EXTRA.IS_ROOT"
         const val EXTRA_HOST = "$EXTRA.HOST"

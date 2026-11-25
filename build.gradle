@@ -9,7 +9,11 @@ idea.module {
 subprojects {
     plugins.withId("com.android.base") {
         android {
-            compileSdk = 37
+            compileSdk {
+                version = release(37) {
+                    minorApiLevel = 1
+                }
+            }
             buildToolsVersion = "37.0.0"
             ndkVersion = "29.0.14206865"
             defaultConfig {
@@ -40,8 +44,7 @@ try {
     if (!count.isEmpty()) gitCommitCount = Integer.parseInt(count)
 } catch (Exception ignored) {}
 
-def baseVersionName = "${api_version_name}"
 ext {
     versionCode = gitCommitCount
-    versionName = "${baseVersionName}"
+    versionName = "15.0"
 }

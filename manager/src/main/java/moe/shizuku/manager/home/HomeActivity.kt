@@ -7,6 +7,23 @@
 
 package moe.shizuku.manager.home
 
+import androidx.compose.foundation.layout.BoxWithConstraints
+import androidx.compose.foundation.layout.WindowInsetsSides
+import androidx.compose.foundation.layout.consumeWindowInsets
+import androidx.compose.foundation.layout.navigationBars
+import androidx.compose.foundation.layout.asPaddingValues
+import androidx.compose.foundation.layout.only
+import androidx.compose.foundation.layout.safeDrawing
+import androidx.compose.foundation.layout.widthIn
+import androidx.compose.material3.LinearWavyProgressIndicator
+import androidx.compose.material3.LinearProgressIndicator
+import androidx.compose.animation.animateColorAsState
+import androidx.compose.animation.animateContentSize
+import androidx.lifecycle.compose.LocalLifecycleOwner
+import androidx.lifecycle.repeatOnLifecycle
+import moe.shizuku.manager.ui.compose.ExpressiveSegmentedItem
+import moe.shizuku.manager.ui.compose.ExpressiveSegmentedSection
+import moe.shizuku.manager.ui.compose.LocalReducedMotion
 import android.Manifest
 import android.app.Activity
 import android.content.ClipData
@@ -50,14 +67,6 @@ import androidx.compose.foundation.lazy.LazyListState
 import androidx.compose.foundation.lazy.rememberLazyListState
 import androidx.compose.foundation.shape.CircleShape
 import androidx.compose.foundation.shape.RoundedCornerShape
-import androidx.compose.material.icons.Icons
-import androidx.compose.material.icons.rounded.Apps
-import androidx.compose.material.icons.rounded.Home
-import androidx.compose.material.icons.rounded.NearMe
-import androidx.compose.material.icons.rounded.Refresh
-import androidx.compose.material.icons.rounded.Settings
-import androidx.compose.material.icons.rounded.Terminal
-import androidx.compose.material.icons.rounded.Wifi
 import androidx.compose.foundation.text.KeyboardOptions
 import androidx.compose.material3.AlertDialog
 import androidx.compose.material3.Button
@@ -116,9 +125,9 @@ import androidx.compose.ui.draw.blur
 import androidx.compose.foundation.pager.HorizontalPager
 import androidx.compose.foundation.pager.rememberPagerState
 import moe.shizuku.manager.ui.compose.scrollMotionBlur
-import androidx.compose.ui.graphics.vector.ImageVector
 import androidx.compose.ui.platform.LocalContext
 import androidx.compose.ui.platform.LocalView
+import androidx.compose.ui.res.painterResource
 import androidx.compose.ui.res.stringResource
 import androidx.compose.ui.text.font.FontWeight
 import androidx.compose.ui.text.style.TextOverflow
@@ -158,7 +167,6 @@ import moe.shizuku.manager.ui.compose.ShizukuExpressiveTheme
 import androidx.compose.animation.fadeIn
 import androidx.compose.animation.fadeOut
 import androidx.compose.animation.togetherWith
-import androidx.compose.animation.core.tween
 import moe.shizuku.manager.utils.CustomTabsHelper
 import moe.shizuku.manager.utils.EnvironmentUtils
 import moe.shizuku.manager.utils.UserHandleCompat
@@ -673,6 +681,19 @@ abstract class HomeActivity : AppActivity() {
                                         settingsTargetSection = SettingsSection.AUTOMATION
                                         selectedTab = 3
                                     },
+                                    onOpenModules = { selectedTab = 1 },
+                                    onOpenComput = { selectedTab = 2 },
+                                    onOpenDeviceOwner = {
+                                        AuthManager.executeWithAuth(
+                                            activity = this@HomeActivity,
+                                            action = SecuritySettings.ProtectedAction.DEVICE_OWNER,
+                                            title = getString(R.string.security_auth_prompt_title),
+                                            subtitle = getString(R.string.security_auth_prompt_device_owner)
+                                        ) {
+                                            settingsTargetSection = SettingsSection.DEVICE_OWNER
+                                            selectedTab = 3
+                                        }
+                                    },
                                     onOpenCompatStubs = {
                                         settingsTargetNav = moe.shizuku.manager.settings.SettingsNav.CompatStubs
                                         selectedTab = 3
@@ -736,10 +757,11 @@ abstract class HomeActivity : AppActivity() {
                                 }
                             }
                         } else {
+                            val motion = MaterialTheme.motionScheme
                             androidx.compose.animation.AnimatedContent(
                                 targetState = selectedTab,
                                 transitionSpec = {
-                                    fadeIn(animationSpec = tween(300)) togetherWith fadeOut(animationSpec = tween(300))
+                                    fadeIn(animationSpec = motion.defaultEffectsSpec()) togetherWith fadeOut(animationSpec = motion.defaultEffectsSpec())
                                 },
                                 label = "tab_transition"
                             ) { targetTab ->
@@ -753,13 +775,13 @@ abstract class HomeActivity : AppActivity() {
                     }
                 }
                 val navItems = listOf(
-                    NavItem(stringResource(R.string.app_name), Icons.Rounded.Home),
-                    NavItem(stringResource(R.string.modules_title), Icons.Rounded.Apps),
-                    NavItem(stringResource(R.string.comput_title), Icons.Rounded.Terminal),
-                    NavItem(stringResource(R.string.settings_title), Icons.Rounded.Settings)
+                    NavItem(stringResource(R.string.app_name), R.drawable.ic_symbol_home_24),
+                    NavItem(stringResource(R.string.modules_title), R.drawable.ic_symbol_apps_24),
+                    NavItem(stringResource(R.string.comput_title), R.drawable.ic_terminal_24),
+                    NavItem(stringResource(R.string.settings_title), R.drawable.ic_settings_outline_24dp)
                 )
 
-                if (useClassicNav) {
+                if (useClassicNav || selectedTab == 0) {
                     RefreshedNavigationBar(
                         items = navItems,
                         selectedIndex = selectedTab,
@@ -819,7 +841,7 @@ abstract class HomeActivity : AppActivity() {
                                             }
                                         ) {
                                             Icon(
-                                                imageVector = Icons.Rounded.Refresh,
+                                                painter = painterResource(R.drawable.ic_server_restart),
                                                 contentDescription = stringResource(R.string.settings_tcp_port_randomize_action)
                                             )
                                         }
@@ -1314,6 +1336,9 @@ private fun HomeScreen(
     onRequestLocalNetworkPermission: () -> Unit,
     onOpenAutomationSettings: () -> Unit = {},
     onOpenCompatStubs: () -> Unit = {},
+    onOpenModules: () -> Unit,
+    onOpenComput: () -> Unit,
+    onOpenDeviceOwner: () -> Unit,
     listState: LazyListState = rememberLazyListState()
 ) {
     ShakeGuideHost(GuideTopic.STARTUP)
@@ -1361,15 +1386,18 @@ private fun HomeScreen(
     // home tab is visible. One-second ticks keep values like "45s" moving
     // instead of appearing frozen behind a 30s refresh.
     val showUptime = ModuleSettings.isServiceUptimeShown()
+    val lifecycle = LocalLifecycleOwner.current.lifecycle
+    val homeActive = LocalShakeGuideActive.current
     val uptimeNow by produceState(
         initialValue = ServiceUptime.uptimeMs(),
-        key1 = running,
-        key2 = showUptime
+        running, showUptime, homeActive, lifecycle
     ) {
-        if (!showUptime || !running) return@produceState
-        while (true) {
-            value = ServiceUptime.uptimeMs()
-            delay(1_000L)
+        if (!showUptime || !running || !homeActive) return@produceState
+        lifecycle.repeatOnLifecycle(androidx.lifecycle.Lifecycle.State.RESUMED) {
+            while (true) {
+                value = ServiceUptime.uptimeMs()
+                delay(1_000L)
+            }
         }
     }
     val uptimeText = if (showUptime && running && ServiceUptime.sinceMs != 0L) {
@@ -1414,7 +1442,7 @@ private fun HomeScreen(
     val pullToRefreshState = rememberPullToRefreshState()
 
     Scaffold(
-        contentWindowInsets = WindowInsets(0.dp),
+        contentWindowInsets = WindowInsets.safeDrawing.only(WindowInsetsSides.Horizontal),
         topBar = {
             TopAppBar(
                 title = {
@@ -1435,9 +1463,11 @@ private fun HomeScreen(
             modifier = Modifier
                 .fillMaxSize()
                 .padding(innerPadding)
+                .consumeWindowInsets(innerPadding),
+            contentAlignment = Alignment.TopCenter
         ) {
             PullToRefreshBox(
-                modifier = Modifier.fillMaxSize(),
+                modifier = Modifier.widthIn(max = 880.dp).fillMaxSize(),
                 isRefreshing = isRefreshing,
                 onRefresh = {
                     scope.launch {
@@ -1453,7 +1483,7 @@ private fun HomeScreen(
                 LazyColumn(
                     state = listState,
                     modifier = Modifier.fillMaxSize(),
-                    contentPadding = PaddingValues(start = 16.dp, top = 16.dp, end = 16.dp, bottom = 112.dp),
+                    contentPadding = PaddingValues(start = 16.dp, top = 16.dp, end = 16.dp, bottom = 80.dp + WindowInsets.navigationBars.asPaddingValues().calculateBottomPadding()),
                     verticalArrangement = Arrangement.spacedBy(12.dp)
                 ) {
             item {
@@ -1462,13 +1492,12 @@ private fun HomeScreen(
                     status = status,
                     running = running,
                     serverState = serverState,
-                    adbPermission = adbPermission,
                     isPrimaryUser = isPrimaryUser,
                     isRooted = isRooted,
                     canUseWirelessAdb = canUseWirelessAdb,
                     onStartRoot = onStartRoot,
                     onStartWirelessAdb = onStartWirelessAdb,
-                    onManageApps = onManageApps,
+                    onShowAdbCommand = onShowAdbCommand,
                     onStop = onStop,
                     uptime = uptimeText
                 )
@@ -1522,10 +1551,16 @@ private fun HomeScreen(
             }
 
             item {
-                QuickActionsPills(
-                    running = running,
+                HomeActionGroups(
                     isPrimaryUser = isPrimaryUser,
+                    canStartWireless = canUseWirelessAdb && serverState != ShizukuStateMachine.State.STARTING,
+                    canManageApps = running && adbPermission,
+                    onManageApps = onManageApps,
+                    onOpenModules = onOpenModules,
+                    onOpenComput = onOpenComput,
+                    onOpenDeviceOwner = onOpenDeviceOwner,
                     onTerminal = onTerminal,
+                    terminalEnabled = running,
                     onStartWirelessAdb = onStartWirelessAdb,
                     onPairWirelessAdb = onPairWirelessAdb,
                     onOpenWirelessGuide = onOpenWirelessGuide
@@ -1583,27 +1618,12 @@ private fun HomeScreen(
                 }
             }
 
-            if (adbPermission) {
-                item {
-                    ManageAppsCard(
-                        status = status,
-                        grantedCount = grantedCount,
-                        onClick = onManageApps
-                    )
-                }
-            }
-
             if (isPrimaryUser) {
                 item {
                     AdbCommandCard(
                         onShowAdbCommand = onShowAdbCommand,
                         onOpenAdbHelp = onOpenAdbHelp
                     )
-                }
-                if (isRooted && !running) {
-                    item {
-                        RootCard(onStartRoot)
-                    }
                 }
             }
 
@@ -1645,13 +1665,12 @@ private fun HomeScreen(
             }
         }
     }
-    PullToRefreshDefaults.LoadingIndicator(
-        state = pullToRefreshState,
-        isRefreshing = isRefreshing,
-        modifier = Modifier
-            .align(Alignment.TopCenter)
-            .padding(top = 8.dp)
-    )
+    val indicatorModifier = Modifier.align(Alignment.TopCenter).padding(top = 8.dp)
+    if (LocalReducedMotion.current) {
+        PullToRefreshDefaults.Indicator(pullToRefreshState, isRefreshing, indicatorModifier)
+    } else {
+        PullToRefreshDefaults.LoadingIndicator(pullToRefreshState, isRefreshing, indicatorModifier)
+    }
 
     if (showAutomationSheet) {
         AutomationBottomSheet(
@@ -1673,145 +1692,96 @@ private fun HomeScreen(
 }
 }
 
+@OptIn(androidx.compose.material3.ExperimentalMaterial3ExpressiveApi::class)
 @Composable
 private fun StatusHero(
     serviceResource: Resource<ServiceStatus>?,
     status: ServiceStatus,
     running: Boolean,
-    serverState: ShizukuStateMachine.State = ShizukuStateMachine.State.STOPPED,
-    adbPermission: Boolean,
+    serverState: ShizukuStateMachine.State,
     isPrimaryUser: Boolean,
     isRooted: Boolean,
     canUseWirelessAdb: Boolean,
     onStartRoot: () -> Unit,
     onStartWirelessAdb: () -> Unit,
-    onManageApps: () -> Unit,
+    onShowAdbCommand: () -> Unit,
     onStop: () -> Unit,
-    uptime: String? = null
+    uptime: String?
 ) {
-    val context = LocalContext.current
-    val title = if (running) {
-        stringResource(R.string.home_status_service_is_running, stringResource(R.string.app_name))
-    } else {
-        stringResource(R.string.home_status_service_not_running, stringResource(R.string.app_name))
+    val starting = serverState == ShizukuStateMachine.State.STARTING
+    val checking = serviceResource == null && !starting && !running
+    val colors = MaterialTheme.colorScheme
+    val motion = MaterialTheme.motionScheme
+    val container by animateColorAsState(
+        if (running && !starting) colors.primaryContainer else colors.surfaceContainerHigh,
+        motion.defaultEffectsSpec(), label = "server-status-surface"
+    )
+    val foreground = if (running && !starting) colors.onPrimaryContainer else colors.onSurface
+    val stateLabel = when {
+        starting -> R.string.notification_service_starting
+        running -> R.string.home_server_running
+        checking -> R.string.home_server_checking
+        else -> R.string.home_server_stopped
     }
-    val summary = remember(status, running) {
-        buildServiceSummary(context, status)
-    }
-
     Surface(
-        modifier = Modifier.fillMaxWidth(),
-        shape = RoundedCornerShape(28.dp),
-        color = if (running) {
-            MaterialTheme.colorScheme.primaryContainer
-        } else {
-            MaterialTheme.colorScheme.surfaceContainerHigh
-        }
+        modifier = Modifier.fillMaxWidth().animateContentSize(motion.defaultSpatialSpec()),
+        shape = MaterialTheme.shapes.extraLarge,
+        color = container,
+        contentColor = foreground
     ) {
-        Column(
-            modifier = Modifier.padding(20.dp),
-            verticalArrangement = Arrangement.spacedBy(16.dp)
-        ) {
-            Row(verticalAlignment = Alignment.CenterVertically) {
-                Surface(
-                    modifier = Modifier.size(56.dp),
-                    shape = CircleShape,
-                    color = if (running) {
-                        MaterialTheme.colorScheme.primary
-                    } else {
-                        MaterialTheme.colorScheme.surfaceContainerHighest
-                    }
+        Column(Modifier.padding(24.dp), verticalArrangement = Arrangement.spacedBy(12.dp)) {
+            Row(verticalAlignment = Alignment.CenterVertically, horizontalArrangement = Arrangement.spacedBy(12.dp)) {
+                ShizukuIcon(
+                    when {
+                        running -> R.drawable.ic_server_ok_24dp
+                        starting || checking -> R.drawable.ic_server_start_24dp
+                        else -> R.drawable.ic_server_error_24dp
+                    },
+                    tint = foreground
+                )
+                Text(stringResource(stateLabel), style = MaterialTheme.typography.headlineMedium)
+            }
+            Text(stringResource(R.string.home_installed_version, BuildConfig.VERSION_NAME),
+                style = MaterialTheme.typography.titleMedium)
+            if (running && status.uid >= 0 && !starting) {
+                val launchMode = when {
+                    status.uid == 0 -> R.string.home_launch_root
+                    StarterActivity.isWirelessSession(Shizuku.getBinder()) -> R.string.home_quick_wireless
+                    else -> R.string.home_launch_adb
+                }
+                Text(stringResource(R.string.home_server_metadata, stringResource(launchMode),
+                    "${status.apiVersion}.${status.patchVersion}", status.uid,
+                    status.pid?.toString() ?: stringResource(R.string.home_pid_unavailable)))
+                if (status.apiVersion != Shizuku.getLatestServiceVersion() ||
+                    status.patchVersion != ShizukuApiConstants.SERVER_PATCH_VERSION
                 ) {
-                    Box(contentAlignment = Alignment.Center) {
-                        ShizukuIcon(
-                            icon = if (running) R.drawable.ic_server_ok_24dp else R.drawable.ic_server_error_24dp,
-                            contentDescription = null,
-                            tint = if (running) {
-                                MaterialTheme.colorScheme.onPrimary
-                            } else {
-                                MaterialTheme.colorScheme.onSurfaceVariant
-                            },
-                            modifier = Modifier.size(28.dp)
-                        )
-                    }
+                    Text(stringResource(R.string.home_server_restart_to_update))
                 }
-                Spacer(Modifier.width(16.dp))
-                Column(verticalArrangement = Arrangement.spacedBy(4.dp)) {
-                    Text(
-                        text = title,
-                        style = MaterialTheme.typography.titleLargeEmphasized,
-                        maxLines = 1,
-                        overflow = TextOverflow.Ellipsis,
-                        color = if (running) {
-                            MaterialTheme.colorScheme.onPrimaryContainer
-                        } else {
-                            MaterialTheme.colorScheme.onSurface
-                        }
-                    )
-                    if (summary.isNotBlank()) {
-                        Text(
-                            text = summary,
-                            style = MaterialTheme.typography.bodyMedium,
-                            color = if (running) {
-                                MaterialTheme.colorScheme.onPrimaryContainer.copy(alpha = 0.75f)
-                            } else {
-                                MaterialTheme.colorScheme.onSurfaceVariant
-                            }
-                        )
-                    }
-                    if (!uptime.isNullOrEmpty()) {
-                        Text(
-                            text = stringResource(R.string.home_status_uptime, uptime),
-                            style = MaterialTheme.typography.bodyMedium,
-                            color = if (running) {
-                                MaterialTheme.colorScheme.onPrimaryContainer.copy(alpha = 0.75f)
-                            } else {
-                                MaterialTheme.colorScheme.onSurfaceVariant
-                            }
-                        )
-                    }
-                }
+                if (uptime != null) Text(stringResource(R.string.home_status_uptime, uptime))
             }
-
-            if (serviceResource == null || serverState == ShizukuStateMachine.State.STARTING) {
-                Row(verticalAlignment = Alignment.CenterVertically) {
-                    LoadingIndicator(Modifier.size(24.dp))
-                }
-            }
-
-            FlowRow(
-                horizontalArrangement = Arrangement.spacedBy(8.dp),
-                verticalArrangement = Arrangement.spacedBy(8.dp)
-            ) {
-                if (running) {
-                    if (adbPermission) {
-                        Button(onClick = onManageApps) {
-                            ButtonIcon(R.drawable.ic_system_icon)
-                            Text(stringResource(R.string.home_manage_apps_button))
-                        }
-                    }
+            if (starting || checking) {
+                if (LocalReducedMotion.current) LinearProgressIndicator(Modifier.fillMaxWidth())
+                else LinearWavyProgressIndicator(Modifier.fillMaxWidth())
+            } else if (running) {
+                FlowRow(horizontalArrangement = Arrangement.spacedBy(8.dp),
+                    verticalArrangement = Arrangement.spacedBy(8.dp)) {
+                    Button(onClick = onStop) { Text(stringResource(R.string.action_stop)) }
                     if (status.uid == 0) {
                         FilledTonalButton(onClick = onStartRoot) {
-                            ButtonIcon(R.drawable.ic_server_restart)
                             Text(stringResource(R.string.home_root_button_restart))
                         }
                     }
-                    FilledTonalButton(onClick = onStop) {
-                        ButtonIcon(R.drawable.ic_close_24)
-                        Text(stringResource(R.string.action_stop))
+                }
+            } else if (isPrimaryUser) {
+                when {
+                    isRooted -> Button(onClick = onStartRoot) {
+                        Text(stringResource(R.string.home_start_root))
                     }
-                } else if (isPrimaryUser) {
-                    if (isRooted) {
-                        Button(onClick = onStartRoot) {
-                            ButtonIcon(R.drawable.ic_server_start_24dp)
-                            Text(stringResource(R.string.home_root_button_start))
-                        }
+                    canUseWirelessAdb -> Button(onClick = onStartWirelessAdb) {
+                        Text(stringResource(R.string.home_wireless_adb_title))
                     }
-                    if (canUseWirelessAdb) {
-                        FilledTonalButton(onClick = onStartWirelessAdb) {
-                            ButtonIcon(R.drawable.ic_wadb_24)
-                            Text(stringResource(R.string.home_wireless_adb_title))
-                        }
+                    else -> Button(onClick = onShowAdbCommand) {
+                        Text(stringResource(R.string.home_adb_button_view_command))
                     }
                 }
             }
@@ -1820,119 +1790,58 @@ private fun StatusHero(
 }
 
 @Composable
-private fun ManageAppsCard(
-    status: ServiceStatus,
-    grantedCount: Int,
-    onClick: () -> Unit
-) {
-    val context = LocalContext.current
-    val running = status.isRunning
-    val title = if (running) {
-        context.resources.getQuantityString(
-            R.plurals.home_app_management_authorized_apps_count,
-            grantedCount,
-            grantedCount
-        )
-    } else {
-        stringResource(R.string.home_app_management_title)
-    }
-    val body = if (running) {
-        stringResource(R.string.home_app_management_view_authorized_apps)
-    } else {
-        stringResource(R.string.home_status_service_not_running, stringResource(R.string.app_name))
-    }
-
-    SimpleActionCard(
-        icon = R.drawable.ic_system_icon,
-        title = title,
-        body = body,
-        enabled = running,
-        onClick = onClick
-    )
-}
-
-@Composable
-private fun QuickActionsPills(
-    running: Boolean,
+private fun HomeActionGroups(
     isPrimaryUser: Boolean,
+    canStartWireless: Boolean,
+    canManageApps: Boolean,
+    onManageApps: () -> Unit,
+    onOpenModules: () -> Unit,
+    onOpenComput: () -> Unit,
+    onOpenDeviceOwner: () -> Unit,
     onTerminal: () -> Unit,
+    terminalEnabled: Boolean,
     onStartWirelessAdb: () -> Unit,
     onPairWirelessAdb: () -> Unit,
     onOpenWirelessGuide: () -> Unit
 ) {
-    Column(verticalArrangement = Arrangement.spacedBy(4.dp)) {
-        FlowRow(
-            horizontalArrangement = Arrangement.spacedBy(10.dp),
-            verticalArrangement = Arrangement.spacedBy(10.dp)
-        ) {
-            QuickActionPill(
-                icon = Icons.Rounded.Terminal,
-                label = stringResource(R.string.home_quick_terminal),
-                enabled = running,
-                onClick = onTerminal
-            )
-            if (isPrimaryUser) {
-                QuickActionPill(
-                    icon = Icons.Rounded.Wifi,
-                    label = stringResource(R.string.home_quick_wireless),
-                    onClick = onStartWirelessAdb
-                )
-                QuickActionPill(
-                    icon = Icons.Rounded.NearMe,
-                    label = stringResource(R.string.adb_pairing),
-                    onClick = onPairWirelessAdb
-                )
+    val start: @Composable () -> Unit = {
+        val pairingAvailable = Build.VERSION.SDK_INT >= Build.VERSION_CODES.R
+        val count = if (pairingAvailable) 3 else 2
+        ExpressiveSegmentedSection(stringResource(R.string.home_connection_actions)) {
+            ExpressiveSegmentedItem(0, count, R.drawable.ic_wadb_24,
+                stringResource(R.string.home_wireless_adb_title), enabled = canStartWireless,
+                onClick = onStartWirelessAdb)
+            if (pairingAvailable) {
+                ExpressiveSegmentedItem(1, count, R.drawable.ic_adb_24dp, stringResource(R.string.adb_pairing),
+                    onClick = onPairWirelessAdb)
             }
-        }
-        if (isPrimaryUser) {
-            TextButton(onClick = onOpenWirelessGuide) {
-                Text(stringResource(R.string.home_wireless_adb_view_guide_button))
-            }
+            ExpressiveSegmentedItem(count - 1, count, R.drawable.ic_help_outline_24dp,
+                stringResource(R.string.home_wireless_adb_view_guide_button), onClick = onOpenWirelessGuide)
         }
     }
-}
-
-@Composable
-private fun QuickActionPill(
-    icon: ImageVector,
-    label: String,
-    enabled: Boolean = true,
-    onClick: () -> Unit
-) {
-    Surface(
-        onClick = onClick,
-        enabled = enabled,
-        shape = RoundedCornerShape(percent = 50),
-        color = if (enabled) {
-            MaterialTheme.colorScheme.secondaryContainer
-        } else {
-            MaterialTheme.colorScheme.surfaceContainerHigh
+    val tools: @Composable () -> Unit = {
+        ExpressiveSegmentedSection(stringResource(R.string.home_tool_actions)) {
+            ExpressiveSegmentedItem(0, 5, R.drawable.ic_system_icon, stringResource(R.string.home_manage_apps_button),
+                enabled = canManageApps, onClick = onManageApps)
+            ExpressiveSegmentedItem(1, 5, R.drawable.ic_adb_24dp, stringResource(R.string.modules_title), onClick = onOpenModules)
+            ExpressiveSegmentedItem(2, 5, R.drawable.ic_terminal_24, stringResource(R.string.comput_title), onClick = onOpenComput)
+            ExpressiveSegmentedItem(3, 5, R.drawable.ic_device_owner_24dp,
+                stringResource(R.string.settings_device_owner_title), onClick = onOpenDeviceOwner)
+            ExpressiveSegmentedItem(4, 5, R.drawable.ic_code_24dp, stringResource(R.string.home_quick_terminal),
+                enabled = terminalEnabled, onClick = onTerminal)
         }
-    ) {
-        Row(
-            modifier = Modifier.padding(horizontal = 18.dp, vertical = 12.dp),
-            verticalAlignment = Alignment.CenterVertically,
-            horizontalArrangement = Arrangement.spacedBy(8.dp)
-        ) {
-            Icon(
-                imageVector = icon,
-                contentDescription = null,
-                tint = if (enabled) {
-                    MaterialTheme.colorScheme.onSecondaryContainer
-                } else {
-                    MaterialTheme.colorScheme.onSurfaceVariant
-                },
-                modifier = Modifier.size(20.dp)
-            )
-            Text(
-                text = label,
-                style = MaterialTheme.typography.labelLarge,
-                color = if (enabled) {
-                    MaterialTheme.colorScheme.onSecondaryContainer
-                } else {
-                    MaterialTheme.colorScheme.onSurfaceVariant
-                }
-            )
+    }
+    BoxWithConstraints(Modifier.fillMaxWidth()) {
+        if (maxWidth >= 600.dp && isPrimaryUser) {
+            Row(horizontalArrangement = Arrangement.spacedBy(16.dp)) {
+                Box(Modifier.weight(1f)) { start() }
+                Box(Modifier.weight(1f)) { tools() }
+            }
+        } else {
+            Column(verticalArrangement = Arrangement.spacedBy(12.dp)) {
+                if (isPrimaryUser) start()
+                tools()
+            }
         }
     }
 }
@@ -2152,7 +2061,7 @@ private fun AutomationBottomSheet(
             } else {
                 Surface(
                     shape = RoundedCornerShape(16.dp),
-                    color = MaterialTheme.colorScheme.secondaryContainer.copy(alpha = 0.5f)
+                    color = MaterialTheme.colorScheme.secondaryContainer
                 ) {
                     Row(
                         modifier = Modifier
@@ -2176,7 +2085,7 @@ private fun AutomationBottomSheet(
                             Text(
                                 text = stringResource(R.string.home_automation_connectors_active_desc),
                                 style = MaterialTheme.typography.bodySmall,
-                                color = MaterialTheme.colorScheme.onSecondaryContainer.copy(alpha = 0.8f)
+                                color = MaterialTheme.colorScheme.onSecondaryContainer
                             )
                         }
                     }
@@ -2502,26 +2411,6 @@ private fun formatServiceUptime(millis: Long): String {
     }
 }
 
-private fun buildServiceSummary(context: android.content.Context, status: ServiceStatus): String {
-    if (!status.isRunning) return ""
-
-    val user = when {
-        status.uid == 0 -> "root"
-        else -> "adb"
-    }
-    val version = "${status.apiVersion}.${status.patchVersion}"
-    val latestVersion = "${Shizuku.getLatestServiceVersion()}.${ShizukuApiConstants.SERVER_PATCH_VERSION}"
-    val raw = if (
-        status.apiVersion != Shizuku.getLatestServiceVersion() ||
-        status.patchVersion != ShizukuApiConstants.SERVER_PATCH_VERSION
-    ) {
-        context.getString(R.string.home_status_service_version_update, user, version, latestVersion)
-    } else {
-        context.getString(R.string.home_status_service_version, user, version)
-    }
-    return htmlToPlainText(raw)
-}
-
 private fun buildDiagnostics(
     context: android.content.Context,
     status: ServiceStatus,
@@ -2532,7 +2421,7 @@ private fun buildDiagnostics(
     tcpMode: Boolean,
     launchMode: Int
 ): String {
-    val versionName = context.packageManager.getPackageInfo(context.packageName, 0).versionName
+    val versionName = context.packageManager.getPackageInfo(context.packageName, 0).versionName ?: BuildConfig.VERSION_NAME
     val localNetwork = if (localNetworkPermissionState.required) {
         "${localNetworkPermissionState.label}: " +
                 if (localNetworkPermissionState.granted) context.getString(R.string.diagnostics_granted) else context.getString(R.string.diagnostics_missing)
@@ -2556,6 +2445,7 @@ private fun buildDiagnostics(
         appendLine("${context.getString(R.string.diagnostics_device)}: ${Build.MANUFACTURER} ${Build.MODEL}")
         appendLine("${context.getString(R.string.diagnostics_service)}: ${if (status.isRunning) context.getString(R.string.diagnostics_running) else context.getString(R.string.diagnostics_stopped)}")
         appendLine("${context.getString(R.string.diagnostics_server_uid)}: ${status.uid}")
+        appendLine("${context.getString(R.string.diagnostics_server_pid)}: ${status.pid ?: context.getString(R.string.diagnostics_unavailable)}")
         appendLine("${context.getString(R.string.diagnostics_server_api)}: ${status.apiVersion}.${status.patchVersion}")
         appendLine("${context.getString(R.string.diagnostics_selinux)}: ${status.seContext ?: context.getString(R.string.diagnostics_unknown)}")
         appendLine("${context.getString(R.string.diagnostics_adb_permission)}: ${if (status.permission) context.getString(R.string.diagnostics_full) else context.getString(R.string.diagnostics_limited)}")
@@ -2568,26 +2458,6 @@ private fun buildDiagnostics(
     }.trim()
 }
 
-
-@Composable
-private fun RootCard(onStartRoot: () -> Unit) {
-    HomeCard(
-        icon = R.drawable.ic_server_start_24dp,
-        title = HtmlText(R.string.home_root_title),
-        body = HtmlText(R.string.home_root_description, Helps.SUI.get())
-    ) {
-        HomeButtons(
-            listOf(
-                HomeButtonSpec(
-                    label = R.string.home_root_button_start,
-                    icon = R.drawable.ic_server_start_24dp,
-                    primary = true,
-                    onClick = onStartRoot
-                )
-            )
-        )
-    }
-}
 
 @Composable
 private fun DialogTitleText(text: String) {

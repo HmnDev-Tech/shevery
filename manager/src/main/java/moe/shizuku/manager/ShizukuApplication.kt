@@ -4,6 +4,9 @@ import android.app.Application
 import android.content.Context
 import android.os.Build
 import androidx.appcompat.app.AppCompatDelegate
+import coil3.ImageLoader
+import coil3.SingletonImageLoader
+import coil3.network.okhttp.OkHttpNetworkFetcherFactory
 import com.topjohnwu.superuser.Shell
 import moe.shizuku.manager.ktx.logd
 import org.lsposed.hiddenapibypass.HiddenApiBypass
@@ -12,7 +15,15 @@ import rikka.material.app.LocaleDelegate
 
 lateinit var application: ShizukuApplication
 
-class ShizukuApplication : Application() {
+class ShizukuApplication : Application(), SingletonImageLoader.Factory {
+
+    override fun newImageLoader(context: Context): ImageLoader =
+        ImageLoader.Builder(context)
+            // The APK excludes Java service descriptors, so register the
+            // remote image fetcher explicitly for catalog banners and avatars.
+            .components { add(OkHttpNetworkFetcherFactory()) }
+            .build()
+
 
     companion object {
 
