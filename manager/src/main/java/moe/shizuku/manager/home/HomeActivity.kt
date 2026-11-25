@@ -781,7 +781,7 @@ abstract class HomeActivity : AppActivity() {
                     NavItem(stringResource(R.string.settings_title), R.drawable.ic_settings_outline_24dp)
                 )
 
-                if (useClassicNav || selectedTab == 0) {
+                if (useClassicNav) {
                     RefreshedNavigationBar(
                         items = navItems,
                         selectedIndex = selectedTab,

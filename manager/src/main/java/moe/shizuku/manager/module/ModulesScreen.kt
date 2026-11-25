@@ -37,6 +37,7 @@ import androidx.compose.foundation.combinedClickable
 import androidx.compose.foundation.horizontalScroll
 import androidx.compose.foundation.layout.Arrangement
 import androidx.compose.foundation.layout.Box
+import androidx.compose.foundation.layout.BoxScope
 import androidx.compose.foundation.layout.Column
 import androidx.compose.foundation.layout.ExperimentalLayoutApi
 import androidx.compose.foundation.layout.FlowRow
@@ -87,6 +88,7 @@ import androidx.compose.runtime.setValue
 import androidx.compose.ui.Alignment
 import androidx.compose.ui.Modifier
 import androidx.compose.ui.draw.clip
+import androidx.compose.ui.graphics.Brush
 import androidx.compose.ui.graphics.Color
 import androidx.compose.ui.graphics.asImageBitmap
 import androidx.compose.ui.layout.ContentScale
@@ -660,6 +662,7 @@ private fun ModuleCard(
         tonalElevation = 1.dp
     ) {
         Box {
+            ModuleBanner(module, containerColor)
             Column(
                 modifier = Modifier.padding(horizontal = 18.dp, vertical = 16.dp),
                 verticalArrangement = Arrangement.spacedBy(10.dp)
@@ -710,7 +713,6 @@ private fun ModuleCard(
                     exit = fadeOut(motion.fastEffectsSpec()) + shrinkVertically(motion.fastSpatialSpec())
                 ) {
                     Column(verticalArrangement = Arrangement.spacedBy(12.dp)) {
-                        ModuleBanner(module)
                         ModuleActions(
                             module = module,
                             serviceRunning = serviceRunning,
@@ -765,7 +767,7 @@ private fun ModuleChips(module: AdbModule, trusted: Boolean, serviceRunning: Boo
 }
 
 @Composable
-private fun ModuleBanner(module: AdbModule) {
+private fun BoxScope.ModuleBanner(module: AdbModule, surface: Color) {
     val banner = module.banner ?: return
     val bitmap by androidx.compose.runtime.produceState<android.graphics.Bitmap?>(null, banner) {
         value = withContext(Dispatchers.IO) { BitmapFactory.decodeFile(banner.absolutePath) }
@@ -774,9 +776,11 @@ private fun ModuleBanner(module: AdbModule) {
         Image(
             bitmap = it.asImageBitmap(),
             contentDescription = null,
-            modifier = Modifier.fillMaxWidth().height(112.dp).clip(MaterialTheme.shapes.medium),
-            contentScale = ContentScale.Crop
+            modifier = Modifier.matchParentSize(),
+            contentScale = ContentScale.Crop,
+            alpha = 0.20f
         )
+        Box(Modifier.matchParentSize().background(Brush.verticalGradient(listOf(Color.Transparent, surface))))
     }
 }
 
