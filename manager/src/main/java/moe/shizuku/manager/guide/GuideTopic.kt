@@ -1,20 +1,43 @@
 package moe.shizuku.manager.guide
 
+import androidx.annotation.DrawableRes
 import androidx.annotation.StringRes
 import moe.shizuku.manager.Helps
 import moe.shizuku.manager.R
 
-private const val LAB_DOCS = "https://github.com/HmnDev-Tech/shevery/blob/main/docs/lab-and-extras.md"
+private const val DOCS_BASE = "https://github.com/HmnDev-Tech/shevery/blob/main/docs"
+private const val LAB_DOCS = "$DOCS_BASE/lab-and-extras.md"
+
+internal enum class GuideCategory(@param:StringRes val label: Int) {
+    GETTING_STARTED(R.string.guide_category_getting_started),
+    TERMINAL_AI(R.string.guide_category_terminal_ai),
+    MODULES(R.string.guide_category_modules),
+    SYSTEM_SECURITY(R.string.guide_category_system_security),
+    AUTOMATION_EXTRAS(R.string.guide_category_automation_extras),
+    REFERENCE(R.string.guide_category_reference),
+}
 
 internal enum class GuideTopic(
+    val category: GuideCategory,
+    @param:DrawableRes val icon: Int,
     @param:StringRes val title: Int,
     @param:StringRes val overview: Int,
     @param:StringRes val instructions: Int,
     @param:StringRes val caution: Int,
     val url: String?
 ) {
-    LAB(R.string.lab_title, R.string.lab_guide_overview, R.string.lab_guide_steps, R.string.lab_guide_limits, null),
+    LAB(
+        GuideCategory.AUTOMATION_EXTRAS,
+        R.drawable.ic_learn_more_24dp,
+        R.string.lab_title,
+        R.string.guide_lab_overview,
+        R.string.guide_lab_instructions,
+        R.string.guide_lab_caution,
+        null
+    ),
     STARTUP(
+        GuideCategory.GETTING_STARTED,
+        R.drawable.ic_server_start_24dp,
         R.string.guide_startup_title,
         R.string.guide_startup_overview,
         R.string.guide_startup_instructions,
@@ -22,6 +45,8 @@ internal enum class GuideTopic(
         Helps.wiki("Installation")
     ),
     WIRELESS_DEBUGGING(
+        GuideCategory.GETTING_STARTED,
+        R.drawable.ic_wadb_24,
         R.string.guide_wireless_debugging_title,
         R.string.guide_wireless_debugging_overview,
         R.string.guide_wireless_debugging_instructions,
@@ -29,6 +54,8 @@ internal enum class GuideTopic(
         Helps.wiki("Installation#wireless-debugging-no-pc")
     ),
     COMPUT(
+        GuideCategory.TERMINAL_AI,
+        R.drawable.ic_terminal_24,
         R.string.guide_comput_title,
         R.string.guide_comput_overview,
         R.string.guide_comput_instructions,
@@ -36,13 +63,26 @@ internal enum class GuideTopic(
         Helps.wiki("Comput")
     ),
     COMMANDIUM(
+        GuideCategory.TERMINAL_AI,
+        R.drawable.ic_code_24dp,
         R.string.guide_commandium_title,
         R.string.guide_commandium_overview,
         R.string.guide_commandium_instructions,
         R.string.guide_commandium_caution,
         Helps.wiki("Commandium")
     ),
+    COMPUT_AGENT(
+        GuideCategory.TERMINAL_AI,
+        R.drawable.ic_symbol_wysiwyg_24,
+        R.string.guide_comput_agent_title,
+        R.string.guide_comput_agent_overview,
+        R.string.guide_comput_agent_instructions,
+        R.string.guide_comput_agent_caution,
+        "$DOCS_BASE/comput-agent.md"
+    ),
     MODULES(
+        GuideCategory.MODULES,
+        R.drawable.ic_adb_24dp,
         R.string.guide_modules_title,
         R.string.guide_modules_overview,
         R.string.guide_modules_instructions,
@@ -50,6 +90,8 @@ internal enum class GuideTopic(
         Helps.wiki("ADB-Modules")
     ),
     CATALOG(
+        GuideCategory.MODULES,
+        R.drawable.ic_symbol_apps_24,
         R.string.guide_catalog_title,
         R.string.guide_catalog_overview,
         R.string.guide_catalog_instructions,
@@ -57,6 +99,8 @@ internal enum class GuideTopic(
         Helps.wiki("Module-catalog")
     ),
     UPDATES(
+        GuideCategory.MODULES,
+        R.drawable.ic_symbol_update_24,
         R.string.guide_updates_title,
         R.string.guide_updates_overview,
         R.string.guide_updates_instructions,
@@ -64,6 +108,8 @@ internal enum class GuideTopic(
         Helps.wiki("Updates")
     ),
     DEVICE_OWNER(
+        GuideCategory.SYSTEM_SECURITY,
+        R.drawable.ic_device_owner_24dp,
         R.string.guide_device_owner_title,
         R.string.guide_device_owner_overview,
         R.string.guide_device_owner_instructions,
@@ -71,6 +117,8 @@ internal enum class GuideTopic(
         Helps.wiki("Dhizuku")
     ),
     SECURITY(
+        GuideCategory.SYSTEM_SECURITY,
+        R.drawable.ic_security_24dp,
         R.string.guide_security_title,
         R.string.guide_security_overview,
         R.string.guide_security_instructions,
@@ -78,13 +126,35 @@ internal enum class GuideTopic(
         Helps.wiki("Settings#security")
     ),
     COMPAT_STUBS(
+        GuideCategory.SYSTEM_SECURITY,
+        R.drawable.ic_system_icon,
         R.string.guide_compat_stubs_title,
         R.string.guide_compat_stubs_overview,
         R.string.guide_compat_stubs_instructions,
         R.string.guide_compat_stubs_caution,
         Helps.wiki("Settings#application--startup-and-service")
     ),
+    STEALTH(
+        GuideCategory.SYSTEM_SECURITY,
+        R.drawable.ic_shield_24dp,
+        R.string.guide_stealth_title,
+        R.string.guide_stealth_overview,
+        R.string.guide_stealth_instructions,
+        R.string.guide_stealth_caution,
+        "$DOCS_BASE/stealth-and-stubs.md#part-1-stealth-edition-on-device-random-package-generator"
+    ),
+    ERROR_PROTECT(
+        GuideCategory.SYSTEM_SECURITY,
+        R.drawable.ic_server_ok_24dp,
+        R.string.guide_error_protect_title,
+        R.string.guide_error_protect_overview,
+        R.string.guide_error_protect_instructions,
+        R.string.guide_error_protect_caution,
+        "$DOCS_BASE/errorprotect.md"
+    ),
     DEVELOPER_OPTIONS(
+        GuideCategory.AUTOMATION_EXTRAS,
+        R.drawable.ic_settings_outline_24dp,
         R.string.guide_developer_options_title,
         R.string.guide_developer_options_overview,
         R.string.guide_developer_options_instructions,
@@ -92,6 +162,8 @@ internal enum class GuideTopic(
         null
     ),
     USB_DEBUGGING(
+        GuideCategory.AUTOMATION_EXTRAS,
+        R.drawable.ic_adb_24dp,
         R.string.guide_usb_debugging_title,
         R.string.guide_usb_debugging_overview,
         R.string.guide_usb_debugging_instructions,
@@ -99,6 +171,8 @@ internal enum class GuideTopic(
         "$LAB_DOCS#2-usb-debugging-hiding"
     ),
     FIREWALL(
+        GuideCategory.AUTOMATION_EXTRAS,
+        R.drawable.ic_security_24dp,
         R.string.guide_firewall_title,
         R.string.guide_firewall_overview,
         R.string.guide_firewall_instructions,
@@ -106,6 +180,8 @@ internal enum class GuideTopic(
         "$LAB_DOCS#3-network-firewall"
     ),
     CONNECTORS(
+        GuideCategory.AUTOMATION_EXTRAS,
+        R.drawable.ic_baseline_link_24,
         R.string.guide_connectors_title,
         R.string.guide_connectors_overview,
         R.string.guide_connectors_instructions,
@@ -113,6 +189,8 @@ internal enum class GuideTopic(
         Helps.wiki("Connectors")
     ),
     AUTHORIZATION(
+        GuideCategory.SYSTEM_SECURITY,
+        R.drawable.ic_symbol_check_24,
         R.string.guide_authorization_title,
         R.string.guide_authorization_overview,
         R.string.guide_authorization_instructions,
@@ -120,6 +198,8 @@ internal enum class GuideTopic(
         Helps.wiki("App-authorization")
     ),
     TASKER(
+        GuideCategory.AUTOMATION_EXTRAS,
+        R.drawable.ic_schedule_24dp,
         R.string.guide_tasker_title,
         R.string.guide_tasker_overview,
         R.string.guide_tasker_instructions,
@@ -127,6 +207,8 @@ internal enum class GuideTopic(
         Helps.wiki("Tasker-Plugin")
     ),
     INTENTS(
+        GuideCategory.AUTOMATION_EXTRAS,
+        R.drawable.ic_code_24dp,
         R.string.guide_intents_title,
         R.string.guide_intents_overview,
         R.string.guide_intents_instructions,
@@ -134,6 +216,8 @@ internal enum class GuideTopic(
         Helps.wiki("Intents#public-automation-control-tasker-macrodroid-adb")
     ),
     SETTINGS(
+        GuideCategory.AUTOMATION_EXTRAS,
+        R.drawable.ic_settings_outline_24dp,
         R.string.guide_settings_title,
         R.string.guide_settings_overview,
         R.string.guide_settings_instructions,
@@ -141,6 +225,8 @@ internal enum class GuideTopic(
         Helps.wiki("Settings")
     ),
     MODULE_POLICY(
+        GuideCategory.MODULES,
+        R.drawable.ic_shield_24dp,
         R.string.guide_module_policy_title,
         R.string.guide_module_policy_overview,
         R.string.guide_module_policy_instructions,
@@ -148,6 +234,8 @@ internal enum class GuideTopic(
         Helps.wiki("Module-policy")
     ),
     FAQ(
+        GuideCategory.REFERENCE,
+        R.drawable.ic_help_outline_24dp,
         R.string.guide_faq_title,
         R.string.guide_faq_overview,
         R.string.guide_faq_instructions,
@@ -155,6 +243,8 @@ internal enum class GuideTopic(
         Helps.wiki("FAQ")
     ),
     HOW_IT_WORKS(
+        GuideCategory.GETTING_STARTED,
+        R.drawable.ic_outline_info_24,
         R.string.guide_how_it_works_title,
         R.string.guide_how_it_works_overview,
         R.string.guide_how_it_works_instructions,
@@ -162,6 +252,8 @@ internal enum class GuideTopic(
         Helps.wiki("How-it-works")
     ),
     PUBLISH_MODULE(
+        GuideCategory.MODULES,
+        R.drawable.ic_outline_open_in_new_24,
         R.string.guide_publish_module_title,
         R.string.guide_publish_module_overview,
         R.string.guide_publish_module_instructions,
@@ -169,6 +261,8 @@ internal enum class GuideTopic(
         Helps.wiki("Publishing-a-module")
     ),
     BUILD(
+        GuideCategory.GETTING_STARTED,
+        R.drawable.ic_code_24dp,
         R.string.guide_build_title,
         R.string.guide_build_overview,
         R.string.guide_build_instructions,

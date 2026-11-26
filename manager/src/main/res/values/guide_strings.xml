@@ -9,96 +9,149 @@
     <string name="guide_limits">Limits and safety</string>
     <string name="guide_read_docs">Read documentation</string>
     <string name="guide_shake_unavailable">This device has no accelerometer.</string>
+    <string name="guide_count_label">%1$d guides from docs &amp; wiki</string>
+    <string name="guide_section_copied">Copied to clipboard</string>
+
+    <string name="guide_category_all">All</string>
+    <string name="guide_category_getting_started">Getting started</string>
+    <string name="guide_category_terminal_ai">Terminal &amp; AI</string>
+    <string name="guide_category_modules">Modules &amp; Catalog</string>
+    <string name="guide_category_system_security">System &amp; Security</string>
+    <string name="guide_category_automation_extras">Automation &amp; Extras</string>
+    <string name="guide_category_reference">FAQ &amp; Reference</string>
+
     <string name="guide_startup_title">Start the server</string>
-    <string name="guide_startup_overview">Shevery lets approved apps use system APIs through a server started with ADB or root.</string>
-    <string name="guide_startup_instructions">Open Home and choose root, wireless debugging, or USB debugging from a computer or OTG device. Use the exact command shown on Home for USB.</string>
-    <string name="guide_startup_caution">On non-rooted devices, you may need to start the server again after reboot unless you have configured autostart.</string>
+    <string name="guide_startup_overview">Shevery runs a privileged server (root, ADB, or wireless debugging) so approved apps can access system APIs and remembers your last launch mode.</string>
+    <string name="guide_startup_instructions">On Home, start via Root (libshizuku.so), Wireless debugging, or the exact PC/OTG adb shell command shown on screen. Enable Start on boot in Settings → Application for automatic recovery.</string>
+    <string name="guide_startup_caution">Uninstall the official Shizuku Manager first because package IDs conflict. Without root or autostart, ADB-started servers stop after reboot; wireless autostart waits up to 120s for unlock on non-TV devices.</string>
+
     <string name="guide_wireless_debugging_title">Wireless debugging</string>
-    <string name="guide_wireless_debugging_overview">Start Shevery over ADB without a computer on Android 11 or later.</string>
-    <string name="guide_wireless_debugging_instructions">Connect to Wi-Fi, enable Wireless debugging in Developer options, and open the pairing tutorial from Home. Pair using the port and code shown in Android, then tap Start in Shevery.</string>
-    <string name="guide_wireless_debugging_caution">The pairing port can differ from the connection port. Keep the device awake and approve pairing only on a trusted network.</string>
+    <string name="guide_wireless_debugging_overview">Start Shevery over local ADB without a PC on Android 11+, with optional TCP-5555 mode and boot-time re-enable.</string>
+    <string name="guide_wireless_debugging_instructions">Connect to Wi-Fi, enable Wireless debugging in Developer options, and follow the in-app pairing tutorial with both the pairing port and 6-digit code. Tap Start on Home once paired.</string>
+    <string name="guide_wireless_debugging_caution">The pairing port differs from the connection port. Keep the screen awake during pairing, grant Nearby Wi-Fi (Android 13+) or Local Network (Android 17+), and pair only on trusted networks.</string>
+
     <string name="guide_comput_title">Comput terminal</string>
-    <string name="guide_comput_overview">Run shell commands through the active Shevery server and view output as it arrives.</string>
-    <string name="guide_comput_instructions">Start the server, then open Terminal. Enter a command or choose a preset. Use macros to save and replay a sequence.</string>
-    <string name="guide_comput_caution">Commands use the server’s ADB or root privileges. Review commands and macros before running them. ADB mode strips familiar host prefixes, while host-only operations still require a computer.</string>
+    <string name="guide_comput_overview">Built-in shell console executing commands through the active Shevery server with live colored output, Presets, JSON Macros, history, and in-output search.</string>
+    <string name="guide_comput_instructions">Start the server and open Terminal. Run commands directly, pick a preset, record macros, or enable ADB mode to strip host adb shell prefixes automatically. Tap Stop to cancel a running command (exit 124).</string>
+    <string name="guide_comput_caution">Commands run with the server’s ADB shell or root privileges. On-device adb install should use pm install; host-side push/pull or device listing still requires a computer.</string>
+
     <string name="guide_commandium_title">Commandium AI</string>
-    <string name="guide_commandium_overview">Generate a shell command from a description or ask for an explanation of a failed command.</string>
-    <string name="guide_commandium_instructions">Open Settings → AI → AI provider. Add an OpenAI-compatible provider, choose a model, and select the provider as active. Open Commandium from Comput.</string>
-    <string name="guide_commandium_caution">Your provider receives prompts and any command output you send for explanations. Keep secrets out of prompts and use ReCommand to review generated commands before running them.</string>
+    <string name="guide_commandium_overview">Turns plain-language goals into Android toybox shell commands and explains failed command output in Comput.</string>
+    <string name="guide_commandium_instructions">Open Settings → AI → AI provider to pick one of 11 presets (Gemini, OpenRouter, OpenAI, DeepSeek, Groq, etc.) or a custom OpenAI-compatible URL. Open Commandium from Comput or tap Explain with AI on errors.</string>
+    <string name="guide_commandium_caution">API keys are encrypted in AndroidKeyStore (AES/GCM), but prompts and failed command outputs are sent to your active provider. Keep secrets out of prompts and keep ReCommand enabled.</string>
+
+    <string name="guide_comput_agent_title">Comput AI Agent</string>
+    <string name="guide_comput_agent_overview">Interactive multi-step assistant in Comput that plans up to 10 shell or ADB module service steps, runs them with approval gates, saves chat history, and summarizes findings.</string>
+    <string name="guide_comput_agent_instructions">Open Comput → Agent, describe your goal, and choose Secure (approve every step), Turbo (auto-run), or Custom (3/5/10 max steps and per-type prompts) in Settings → AI. Use History to resume any saved chat.</string>
+    <string name="guide_comput_agent_caution">Desktop tools (apt, systemctl, iptables) are blocked in favor of Android toybox commands. Always review or edit commands with Allow / Edit &amp; Allow before running in Secure or Custom mode.</string>
+
     <string name="guide_modules_title">ADB modules</string>
-    <string name="guide_modules_overview">Install modules that can run scripts and, depending on policy, provide a WebUI or background service.</string>
-    <string name="guide_modules_instructions">Open ADB Modules and select a ZIP with module.prop at the archive root, or install from the catalog. Open the installed module to see its available actions.</string>
-    <string name="guide_modules_caution">Review the source before running a module. Scripts use the server’s privileges. Keep the default SAFE policy unless a module needs additional access.</string>
+    <string name="guide_modules_overview">ZIP-packaged shell and WebUI extensions unpacked into Shevery’s private adb_modules storage and executed via the active ADB or root server (no Magisk mount hooks).</string>
+    <string name="guide_modules_instructions">Install a ZIP with module.prop at the root from ADB Modules, a file manager Share/View intent, or the Catalog. Modules can expose action.sh (e.g. ShizuConfig’s diagnostics Action), service.sh, and webui/index.html using $MODDIR.</string>
+    <string name="guide_modules_caution">Install limits: max 2048 entries, 200 MB extracted, 256 KB per script, 120s script timeout (exit 124), 64 KB retained logs. Inspect scripts before running; do not assume /data/adb/modules paths.</string>
+
     <string name="guide_catalog_title">Module catalog</string>
-    <string name="guide_catalog_overview">Find modules published on GitHub with the shevery-modules topic.</string>
-    <string name="guide_catalog_instructions">Open Catalog from ADB Modules. Inspect a module before installing. Choose source files or release ZIPs in the module update settings.</string>
-    <string name="guide_catalog_caution">GitHub rate limits anonymous searches. An optional personal access token raises the limit. Keep the token private and install only from authors you trust.</string>
+    <string name="guide_catalog_overview">Discovers GitHub repositories tagged shevery-modules (cached 6h, max 4 per author except HmnDev-Tech) and installs modules from Sources or Release ZIPs.</string>
+    <string name="guide_catalog_instructions">Open Catalog from ADB Modules, filter by stars or recency, and inspect details before installing. Configure Sources vs Release ZIP mode and an optional GitHub PAT in Settings → Updates → Module updates.</string>
+    <string name="guide_catalog_caution">Anonymous GitHub search is capped at 60 req/h; a ghp_ or github_pat_ token raises it to 5000 req/h and is stored in EncryptedSharedPreferences, sent only to api.github.com.</string>
+
     <string name="guide_updates_title">App and module updates</string>
-    <string name="guide_updates_overview">Shevery checks GitHub releases for app updates and checks each module’s configured update source.</string>
-    <string name="guide_updates_instructions">In Settings → Updates, choose Stable or Beta and a check frequency, or check manually. Review available module updates in ADB Modules.</string>
-    <string name="guide_updates_caution">Beta includes pre-releases. Android asks you to confirm app installation. Review module releases before applying updates.</string>
-    <string name="guide_device_owner_title">Device Owner and Dhizuku</string>
-    <string name="guide_device_owner_overview">Device Owner settings show ownership and delegation. Experimental Dhizuku mode bridges Shevery to a device owner managed by Dhizuku.</string>
-    <string name="guide_device_owner_instructions">Start Shevery via USB/OTG or wireless debugging first, then start Dhizuku. Enable Dhizuku mode under Settings → Application. Use Device Owner settings to inspect delegation or transfer options.</string>
-    <string name="guide_device_owner_caution">Owner and delegated privileges affect device-wide policy. Confirm the receiving app and the privileges before granting or transferring access.</string>
-    <string name="guide_security_title">Security and authentication</string>
-    <string name="guide_security_overview">Protect access to Shevery and sensitive actions with biometrics or the device credential.</string>
-    <string name="guide_security_instructions">Open Settings → Security. Enable authentication, choose a session timeout, and select the actions that should require confirmation.</string>
-    <string name="guide_security_caution">When a protected session expires in the background, Shevery locks on return and drops temporary grants from that session.</string>
+    <string name="guide_updates_overview">Checks GitHub Releases for Shevery self-updates (Stable or Beta) and resolves module updates across updateJson, catalog metadata, and GitHub releases.</string>
+    <string name="guide_updates_instructions">In Settings → Updates, pick Stable or Beta and Daily, Weekly, or Manual WorkManager checks, or check manually. Module update checks compare versionCode first and run from ADB Modules.</string>
+    <string name="guide_updates_caution">Beta includes pre-releases. App updates stream to a PackageInstaller session, so Android still asks for confirmation unless Device Owner handles silent install; always review module changelogs first.</string>
+
+    <string name="guide_device_owner_title">Device Owner &amp; Dhizuku</string>
+    <string name="guide_device_owner_overview">Manages Device/Profile Owner activation, 5 DPM app delegation scopes, ownership transfer, native Dhizuku API v1/v2 serving, and experimental Dhizuku bridge mode.</string>
+    <string name="guide_device_owner_instructions">Open Settings → Device Owner to activate in 1 tap via Shizuku or copy the adb shell dpm command. Manage delegations or Strict Whitelist Mode under App Delegation, or enable Dhizuku Mode in Settings → Application after starting Shevery first.</string>
+    <string name="guide_device_owner_caution">Device Owner requires no conflicting accounts during initial dpm setup and affects device-wide policies. Deactivating uses a 5s safety countdown; never start Shevery through Dhizuku before Shevery is running.</string>
+
+    <string name="guide_security_title">Security &amp; authentication</string>
+    <string name="guide_security_overview">Locks Shevery and individual sensitive actions behind BiometricPrompt or device credential with configurable session timeouts.</string>
+    <string name="guide_security_instructions">Open Settings → Security, enable authentication, pick a timeout (Immediately to 1 hour), and choose protected actions: app launch, Device Owner/transfer, app permissions, server start/stop, and stub install/removal.</string>
+    <string name="guide_security_caution">When a session expires in the background, Shevery locks on return and drops temporary grants from that session. Keep at least one lock screen credential configured on the device.</string>
+
     <string name="guide_compat_stubs_title">Compatibility stubs</string>
-    <string name="guide_compat_stubs_overview">Bridge legacy apps that expect the official Shizuku or Dhizuku package to the Shevery service.</string>
-    <string name="guide_compat_stubs_instructions">Open Settings → Application → Compatibility Stubs. Choose the bridge required by the app and confirm installation. Open the legacy app and authorize access when prompted.</string>
-    <string name="guide_compat_stubs_caution">The bridge uses the original package ID. Android cannot install it alongside the original app with that same ID.</string>
+    <string name="guide_compat_stubs_overview">Installs lightweight bridge APKs (moe.shizuku.privileged.api and com.rosan.dhizuku) so legacy apps that hardcode package-name checks work with Shevery.</string>
+    <string name="guide_compat_stubs_instructions">Open Settings → Application → Compatibility Stubs and tap Install. StubManager automatically tries Device Owner, active Shevery Server, Root, and Local ADB channels in order.</string>
+    <string name="guide_compat_stubs_caution">Stubs use the original package IDs, so Android cannot install them alongside the original Shizuku or Dhizuku apps. Stub actions can be biometric-protected under Settings → Security.</string>
+
+    <string name="guide_stealth_title">Stealth Edition generator</string>
+    <string name="guide_stealth_overview">On-device APK rebuilder (Android 10+) that clones the bundled stealth template with a random com.&lt;8&gt;.&lt;8&gt; package ID and custom launcher label.</string>
+    <string name="guide_stealth_instructions">Create a backup in Settings → Backups first, then open Settings → Application → Stealth version. Customize the app and file name, save to Downloads/, uninstall standard Shevery, and install the generated APK.</string>
+    <string name="guide_stealth_caution">Stealth APKs keep Shevery’s binder provider authorities, so standard Shevery must be uninstalled before installing the stealth copy. Back up first so you can restore settings, grants, and modules in one tap.</string>
+
+    <string name="guide_error_protect_title">ErrorProtect watchdog</string>
+    <string name="guide_error_protect_overview">Monitors server main-thread heartbeats (5s beat / 60s freeze limit) and system binder deaths (package, activity, user, appops) so the native starter daemon recovers cleanly.</string>
+    <string name="guide_error_protect_instructions">ErrorProtect is on by default in Settings → Application. It rebinds dead system services with 5s–60s backoff (up to 10 tries) or restarts shizuku_server via the detached starter supervisor.</string>
+    <string name="guide_error_protect_caution">Crash-loop protection stops after 5 consecutive rapid failures, resetting after 60s of stable uptime. Disable ErrorProtect only if an external tool manages the server lifecycle.</string>
+
     <string name="guide_developer_options_title">Hide Developer options</string>
-    <string name="guide_developer_options_overview">Temporarily turns off the device-wide Developer options setting while a selected app is in the foreground.</string>
-    <string name="guide_developer_options_instructions">Open the feature, grant Usage access, and start Shevery through Shizuku or configure it as Device Owner. Select the apps that should trigger the change.</string>
-    <string name="guide_developer_options_caution">The setting affects the whole device while it is off. If Shevery is force-stopped, reopen it so Android can let it restore the setting.</string>
+    <string name="guide_developer_options_overview">Temporarily toggles off device-wide Developer options whenever selected apps come to the foreground and restores it afterward.</string>
+    <string name="guide_developer_options_instructions">Open the tool from Extras/Lab, grant Usage access (PACKAGE_USAGE_STATS), ensure Shevery or Device Owner is active, and enable switches for target apps.</string>
+    <string name="guide_developer_options_caution">The setting is global while active and may affect debugging tools. If Shevery is force-stopped mid-session, reopen Shevery so it restores the original state.</string>
+
     <string name="guide_usb_debugging_title">Hide USB debugging</string>
-    <string name="guide_usb_debugging_overview">Temporarily turns off USB debugging while a selected app is in the foreground.</string>
-    <string name="guide_usb_debugging_instructions">Grant Usage access, then start Shevery through Shizuku or configure it as Device Owner. Enable the switch next to each app that should trigger the change.</string>
-    <string name="guide_usb_debugging_caution">This changes USB debugging device-wide and can interrupt ADB connections. If you force-stop Shevery, reopen it to allow cleanup.</string>
+    <string name="guide_usb_debugging_overview">Polls the foreground app every second when unlocked and hides Settings.Global.ADB_ENABLED for banking, payment, or DRM apps.</string>
+    <string name="guide_usb_debugging_instructions">Grant Usage access, start Shevery or set Device Owner (WRITE_SECURE_SETTINGS), and select target apps. Shevery saves and restores ADB_ENABLED automatically on app switch or screen lock.</string>
+    <string name="guide_usb_debugging_caution">Disabling ADB_ENABLED affects the whole device and can drop active USB/ADB connections while the target app is open. Reopen Shevery to recover if force-stopped.</string>
+
     <string name="guide_firewall_title">Network firewall</string>
-    <string name="guide_firewall_overview">Block an app’s network access on Android 11 or later using Android’s firewall.</string>
-    <string name="guide_firewall_instructions">Start Shevery with Shizuku, open Firewall, and switch on blocking for the chosen app. Turn the switch off to remove the rule Shevery added.</string>
-    <string name="guide_firewall_caution">The firewall chain is shared. Enabling it can activate rules from other apps and blocking a package can affect others sharing its Android user ID.</string>
+    <string name="guide_firewall_overview">Blocks per-app internet access without using Android’s VPN slot by driving the built-in eBPF connectivity chain3 through Shevery’s shell.</string>
+    <string name="guide_firewall_instructions">Requires Android 13+ AOSP connectivity chain3 and a running Shevery server. Toggle blocking per app; Shevery verifies kernel :deny/:allow state via cmd connectivity.</string>
+    <string name="guide_firewall_caution">The system chain3 policy is shared across Android, so enabling it may activate other rules and blocking a package affects all apps sharing its Android UID.</string>
+
     <string name="guide_connectors_title">Shevery Connectors</string>
-    <string name="guide_connectors_overview">Allow third-party activators to get the server start command and enable incoming automation actions.</string>
-    <string name="guide_connectors_instructions">Open Settings → Automation and enable Shevery Connectors. Check the connector status and automation fields from Home → View intents.</string>
-    <string name="guide_connectors_caution">Connectors are off by default. Direct actions require a secret token. Keep it private and turn off Connectors when you no longer need external control.</string>
+    <string name="guide_connectors_overview">Gates both the connector ContentProvider (content://moe.shizuku.privileged.api.connector) for LPE activators and incoming Tasker/MacroDroid automation broadcasts.</string>
+    <string name="guide_connectors_instructions">Enable Shevery Connectors in Settings → Automation after reviewing the safety prompt. Activators query the command column; automation tools check live status in View intents.</string>
+    <string name="guide_connectors_caution">Off by default for safety. While enabled, any app that reads the connector or holds your auth token can control the server; disable Connectors when not needed.</string>
+
     <string name="guide_authorization_title">App authorization</string>
-    <string name="guide_authorization_overview">Choose which apps can use the elevated Shevery API.</string>
-    <string name="guide_authorization_instructions">Start the server. When an app asks for access, check which app made the request and decide whether to allow it. Review and revoke grants from Authorized apps.</string>
-    <string name="guide_authorization_caution">Grant access only to apps you trust. Revoking access affects later API calls. It cannot undo changes an app already made.</string>
-    <string name="guide_tasker_title">Tasker and MacroDroid</string>
-    <string name="guide_tasker_overview">Automate starting, stopping, restarting, or toggling the Shevery server.</string>
-    <string name="guide_tasker_instructions">Enable Connectors in Settings → Automation. In Tasker, add a Shevery Tasker plugin action. In MacroDroid, use a broadcast and copy the action, receiver, and token from Automation.</string>
-    <string name="guide_tasker_caution">An automation setup still needs a supported start method. Update saved direct actions whenever you regenerate the auth token.</string>
-    <string name="guide_intents_title">Automation intents</string>
-    <string name="guide_intents_overview">The public broadcasts let an automation app control the Shevery server.</string>
-    <string name="guide_intents_instructions">Enable Connectors. Copy the action, target package, receiver, and auth token from Settings → Automation or Home → View intents.</string>
-    <string name="guide_intents_caution">Use the documented public actions. Keep the auth token private. Regenerating it invalidates existing direct broadcasts.</string>
+    <string name="guide_authorization_overview">Controls which third-party apps hold elevated Binder IPC permissions via RequestPermissionActivity and server-side FLAG_ALLOWED/FLAG_DENIED flags.</string>
+    <string name="guide_authorization_instructions">Start the server, approve or deny apps when prompted, and audit or revoke grants anytime in Authorized apps on Home.</string>
+    <string name="guide_authorization_caution">Never grant access to untrusted apps. Revoking blocks future API calls but cannot revert system changes already made. On Android 8.0+ ADB, non-Activity apps need a transparent Activity once for binder delivery.</string>
+
+    <string name="guide_tasker_title">Tasker &amp; MacroDroid</string>
+    <string name="guide_tasker_overview">Automates Start, Stop, Restart, and Toggle server actions plus a Server is running state condition via the Locale/Tasker plugin or explicit broadcasts.</string>
+    <string name="guide_tasker_instructions">Enable Connectors in Settings → Automation. Use the Shevery Tasker plugin in Tasker, or send explicit broadcasts to com.hamondev.shevery / PluginReceiver with extra auth=&lt;token&gt; in MacroDroid or Termux.</string>
+    <string name="guide_tasker_caution">Missing or wrong auth tokens return RESULT_CANCELED and post an alert notification. Regenerating the token invalidates all existing macros; non-root START_SERVER needs ADB TCP enabled first.</string>
+
+    <string name="guide_intents_title">Automation &amp; public intents</string>
+    <string name="guide_intents_overview">Documents public automation broadcasts, RequestPermission, Accessibility Manager shortcut, Module WebUI deep links (shevery://module/&lt;id&gt;), and ZIP VIEW/SEND intake.</string>
+    <string name="guide_intents_instructions">Copy ready-made am broadcast commands from Settings → Automation or Home → View intents. Launch WebUIs via shevery://module/&lt;id&gt; or OPEN_WEBUI, and open Accessibility Manager via ACCESSIBILITY_MANAGER.</string>
+    <string name="guide_intents_caution">Internal SheveryControlReceiver actions are non-exported and fail from adb shell. ModuleWebViewActivity omits BROWSABLE to block untrusted web iframes and enforces APP_OPEN auth if enabled.</string>
+
     <string name="guide_settings_title">Settings</string>
-    <string name="guide_settings_overview">Configure startup, appearance, security, automation, and other Shevery options.</string>
-    <string name="guide_settings_instructions">Open the relevant section from the Settings hub. Use Application for startup behavior, Appearance for interface preferences, and Backups to export or restore a ZIP.</string>
-    <string name="guide_settings_caution">Keep backup archives private because they can contain preferences, app authorizations, and modules.</string>
+    <string name="guide_settings_overview">Organizes 11 sections: Application, Appearance, Security, Device Owner, Modules, Updates, AI, Backups, Automation, Extras, and About.</string>
+    <string name="guide_settings_instructions">Configure boot startup, ErrorProtect, and TCP port in Application; Black theme and Classic nav in Appearance; ZIP export/restore in Backups; Accessibility Manager with keep-alive pinning in Extras.</string>
+    <string name="guide_settings_caution">Backup ZIPs can contain preferences, app authorizations, AI settings, and installed modules—store exported archives privately.</string>
+
     <string name="guide_module_policy_title">Module access policy</string>
-    <string name="guide_module_policy_overview">Control which actions, background tasks, and WebUI capabilities a module can use.</string>
-    <string name="guide_module_policy_instructions">Open Settings → Modules and keep SAFE for routine use. Choose CUSTOM if a module needs a specific permission. Review its scripts before marking it trusted.</string>
-    <string name="guide_module_policy_caution">Trust bypasses several restrictions. Allow background actions only if required and keep ReCommand enabled for an extra review before executing scripts.</string>
-    <string name="guide_faq_title">Troubleshooting</string>
-    <string name="guide_faq_overview">Find answers for installation, wireless pairing, server stoppages, and module errors.</string>
-    <string name="guide_faq_instructions">Check the port and pairing code if wireless pairing fails. If the server keeps stopping, check battery settings and the ErrorProtect watchdog. For module errors, review the installer output.</string>
-    <string name="guide_faq_caution">For a bug report, include the device model, Android version, start method, and relevant logs. Remove tokens, API keys, and personal information before sharing logs.</string>
+    <string name="guide_module_policy_overview">Per-feature gate controlling Action scripts, background service.sh, WebUI JS shell bridge, WebView internet, and WebUI downloads (SAFE / CUSTOM / FULL).</string>
+    <string name="guide_module_policy_instructions">Keep SAFE (manual actions only) by default, or switch to CUSTOM for granular permissions in Settings → Modules. Long-press a module card to grant or revoke Full Trust.</string>
+    <string name="guide_module_policy_caution">WebView internet is blocked even in FULL mode unless CUSTOM enables it or the module is trusted. Full Trust is bound to installed files and auto-revokes if the module payload changes; keep ReCommand on.</string>
+
+    <string name="guide_lab_title">Lab &amp; gestures</string>
+    <string name="guide_lab_overview">Houses Shake-for-Guide sensitivity presets and live counter, pure Black night theme, Reduced expressive motion, and IPC binder snapshots.</string>
+    <string name="guide_lab_instructions">Open Settings → Lab to pick Low/Medium/High shake sensitivity, run the live shake test, toggle Black night or Reduced motion, or inspect current Shizuku/Shevery/Connector binder state.</string>
+    <string name="guide_lab_caution">Running the shake calibration test temporarily pauses automatic guide opening so you can test hits cleanly. IPC snapshot exports status only without logcat dumps.</string>
+
+    <string name="guide_faq_title">FAQ &amp; troubleshooting</string>
+    <string name="guide_faq_overview">Covers Shizuku package conflicts, wireless pairing failures, server drops, scam renames, module install rejections, and Smart Logs.</string>
+    <string name="guide_faq_instructions">For wireless pairing, enter both the pairing port and code. For drops, keep ErrorProtect on and exempt Shevery from battery optimization. Use Smart Logs on Home or verbose logging in Extras for issues, and ShizuConfig’s Action in Catalog for device diagnostics.</string>
+    <string name="guide_faq_caution">Shevery is 100% free—avoid paid downloaders and fake renames like Shizako+. Strip tokens and personal data before attaching logs to GitHub issues.</string>
+
     <string name="guide_how_it_works_title">How Shevery works</string>
-    <string name="guide_how_it_works_overview">Shevery runs a privileged server and lets approved apps reach system APIs through Binder IPC.</string>
-    <string name="guide_how_it_works_instructions">Start the server and grant access to an app you trust. The app can then use the Shevery API for supported operations.</string>
-    <string name="guide_how_it_works_caution">Available permissions depend on the server’s identity and Android version. An ADB-started server runs with shell privileges.</string>
+    <string name="guide_how_it_works_overview">Forwards app system API calls over Binder IPC (transactRemote) through a privileged server, avoiding slow per-command su shell spawning.</string>
+    <string name="guide_how_it_works_instructions">Start shizuku_server via ADB or root, let BinderSender deliver the binder as apps launch, and use ShizukuBinderWrapper plus Android17Compat fallbacks for Android 15–17 signature changes.</string>
+    <string name="guide_how_it_works_caution">Available permissions match the server UID (shell for ADB, root for su). Normal apps on Android 9+ still need hidden-API bypasses for restricted platform methods.</string>
+
     <string name="guide_publish_module_title">Publish a module</string>
-    <string name="guide_publish_module_overview">A GitHub repository can make a module discoverable in the Shevery catalog.</string>
-    <string name="guide_publish_module_instructions">Put module.prop at the repository root, add the shevery-modules topic, and publish a ZIP release if you support release installs.</string>
-    <string name="guide_publish_module_caution">Keep the module ID stable and increase versionCode for each update. Give users a way to review your scripts before installation.</string>
+    <string name="guide_publish_module_overview">Any public GitHub repository with module.prop and the shevery-modules topic appears automatically in Shevery’s Catalog within the 6h cache window.</string>
+    <string name="guide_publish_module_instructions">Place module.prop at repo root (or a validated subdir), add the shevery-modules GitHub topic, optionally host updateJson, and attach a ZIP matching the module ID for Release installs.</string>
+    <string name="guide_publish_module_caution">Keep the module id stable, bump versionCode every release, stay within the 4-module per-author catalog limit, and keep scripts readable so users can audit them.</string>
+
     <string name="guide_build_title">Build from source</string>
-    <string name="guide_build_overview">Build the Shevery manager and its native components from the project repository.</string>
-    <string name="guide_build_instructions">Clone the repository with submodules. Install the Android SDK and NDK required by the selected revision, then run the included Gradle wrapper.</string>
-    <string name="guide_build_caution">Check the build configuration of your checkout for tool versions. Android requires a matching signing key to install over an existing copy.</string>
+    <string name="guide_build_overview">Builds the Compose manager app, Rust/NDK native binaries, server, starter, and compatibility stubs from the HmnDev-Tech/shevery repository.</string>
+    <string name="guide_build_instructions">Run git clone --recurse-submodules, configure JDK 21 / Android SDK / NDK &amp; Rust targets, and run ./gradlew :manager:assembleDebug or :manager:assembleRelease.</string>
+    <string name="guide_build_caution">Cloning without --recurse-submodules fails the build. Debug builds produce a debuggable shizuku_server; installing over an existing APK requires a matching signing key, and Apache 2.0 trademark rules bar reusing Shevery branding.</string>
 </resources>
