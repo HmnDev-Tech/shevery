@@ -357,6 +357,11 @@
     <string name="home_diagnostics_title"><![CDATA[Диагностика]]></string>
     <string name="home_diagnostics_copy"><![CDATA[Скопировать диагностику]]></string>
     <string name="home_diagnostics_copied"><![CDATA[Данные диагностики скопированы.]]></string>
+    <string name="home_diagnostics_smart_logs_title">Shevery Smart Logs</string>
+    <string name="home_diagnostics_smart_logs_subtitle">Диагностика только приложения и отфильтрованные логи для GitHub Issues</string>
+    <string name="home_smart_logs_open">Открыть Smart Logs</string>
+    <string name="home_shizuconfig_notice_title">Диагностика перенесена в ShizuConfig</string>
+    <string name="home_shizuconfig_notice_body">В каталоге уже есть модуль ShizuConfig — установите его и используйте Action там для диагностики.</string>
     <string name="starting_root_shell"><![CDATA[Запуск root-оболочки…]]></string>
     <string name="home_dhizuku_title"><![CDATA[Запуск (через Dhizuku)]]></string>
     <string name="home_dhizuku_description"><![CDATA[Для устройств под управлением Dhizuku вы можете запустить Shevery напрямую, используя привилегии владельца устройства.]]></string>

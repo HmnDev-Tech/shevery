@@ -113,6 +113,9 @@
     <string name="home_diagnostics_smart_logs_saved">Shevery logs saved.</string>
     <string name="home_diagnostics_smart_logs_save_failed">Failed to save logs: %1$s</string>
     <string name="home_diagnostics_tap_hint">Tap card to view, copy, or download Shevery app logs</string>
+    <string name="home_smart_logs_open">Open Smart Logs</string>
+    <string name="home_shizuconfig_notice_title">Diagnostics moved to ShizuConfig</string>
+    <string name="home_shizuconfig_notice_body">The ShizuConfig module is already available in the catalog. Install it and run its Action for diagnostics.</string>
     <string name="home_modules_description">Install and manage ADB-backed modules</string>
 
     <!-- Home - Adb permissions limited -->

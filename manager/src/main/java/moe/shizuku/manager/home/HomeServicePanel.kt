@@ -1,18 +1,12 @@
-@file:OptIn(androidx.compose.material3.ExperimentalMaterial3ExpressiveApi::class,
-    androidx.compose.foundation.layout.ExperimentalLayoutApi::class)
+@file:OptIn(androidx.compose.foundation.layout.ExperimentalLayoutApi::class)
 
 package moe.shizuku.manager.home
 
-import androidx.compose.animation.core.animateFloatAsState
-import androidx.compose.animation.core.snap
-import androidx.compose.foundation.Canvas
 import androidx.compose.foundation.layout.Arrangement
 import androidx.compose.foundation.layout.Column
 import androidx.compose.foundation.layout.FlowRow
-import androidx.compose.foundation.layout.Row
 import androidx.compose.foundation.layout.Spacer
 import androidx.compose.foundation.layout.fillMaxWidth
-import androidx.compose.foundation.layout.height
 import androidx.compose.foundation.layout.padding
 import androidx.compose.foundation.layout.size
 import androidx.compose.foundation.layout.width
@@ -25,13 +19,7 @@ import androidx.compose.material3.OutlinedButton
 import androidx.compose.material3.Surface
 import androidx.compose.material3.Text
 import androidx.compose.runtime.Composable
-import androidx.compose.ui.Alignment
 import androidx.compose.ui.Modifier
-import androidx.compose.ui.geometry.Offset
-import androidx.compose.ui.graphics.Color
-import androidx.compose.ui.graphics.StrokeCap
-import androidx.compose.ui.graphics.drawscope.Stroke
-import androidx.compose.ui.graphics.drawscope.rotate
 import androidx.compose.ui.res.stringResource
 import androidx.compose.ui.semantics.LiveRegionMode
 import androidx.compose.ui.semantics.heading
@@ -42,7 +30,6 @@ import androidx.compose.ui.text.font.FontWeight
 import androidx.compose.ui.unit.dp
 import moe.shizuku.manager.R
 import moe.shizuku.manager.model.ServiceStatus
-import moe.shizuku.manager.ui.compose.LocalReducedMotion
 import moe.shizuku.manager.ui.compose.ShizukuIcon
 import moe.shizuku.manager.utils.ShizukuStateMachine.State
 import rikka.shizuku.Shizuku
@@ -97,15 +84,11 @@ internal fun HomeServicePanel(
         contentColor = ink
     ) {
         Column(Modifier.padding(20.dp), verticalArrangement = Arrangement.spacedBy(12.dp)) {
-            Row(Modifier.fillMaxWidth(), verticalAlignment = Alignment.CenterVertically,
-                horizontalArrangement = Arrangement.spacedBy(12.dp)) {
-                RelayMark(running, pending, ink, Modifier.width(96.dp).height(46.dp))
-                Text(
-                    stringResource(if (hasDetails) launchMode else R.string.home_service),
-                    Modifier.weight(1f),
-                    style = MaterialTheme.typography.labelLarge
-                )
-            }
+            Text(
+                text = stringResource(if (hasDetails) launchMode else R.string.home_service),
+                style = MaterialTheme.typography.titleMedium,
+                fontWeight = FontWeight.Bold
+            )
             Text(stringResource(title),
                 modifier = Modifier.semantics { heading(); liveRegion = LiveRegionMode.Polite },
                 style = MaterialTheme.typography.headlineLarge, fontWeight = FontWeight.SemiBold)
@@ -167,35 +150,5 @@ private fun ServiceMetric(label: String, value: String) {
     Column(Modifier.semantics(mergeDescendants = true) {}) {
         Text(label, style = MaterialTheme.typography.labelSmall)
         Text(value, style = MaterialTheme.typography.titleMedium, fontFamily = FontFamily.Monospace)
-    }
-}
-
-/** The arm rests on the right contact only after the service is connected. */
-@Composable
-private fun RelayMark(closed: Boolean, moving: Boolean, ink: Color, modifier: Modifier) {
-    val target = when {
-        moving -> -18f
-        closed -> 0f
-        else -> -36f
-    }
-    val angle = animateFloatAsState(
-        targetValue = target,
-        animationSpec = if (LocalReducedMotion.current) snap() else MaterialTheme.motionScheme.defaultSpatialSpec(),
-        label = "relay contact"
-    )
-    Canvas(modifier) {
-        val unit = size.width / 96f
-        val y = size.height * 0.76f
-        val pivot = Offset(24f * unit, y)
-        val contact = Offset(68f * unit, y)
-        val stroke = 3.5f * unit
-        val radius = 6f * unit
-        drawLine(ink, Offset(2f * unit, y), Offset(pivot.x - radius, y), stroke, StrokeCap.Round)
-        drawLine(ink, Offset(contact.x + radius, y), Offset(size.width - 2f * unit, y), stroke, StrokeCap.Round)
-        drawCircle(ink, radius, contact, style = Stroke(stroke))
-        rotate(angle.value, pivot) {
-            drawLine(ink, pivot, contact, stroke * 1.5f, StrokeCap.Round)
-        }
-        drawCircle(ink, radius, pivot)
     }
 }

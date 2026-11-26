@@ -103,7 +103,6 @@ import moe.shizuku.manager.service.WatchdogManager
 import moe.shizuku.manager.starter.StarterActivity
 import moe.shizuku.manager.utils.CustomTabsHelper
 import moe.shizuku.manager.utils.EnvironmentUtils
-import moe.shizuku.manager.ui.compose.ExpressiveSwitch
 import moe.shizuku.manager.ui.compose.GroupDivider
 import moe.shizuku.manager.ui.compose.MonospaceLog
 import moe.shizuku.manager.ui.compose.SectionHeader
@@ -112,7 +111,6 @@ import moe.shizuku.manager.ui.compose.SettingsRow
 import moe.shizuku.manager.ui.compose.ShizukuLazyScaffold
 import moe.shizuku.manager.ui.compose.SwitchSettingsRow
 import moe.shizuku.manager.ui.compose.htmlToPlainText
-import moe.shizuku.manager.home.SheverySmartLogsDialog
 import rikka.core.util.ResourceUtils
 import rikka.core.util.ClipboardUtils
 import rikka.material.app.LocaleDelegate
@@ -334,7 +332,6 @@ fun SettingsScreen(
     var showNightDialog by remember { mutableStateOf(false) }
     var showModuleModeDialog by remember { mutableStateOf(false) }
     var showCustomPermissionsDialog by remember { mutableStateOf(false) }
-    var showDiagnosticsLogsDialog by remember { mutableStateOf(false) }
     var pendingTcpModeChange by remember { mutableStateOf<Boolean?>(null) }
 
     var moduleAccessMode by remember {
@@ -391,7 +388,6 @@ fun SettingsScreen(
     var expHaptics by remember { mutableStateOf(ModuleSettings.isServiceStateHapticsEnabled()) }
     var expUptime by remember { mutableStateOf(ModuleSettings.isServiceUptimeShown()) }
     var expKeepScreen by remember { mutableStateOf(ModuleSettings.isKeepScreenOnWhileStarting()) }
-    var showHomeDiagnostics by remember { mutableStateOf(ModuleSettings.isHomeDiagnosticsShown()) }
     var showUnsafeDialog by remember { mutableStateOf(false) }
     var showRevokeDialog by remember { mutableStateOf(false) }
     var recreateTick by remember { mutableIntStateOf(0) }
@@ -546,7 +542,6 @@ fun SettingsScreen(
                 expHaptics = ModuleSettings.isServiceStateHapticsEnabled()
                 expUptime = ModuleSettings.isServiceUptimeShown()
                 expKeepScreen = ModuleSettings.isKeepScreenOnWhileStarting()
-                showHomeDiagnostics = ModuleSettings.isHomeDiagnosticsShown()
                 tcpMode = ShizukuSettings.isTcpMode()
                 tcpModePort = ShizukuSettings.getTcpModePort()
                 tcpPortRandomized = ShizukuSettings.isTcpPortRandomized()
@@ -914,7 +909,6 @@ fun SettingsScreen(
                             expHaptics = expHaptics,
                             expUptime = expUptime,
                             expKeepScreen = expKeepScreen,
-                            showHomeDiagnostics = showHomeDiagnostics,
                             onNotifyRecoveryChange = { value ->
                                 notifyRecovery = value
                                 ModuleSettings.setNotifyOnRecovery(value)
@@ -943,11 +937,6 @@ fun SettingsScreen(
                                 expKeepScreen = value
                                 ModuleSettings.setKeepScreenOnWhileStarting(value)
                             },
-                            onShowHomeDiagnosticsChange = { value ->
-                                showHomeDiagnostics = value
-                                ModuleSettings.setHomeDiagnosticsShown(value)
-                            },
-                            onOpenDiagnosticsLogs = { showDiagnosticsLogsDialog = true },
                             onOpenAccessibility = {
                                 context.startActivity(Intent(context, AccessibilityManagerActivity::class.java))
                             },
@@ -1037,12 +1026,6 @@ fun SettingsScreen(
                 }
             }
         }
-    }
-
-    if (showDiagnosticsLogsDialog) {
-        SheverySmartLogsDialog(
-            onDismiss = { showDiagnosticsLogsDialog = false }
-        )
     }
 
     if (showLanguageDialog) {
@@ -2042,7 +2025,6 @@ private fun LazyListScope.extrasSectionContent(
     expHaptics: Boolean,
     expUptime: Boolean,
     expKeepScreen: Boolean,
-    showHomeDiagnostics: Boolean,
     onNotifyRecoveryChange: (Boolean) -> Unit,
     onAutoRefreshChange: (Boolean) -> Unit,
     onVerboseLoggingChange: (Boolean) -> Unit,
@@ -2050,8 +2032,6 @@ private fun LazyListScope.extrasSectionContent(
     onExpHapticsChange: (Boolean) -> Unit,
     onExpUptimeChange: (Boolean) -> Unit,
     onExpKeepScreenChange: (Boolean) -> Unit,
-    onShowHomeDiagnosticsChange: (Boolean) -> Unit,
-    onOpenDiagnosticsLogs: () -> Unit,
     onOpenAccessibility: () -> Unit,
     onRestartService: () -> Unit,
     onClearUpdateBanner: () -> Unit,
@@ -2199,30 +2179,6 @@ private fun LazyListScope.extrasSectionContent(
                 summary = stringResource(R.string.lab_exp_keep_screen_summary),
                 checked = expKeepScreen,
                 onCheckedChange = onExpKeepScreenChange
-            )
-            GroupDivider()
-            SettingsRow(
-                icon = R.drawable.ic_outline_info_24,
-                title = stringResource(R.string.lab_home_diagnostics_title),
-                summary = if (showHomeDiagnostics) {
-                    stringResource(R.string.lab_home_diagnostics_summary) + "\n" +
-                        stringResource(R.string.home_diagnostics_tap_hint)
-                } else {
-                    stringResource(R.string.lab_home_diagnostics_summary)
-                },
-                onClick = {
-                    if (showHomeDiagnostics) {
-                        onOpenDiagnosticsLogs()
-                    } else {
-                        onShowHomeDiagnosticsChange(true)
-                    }
-                },
-                trailing = {
-                    ExpressiveSwitch(
-                        checked = showHomeDiagnostics,
-                        onCheckedChange = onShowHomeDiagnosticsChange
-                    )
-                }
             )
         }
     }

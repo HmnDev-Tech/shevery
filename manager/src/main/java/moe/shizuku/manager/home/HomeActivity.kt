@@ -22,8 +22,6 @@ import moe.shizuku.manager.ui.compose.ExpressiveSegmentedSection
 import moe.shizuku.manager.ui.compose.LocalReducedMotion
 import android.Manifest
 import android.app.Activity
-import android.content.ClipData
-import android.content.ClipboardManager
 import android.content.BroadcastReceiver
 import android.content.Context
 import android.content.IntentFilter
@@ -92,8 +90,6 @@ import androidx.compose.foundation.rememberScrollState
 import androidx.compose.foundation.verticalScroll
 import androidx.compose.material3.Text
 import androidx.compose.material3.TextButton
-import androidx.compose.material3.TopAppBar
-import androidx.compose.material3.TopAppBarDefaults
 import androidx.compose.runtime.Composable
 import androidx.compose.runtime.CompositionLocalProvider
 import androidx.compose.runtime.DisposableEffect
@@ -129,7 +125,6 @@ import androidx.compose.ui.res.stringResource
 import androidx.compose.ui.text.font.FontFamily
 import androidx.compose.ui.platform.LocalDensity
 import androidx.compose.ui.text.font.FontWeight
-import androidx.compose.ui.text.style.TextOverflow
 import androidx.compose.ui.unit.dp
 import androidx.core.content.ContextCompat
 import moe.shizuku.manager.BuildConfig
@@ -671,7 +666,6 @@ abstract class HomeActivity : AppActivity() {
                                     onShowAdbCommand = { showAdbCommandDialog = true },
                                     onOpenAdbHelp = { CustomTabsHelper.launchUrlOrCopy(this@HomeActivity, Helps.ADB.get()) },
                                     onOpenAdbPermissionHelp = { CustomTabsHelper.launchUrlOrCopy(this@HomeActivity, Helps.ADB_PERMISSION.get()) },
-                                    onCopyDiagnostics = { copyDiagnostics(it) },
                                     onRequestLocalNetworkPermission = {
                                         requestLocalNetworkPermission { permissionRefreshTick.intValue++ }
                                     },
@@ -1246,12 +1240,6 @@ abstract class HomeActivity : AppActivity() {
         )
     }
 
-    private fun copyDiagnostics(text: String) {
-        getSystemService(ClipboardManager::class.java)
-            .setPrimaryClip(ClipData.newPlainText(getString(R.string.home_diagnostics_title), text))
-        Toast.makeText(this, R.string.home_diagnostics_copied, Toast.LENGTH_SHORT).show()
-    }
-
     private fun isPermissionDefined(permission: String): Boolean {
         return try {
             packageManager.getPermissionInfo(permission, 0)
@@ -1330,7 +1318,6 @@ private fun HomeScreen(
     onShowAdbCommand: () -> Unit,
     onOpenAdbHelp: () -> Unit,
     onOpenAdbPermissionHelp: () -> Unit,
-    onCopyDiagnostics: (String) -> Unit,
     onRequestLocalNetworkPermission: () -> Unit,
     onOpenAutomationSettings: () -> Unit = {},
     onOpenCompatStubs: () -> Unit = {},
@@ -1360,25 +1347,7 @@ private fun HomeScreen(
             }
         }
     }
-    val watchdogEnabled = ModuleSettings.isWatchdogEnabled()
-    val tcpMode = ShizukuSettings.isTcpMode()
-    val launchMode = ShizukuSettings.getLastLaunchMode()
-    var showHomeDiagnostics by remember {
-        mutableStateOf(ModuleSettings.isHomeDiagnosticsShown())
-    }
-    var diagnosticsDialogText by remember { mutableStateOf<String?>(null) }
-    DisposableEffect(Unit) {
-        val prefs = ShizukuSettings.getPreferences()
-        val listener = android.content.SharedPreferences.OnSharedPreferenceChangeListener { _, key ->
-            if (key == ModuleSettings.KEY_SHOW_HOME_DIAGNOSTICS) {
-                showHomeDiagnostics = ModuleSettings.isHomeDiagnosticsShown()
-            }
-        }
-        prefs.registerOnSharedPreferenceChangeListener(listener)
-        onDispose {
-            prefs.unregisterOnSharedPreferenceChangeListener(listener)
-        }
-    }
+    var showSmartLogsDialog by remember { mutableStateOf(false) }
 
     // Experimental (Extras > Experimental): uptime itself is recorded by the
     // process-scoped [ServiceUptime] tracker (backed by the state machine, so it
@@ -1456,32 +1425,10 @@ private fun HomeScreen(
     val pullToRefreshState = rememberPullToRefreshState()
 
     Scaffold(
-        contentWindowInsets = WindowInsets.safeDrawing.only(WindowInsetsSides.Horizontal),
-        topBar = {
-            TopAppBar(
-                title = {
-                    Text(
-                        text = stringResource(R.string.app_name),
-                        maxLines = 1,
-                        overflow = TextOverflow.Ellipsis
-                    )
-                },
-                actions = {
-                    Text(
-                        stringResource(R.string.about_version_value, BuildConfig.VERSION_NAME),
-                        modifier = Modifier.padding(end = 16.dp),
-                        style = MaterialTheme.typography.labelMedium,
-                        fontFamily = FontFamily.Monospace,
-                        color = MaterialTheme.colorScheme.onSurfaceVariant
-                    )
-                },
-                colors = TopAppBarDefaults.topAppBarColors(
-                    containerColor = MaterialTheme.colorScheme.surface,
-                    scrolledContainerColor = MaterialTheme.colorScheme.surfaceContainer
-                )
-            )
-        }
+        contentWindowInsets = WindowInsets.safeDrawing.only(WindowInsetsSides.Horizontal)
     ) { innerPadding ->
+        val topInset = WindowInsets.safeDrawing.only(WindowInsetsSides.Top).asPaddingValues().calculateTopPadding()
+        val bottomInset = WindowInsets.navigationBars.asPaddingValues().calculateBottomPadding()
         Box(
             modifier = Modifier
                 .fillMaxSize()
@@ -1508,7 +1455,7 @@ private fun HomeScreen(
                 LazyColumn(
                     state = listState,
                     modifier = Modifier.fillMaxSize(),
-                    contentPadding = PaddingValues(start = 16.dp, top = 16.dp, end = 16.dp, bottom = 80.dp + WindowInsets.navigationBars.asPaddingValues().calculateBottomPadding()),
+                    contentPadding = PaddingValues(start = 16.dp, top = 16.dp + topInset, end = 16.dp, bottom = 80.dp + bottomInset),
                     verticalArrangement = Arrangement.spacedBy(12.dp)
                 ) {
                     item(key = "service") {
@@ -1647,39 +1594,15 @@ private fun HomeScreen(
                         )
                     }
 
-                    if (showHomeDiagnostics) {
-                        item {
-                            val diagnostics = remember(
-                                context,
-                                status,
-                                grantedCount,
-                                localNetworkPermissionState,
-                                isRooted,
-                                watchdogEnabled,
-                                tcpMode,
-                                launchMode
-                            ) {
-                                buildDiagnostics(
-                                    context = context,
-                                    status = status,
-                                    grantedCount = grantedCount,
-                                    localNetworkPermissionState = localNetworkPermissionState,
-                                    isRooted = isRooted,
-                                    watchdogEnabled = watchdogEnabled,
-                                    tcpMode = tcpMode,
-                                    launchMode = launchMode
-                                )
-                            }
-                            DiagnosticsCard(
-                                diagnostics = diagnostics,
-                                onCopyDiagnostics = onCopyDiagnostics,
-                                onOpenLogs = { diagnosticsDialogText = diagnostics }
-                            )
-                        }
+                    item(key = "smart-logs") {
+                        SmartLogsCard(
+                            onOpenLogs = { showSmartLogsDialog = true },
+                            onOpenModules = onOpenModules
+                        )
                     }
                 }
             }
-            val indicatorModifier = Modifier.align(Alignment.TopCenter).padding(top = 8.dp)
+            val indicatorModifier = Modifier.align(Alignment.TopCenter).padding(top = 8.dp + topInset)
             if (LocalReducedMotion.current) {
                 PullToRefreshDefaults.Indicator(pullToRefreshState, isRefreshing, indicatorModifier)
             } else {
@@ -1696,10 +1619,9 @@ private fun HomeScreen(
                 )
             }
 
-            diagnosticsDialogText?.let { summary ->
+            if (showSmartLogsDialog) {
                 SheverySmartLogsDialog(
-                    diagnosticsSummary = summary,
-                    onDismiss = { diagnosticsDialogText = null }
+                    onDismiss = { showSmartLogsDialog = false }
                 )
             }
         }
@@ -1872,35 +1794,59 @@ private fun LocalNetworkPermissionCard(
 }
 
 @Composable
-private fun DiagnosticsCard(
-    diagnostics: String,
-    onCopyDiagnostics: (String) -> Unit,
-    onOpenLogs: () -> Unit
+private fun SmartLogsCard(
+    onOpenLogs: () -> Unit,
+    onOpenModules: () -> Unit
 ) {
     HomeCard(
-        icon = R.drawable.ic_outline_info_24,
-        title = stringResource(R.string.home_diagnostics_title),
-        body = diagnostics,
+        icon = R.drawable.ic_terminal_24,
+        title = stringResource(R.string.home_diagnostics_smart_logs_title),
+        body = stringResource(R.string.home_diagnostics_smart_logs_subtitle),
         onClick = onOpenLogs
     ) {
-        Text(
-            text = stringResource(R.string.home_diagnostics_tap_hint),
-            style = MaterialTheme.typography.bodySmall,
-            color = MaterialTheme.colorScheme.primary
-        )
+        Surface(
+            modifier = Modifier.fillMaxWidth(),
+            shape = RoundedCornerShape(14.dp),
+            color = MaterialTheme.colorScheme.tertiaryContainer
+        ) {
+            Row(
+                modifier = Modifier.padding(12.dp),
+                horizontalArrangement = Arrangement.spacedBy(10.dp),
+                verticalAlignment = Alignment.Top
+            ) {
+                ShizukuIcon(
+                    icon = R.drawable.ic_warning_24,
+                    modifier = Modifier.size(18.dp),
+                    tint = MaterialTheme.colorScheme.onTertiaryContainer
+                )
+                Column(verticalArrangement = Arrangement.spacedBy(2.dp)) {
+                    Text(
+                        text = stringResource(R.string.home_shizuconfig_notice_title),
+                        style = MaterialTheme.typography.labelLarge,
+                        fontWeight = FontWeight.SemiBold,
+                        color = MaterialTheme.colorScheme.onTertiaryContainer
+                    )
+                    Text(
+                        text = stringResource(R.string.home_shizuconfig_notice_body),
+                        style = MaterialTheme.typography.bodySmall,
+                        color = MaterialTheme.colorScheme.onTertiaryContainer
+                    )
+                }
+            }
+        }
         HomeButtons(
             listOf(
                 HomeButtonSpec(
-                    label = R.string.home_diagnostics_copy,
-                    icon = R.drawable.ic_content_copy_24,
+                    label = R.string.home_smart_logs_open,
+                    icon = R.drawable.ic_terminal_24,
                     primary = true,
-                    onClick = { onCopyDiagnostics(diagnostics) }
+                    onClick = onOpenLogs
                 ),
                 HomeButtonSpec(
-                    label = R.string.home_diagnostics_smart_logs_title,
-                    icon = R.drawable.ic_terminal_24,
+                    label = R.string.modules_title,
+                    icon = R.drawable.ic_adb_24dp,
                     primary = false,
-                    onClick = onOpenLogs
+                    onClick = onOpenModules
                 )
             )
         )
@@ -2356,53 +2302,6 @@ private fun formatServiceUptime(millis: Long): String {
         minutes > 0 -> "${minutes}m"
         else -> "${seconds}s"
     }
-}
-
-private fun buildDiagnostics(
-    context: android.content.Context,
-    status: ServiceStatus,
-    grantedCount: Int,
-    localNetworkPermissionState: LocalNetworkPermissionState,
-    isRooted: Boolean,
-    watchdogEnabled: Boolean,
-    tcpMode: Boolean,
-    launchMode: Int
-): String {
-    val versionName = context.packageManager.getPackageInfo(context.packageName, 0).versionName ?: BuildConfig.VERSION_NAME
-    val localNetwork = if (localNetworkPermissionState.required) {
-        "${localNetworkPermissionState.label}: " +
-                if (localNetworkPermissionState.granted) context.getString(R.string.diagnostics_granted) else context.getString(R.string.diagnostics_missing)
-    } else {
-        context.getString(R.string.diagnostics_not_required)
-    }
-    fun onOff(enabled: Boolean) = if (enabled) {
-        context.getString(R.string.diagnostics_enabled)
-    } else {
-        context.getString(R.string.diagnostics_disabled)
-    }
-    val lastLaunch = when (launchMode) {
-        ShizukuSettings.LaunchMethod.ROOT -> "root"
-        ShizukuSettings.LaunchMethod.ADB -> "adb"
-        else -> context.getString(R.string.diagnostics_unknown)
-    }
-
-    return buildString {
-        appendLine("${context.getString(R.string.diagnostics_app)}: ${context.getString(R.string.app_name)} $versionName (${BuildConfig.VERSION_CODE})")
-        appendLine("${context.getString(R.string.diagnostics_android)}: ${Build.VERSION.RELEASE} / SDK ${Build.VERSION.SDK_INT} / ${Build.VERSION.CODENAME}")
-        appendLine("${context.getString(R.string.diagnostics_device)}: ${Build.MANUFACTURER} ${Build.MODEL}")
-        appendLine("${context.getString(R.string.diagnostics_service)}: ${if (status.isRunning) context.getString(R.string.diagnostics_running) else context.getString(R.string.diagnostics_stopped)}")
-        appendLine("${context.getString(R.string.diagnostics_server_uid)}: ${status.uid}")
-        appendLine("${context.getString(R.string.diagnostics_server_pid)}: ${status.pid ?: context.getString(R.string.diagnostics_unavailable)}")
-        appendLine("${context.getString(R.string.diagnostics_server_api)}: ${status.apiVersion}.${status.patchVersion}")
-        appendLine("${context.getString(R.string.diagnostics_selinux)}: ${status.seContext ?: context.getString(R.string.diagnostics_unknown)}")
-        appendLine("${context.getString(R.string.diagnostics_adb_permission)}: ${if (status.permission) context.getString(R.string.diagnostics_full) else context.getString(R.string.diagnostics_limited)}")
-        appendLine("${context.getString(R.string.diagnostics_authorized_apps)}: $grantedCount")
-        appendLine("${context.getString(R.string.diagnostics_local_network)}: $localNetwork")
-        appendLine("${context.getString(R.string.diagnostics_error_protect)}: ${onOff(watchdogEnabled)}")
-        appendLine("${context.getString(R.string.diagnostics_tcp_mode)}: ${onOff(tcpMode)}${if (tcpMode) " (${ShizukuSettings.getTcpModePort()})" else ""}")
-        appendLine("${context.getString(R.string.diagnostics_launch_mode)}: $lastLaunch")
-        appendLine("${context.getString(R.string.diagnostics_root)}: ${if (isRooted) context.getString(R.string.diagnostics_available) else context.getString(R.string.diagnostics_unavailable)}")
-    }.trim()
 }
 
 
