@@ -324,17 +324,15 @@ private fun ExpressivePressableSegment(
     val pressed by interactions.collectIsPressedAsState()
     val reducedMotion = LocalReducedMotion.current
     val motion = MaterialTheme.motionScheme
-    val cornerSpec = if (reducedMotion) snap() else motion.fastSpatialSpec()
-    val colorSpec = if (reducedMotion) snap() else motion.fastEffectsSpec()
 
     val topRadius by animateDpAsState(
         targetValue = if (pressed) 28.dp else if (index == 0) 24.dp else 4.dp,
-        animationSpec = cornerSpec,
+        animationSpec = if (reducedMotion) snap() else motion.fastSpatialSpec(),
         label = "guide-segment-top"
     )
     val bottomRadius by animateDpAsState(
         targetValue = if (pressed) 28.dp else if (index == count - 1) 24.dp else 4.dp,
-        animationSpec = cornerSpec,
+        animationSpec = if (reducedMotion) snap() else motion.fastSpatialSpec(),
         label = "guide-segment-bottom"
     )
     val containerColor by animateColorAsState(
@@ -343,7 +341,7 @@ private fun ExpressivePressableSegment(
         } else {
             MaterialTheme.colorScheme.surfaceContainerHigh
         },
-        animationSpec = colorSpec,
+        animationSpec = if (reducedMotion) snap() else motion.fastEffectsSpec(),
         label = "guide-segment-color"
     )
 
