@@ -699,6 +699,14 @@
     <string name="app_management_add_app_added">Привилегии приложения обновлены</string>
     <string name="app_management_badge_shevery">Shevery</string>
     <string name="app_management_badge_legacy">Legacy</string>
+    <string name="about_version_value">Версия %s</string>
+    <string name="home_server_starting">Сервер запускается</string>
+    <string name="home_server_stopping">Сервер останавливается</string>
+    <string name="home_server_crashed">Связь с сервером потеряна</string>
+    <string name="home_status_unavailable">Не удалось получить данные сервера</string>
+    <string name="home_service">Системная служба</string>
+    <string name="home_granted_count">С доступом: %1$d</string>
+    <string name="home_status_uptime">Время работы: %1$s</string>
     <string name="home_server_running">Сервер запущен</string>
     <string name="home_server_stopped">Сервер остановлен</string>
     <string name="home_server_checking">Проверка сервера</string>

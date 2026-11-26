@@ -15,10 +15,6 @@ import androidx.compose.foundation.layout.asPaddingValues
 import androidx.compose.foundation.layout.only
 import androidx.compose.foundation.layout.safeDrawing
 import androidx.compose.foundation.layout.widthIn
-import androidx.compose.material3.LinearWavyProgressIndicator
-import androidx.compose.material3.LinearProgressIndicator
-import androidx.compose.animation.animateColorAsState
-import androidx.compose.animation.animateContentSize
 import androidx.lifecycle.compose.LocalLifecycleOwner
 import androidx.lifecycle.repeatOnLifecycle
 import moe.shizuku.manager.ui.compose.ExpressiveSegmentedItem
@@ -56,6 +52,7 @@ import androidx.compose.foundation.layout.PaddingValues
 import androidx.compose.foundation.layout.Row
 import androidx.compose.foundation.layout.Spacer
 import androidx.compose.foundation.layout.WindowInsets
+import androidx.compose.foundation.layout.fillMaxHeight
 import androidx.compose.foundation.layout.fillMaxSize
 import androidx.compose.foundation.layout.fillMaxWidth
 import androidx.compose.foundation.layout.height
@@ -129,6 +126,8 @@ import androidx.compose.ui.platform.LocalContext
 import androidx.compose.ui.platform.LocalView
 import androidx.compose.ui.res.painterResource
 import androidx.compose.ui.res.stringResource
+import androidx.compose.ui.text.font.FontFamily
+import androidx.compose.ui.platform.LocalDensity
 import androidx.compose.ui.text.font.FontWeight
 import androidx.compose.ui.text.style.TextOverflow
 import androidx.compose.ui.unit.dp
@@ -179,7 +178,6 @@ import rikka.lifecycle.Resource
 import rikka.lifecycle.Status
 import rikka.lifecycle.viewModels
 import rikka.shizuku.Shizuku
-import rikka.shizuku.ShizukuApiConstants
 import moe.shizuku.manager.module.ModuleSettings
 import moe.shizuku.manager.module.update.SheveryUpdateChecker
 import moe.shizuku.manager.compat.StubManager
@@ -607,8 +605,8 @@ abstract class HomeActivity : AppActivity() {
                                     isPrimaryUser = UserHandleCompat.myUserId() == 0,
                                     isRooted = EnvironmentUtils.isRooted(),
                                     onRefresh = {
-                                        checkServerStatus()
                                         appsModel.load()
+                                        homeModel.reload()
                                     },
                                     onStop = {
                                         AuthManager.executeWithAuth(
@@ -1321,7 +1319,7 @@ private fun HomeScreen(
     localNetworkPermissionState: LocalNetworkPermissionState,
     isPrimaryUser: Boolean,
     isRooted: Boolean,
-    onRefresh: () -> Unit,
+    onRefresh: () -> Job,
     onStop: () -> Unit,
     onManageApps: () -> Unit,
     onTerminal: () -> Unit,
@@ -1345,11 +1343,13 @@ private fun HomeScreen(
     val context = LocalContext.current
     val status = serviceResource?.data ?: ServiceStatus()
     val grantedCount = grantedResource?.data ?: 0
-    val running = serverState == ShizukuStateMachine.State.RUNNING || status.isRunning
+    val running = serverState == ShizukuStateMachine.State.RUNNING
+    val changing = serverState == ShizukuStateMachine.State.STARTING || serverState == ShizukuStateMachine.State.STOPPING
+    val hasDetails = running && status.uid >= 0
     val adbPermission = status.permission
     val canUseWirelessAdb by produceState(
         initialValue = Build.VERSION.SDK_INT >= Build.VERSION_CODES.R || ShizukuSettings.isTcpMode(),
-        key1 = status.isRunning
+        key1 = running
     ) {
         if (Build.VERSION.SDK_INT >= Build.VERSION_CODES.R || ShizukuSettings.isTcpMode()) {
             value = true
@@ -1439,6 +1439,20 @@ private fun HomeScreen(
     val scope = rememberCoroutineScope()
     var isRefreshing by remember { mutableStateOf(false) }
     var showAutomationSheet by remember { mutableStateOf(false) }
+    val pendingUpdate by produceState<Pair<String, String>?>(null, homeActive) {
+        if (homeActive) {
+            val version = ModuleSettings.getPendingUpdateVersion()
+            val url = ModuleSettings.getPendingUpdateUrl()
+            value = when {
+                version.isNullOrEmpty() || url.isNullOrEmpty() -> null
+                SheveryUpdateChecker.isTagNewerThanInstalled(version) -> version to url
+                else -> {
+                    ModuleSettings.clearPendingUpdate()
+                    null
+                }
+            }
+        }
+    }
     val pullToRefreshState = rememberPullToRefreshState()
 
     Scaffold(
@@ -1450,6 +1464,15 @@ private fun HomeScreen(
                         text = stringResource(R.string.app_name),
                         maxLines = 1,
                         overflow = TextOverflow.Ellipsis
+                    )
+                },
+                actions = {
+                    Text(
+                        stringResource(R.string.about_version_value, BuildConfig.VERSION_NAME),
+                        modifier = Modifier.padding(end = 16.dp),
+                        style = MaterialTheme.typography.labelMedium,
+                        fontFamily = FontFamily.Monospace,
+                        color = MaterialTheme.colorScheme.onSurfaceVariant
                     )
                 },
                 colors = TopAppBarDefaults.topAppBarColors(
@@ -1470,11 +1493,13 @@ private fun HomeScreen(
                 modifier = Modifier.widthIn(max = 880.dp).fillMaxSize(),
                 isRefreshing = isRefreshing,
                 onRefresh = {
-                    scope.launch {
+                    if (!isRefreshing) scope.launch {
                         isRefreshing = true
-                        onRefresh()
-                        delay(500L)
-                        isRefreshing = false
+                        try {
+                            onRefresh().join()
+                        } finally {
+                            isRefreshing = false
+                        }
                     }
                 },
                 state = pullToRefreshState,
@@ -1486,304 +1511,196 @@ private fun HomeScreen(
                     contentPadding = PaddingValues(start = 16.dp, top = 16.dp, end = 16.dp, bottom = 80.dp + WindowInsets.navigationBars.asPaddingValues().calculateBottomPadding()),
                     verticalArrangement = Arrangement.spacedBy(12.dp)
                 ) {
-            item {
-                StatusHero(
-                    serviceResource = serviceResource,
-                    status = status,
-                    running = running,
-                    serverState = serverState,
-                    isPrimaryUser = isPrimaryUser,
-                    isRooted = isRooted,
-                    canUseWirelessAdb = canUseWirelessAdb,
-                    onStartRoot = onStartRoot,
-                    onStartWirelessAdb = onStartWirelessAdb,
-                    onShowAdbCommand = onShowAdbCommand,
-                    onStop = onStop,
-                    uptime = uptimeText
-                )
-            }
-
-            item {
-                val pendingVersion = remember { mutableStateOf<String?>(null) }
-                val pendingUrl = remember { mutableStateOf<String?>(null) }
-                val ctx = LocalContext.current
-                LaunchedEffect(Unit) {
-                    val storedVersion = ModuleSettings.getPendingUpdateVersion()
-                    val storedUrl = ModuleSettings.getPendingUpdateUrl()
-                    if (!storedVersion.isNullOrEmpty() && !storedUrl.isNullOrEmpty()
-                        && !SheveryUpdateChecker.isTagNewerThanInstalled(storedVersion)
-                    ) {
-                        ModuleSettings.clearPendingUpdate()
-                    } else {
-                        pendingVersion.value = storedVersion
-                        pendingUrl.value = storedUrl
-                    }
-                }
-                val version = pendingVersion.value
-                val url = pendingUrl.value
-                val showAppUpdateInstall = remember { mutableStateOf(false) }
-                if (!version.isNullOrEmpty() && !url.isNullOrEmpty()) {
-                    if (showAppUpdateInstall.value) {
-                        SheveryAppUpdateDialog(
-                            result = SheveryAppUpdateResult(
-                                hasUpdate = true,
-                                currentVersion = BuildConfig.VERSION_NAME,
-                                latestVersion = version,
-                                releaseTitle = null,
-                                releaseNotes = null,
-                                downloadUrl = url,
-                                htmlUrl = null,
-                                isPreRelease = false,
-                                publishedAt = null,
-                                error = null
-                            ),
-                            onDismiss = { showAppUpdateInstall.value = false },
-                        )
-                    }
-                    HomeCard(
-                        icon = R.drawable.ic_outline_info_24,
-                        title = ctx.getString(R.string.home_update_available_title, version),
-                        body = ctx.getString(R.string.home_update_available_body),
-                        enabled = true,
-                        onClick = { showAppUpdateInstall.value = true },
-                    )
-                }
-            }
-
-            item {
-                HomeActionGroups(
-                    isPrimaryUser = isPrimaryUser,
-                    canStartWireless = canUseWirelessAdb && serverState != ShizukuStateMachine.State.STARTING,
-                    canManageApps = running && adbPermission,
-                    onManageApps = onManageApps,
-                    onOpenModules = onOpenModules,
-                    onOpenComput = onOpenComput,
-                    onOpenDeviceOwner = onOpenDeviceOwner,
-                    onTerminal = onTerminal,
-                    terminalEnabled = running,
-                    onStartWirelessAdb = onStartWirelessAdb,
-                    onPairWirelessAdb = onPairWirelessAdb,
-                    onOpenWirelessGuide = onOpenWirelessGuide
-                )
-            }
-
-            if (!shizukuStubInstalled) {
-                item {
-                    HomeCard(
-                        icon = R.drawable.ic_warning_24,
-                        title = stringResource(R.string.home_shizuku_deprecated_banner_title),
-                        body = stringResource(R.string.home_shizuku_deprecated_banner_body)
-                    ) {
-                        HomeButtons(
-                            listOf(
-                                HomeButtonSpec(
-                                    label = R.string.home_shizuku_deprecated_banner_button,
-                                    icon = R.drawable.ic_system_icon,
-                                    primary = true,
-                                    onClick = onOpenCompatStubs
-                                )
-                            )
-                        )
-                    }
-                }
-            }
-
-            if (running && !adbPermission) {
-                item {
-                    HomeCard(
-                        icon = R.drawable.ic_warning_24,
-                        title = stringResource(R.string.home_adb_is_limited_title),
-                        body = stringResource(R.string.home_adb_is_limited_description)
-                    ) {
-                        HomeButtons(
-                            listOf(
-                                HomeButtonSpec(
-                                    label = R.string.home_adb_button_view_help,
-                                    icon = R.drawable.ic_help_outline_24dp,
-                                    primary = true,
-                                    onClick = onOpenAdbPermissionHelp
-                                )
-                            )
-                        )
-                    }
-                }
-            }
-
-            if (localNetworkPermissionState.required && !localNetworkPermissionState.granted) {
-                item {
-                    LocalNetworkPermissionCard(
-                        localNetworkPermissionState = localNetworkPermissionState,
-                        onRequestLocalNetworkPermission = onRequestLocalNetworkPermission
-                    )
-                }
-            }
-
-            if (isPrimaryUser) {
-                item {
-                    AdbCommandCard(
-                        onShowAdbCommand = onShowAdbCommand,
-                        onOpenAdbHelp = onOpenAdbHelp
-                    )
-                }
-            }
-
-            item {
-                AutomationCard(
-                    onViewIntents = { showAutomationSheet = true }
-                )
-            }
-
-            if (showHomeDiagnostics) {
-                item {
-                    val diagnostics = remember(
-                        context,
-                        status,
-                        grantedCount,
-                        localNetworkPermissionState,
-                        isRooted,
-                        watchdogEnabled,
-                        tcpMode,
-                        launchMode
-                    ) {
-                        buildDiagnostics(
-                            context = context,
+                    item(key = "service") {
+                        HomeServicePanel(
+                            state = serverState,
+                            checking = serviceResource == null && serverState == ShizukuStateMachine.State.STOPPED,
+                            readFailed = serviceResource?.status == Status.ERROR,
                             status = status,
-                            grantedCount = grantedCount,
-                            localNetworkPermissionState = localNetworkPermissionState,
+                            launchMode = when {
+                                status.uid == 0 -> R.string.home_launch_root
+                                hasDetails && StarterActivity.isWirelessSession(Shizuku.getBinder()) -> R.string.home_quick_wireless
+                                else -> R.string.home_launch_adb
+                            },
+                            onRetry = { onRefresh() },
+                            isPrimaryUser = isPrimaryUser,
                             isRooted = isRooted,
-                            watchdogEnabled = watchdogEnabled,
-                            tcpMode = tcpMode,
-                            launchMode = launchMode
+                            canUseWirelessAdb = canUseWirelessAdb,
+                            onStartRoot = onStartRoot,
+                            onStartWirelessAdb = onStartWirelessAdb,
+                            onShowAdbCommand = onShowAdbCommand,
+                            onStop = onStop,
+                            uptime = uptimeText
                         )
                     }
-                    DiagnosticsCard(
-                        diagnostics = diagnostics,
-                        onCopyDiagnostics = onCopyDiagnostics,
-                        onOpenLogs = { diagnosticsDialogText = diagnostics }
-                    )
-                }
-            }
-        }
-    }
-    val indicatorModifier = Modifier.align(Alignment.TopCenter).padding(top = 8.dp)
-    if (LocalReducedMotion.current) {
-        PullToRefreshDefaults.Indicator(pullToRefreshState, isRefreshing, indicatorModifier)
-    } else {
-        PullToRefreshDefaults.LoadingIndicator(pullToRefreshState, isRefreshing, indicatorModifier)
-    }
 
-    if (showAutomationSheet) {
-        AutomationBottomSheet(
-            onDismiss = { showAutomationSheet = false },
-            onOpenAutomationSettings = {
-                showAutomationSheet = false
-                onOpenAutomationSettings()
-            }
-        )
-    }
+                    pendingUpdate?.let { (version, url) ->
+                        item(key = "available-update") {
+                            var showAppUpdateInstall by rememberSaveable { mutableStateOf(false) }
+                            if (showAppUpdateInstall) {
+                                SheveryAppUpdateDialog(
+                                    result = SheveryAppUpdateResult(
+                                        hasUpdate = true,
+                                        currentVersion = BuildConfig.VERSION_NAME,
+                                        latestVersion = version,
+                                        releaseTitle = null,
+                                        releaseNotes = null,
+                                        downloadUrl = url,
+                                        htmlUrl = null,
+                                        isPreRelease = false,
+                                        publishedAt = null,
+                                        error = null
+                                    ),
+                                    onDismiss = { showAppUpdateInstall = false },
+                                )
+                            }
+                            HomeCard(
+                                icon = R.drawable.ic_outline_info_24,
+                                title = stringResource(R.string.home_update_available_title, version),
+                                body = stringResource(R.string.home_update_available_body),
+                                onClick = { showAppUpdateInstall = true },
+                            )
+                        }
+                    }
 
-    diagnosticsDialogText?.let { summary ->
-        SheverySmartLogsDialog(
-            diagnosticsSummary = summary,
-            onDismiss = { diagnosticsDialogText = null }
-        )
-    }
-}
-}
-}
+                    item(key = "actions") {
+                        HomeActionGroups(
+                            isPrimaryUser = isPrimaryUser,
+                            canStartWireless = canUseWirelessAdb && !changing,
+                            grantedCount = grantedResource?.takeIf { it.status == Status.SUCCESS }?.data,
+                            canManageApps = hasDetails && adbPermission,
+                            onManageApps = onManageApps,
+                            onOpenModules = onOpenModules,
+                            onOpenComput = onOpenComput,
+                            onOpenDeviceOwner = onOpenDeviceOwner,
+                            onTerminal = onTerminal,
+                            terminalEnabled = running,
+                            onStartWirelessAdb = onStartWirelessAdb,
+                            onPairWirelessAdb = onPairWirelessAdb,
+                            onOpenWirelessGuide = onOpenWirelessGuide
+                        )
+                    }
 
-@OptIn(androidx.compose.material3.ExperimentalMaterial3ExpressiveApi::class)
-@Composable
-private fun StatusHero(
-    serviceResource: Resource<ServiceStatus>?,
-    status: ServiceStatus,
-    running: Boolean,
-    serverState: ShizukuStateMachine.State,
-    isPrimaryUser: Boolean,
-    isRooted: Boolean,
-    canUseWirelessAdb: Boolean,
-    onStartRoot: () -> Unit,
-    onStartWirelessAdb: () -> Unit,
-    onShowAdbCommand: () -> Unit,
-    onStop: () -> Unit,
-    uptime: String?
-) {
-    val starting = serverState == ShizukuStateMachine.State.STARTING
-    val checking = serviceResource == null && !starting && !running
-    val colors = MaterialTheme.colorScheme
-    val motion = MaterialTheme.motionScheme
-    val container by animateColorAsState(
-        if (running && !starting) colors.primaryContainer else colors.surfaceContainerHigh,
-        motion.defaultEffectsSpec(), label = "server-status-surface"
-    )
-    val foreground = if (running && !starting) colors.onPrimaryContainer else colors.onSurface
-    val stateLabel = when {
-        starting -> R.string.notification_service_starting
-        running -> R.string.home_server_running
-        checking -> R.string.home_server_checking
-        else -> R.string.home_server_stopped
-    }
-    Surface(
-        modifier = Modifier.fillMaxWidth().animateContentSize(motion.defaultSpatialSpec()),
-        shape = MaterialTheme.shapes.extraLarge,
-        color = container,
-        contentColor = foreground
-    ) {
-        Column(Modifier.padding(24.dp), verticalArrangement = Arrangement.spacedBy(12.dp)) {
-            Row(verticalAlignment = Alignment.CenterVertically, horizontalArrangement = Arrangement.spacedBy(12.dp)) {
-                ShizukuIcon(
-                    when {
-                        running -> R.drawable.ic_server_ok_24dp
-                        starting || checking -> R.drawable.ic_server_start_24dp
-                        else -> R.drawable.ic_server_error_24dp
-                    },
-                    tint = foreground
-                )
-                Text(stringResource(stateLabel), style = MaterialTheme.typography.headlineMedium)
-            }
-            Text(stringResource(R.string.home_installed_version, BuildConfig.VERSION_NAME),
-                style = MaterialTheme.typography.titleMedium)
-            if (running && status.uid >= 0 && !starting) {
-                val launchMode = when {
-                    status.uid == 0 -> R.string.home_launch_root
-                    StarterActivity.isWirelessSession(Shizuku.getBinder()) -> R.string.home_quick_wireless
-                    else -> R.string.home_launch_adb
-                }
-                Text(stringResource(R.string.home_server_metadata, stringResource(launchMode),
-                    "${status.apiVersion}.${status.patchVersion}", status.uid,
-                    status.pid?.toString() ?: stringResource(R.string.home_pid_unavailable)))
-                if (status.apiVersion != Shizuku.getLatestServiceVersion() ||
-                    status.patchVersion != ShizukuApiConstants.SERVER_PATCH_VERSION
-                ) {
-                    Text(stringResource(R.string.home_server_restart_to_update))
-                }
-                if (uptime != null) Text(stringResource(R.string.home_status_uptime, uptime))
-            }
-            if (starting || checking) {
-                if (LocalReducedMotion.current) LinearProgressIndicator(Modifier.fillMaxWidth())
-                else LinearWavyProgressIndicator(Modifier.fillMaxWidth())
-            } else if (running) {
-                FlowRow(horizontalArrangement = Arrangement.spacedBy(8.dp),
-                    verticalArrangement = Arrangement.spacedBy(8.dp)) {
-                    Button(onClick = onStop) { Text(stringResource(R.string.action_stop)) }
-                    if (status.uid == 0) {
-                        FilledTonalButton(onClick = onStartRoot) {
-                            Text(stringResource(R.string.home_root_button_restart))
+                    if (!shizukuStubInstalled) {
+                        item {
+                            HomeCard(
+                                icon = R.drawable.ic_warning_24,
+                                title = stringResource(R.string.home_shizuku_deprecated_banner_title),
+                                body = stringResource(R.string.home_shizuku_deprecated_banner_body)
+                            ) {
+                                HomeButtons(
+                                    listOf(
+                                        HomeButtonSpec(
+                                            label = R.string.home_shizuku_deprecated_banner_button,
+                                            icon = R.drawable.ic_system_icon,
+                                            primary = true,
+                                            onClick = onOpenCompatStubs
+                                        )
+                                    )
+                                )
+                            }
+                        }
+                    }
+
+                    if (hasDetails && !adbPermission) {
+                        item {
+                            HomeCard(
+                                icon = R.drawable.ic_warning_24,
+                                title = stringResource(R.string.home_adb_is_limited_title),
+                                body = stringResource(R.string.home_adb_is_limited_description)
+                            ) {
+                                HomeButtons(
+                                    listOf(
+                                        HomeButtonSpec(
+                                            label = R.string.home_adb_button_view_help,
+                                            icon = R.drawable.ic_help_outline_24dp,
+                                            primary = true,
+                                            onClick = onOpenAdbPermissionHelp
+                                        )
+                                    )
+                                )
+                            }
+                        }
+                    }
+
+                    if (localNetworkPermissionState.required && !localNetworkPermissionState.granted) {
+                        item {
+                            LocalNetworkPermissionCard(
+                                localNetworkPermissionState = localNetworkPermissionState,
+                                onRequestLocalNetworkPermission = onRequestLocalNetworkPermission
+                            )
+                        }
+                    }
+
+                    if (isPrimaryUser) {
+                        item {
+                            AdbCommandCard(
+                                onShowAdbCommand = onShowAdbCommand,
+                                onOpenAdbHelp = onOpenAdbHelp
+                            )
+                        }
+                    }
+
+                    item {
+                        AutomationCard(
+                            onViewIntents = { showAutomationSheet = true }
+                        )
+                    }
+
+                    if (showHomeDiagnostics) {
+                        item {
+                            val diagnostics = remember(
+                                context,
+                                status,
+                                grantedCount,
+                                localNetworkPermissionState,
+                                isRooted,
+                                watchdogEnabled,
+                                tcpMode,
+                                launchMode
+                            ) {
+                                buildDiagnostics(
+                                    context = context,
+                                    status = status,
+                                    grantedCount = grantedCount,
+                                    localNetworkPermissionState = localNetworkPermissionState,
+                                    isRooted = isRooted,
+                                    watchdogEnabled = watchdogEnabled,
+                                    tcpMode = tcpMode,
+                                    launchMode = launchMode
+                                )
+                            }
+                            DiagnosticsCard(
+                                diagnostics = diagnostics,
+                                onCopyDiagnostics = onCopyDiagnostics,
+                                onOpenLogs = { diagnosticsDialogText = diagnostics }
+                            )
                         }
                     }
                 }
-            } else if (isPrimaryUser) {
-                when {
-                    isRooted -> Button(onClick = onStartRoot) {
-                        Text(stringResource(R.string.home_start_root))
+            }
+            val indicatorModifier = Modifier.align(Alignment.TopCenter).padding(top = 8.dp)
+            if (LocalReducedMotion.current) {
+                PullToRefreshDefaults.Indicator(pullToRefreshState, isRefreshing, indicatorModifier)
+            } else {
+                PullToRefreshDefaults.LoadingIndicator(pullToRefreshState, isRefreshing, indicatorModifier)
+            }
+
+            if (showAutomationSheet) {
+                AutomationBottomSheet(
+                    onDismiss = { showAutomationSheet = false },
+                    onOpenAutomationSettings = {
+                        showAutomationSheet = false
+                        onOpenAutomationSettings()
                     }
-                    canUseWirelessAdb -> Button(onClick = onStartWirelessAdb) {
-                        Text(stringResource(R.string.home_wireless_adb_title))
-                    }
-                    else -> Button(onClick = onShowAdbCommand) {
-                        Text(stringResource(R.string.home_adb_button_view_command))
-                    }
-                }
+                )
+            }
+
+            diagnosticsDialogText?.let { summary ->
+                SheverySmartLogsDialog(
+                    diagnosticsSummary = summary,
+                    onDismiss = { diagnosticsDialogText = null }
+                )
             }
         }
     }
@@ -1793,6 +1710,7 @@ private fun StatusHero(
 private fun HomeActionGroups(
     isPrimaryUser: Boolean,
     canStartWireless: Boolean,
+    grantedCount: Int?,
     canManageApps: Boolean,
     onManageApps: () -> Unit,
     onOpenModules: () -> Unit,
@@ -1804,7 +1722,7 @@ private fun HomeActionGroups(
     onPairWirelessAdb: () -> Unit,
     onOpenWirelessGuide: () -> Unit
 ) {
-    val start: @Composable () -> Unit = {
+    val connection: @Composable () -> Unit = {
         val pairingAvailable = Build.VERSION.SDK_INT >= Build.VERSION_CODES.R
         val count = if (pairingAvailable) 3 else 2
         ExpressiveSegmentedSection(stringResource(R.string.home_connection_actions)) {
@@ -1821,26 +1739,79 @@ private fun HomeActionGroups(
     }
     val tools: @Composable () -> Unit = {
         ExpressiveSegmentedSection(stringResource(R.string.home_tool_actions)) {
-            ExpressiveSegmentedItem(0, 5, R.drawable.ic_system_icon, stringResource(R.string.home_manage_apps_button),
-                enabled = canManageApps, onClick = onManageApps)
-            ExpressiveSegmentedItem(1, 5, R.drawable.ic_adb_24dp, stringResource(R.string.modules_title), onClick = onOpenModules)
-            ExpressiveSegmentedItem(2, 5, R.drawable.ic_terminal_24, stringResource(R.string.comput_title), onClick = onOpenComput)
-            ExpressiveSegmentedItem(3, 5, R.drawable.ic_device_owner_24dp,
+            val apps: @Composable (Modifier, RoundedCornerShape) -> Unit = { modifier, shape ->
+                HomeToolTile(
+                    icon = R.drawable.ic_system_icon,
+                    label = stringResource(R.string.home_manage_apps_button),
+                    value = if (canManageApps && grantedCount != null)
+                        stringResource(R.string.home_granted_count, grantedCount) else null,
+                    enabled = canManageApps, onClick = onManageApps, modifier = modifier, shape = shape
+                )
+            }
+            val terminal: @Composable (Modifier, RoundedCornerShape) -> Unit = { modifier, shape ->
+                HomeToolTile(R.drawable.ic_terminal_24, stringResource(R.string.home_quick_terminal),
+                    enabled = terminalEnabled, onClick = onTerminal, modifier = modifier, shape = shape)
+            }
+            BoxWithConstraints(Modifier.fillMaxWidth()) {
+                if (maxWidth >= 296.dp && LocalDensity.current.fontScale <= 1.35f) {
+                    Row(Modifier.fillMaxWidth().height(androidx.compose.foundation.layout.IntrinsicSize.Min),
+                        horizontalArrangement = Arrangement.spacedBy(4.dp)) {
+                        apps(Modifier.weight(1f).fillMaxHeight(), RoundedCornerShape(24.dp, 4.dp, 4.dp, 4.dp))
+                        terminal(Modifier.weight(1f).fillMaxHeight(), RoundedCornerShape(4.dp, 24.dp, 4.dp, 4.dp))
+                    }
+                } else {
+                    Column(verticalArrangement = Arrangement.spacedBy(4.dp)) {
+                        apps(Modifier.fillMaxWidth(), RoundedCornerShape(24.dp, 24.dp, 4.dp, 4.dp))
+                        terminal(Modifier.fillMaxWidth(), RoundedCornerShape(4.dp))
+                    }
+                }
+            }
+            ExpressiveSegmentedItem(1, 4, R.drawable.ic_adb_24dp, stringResource(R.string.modules_title), onClick = onOpenModules)
+            ExpressiveSegmentedItem(2, 4, R.drawable.ic_code_24dp, stringResource(R.string.comput_title), onClick = onOpenComput)
+            ExpressiveSegmentedItem(3, 4, R.drawable.ic_device_owner_24dp,
                 stringResource(R.string.settings_device_owner_title), onClick = onOpenDeviceOwner)
-            ExpressiveSegmentedItem(4, 5, R.drawable.ic_code_24dp, stringResource(R.string.home_quick_terminal),
-                enabled = terminalEnabled, onClick = onTerminal)
         }
     }
     BoxWithConstraints(Modifier.fillMaxWidth()) {
         if (maxWidth >= 600.dp && isPrimaryUser) {
             Row(horizontalArrangement = Arrangement.spacedBy(16.dp)) {
-                Box(Modifier.weight(1f)) { start() }
+                Box(Modifier.weight(1f)) { connection() }
                 Box(Modifier.weight(1f)) { tools() }
             }
         } else {
             Column(verticalArrangement = Arrangement.spacedBy(12.dp)) {
-                if (isPrimaryUser) start()
+                if (isPrimaryUser && !terminalEnabled) connection()
                 tools()
+                if (isPrimaryUser && terminalEnabled) connection()
+            }
+        }
+    }
+}
+
+@Composable
+private fun HomeToolTile(
+    @DrawableRes icon: Int,
+    label: String,
+    value: String? = null,
+    enabled: Boolean,
+    onClick: () -> Unit,
+    modifier: Modifier,
+    shape: RoundedCornerShape
+) {
+    val colors = MaterialTheme.colorScheme
+    Surface(
+        onClick = onClick,
+        enabled = enabled,
+        modifier = modifier,
+        shape = shape,
+        color = if (enabled) colors.secondaryContainer else colors.surfaceContainer,
+        contentColor = if (enabled) colors.onSecondaryContainer else colors.onSurface.copy(alpha = 0.38f)
+    ) {
+        Column(Modifier.padding(16.dp), verticalArrangement = Arrangement.spacedBy(12.dp)) {
+            ShizukuIcon(icon, modifier = Modifier.size(24.dp))
+            Column {
+                Text(label, style = MaterialTheme.typography.titleSmall, fontWeight = FontWeight.SemiBold)
+                if (value != null) Text(value, style = MaterialTheme.typography.bodySmall)
             }
         }
     }
@@ -2302,47 +2273,23 @@ private fun HomeCard(
             .fillMaxWidth()
             .then(clickableModifier)
             .alpha(if (enabled) 1f else 0.56f),
-        shape = MaterialTheme.shapes.extraLarge,
-        color = MaterialTheme.colorScheme.surfaceContainer,
-        tonalElevation = 2.dp
+        shape = MaterialTheme.shapes.large,
+        color = MaterialTheme.colorScheme.surfaceContainer
     ) {
-        Row(
-            modifier = Modifier.padding(18.dp),
-            horizontalArrangement = Arrangement.spacedBy(16.dp)
+        Column(
+            modifier = Modifier.padding(16.dp),
+            verticalArrangement = Arrangement.spacedBy(8.dp)
         ) {
-            Surface(
-                modifier = Modifier.size(44.dp),
-                shape = CircleShape,
-                color = MaterialTheme.colorScheme.primaryContainer
-            ) {
-                Box(contentAlignment = Alignment.Center) {
-                    ShizukuIcon(
-                        icon = icon,
-                        contentDescription = null,
-                        tint = MaterialTheme.colorScheme.onPrimaryContainer,
-                        modifier = Modifier.size(24.dp)
-                    )
-                }
+            Row(verticalAlignment = Alignment.CenterVertically,
+                horizontalArrangement = Arrangement.spacedBy(12.dp)) {
+                ShizukuIcon(icon, modifier = Modifier.size(24.dp), tint = MaterialTheme.colorScheme.primary)
+                Text(title, style = MaterialTheme.typography.titleMedium, fontWeight = FontWeight.SemiBold)
             }
-            Column(
-                modifier = Modifier.weight(1f),
-                verticalArrangement = Arrangement.spacedBy(6.dp)
-            ) {
-                Text(
-                    text = title,
-                    style = MaterialTheme.typography.titleMedium,
-                    fontWeight = FontWeight.SemiBold,
-                    color = MaterialTheme.colorScheme.onSurface
-                )
-                if (body.isNotBlank()) {
-                    Text(
-                        text = body,
-                        style = MaterialTheme.typography.bodyMedium,
-                        color = MaterialTheme.colorScheme.onSurfaceVariant
-                    )
-                }
-                content()
+            if (body.isNotBlank()) {
+                Text(body, style = MaterialTheme.typography.bodyMedium,
+                    color = MaterialTheme.colorScheme.onSurfaceVariant)
             }
+            content()
         }
     }
 }

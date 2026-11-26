@@ -1138,6 +1138,15 @@ Wi-Fi is required for the first restart because Shevery must connect to the curr
     <string name="about_version_value">Version %s</string>
     <string name="lab_shevery_connected">Shevery binder connected</string>
     <string name="lab_shevery_disconnected">Shevery binder disconnected</string>
+    <string name="home_server_starting">Starting server</string>
+    <string name="home_server_stopping">Stopping server</string>
+    <string name="home_server_crashed">Connection lost</string>
+    <string name="home_status_unavailable">Server details unavailable</string>
+    <string name="home_service">System service</string>
+    <string name="home_granted_count">Authorized: %1$d</string>
+    <string name="home_metric_api" translatable="false">API</string>
+    <string name="home_metric_uid" translatable="false">UID</string>
+    <string name="home_metric_pid" translatable="false">PID</string>
     <string name="home_server_running">Server running</string>
     <string name="home_server_stopped">Server stopped</string>
     <string name="home_server_checking">Checking server</string>

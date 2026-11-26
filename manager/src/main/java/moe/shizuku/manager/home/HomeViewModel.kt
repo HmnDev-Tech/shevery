@@ -8,7 +8,7 @@ import androidx.lifecycle.viewModelScope
 import kotlinx.coroutines.CancellationException
 import kotlinx.coroutines.Dispatchers
 import kotlinx.coroutines.Job
-import kotlinx.coroutines.ensureActive
+import kotlinx.coroutines.withContext
 import kotlinx.coroutines.launch
 import kotlinx.coroutines.flow.SharingStarted
 import kotlinx.coroutines.flow.StateFlow
@@ -84,19 +84,17 @@ class HomeViewModel : ViewModel() {
 
     private var reloadJob: Job? = null
 
-    fun reload() {
+    fun reload(): Job {
         reloadJob?.cancel()
-        reloadJob = viewModelScope.launch(Dispatchers.IO) {
+        return viewModelScope.launch {
             try {
-                val status = load()
-                ensureActive()
-                _serviceStatus.postValue(Resource.success(status))
+                val status = withContext(Dispatchers.IO) { load() }
+                _serviceStatus.value = Resource.success(status)
             } catch (e: CancellationException) {
                 throw e
             } catch (e: Throwable) {
-                ensureActive()
-                _serviceStatus.postValue(Resource.error(e, ServiceStatus()))
+                _serviceStatus.value = Resource.error(e, ServiceStatus())
             }
-        }
+        }.also { reloadJob = it }
     }
 }

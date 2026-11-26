@@ -2,7 +2,7 @@ package rikka.shizuku.server;
 
 import android.content.pm.PackageInfo;
 import android.content.pm.PackageManager;
-import android.os.Build;
+import android.os.RemoteException;
 import android.util.AtomicFile;
 
 import androidx.annotation.Nullable;
@@ -16,11 +16,9 @@ import java.io.FileNotFoundException;
 import java.io.FileOutputStream;
 import java.io.IOException;
 import java.io.InputStreamReader;
-import java.util.ArrayList;
+import java.util.Arrays;
 import java.util.Collections;
-import java.util.LinkedHashSet;
 import java.util.List;
-import java.util.Set;
 
 import moe.shizuku.common.util.InstalledPackagesCompat;
 import rikka.hidden.compat.PackageManagerApis;
@@ -104,43 +102,15 @@ public class ShizukuConfigManager extends ConfigManager {
     public ShizukuConfigManager() {
         this.config = load();
 
-        boolean changed = false;
-
-        if (config.packages == null) {
-            config.packages = new ArrayList<>();
-            changed = true;
-        }
-
-        for (ShizukuConfig.PackageEntry entry : new ArrayList<>(config.packages)) {
-            if (entry.packages == null) {
-                entry.packages = new ArrayList<>();
+        boolean changed = config.reconcilePackages(uid -> {
+            try {
+                String[] packages = PackageManagerApis.getPackagesForUid(uid);
+                return packages == null ? Collections.emptyList() : Arrays.asList(packages);
+            } catch (RemoteException | RuntimeException e) {
+                LOGGER.w(e, "package lookup unavailable for uid %d", uid);
+                return null;
             }
-
-            List<String> packages = PackageManagerApis.getPackagesForUidNoThrow(entry.uid);
-            if (packages.isEmpty()) {
-                LOGGER.i("remove config for uid %d since it has gone", entry.uid);
-                config.packages.remove(entry);
-                changed = true;
-                continue;
-            }
-
-            boolean packagesChanged = Collections.disjoint(entry.packages, packages);
-
-            final int rawSize = entry.packages.size();
-            Set<String> s = new LinkedHashSet<>(entry.packages);
-            entry.packages.clear();
-            entry.packages.addAll(s);
-            final int shrunkSize = entry.packages.size();
-            if (shrunkSize < rawSize) {
-                LOGGER.w("entry.packages has duplicate! Shrunk. (%d -> %d)", rawSize, shrunkSize);
-            }
-
-            if (packagesChanged) {
-                LOGGER.i("remove config for uid %d since the packages for it changed", entry.uid);
-                config.packages.remove(entry);
-                changed = true;
-            }
-        }
+        });
 
         for (int userId : UserManagerApis.getUserIdsNoThrow()) {
             for (PackageInfo pi : InstalledPackagesCompat.getInstalledPackagesNoThrow(PackageManager.GET_PERMISSIONS, userId)) {

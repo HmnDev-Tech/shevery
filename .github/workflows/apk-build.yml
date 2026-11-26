@@ -2,9 +2,9 @@ name: Build Android APK
 
 on:
   push:
-    branches: [ "main", "dev", "nightly" ]
+    branches: [ "main", "dev", "nightly", "feat/expressive-home" ]
   pull_request:
-    branches: [ "main", "dev", "nightly" ]
+    branches: [ "main", "dev", "nightly", "feat/expressive-home" ]
   workflow_dispatch:
 
 # Every run builds and uploads BOTH artifacts: a debug APK and a release APK.
