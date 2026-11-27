@@ -246,7 +246,7 @@ Trusted modules:
 - can expose `window.Shizuku` without `usesShellBridge=true`;
 - can use WebView internet while the bridge is exposed;
 - can use `download()` even when global WebUI download is blocked;
-- can overwrite WebUI entry files through `download()`.
+- can download styles, data, images, and fonts through `download()`.
 
 ### ReCommand
 
@@ -259,7 +259,7 @@ The optional AI checker is fully integrated into the manager:
 
 ### WebUI Internet File Loader
 
-`window.Shizuku.download(url, relativeWebPath)` downloads an HTTPS URL into the module WebUI directory. This is meant for optional runtime caching of CSS, JS, fonts, and other WebUI assets.
+`window.Shizuku.download(url, relativeWebPath)` downloads an HTTPS URL into the module WebUI directory. This is meant for optional runtime caching of styles, data, images, and fonts. Scripts and documents must ship with the module. WebUI shell calls always require confirmation when the module has network access.
 
 ```javascript
 const result = JSON.parse(window.Shizuku.download(

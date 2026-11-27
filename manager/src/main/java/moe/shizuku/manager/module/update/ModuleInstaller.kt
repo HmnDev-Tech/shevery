@@ -39,7 +39,8 @@ class ModuleInstaller private constructor() {
         repo: String,
         subPath: String? = null,
         onLog: (String) -> Unit = {},
-        onProgress: (Float?) -> Unit = {}
+        onProgress: (Float?) -> Unit = {},
+        expectedModuleId: String? = null
     ): Result<moe.shizuku.manager.module.AdbModule> = withContext(Dispatchers.IO) {
         try {
             cleanupOldZips(context)
@@ -68,7 +69,7 @@ class ModuleInstaller private constructor() {
                 return@withContext Result.failure(Exception("Failed to prepare module ZIP"))
             }
 
-            val module = AdbModuleManager.install(context, zipUri, onLog = onLog, onProgress = onProgress)
+            val module = AdbModuleManager.install(context, zipUri, onLog = onLog, onProgress = onProgress, expectedModuleId = expectedModuleId)
             Result.success(module)
         } catch (ce: CancellationException) {
             throw ce

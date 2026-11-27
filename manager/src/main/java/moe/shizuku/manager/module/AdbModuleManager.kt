@@ -117,7 +117,16 @@ object AdbModuleManager {
 
     suspend fun listModules(context: Context): List<AdbModule> = withContext(Dispatchers.IO) {
         storageMutex.withLock {
-            modulesRoot(context)
+            val root = modulesRoot(context)
+            root.listFiles { file -> file.isDirectory && file.name.startsWith(".") && file.name.endsWith(".old") }
+                ?.forEach { backup ->
+                    val id = backup.name.removePrefix(".").removeSuffix(".old")
+                    val target = root.resolve(id)
+                    if (isValidModuleId(id) && !target.exists()) {
+                        check(backup.renameTo(target)) { "Unable to recover module $id." }
+                    }
+                }
+            root
                 .listFiles { file -> file.isDirectory && !file.name.startsWith(".") }
                 ?.mapNotNull(::readModule)
                 ?.sortedWith(compareBy<AdbModule> { !it.enabled }.thenBy { it.name.lowercase(Locale.ROOT) })
@@ -129,7 +138,9 @@ object AdbModuleManager {
         context: Context,
         uri: Uri,
         onLog: (String) -> Unit = {},
-        onProgress: (Float?) -> Unit = {}
+        onProgress: (Float?) -> Unit = {},
+        expectedModuleId: String? = null,
+        expectedVersionCode: Long? = null
     ): AdbModule = withContext(Dispatchers.IO) {
         val temp = File.createTempFile("adb_module_", ".zip", context.cacheDir)
         try {
@@ -166,9 +177,15 @@ object AdbModuleManager {
                 val props = parseModuleProp(propBytes.toString("UTF-8"))
                 val id = props["id"]?.trim().orEmpty()
                 require(idRegex.matches(id)) { "Invalid module id: $id" }
+                require(expectedModuleId == null || id == expectedModuleId) {
+                    "Expected module $expectedModuleId, received $id."
+                }
                 val propName = props["name"]?.trim().takeUnless { it.isNullOrEmpty() } ?: id
                 val propVersion = props["version"]?.trim().takeUnless { it.isNullOrEmpty() } ?: "1.0"
                 val propVersionCode = props["versionCode"]?.trim() ?: "1"
+                require(expectedVersionCode == null || propVersionCode.toLongOrNull() == expectedVersionCode) {
+                    "The archive version does not match the update metadata."
+                }
                 val propAuthor = props["author"]?.trim().takeUnless { it.isNullOrEmpty() } ?: "Unknown"
 
                 onLog("*********************************************************")
@@ -186,6 +203,12 @@ object AdbModuleManager {
                     val backup = File(modulesDir, ".$id.old")
                     if (!target.exists() && backup.exists()) {
                         check(backup.renameTo(target)) { "Unable to recover the previous module." }
+                    }
+                    if (expectedVersionCode != null) {
+                        val currentVersionCode = readModule(target)?.versionCode
+                        require(currentVersionCode != null && expectedVersionCode > currentVersionCode) {
+                            "Module update must be newer than the installed version."
+                        }
                     }
                     val wasTrusted = ModuleSettings.isModuleTrusted(id)
                     val previousFingerprint = if (wasTrusted) moduleFingerprint(target) else null
@@ -230,6 +253,10 @@ object AdbModuleManager {
                         val stagingSourceProp = staging.resolve(".source.prop")
                         if (existingSourceProp.isFile && !stagingSourceProp.exists()) {
                             runCatching { existingSourceProp.copyTo(stagingSourceProp, overwrite = false) }
+                        }
+
+                        if (target.resolve(DISABLE_FILE).exists() && !staging.resolve(DISABLE_FILE).exists()) {
+                            staging.resolve(DISABLE_FILE).writeText("disabled")
                         }
 
                         onLog("- Setting executable permissions (chmod 0755) on scripts...")
@@ -385,6 +412,7 @@ object AdbModuleManager {
         owner: String,
         repo: String,
         subPath: String? = null,
+        expectedModuleId: String? = null,
         onFinished: (Result<AdbModule>) -> Unit = {}
     ) {
         val appContext = context.applicationContext
@@ -415,7 +443,8 @@ object AdbModuleManager {
                 repo = repo,
                 subPath = subPath,
                 onLog = ::appendConsoleLine,
-                onProgress = ::updateConsoleProgress
+                onProgress = ::updateConsoleProgress,
+                expectedModuleId = expectedModuleId
             )
             result.fold(
                 onSuccess = { module ->
@@ -452,6 +481,7 @@ object AdbModuleManager {
         module: AdbModule,
         zipUrl: String,
         newVersion: String,
+        newVersionCode: Long? = null,
         onFinished: (Result<AdbModule>) -> Unit = {}
     ) {
         val appContext = context.applicationContext
@@ -476,43 +506,71 @@ object AdbModuleManager {
                     val client = OkHttpClient.Builder()
                         .connectTimeout(15, TimeUnit.SECONDS)
                         .readTimeout(30, TimeUnit.SECONDS)
+                        .callTimeout(120, TimeUnit.SECONDS)
+                        .followSslRedirects(false)
                         .build()
+                    require(newVersionCode != null) { "Signed module updates require a versionCode." }
                     val request = Request.Builder().url(zipUrl).build()
+                    require(request.url.isHttps) { "Module updates require HTTPS." }
                     val cacheDir = File(appContext.cacheDir, "module_zips").apply { mkdirs() }
-                    val zipFile = File(cacheDir, "${module.id}-update-$newVersion.zip")
-                    client.newCall(request).execute().use { resp ->
-                        if (!resp.isSuccessful) throw IllegalStateException("Download failed: HTTP ${resp.code}")
-                        val body = resp.body ?: throw IllegalStateException("Empty response body")
-                        val total = body.contentLength()
-                        body.byteStream().use { input ->
-                            zipFile.outputStream().use { output ->
-                                val buffer = ByteArray(8192)
-                                var downloaded = 0L
-                                var nextMilestone = 25
-                                while (true) {
-                                    val read = input.read(buffer)
-                                    if (read <= 0) break
-                                    output.write(buffer, 0, read)
-                                    downloaded += read
-                                    if (total > 0L) {
-                                        val pct = ((downloaded * 100L) / total).toInt().coerceIn(0, 100)
-                                        updateConsoleProgress(0.05f + (pct / 100f) * 0.70f)
-                                        if (pct >= nextMilestone && nextMilestone <= 100) {
-                                            appendConsoleLine("  ↳ $pct% (${formatBytes(downloaded)} / ${formatBytes(total)})")
-                                            nextMilestone += 25
+                    val publicKey = parseModuleProp(module.directory.resolve("module.prop").readText())["updatePublicKey"]
+                    require(!publicKey.isNullOrBlank()) {
+                        "Direct updates require an installed publisher key. Install a verified ZIP manually."
+                    }
+                    val key = java.security.KeyFactory.getInstance("RSA").generatePublic(
+                        java.security.spec.X509EncodedKeySpec(java.util.Base64.getDecoder().decode(publicKey))
+                    )
+                    require((key as java.security.interfaces.RSAPublicKey).modulus.bitLength() >= 2048)
+                    val verifier = java.security.Signature.getInstance("SHA256withRSA").apply { initVerify(key) }
+                    val zipFile = File.createTempFile("module-update-", ".zip", cacheDir)
+                    try {
+                        client.newCall(request).execute().use { resp ->
+                            if (!resp.isSuccessful) throw IllegalStateException("Download failed: HTTP ${resp.code}")
+                            val signature = requireNotNull(resp.header("X-Shevery-Module-Signature")) {
+                                "Module update signature is missing."
+                            }
+                            val body = resp.body ?: throw IllegalStateException("Empty response body")
+                            val total = body.contentLength()
+                            require(total <= MAX_ARCHIVE_BYTES) { "Module update exceeds the archive size limit." }
+                            body.byteStream().use { input ->
+                                zipFile.outputStream().use { output ->
+                                    val buffer = ByteArray(8192)
+                                    var downloaded = 0L
+                                    var nextMilestone = 25
+                                    while (true) {
+                                        val read = input.read(buffer)
+                                        if (read <= 0) break
+                                        downloaded += read
+                                        require(downloaded <= MAX_ARCHIVE_BYTES) { "Module update exceeds the archive size limit." }
+                                        verifier.update(buffer, 0, read)
+                                        output.write(buffer, 0, read)
+                                        if (total > 0L) {
+                                            val pct = ((downloaded * 100L) / total).toInt().coerceIn(0, 100)
+                                            updateConsoleProgress(0.05f + (pct / 100f) * 0.70f)
+                                            if (pct >= nextMilestone && nextMilestone <= 100) {
+                                                appendConsoleLine("  ↳ $pct% (${formatBytes(downloaded)} / ${formatBytes(total)})")
+                                                nextMilestone += 25
+                                            }
                                         }
                                     }
                                 }
                             }
+                            require(verifier.verify(java.util.Base64.getDecoder().decode(signature))) {
+                                "Module update signature does not match the installed publisher key."
+                            }
                         }
+                        appendConsoleLine("- Downloaded ${zipFile.name} (${formatBytes(zipFile.length())})")
+                        install(
+                            context = appContext,
+                            uri = Uri.fromFile(zipFile),
+                            onLog = ::appendConsoleLine,
+                            onProgress = ::updateConsoleProgress,
+                            expectedModuleId = module.id,
+                            expectedVersionCode = newVersionCode
+                        )
+                    } finally {
+                        zipFile.delete()
                     }
-                    appendConsoleLine("- Downloaded ${zipFile.name} (${formatBytes(zipFile.length())})")
-                    install(
-                        context = appContext,
-                        uri = Uri.fromFile(zipFile),
-                        onLog = ::appendConsoleLine,
-                        onProgress = ::updateConsoleProgress
-                    )
                 }
             }
             result.fold(
@@ -600,7 +658,7 @@ object AdbModuleManager {
 
     suspend fun runEnabledServicesIfAllowed(context: Context): List<Pair<AdbModule, ModuleActionResult>> =
         withContext(Dispatchers.IO) {
-            if (!Shizuku.pingBinder() || !ModuleSettings.canRunService() || servicesStartedForBinder) {
+            if (!Shizuku.pingBinder() || servicesStartedForBinder) {
                 return@withContext emptyList()
             }
             servicesStartedForBinder = true

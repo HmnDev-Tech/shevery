@@ -169,3 +169,14 @@ logs/service-last.log
 Each log includes module id, script name, exit code, access mode, stdout, and stderr.
 
 Use it to verify install, enable/disable, Action, Service, WebUI, and banner rendering.
+
+### Signed direct updates
+
+Updates from a module's own URL require HTTPS, a higher numeric `versionCode`,
+and the same module ID. Include `updatePublicKey` in the trusted initial
+`module.prop` as a Base64-encoded X.509 SubjectPublicKeyInfo RSA public key
+(2048 bits or greater). The ZIP server returns the Base64-encoded SHA256withRSA
+signature over the ZIP bytes in the `X-Shevery-Module-Signature` response
+header. The installed module's key verifies the download before extraction.
+Modules distributed without an update key can be updated by manually installing
+a ZIP authenticated by their publisher.

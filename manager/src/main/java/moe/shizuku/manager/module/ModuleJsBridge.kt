@@ -36,7 +36,7 @@ class ModuleJsBridge(
         if (!uri.scheme.equals("https", ignoreCase = true)) {
             return false
         }
-        if (uri.host != "appassets.androidplatform.net") {
+        if (uri.host != moduleWebHost(module.id)) {
             return false
         }
         val segments = uri.pathSegments
@@ -157,7 +157,7 @@ class ModuleJsBridge(
         if (!ModuleSettings.canExposeWebBridge(module)) {
             return shellError("Permission denied: WebUI shell bridge is blocked by module access policy.")
         }
-        if (ModuleSettings.recommandForWebUi() && !trusted) {
+        if (ModuleSettings.canUseWebNetwork(module) || ModuleSettings.recommandForWebUi()) {
             val approved = commandReviewer?.confirmCommand(
                 ModuleCommandRequest(
                     module = module,
@@ -361,10 +361,9 @@ class ModuleJsBridge(
     private fun resolveWebFile(relativeWebPath: String): File {
         val root = module.webRoot ?: error("Module has no WebUI root.")
         val clean = cleanRelativePath(relativeWebPath)
-        if (!ModuleSettings.isModuleTrusted(module.id)) {
-            require(!clean.equals("index.html", ignoreCase = true) && !clean.endsWith("/index.html", ignoreCase = true)) {
-                "download() cannot overwrite WebUI entry files."
-            }
+        val extension = clean.substringAfterLast('.', "").lowercase(java.util.Locale.ROOT)
+        require(extension in setOf("css", "json", "txt", "png", "jpg", "jpeg", "webp", "gif", "woff", "woff2", "ttf", "otf")) {
+            "WebUI downloads can only write data, styles, images, and fonts."
         }
         val file = File(root, clean)
         ensureInside(root, file)

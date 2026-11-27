@@ -219,7 +219,8 @@ fun ModulesScreen(
                 moduleName = module.name,
                 owner = info.repoOwner,
                 repo = info.repoName,
-                subPath = info.subPath
+                subPath = info.subPath,
+                expectedModuleId = module.id
             ) { result ->
                 updatingModuleId = null
                 result.onSuccess {
@@ -237,12 +238,13 @@ fun ModulesScreen(
                     ).show()
                 }
             }
-        } else if (info.zipUrl.startsWith("http://") || info.zipUrl.startsWith("https://")) {
+        } else {
             AdbModuleManager.launchUrlUpdateInstall(
                 context = context,
                 module = module,
                 zipUrl = info.zipUrl,
-                newVersion = info.newVersion
+                newVersion = info.newVersion,
+                newVersionCode = info.newVersionCode
             ) { result ->
                 updatingModuleId = null
                 result.onSuccess {

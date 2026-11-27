@@ -149,14 +149,16 @@ class ModuleWebViewActivity : AppActivity() {
         // Serve module files from a real HTTPS origin instead of file://. This makes
         // ES module imports same-origin (issue #120) without enabling universal file
         // access, and keeps the bridge origin check meaningful.
+        val moduleHost = moduleWebHost(module.id)
         val assetLoader = WebViewAssetLoader.Builder()
+            .setDomain(moduleHost)
             .addPathHandler(
                 "/modules/${module.id}/",
                 WebViewAssetLoader.InternalStoragePathHandler(this, module.directory)
             )
             .build()
         val indexRelative = index.relativeTo(module.directory).invariantSeparatorsPath
-        val indexUrl = "https://appassets.androidplatform.net/modules/${module.id}/" +
+        val indexUrl = "https://$moduleHost/modules/${module.id}/" +
             indexRelative.split('/').joinToString("/") { Uri.encode(it) ?: it }
 
         setContent {
@@ -187,6 +189,7 @@ class ModuleWebViewActivity : AppActivity() {
                                 webViewClient = LocalModuleWebViewClient(
                                     module,
                                     webNetworkAllowed,
+                                    exposeBridge,
                                     assetLoader
                                 )
                                 if (exposeBridge) {
@@ -268,6 +271,7 @@ class ModuleWebViewActivity : AppActivity() {
     private class LocalModuleWebViewClient(
         private val module: AdbModule,
         private val webNetworkAllowed: Boolean,
+        private val bridgeEnabled: Boolean,
         private val assetLoader: WebViewAssetLoader
     ) : WebViewClient() {
 
@@ -276,27 +280,32 @@ class ModuleWebViewActivity : AppActivity() {
             request: WebResourceRequest
         ): WebResourceResponse? {
             val url = request.url
-            if (url.host == "appassets.androidplatform.net") {
-                return assetLoader.shouldInterceptRequest(url)
+            if (url.host == moduleWebHost(module.id)) {
+                val response = assetLoader.shouldInterceptRequest(url) ?: return forbidden()
+                if (bridgeEnabled) {
+                    val connect = if (webNetworkAllowed) "'self' https:" else "'self'"
+                    response.responseHeaders = response.responseHeaders.orEmpty() + mapOf(
+                        "Content-Security-Policy" to
+                            "script-src 'self' 'unsafe-inline'; frame-src 'none'; worker-src 'none'; " +
+                            "object-src 'none'; base-uri 'none'; form-action 'none'; connect-src $connect",
+                        "X-Content-Type-Options" to "nosniff"
+                    )
+                }
+                return response
             }
-            if (!webNetworkAllowed) {
-                // Hard network block for untrusted modules, including iframes and fetch().
-                return WebResourceResponse(
-                    "text/plain",
-                    "utf-8",
-                    403,
-                    "Forbidden",
-                    emptyMap(),
-                    java.io.ByteArrayInputStream(ByteArray(0))
-                )
-            }
-            return null
+            return if (webNetworkAllowed) null else forbidden()
         }
 
+        private fun forbidden() = WebResourceResponse(
+            "text/plain", "utf-8", 403, "Forbidden", emptyMap(),
+            java.io.ByteArrayInputStream(ByteArray(0))
+        )
+
         override fun shouldOverrideUrlLoading(view: WebView, request: WebResourceRequest): Boolean {
+            if (bridgeEnabled && !request.isForMainFrame) return true
             val uri = request.url
             val scheme = uri.scheme?.lowercase()
-            if (scheme == "https" && uri.host == "appassets.androidplatform.net") {
+            if (scheme == "https" && uri.host == moduleWebHost(module.id)) {
                 return false
             }
             if (scheme == "http" || scheme == "https") {
@@ -318,4 +327,12 @@ class ModuleWebViewActivity : AppActivity() {
     companion object {
         const val EXTRA_MODULE_ID = "module_id"
     }
+}
+
+internal fun moduleWebHost(moduleId: String): String {
+    val idHash = java.security.MessageDigest.getInstance("SHA-256")
+        .digest(moduleId.toByteArray(Charsets.UTF_8))
+        .take(16)
+        .joinToString("") { "%02x".format(it) }
+    return "$idHash.modules.shevery.invalid"
 }
