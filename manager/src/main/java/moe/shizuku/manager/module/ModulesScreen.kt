@@ -1,10 +1,3 @@
-@file:OptIn(
-    androidx.compose.foundation.ExperimentalFoundationApi::class,
-    androidx.compose.foundation.layout.ExperimentalLayoutApi::class,
-    androidx.compose.material3.ExperimentalMaterial3Api::class,
-    androidx.compose.material3.ExperimentalMaterial3ExpressiveApi::class
-)
-
 package moe.shizuku.manager.module
 
 
@@ -238,7 +231,7 @@ fun ModulesScreen(
                     ).show()
                 }
             }
-        } else {
+        } else if (info.zipUrl.isNotBlank()) {
             AdbModuleManager.launchUrlUpdateInstall(
                 context = context,
                 module = module,
