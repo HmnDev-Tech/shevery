@@ -24,9 +24,6 @@ internal object StealthNative {
     ): ByteArray?
 
     @JvmStatic
-    external fun nativeFixDex(dex: ByteArray): ByteArray?
-
-    @JvmStatic
     external fun nativeCrc32(data: ByteArray): Long
 
     @JvmStatic

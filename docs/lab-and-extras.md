@@ -54,7 +54,7 @@ Accessible via **Lab Features → Network firewall** (`NetworkFirewallActivity`)
 
 ### Requirements
 
-- **Android 11+ (API 30+)**
+- **Android with the connectivity firewall commands and rule verification** (Android 13+ on AOSP)
 - **Shevery server running** (ADB or Root)
 
 ### How It Works
@@ -73,7 +73,7 @@ Unlike VPN-based firewalls that occupy Android's single VPN slot, Shevery's Netw
    # Restore internet access for a package
    cmd connectivity set-package-networking-enabled true <package>
    ```
-3. Verifies the applied kernel state via `cmd connectivity get-package-networking-enabled <package>` (`:deny` vs `:allow`) and persists the blocked package set across app launches.
+3. Verifies the applied kernel state via `cmd connectivity get-package-networking-enabled <package>` (`:deny` vs `:allow`) and saves the list of packages configured in Shevery. The screen checks that the chain and its rules are active before showing packages as blocked.
 
 ---
 

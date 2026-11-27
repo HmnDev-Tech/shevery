@@ -7,6 +7,7 @@ import com.android.org.conscrypt.Conscrypt
 import java.io.Closeable
 import java.io.DataInputStream
 import java.io.DataOutputStream
+import java.net.InetSocketAddress
 import java.net.Socket
 import java.nio.ByteBuffer
 import java.nio.ByteOrder
@@ -164,57 +165,37 @@ private class PairingContext private constructor(private val nativePtr: Long) {
 @RequiresApi(Build.VERSION_CODES.R)
 class AdbPairingClient(private val host: String, private val port: Int, private val pairCode: String, private val key: AdbKey) : Closeable {
 
-    private enum class State {
-        Ready,
-        ExchangingMsgs,
-        ExchangingPeerInfo,
-        Stopped
-    }
-
     private lateinit var socket: Socket
+    private lateinit var tlsSocket: SSLSocket
     private lateinit var inputStream: DataInputStream
     private lateinit var outputStream: DataOutputStream
 
     private val peerInfo: PeerInfo = PeerInfo(PeerInfo.Type.ADB_RSA_PUB_KEY.value, key.adbPublicKey)
     private lateinit var pairingContext: PairingContext
-    private var state: State = State.Ready
 
     fun start(): Boolean {
         setupTlsConnection()
-
-        state = State.ExchangingMsgs
-
-        if (!doExchangeMsgs()) {
-            state = State.Stopped
-            return false
-        }
-
-        state = State.ExchangingPeerInfo
-
-        if (!doExchangePeerInfo()) {
-            state = State.Stopped
-            return false
-        }
-
-        state = State.Stopped
-        return true
+        return doExchangeMsgs() && doExchangePeerInfo()
     }
 
     private fun setupTlsConnection() {
-        socket = Socket(host, port)
+        socket = Socket()
         socket.tcpNoDelay = true
+        socket.soTimeout = 15_000
+        socket.connect(InetSocketAddress(host, port), 5_000)
 
         val sslContext = key.sslContext
-        val sslSocket = sslContext.socketFactory.createSocket(socket, host, port, true) as SSLSocket
-        sslSocket.startHandshake()
+        tlsSocket = sslContext.socketFactory.createSocket(socket, host, port, true) as SSLSocket
+        tlsSocket.soTimeout = 15_000
+        tlsSocket.startHandshake()
         Log.d(TAG, "Handshake succeeded.")
 
-        inputStream = DataInputStream(sslSocket.inputStream)
-        outputStream = DataOutputStream(sslSocket.outputStream)
+        inputStream = DataInputStream(tlsSocket.inputStream)
+        outputStream = DataOutputStream(tlsSocket.outputStream)
 
         val pairCodeBytes = pairCode.toByteArray()
-        val keyMaterial = Conscrypt.exportKeyingMaterial(sslSocket, kExportedKeyLabel, null, kExportedKeySize)
-        val passwordBytes = ByteArray(pairCode.length + keyMaterial.size)
+        val keyMaterial = Conscrypt.exportKeyingMaterial(tlsSocket, kExportedKeyLabel, null, kExportedKeySize)
+        val passwordBytes = ByteArray(pairCodeBytes.size + keyMaterial.size)
         pairCodeBytes.copyInto(passwordBytes)
         keyMaterial.copyInto(passwordBytes, pairCodeBytes.size)
 
@@ -286,22 +267,9 @@ class AdbPairingClient(private val host: String, private val port: Int, private 
     }
 
     override fun close() {
-        try {
-            inputStream.close()
-        } catch (e: Throwable) {
-        }
-        try {
-            outputStream.close()
-        } catch (e: Throwable) {
-        }
-        try {
-            socket.close()
-        } catch (e: Exception) {
-        }
-
-        if (state != State.Ready) {
-            pairingContext.destroy()
-        }
+        if (::socket.isInitialized) runCatching { socket.close() }
+        if (::tlsSocket.isInitialized) runCatching { tlsSocket.close() }
+        if (::pairingContext.isInitialized) pairingContext.destroy()
     }
 
     companion object {

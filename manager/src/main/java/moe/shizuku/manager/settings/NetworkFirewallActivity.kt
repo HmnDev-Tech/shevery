@@ -2,6 +2,7 @@ package moe.shizuku.manager.settings
 
 import android.os.Build
 import android.os.Bundle
+import android.os.Process
 import android.widget.Toast
 import androidx.activity.compose.setContent
 import androidx.compose.foundation.layout.fillMaxWidth
@@ -34,6 +35,8 @@ import kotlinx.coroutines.Dispatchers
 import kotlinx.coroutines.launch
 import kotlinx.coroutines.withContext
 import moe.shizuku.manager.R
+import moe.shizuku.manager.guide.GuideTopic
+import moe.shizuku.manager.guide.ShakeGuideHost
 import moe.shizuku.manager.app.AppActivity
 import moe.shizuku.manager.ui.compose.GroupDivider
 import moe.shizuku.manager.ui.compose.SettingsGroup
@@ -42,7 +45,10 @@ import moe.shizuku.manager.ui.compose.ShizukuLazyScaffold
 import moe.shizuku.manager.ui.compose.SwitchSettingsRow
 import rikka.shizuku.Shizuku
 
-private data class FirewallApp(val packageName: String, val label: String)
+private data class FirewallApp(val packageName: String, val label: String, val uid: Int) {
+    val isSystemUid: Boolean
+        get() = (uid % 100000) < Process.FIRST_APPLICATION_UID
+}
 
 class NetworkFirewallActivity : AppActivity() {
 
@@ -53,25 +59,30 @@ class NetworkFirewallActivity : AppActivity() {
             val scope = rememberCoroutineScope()
             var refresh by remember { mutableStateOf(0) }
             var apps by remember { mutableStateOf(emptyList<FirewallApp>()) }
-            var blocked by remember { mutableStateOf(NetworkFirewallManager.blockedPackages()) }
+            var blocked by remember { mutableStateOf(emptySet<String>()) }
             var autoFirewallOnInstall by remember {
                 mutableStateOf(NetworkFirewallManager.isAutoFirewallOnInstall())
             }
             var searchQuery by rememberSaveable { mutableStateOf("") }
             var changing by remember { mutableStateOf(emptySet<String>()) }
             LifecycleEventEffect(Lifecycle.Event.ON_RESUME) {
-                blocked = NetworkFirewallManager.blockedPackages()
                 autoFirewallOnInstall = NetworkFirewallManager.isAutoFirewallOnInstall()
                 refresh++
             }
             androidx.compose.runtime.LaunchedEffect(refresh) {
-                apps = withContext(Dispatchers.IO) { loadApps() }
-                NetworkFirewallManager.retainInstalledPackages(apps.map { it.packageName }.toSet())
-                blocked = NetworkFirewallManager.blockedPackages()
+                val (installed, effectiveRules) = withContext(Dispatchers.IO) {
+                    val installed = loadApps()
+                    val rules = NetworkFirewallManager.effectiveBlockedPackages(
+                        installed.map { it.packageName }.toSet()
+                    )
+                    installed to rules
+                }
+                apps = installed
+                blocked = effectiveRules
             }
-            val filteredApps = remember(apps, searchQuery) {
+            val filteredApps = remember(apps, blocked, searchQuery) {
                 val query = searchQuery.trim()
-                if (query.isEmpty()) {
+                val matching = if (query.isEmpty()) {
                     apps
                 } else {
                     apps.filter {
@@ -79,11 +90,17 @@ class NetworkFirewallActivity : AppActivity() {
                             it.packageName.contains(query, ignoreCase = true)
                     }
                 }
+                matching.sortedWith(
+                    compareByDescending<FirewallApp> { it.packageName in blocked }
+                        .thenBy { it.isSystemUid }
+                        .thenBy { it.label.lowercase() }
+                )
             }
             val supported = Build.VERSION.SDK_INT >= Build.VERSION_CODES.R
             val serverRunning = Shizuku.pingBinder()
 
             ShizukuExpressiveTheme {
+                ShakeGuideHost(GuideTopic.FIREWALL)
                 ShizukuLazyScaffold(
                     title = stringResource(R.string.network_firewall_title),
                     onNavigateUp = { finish() }
@@ -162,9 +179,13 @@ class NetworkFirewallActivity : AppActivity() {
                         SwitchSettingsRow(
                             icon = R.drawable.ic_security_24dp,
                             title = app.label,
-                            summary = app.packageName,
+                            summary = if (app.isSystemUid) {
+                                "${app.packageName} · ${stringResource(R.string.network_firewall_system_uid_unsupported)}"
+                            } else {
+                                app.packageName
+                            },
                             checked = app.packageName in blocked,
-                            enabled = supported && serverRunning && app.packageName !in changing,
+                            enabled = supported && serverRunning && !app.isSystemUid && app.packageName !in changing,
                             onCheckedChange = { enabled ->
                                 changing = changing + app.packageName
                                 scope.launch {
@@ -173,7 +194,7 @@ class NetworkFirewallActivity : AppActivity() {
                                     }
                                     changing = changing - app.packageName
                                     if (applied) {
-                                        blocked = NetworkFirewallManager.blockedPackages()
+                                        refresh++
                                     } else {
                                         Toast.makeText(
                                             context,
@@ -195,7 +216,7 @@ class NetworkFirewallActivity : AppActivity() {
         packageManager.getInstalledApplications(0)
             .asSequence()
             .filter { it.packageName != packageName }
-            .map { FirewallApp(it.packageName, it.loadLabel(packageManager).toString()) }
+            .map { FirewallApp(it.packageName, it.loadLabel(packageManager).toString(), it.uid) }
             .sortedBy { it.label.lowercase() }
             .toList()
 }

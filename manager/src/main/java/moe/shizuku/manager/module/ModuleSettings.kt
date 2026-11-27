@@ -20,7 +20,7 @@ object ModuleSettings {
     private const val KEY_CUSTOM_WEB_DOWNLOAD = "adb_modules_custom_web_download"
     private const val KEY_RECOMMAND_WEBUI = "adb_modules_recommand_webui"
     private const val KEY_RECOMMAND_ACTION = "adb_modules_recommand_action"
-    private const val KEY_TRUSTED_MODULES = "adb_modules_trusted_modules"
+    internal const val KEY_TRUSTED_MODULES = "adb_modules_trusted_modules"
     private const val KEY_CONNECTOR_ENABLED = "shizuku_connector_enabled"
     private const val KEY_VERBOSE_LOGGING = "shizuku_verbose_logging"
     private const val KEY_NOTIFY_DEATH = "shizuku_notify_service_death"
@@ -37,7 +37,6 @@ object ModuleSettings {
     private const val KEY_EXP_SERVICE_HAPTICS = "exp_service_state_haptics"
     private const val KEY_EXP_SHOW_UPTIME = "exp_show_service_uptime"
     private const val KEY_EXP_KEEP_SCREEN_STARTING = "exp_keep_screen_on_starting"
-    const val KEY_SHOW_HOME_DIAGNOSTICS = "shizuku_show_home_diagnostics"
 
 
     enum class AccessMode(
@@ -186,7 +185,8 @@ object ModuleSettings {
             ?: false
     }
 
-    fun setModuleTrusted(moduleId: String, trusted: Boolean) {
+    @Synchronized
+    fun setModuleTrusted(moduleId: String, trusted: Boolean, persistNow: Boolean = false) {
         val prefs = ShizukuSettings.getPreferences()
         val current = prefs.getStringSet(KEY_TRUSTED_MODULES, emptySet()).orEmpty().toMutableSet()
         if (trusted) {
@@ -194,11 +194,22 @@ object ModuleSettings {
         } else {
             current -= moduleId
         }
-        prefs.edit().putStringSet(KEY_TRUSTED_MODULES, current).apply()
+        val editor = prefs.edit().putStringSet(KEY_TRUSTED_MODULES, current)
+        if (persistNow) {
+            check(editor.commit()) { "Unable to save module trust settings." }
+        } else {
+            editor.apply()
+        }
     }
 
-    fun clearTrustedModules() {
-        ShizukuSettings.getPreferences().edit().remove(KEY_TRUSTED_MODULES).apply()
+    @Synchronized
+    fun clearTrustedModules(persistNow: Boolean = false) {
+        val editor = ShizukuSettings.getPreferences().edit().remove(KEY_TRUSTED_MODULES)
+        if (persistNow) {
+            check(editor.commit()) { "Unable to clear module trust settings." }
+        } else {
+            editor.apply()
+        }
     }
 
     fun recommandForWebUi(): Boolean {
@@ -325,14 +336,6 @@ object ModuleSettings {
 
     fun setKeepScreenOnWhileStarting(value: Boolean) {
         ShizukuSettings.getPreferences().edit().putBoolean(KEY_EXP_KEEP_SCREEN_STARTING, value).apply()
-    }
-
-    fun isHomeDiagnosticsShown(): Boolean {
-        return ShizukuSettings.getPreferences().getBoolean(KEY_SHOW_HOME_DIAGNOSTICS, false)
-    }
-
-    fun setHomeDiagnosticsShown(value: Boolean) {
-        ShizukuSettings.getPreferences().edit().putBoolean(KEY_SHOW_HOME_DIAGNOSTICS, value).apply()
     }
 
     // Comput Settings

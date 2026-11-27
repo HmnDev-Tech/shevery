@@ -551,28 +551,6 @@ pub unsafe extern "system" fn Java_moe_shizuku_manager_stealth_StealthNative_nat
 }
 
 #[no_mangle]
-pub unsafe extern "system" fn Java_moe_shizuku_manager_stealth_StealthNative_nativeFixDex(
-    raw_env: *mut JNIEnv,
-    _class: jclass,
-    j_dex: jbyteArray,
-) -> jbyteArray {
-    if j_dex.is_null() {
-        return std::ptr::null_mut();
-    }
-    let env = match jni::JNIEnv::from_raw(raw_env as *mut _) {
-        Ok(e) => e,
-        Err(_) => return std::ptr::null_mut(),
-    };
-    let fixed = stealth::fix_dex_header(&match env.convert_byte_array(&JByteArray::from_raw(j_dex)) {
-        Ok(v) => v,
-        Err(_) => return std::ptr::null_mut(),
-    });
-    env.byte_array_from_slice(&fixed)
-        .map(|a| a.into_raw())
-        .unwrap_or(std::ptr::null_mut())
-}
-
-#[no_mangle]
 pub unsafe extern "system" fn Java_moe_shizuku_manager_stealth_StealthNative_nativeCrc32(
     raw_env: *mut JNIEnv,
     _class: jclass,
@@ -836,11 +814,6 @@ pub extern "system" fn JNI_OnLoad(vm: *mut jni::sys::JavaVM, _reserved: *mut c_v
                     as *mut _,
             },
             JNINativeMethod {
-                name: b"nativeFixDex\0".as_ptr() as *mut _,
-                signature: b"([B)[B\0".as_ptr() as *mut _,
-                fnPtr: Java_moe_shizuku_manager_stealth_StealthNative_nativeFixDex as *mut _,
-            },
-            JNINativeMethod {
                 name: b"nativeCrc32\0".as_ptr() as *mut _,
                 signature: b"([B)J\0".as_ptr() as *mut _,
                 fnPtr: Java_moe_shizuku_manager_stealth_StealthNative_nativeCrc32 as *mut _,
@@ -930,18 +903,12 @@ mod tests {
     }
 
     #[test]
-    fn test_stealth_swap_and_dex() {
+    fn test_stealth_swap_preserves_tasker_class_name() {
         let src = b"com.hamondev.shevery/com.hamondev.shevery.tasker.Plugin";
         let out = stealth::swap_filtered(src, b"com.hamondev.shevery", b"com.abcdefgh.ijklmno", false);
         assert_eq!(
             &out[..],
             b"com.abcdefgh.ijklmno/com.hamondev.shevery.tasker.Plugin"
         );
-
-        let mut fake_dex = vec![0u8; 64];
-        fake_dex[0..8].copy_from_slice(b"dex\n035\0");
-        let fixed = stealth::fix_dex_header(&fake_dex);
-        assert_eq!(fixed.len(), 64);
-        assert_ne!(&fixed[12..32], &[0u8; 20]);
     }
 }

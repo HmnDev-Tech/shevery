@@ -6,6 +6,9 @@ import android.os.Build
 import android.os.Environment
 import android.provider.MediaStore
 import android.util.Base64
+import com.android.tools.smali.dexlib2.dexbacked.DexBackedDexFile
+import com.android.tools.smali.dexlib2.writer.io.MemoryDataStore
+import com.android.tools.smali.dexlib2.writer.pool.DexPool
 import moe.shizuku.manager.ktx.logd
 import org.bouncycastle.asn1.x500.X500Name
 import org.bouncycastle.asn1.x509.SubjectPublicKeyInfo
@@ -52,8 +55,8 @@ import java.util.zip.ZipFile
  *    dedicated 32-char AXML StringPool placeholder (`STEALTH_LABEL_PLACEHOLDER`)
  *    and switches `<application android:label>` to `TYPE_STRING` so custom
  *    names up to 32 characters work without trailing spaces or broken offsets.
- * 4. Recalculates DEX SHA-1 signature and Adler32 checksum on all modified DEX
- *    files.
+ * 4. Rebuilds modified DEX files so the string table stays sorted and all
+ *    references and header digests match the rewritten bytecode.
  * 5. Writes a 4-byte aligned (`zipalign 4`) ZIP archive for all `STORED`
  *    entries (such as `resources.arsc`, required when `targetSdk >= 30`) and
  *    signs the output with BOTH v1 JAR signing and **APK Signature Scheme v2**
@@ -486,16 +489,7 @@ object StealthApkGenerator {
         }
 
         if (isDex(raw)) {
-            var data = raw
-            for (oldPkg in oldPkgs) {
-                data = swapFiltered(
-                    data = data,
-                    old = oldPkg.toByteArray(Charsets.US_ASCII),
-                    repl = newPkgAscii,
-                    skipFollowedBy = taskerSuffixAscii
-                )
-            }
-            return fixDex(data)
+            return rewriteDexPackages(raw, oldPkgs, newPkgAscii, taskerSuffixAscii)
         }
 
         if (entry.name == "AndroidManifest.xml") {
@@ -676,26 +670,45 @@ object StealthApkGenerator {
             data[2] == 'x'.code.toByte() && data[3] == '\n'.code.toByte()
     }
 
-    private fun fixDex(data: ByteArray): ByteArray {
-        if (data.size < 32 || !isDex(data)) return data
-        if (StealthNative.isAvailable) {
-            StealthNative.nativeFixDex(data)?.let { return it }
+    private fun rewriteDexPackages(
+        data: ByteArray,
+        oldPkgs: Set<String>,
+        newPkgAscii: ByteArray,
+        taskerSuffixAscii: ByteArray,
+    ): ByteArray {
+        val dex = DexBackedDexFile(null, data)
+        val strings = dex.stringSection
+        val oldPackagesAscii = oldPkgs.map { it.toByteArray(Charsets.US_ASCII) }
+        var patched: ByteArray? = null
+
+        for ((index, value) in strings.withIndex()) {
+            if (oldPkgs.none { value.contains(it) }) continue
+
+            val stringOffset = dex.buffer.readSmallUint(strings.getOffset(index))
+            val reader = dex.dataBuffer.readerAt(stringOffset)
+            reader.skipUleb128() // UTF-16 length, preserved by the equal-length ASCII replacement.
+            val start = dex.dataBuffer.baseOffset + reader.offset
+            var end = start
+            while (data[end] != 0.toByte()) end++
+            val original = data.copyOfRange(start, end)
+            var rewritten = original
+            for (old in oldPackagesAscii) {
+                rewritten = swapFiltered(rewritten, old, newPkgAscii, taskerSuffixAscii)
+            }
+            if (!rewritten.contentEquals(original)) {
+                val output = patched ?: data.copyOf().also { patched = it }
+                rewritten.copyInto(output, start)
+            }
         }
-        return try {
-            val sha1 = MessageDigest.getInstance("SHA-1")
-            sha1.update(data, 32, data.size - 32)
-            val sig = sha1.digest()
-            sig.copyInto(data, 12)
-            val adler = java.util.zip.Adler32()
-            adler.update(data, 12, data.size - 12)
-            val checksum = adler.value.toInt()
-            data[8] = (checksum and 0xFF).toByte()
-            data[9] = ((checksum ushr 8) and 0xFF).toByte()
-            data[10] = ((checksum ushr 16) and 0xFF).toByte()
-            data[11] = ((checksum ushr 24) and 0xFF).toByte()
-            data
-        } catch (_: Throwable) {
-            data
+
+        val changedDex = patched ?: return data
+        // Read references by their original indices, then emit a sorted pool with new indices.
+        val output = MemoryDataStore(data.size)
+        try {
+            DexPool.writeTo(output, DexBackedDexFile(dex.opcodes, changedDex))
+            return output.data
+        } finally {
+            output.close()
         }
     }
 

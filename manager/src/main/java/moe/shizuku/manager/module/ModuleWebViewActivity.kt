@@ -16,6 +16,8 @@ import androidx.compose.foundation.layout.padding
 import androidx.compose.ui.viewinterop.AndroidView
 import androidx.webkit.WebViewAssetLoader
 import moe.shizuku.manager.R
+import moe.shizuku.manager.guide.GuideTopic
+import moe.shizuku.manager.guide.ShakeGuideHost
 import moe.shizuku.manager.app.AppActivity
 import moe.shizuku.manager.security.AuthManager
 import moe.shizuku.manager.security.SecuritySettings
@@ -164,6 +166,7 @@ class ModuleWebViewActivity : AppActivity() {
                 ModuleSettings.canExposeWebBridge(module)
 
             ShizukuExpressiveTheme {
+                ShakeGuideHost(GuideTopic.MODULES)
                 ShizukuScaffold(
                     title = module.name,
                     onNavigateUp = { finish() }

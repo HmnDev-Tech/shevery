@@ -38,10 +38,6 @@ import androidx.compose.foundation.lazy.LazyColumn
 import androidx.compose.foundation.lazy.rememberLazyListState
 import androidx.compose.foundation.lazy.items
 import androidx.compose.foundation.shape.RoundedCornerShape
-import androidx.compose.material.icons.Icons
-import androidx.compose.material.icons.rounded.Check
-import androidx.compose.material.icons.rounded.Star
-import androidx.compose.material.icons.rounded.Update
 import androidx.compose.material3.AlertDialog
 import androidx.compose.material3.ExperimentalMaterial3Api
 import androidx.compose.material3.ExperimentalMaterial3ExpressiveApi
@@ -78,6 +74,7 @@ import androidx.compose.ui.draw.clip
 import androidx.compose.ui.layout.ContentScale
 import androidx.compose.ui.platform.LocalContext
 import androidx.compose.ui.platform.LocalUriHandler
+import androidx.compose.ui.res.painterResource
 import androidx.compose.ui.res.stringResource
 import androidx.compose.ui.text.SpanStyle
 import androidx.compose.ui.text.buildAnnotatedString
@@ -89,8 +86,9 @@ import androidx.compose.ui.text.style.TextOverflow
 import androidx.compose.ui.text.withStyle
 import androidx.compose.ui.unit.dp
 import androidx.compose.ui.unit.sp
-import coil.compose.AsyncImage
-import coil.request.ImageRequest
+import coil3.compose.AsyncImage
+import coil3.request.ImageRequest
+import coil3.request.crossfade
 import kotlinx.coroutines.Dispatchers
 import kotlinx.coroutines.async
 import kotlinx.coroutines.coroutineScope
@@ -99,6 +97,8 @@ import kotlinx.coroutines.withContext
 import okhttp3.OkHttpClient
 import okhttp3.Request
 import moe.shizuku.manager.R
+import moe.shizuku.manager.guide.GuideTopic
+import moe.shizuku.manager.guide.ShakeGuideHost
 import moe.shizuku.manager.module.AdbModuleManager
 import moe.shizuku.manager.module.ModuleSettings
 import moe.shizuku.manager.module.discovery.DiscoveredModule
@@ -210,6 +210,7 @@ fun CatalogScreen(onNavigateUp: () -> Unit) {
     }
 
     ShizukuExpressiveTheme {
+        ShakeGuideHost(GuideTopic.CATALOG)
         AnimatedContent(
             targetState = detailModule,
             transitionSpec = {
@@ -453,7 +454,7 @@ private fun CatalogListScreen(
                         leadingIcon = if (selectedFilter == filter) {
                             {
                                 Icon(
-                                    imageVector = Icons.Rounded.Check,
+                                    painter = painterResource(R.drawable.ic_symbol_check_24),
                                     contentDescription = null,
                                     modifier = Modifier.size(FilterChipDefaults.IconSize)
                                 )
@@ -621,7 +622,7 @@ private fun ModuleDetailScreen(
                             modifier = Modifier.weight(1f).height(48.dp),
                             onClick = { onInstall() }
                         ) {
-                            Icon(Icons.Rounded.Update, null, modifier = Modifier.size(18.dp).padding(end = 6.dp))
+                            Icon(painterResource(R.drawable.ic_symbol_update_24), null, modifier = Modifier.size(18.dp).padding(end = 6.dp))
                             Text("Update", style = MaterialTheme.typography.labelLarge)
                         }
                     } else {
@@ -685,7 +686,7 @@ private fun ModuleDetailScreen(
                         }
                         DetailChip(
                             text = "${module.stars}",
-                            icon = { Icon(Icons.Rounded.Star, null, Modifier.size(14.dp), tint = MaterialTheme.colorScheme.onSecondaryContainer) },
+                            icon = { Icon(painterResource(R.drawable.ic_symbol_star_24), null, Modifier.size(14.dp), tint = MaterialTheme.colorScheme.onSecondaryContainer) },
                             color = MaterialTheme.colorScheme.secondaryContainer,
                             onColor = MaterialTheme.colorScheme.onSecondaryContainer
                         )
@@ -800,7 +801,7 @@ private fun CatalogModuleCard(
                 verticalArrangement = Arrangement.spacedBy(8.dp)
             ) {
                 module.version?.let { DetailChip(text = it, color = MaterialTheme.colorScheme.secondaryContainer, onColor = MaterialTheme.colorScheme.onSecondaryContainer) }
-                DetailChip(text = "${module.stars}", icon = { Icon(Icons.Rounded.Star, null, Modifier.size(14.dp), tint = MaterialTheme.colorScheme.onSecondaryContainer) }, color = MaterialTheme.colorScheme.secondaryContainer, onColor = MaterialTheme.colorScheme.onSecondaryContainer)
+                DetailChip(text = "${module.stars}", icon = { Icon(painterResource(R.drawable.ic_symbol_star_24), null, Modifier.size(14.dp), tint = MaterialTheme.colorScheme.onSecondaryContainer) }, color = MaterialTheme.colorScheme.secondaryContainer, onColor = MaterialTheme.colorScheme.onSecondaryContainer)
                 if (module.isOfficial) DetailChip(text = stringResource(R.string.modules_catalog_sort_official), color = MaterialTheme.colorScheme.tertiaryContainer, onColor = MaterialTheme.colorScheme.onTertiaryContainer)
                 if (installed) DetailChip(text = "Installed", color = MaterialTheme.colorScheme.primaryContainer, onColor = MaterialTheme.colorScheme.onPrimaryContainer)
             }

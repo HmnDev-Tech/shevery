@@ -1,0 +1,157 @@
+<?xml version="1.0" encoding="utf-8"?>
+<resources>
+    <string name="shake_for_guide_title">Гайд при встряхивании</string>
+    <string name="shake_for_guide_summary">Встряхните устройство, чтобы открыть гайд по текущему экрану.</string>
+    <string name="guide_catalog">Все гайды</string>
+    <string name="guide_close">Закрыть</string>
+    <string name="guide_overview">Обзор</string>
+    <string name="guide_get_started">Как пользоваться</string>
+    <string name="guide_limits">Ограничения и безопасность</string>
+    <string name="guide_read_docs">Читать документацию</string>
+    <string name="guide_shake_unavailable">На устройстве нет акселерометра.</string>
+    <string name="guide_count_label">%1$d гайдов по docs и wiki</string>
+    <string name="guide_section_copied">Скопировано в буфер обмена</string>
+
+    <string name="guide_category_all">Все</string>
+    <string name="guide_category_getting_started">Начало работы</string>
+    <string name="guide_category_terminal_ai">Терминал и ИИ</string>
+    <string name="guide_category_modules">Модули и каталог</string>
+    <string name="guide_category_system_security">Система и безопасность</string>
+    <string name="guide_category_automation_extras">Автоматизация и доп.</string>
+    <string name="guide_category_reference">Справка и FAQ</string>
+
+    <string name="guide_startup_title">Запуск сервера</string>
+    <string name="guide_startup_overview">Shevery запускает привилегированный сервер (через root, ADB или беспроводную отладку), даёт одобренным приложениям доступ к системным API и запоминает последний режим запуска.</string>
+    <string name="guide_startup_instructions">На главном экране запустите сервер через Root (libshizuku.so), беспроводную отладку или точную команду adb shell с ПК/OTG. Для автовосстановления включите автозапуск при загрузке в «Настройки → Приложение».</string>
+    <string name="guide_startup_caution">Сначала удалите официальный Shizuku Manager из-за конфликта пакетов. Без root или автозапуска ADB-сервер останавливается после перезагрузки; беспроводной автозапуск ждёт разблокировки до 120 с (кроме ТВ).</string>
+
+    <string name="guide_wireless_debugging_title">Беспроводная отладка</string>
+    <string name="guide_wireless_debugging_overview">Запуск Shevery через локальный ADB без ПК на Android 11+, с поддержкой режима TCP-5555 и повторного включения при загрузке.</string>
+    <string name="guide_wireless_debugging_instructions">Подключитесь к Wi-Fi, включите беспроводную отладку в параметрах разработчика и пройдите встроенный туториал сопряжения, введя порт сопряжения и 6-значный код. Затем нажмите «Запустить» на главном экране.</string>
+    <string name="guide_wireless_debugging_caution">Порт сопряжения отличается от порта подключения. Не гасите экран при сопряжении, выдайте доступ к Wi-Fi рядом (Android 13+) или локальной сети (Android 17+) и используйте только доверенный Wi-Fi.</string>
+
+    <string name="guide_comput_title">Терминал Comput</string>
+    <string name="guide_comput_overview">Встроенная консоль оболочки, выполняющая команды через сервер Shevery с цветным выводом в реальном времени, шаблонами, JSON-макросами, историей и поиском по выводу.</string>
+    <string name="guide_comput_instructions">Запустите сервер и откройте «Терминал». Вводите команды, выбирайте пресеты, записывайте макросы или включите режим ADB для автоочистки префикса adb shell. Кнопка остановки завершает команду (код 124).</string>
+    <string name="guide_comput_caution">Команды выполняются с правами ADB shell или root сервера. На устройстве вместо adb install используйте pm install; операции со стороны ПК (push/pull) по-прежнему требуют компьютер.</string>
+
+    <string name="guide_commandium_title">ИИ Commandium</string>
+    <string name="guide_commandium_overview">Преобразует текстовые задачи в команды Android toybox и объясняет ошибки выполнения команд прямо в Comput.</string>
+    <string name="guide_commandium_instructions">В «Настройки → ИИ → Провайдер ИИ» выберите один из 11 пресетов (Gemini, OpenRouter, OpenAI, DeepSeek, Groq и др.) или свой OpenAI-совместимый URL. Открывайте Commandium из Comput или жмите «Объяснить с ИИ» при сбоях.</string>
+    <string name="guide_commandium_caution">API-ключи шифруются в AndroidKeyStore (AES/GCM), но запросы и вывод команд отправляются выбранному провайдеру. Не передавайте секреты и держите ReCommand включённым.</string>
+
+    <string name="guide_comput_agent_title">ИИ-агент Comput</string>
+    <string name="guide_comput_agent_overview">Пошаговый ассистент в Comput: строит план до 10 шагов (shell-команды и сервисы модулей), выполняет их с подтверждением, хранит историю чатов и подводит итог.</string>
+    <string name="guide_comput_agent_instructions">Откройте Comput → Агент, опишите цель и выберите режим в «Настройки → ИИ»: Безопасный (подтверждать каждый шаг), Турбо (автозапуск) или Выборочный (3/5/10 шагов). История позволяет продолжить любой диалог.</string>
+    <string name="guide_comput_agent_caution">Десктопные утилиты (apt, systemctl, iptables) запрещены в пользу команд Android toybox. Всегда проверяйте или редактируйте шаг через «Разрешить / Изменить» в безопасном режиме.</string>
+
+    <string name="guide_modules_title">ADB-модули</string>
+    <string name="guide_modules_overview">ZIP-расширения со скриптами и WebUI, распаковываемые в приватное хранилище adb_modules и запускаемые через активный ADB/root сервер (без mount-хуков Magisk).</string>
+    <string name="guide_modules_instructions">Установите ZIP с module.prop в корне через «ADB-модули», меню «Поделиться/Открыть» или Каталог. Модули поддерживают action.sh (например, Action для диагностики в ShizuConfig), service.sh и webui/index.html через $MODDIR.</string>
+    <string name="guide_modules_caution">Лимиты: до 2048 файлов, 200 МБ после распаковки, 256 КБ на скрипт, таймаут 120 с (код 124), 64 КБ логов. Проверяйте скрипты перед запуском и не используйте пути /data/adb/modules.</string>
+
+    <string name="guide_catalog_title">Каталог модулей</string>
+    <string name="guide_catalog_overview">Ищет репозитории GitHub с тегом shevery-modules (кэш 6 ч, до 4 модулей от автора кроме HmnDev-Tech) и ставит их из исходников или ZIP-релиза.</string>
+    <string name="guide_catalog_instructions">Откройте «Каталог» в разделе ADB-модулей, сортируйте по звёздам или новизне и изучайте описание до установки. Режим установки и GitHub PAT настраиваются в «Настройки → Обновления → Обновления модулей».</string>
+    <string name="guide_catalog_caution">Анонимный лимит GitHub — 60 запросов/ч; токен ghp_ или github_pat_ поднимает его до 5000 запросов/ч, хранится в EncryptedSharedPreferences и отправляется только на api.github.com.</string>
+
+    <string name="guide_updates_title">Обновления приложения и модулей</string>
+    <string name="guide_updates_overview">Проверяет релизы Shevery на GitHub (Stable или Beta) и ищет обновления модулей по цепочке: updateJson → каталог → последний релиз GitHub.</string>
+    <string name="guide_updates_instructions">В «Настройки → Обновления» выберите канал (Stable/Beta) и частоту WorkManager (Ежедневно, Еженедельно или Вручную). Обновления модулей сверяют versionCode и запускаются на экране ADB-модулей.</string>
+    <string name="guide_updates_caution">Канал Beta включает пре-релизы. Приложение устанавливается через PackageInstaller с системным подтверждением (если нет Device Owner); перед обновлением модулей проверяйте список изменений.</string>
+
+    <string name="guide_device_owner_title">Владелец устройства и Dhizuku</string>
+    <string name="guide_device_owner_overview">Управление Device/Profile Owner, 5 областями делегирования DPM, передачей прав, встроенным сервером Dhizuku API v1/v2 и экспериментальным мостом Dhizuku.</string>
+    <string name="guide_device_owner_instructions">Откройте «Настройки → Владелец устройства» для активации в 1 касание через Shizuku или команды adb shell dpm. Управляйте делегированием и белым списком там же; режим Dhizuku включается в «Настройки → Приложение» после запуска Shevery.</string>
+    <string name="guide_device_owner_caution">Для первой активации Device Owner на устройстве не должно быть аккаунтов и лишних профилей. Отключение защищено 5-секундным таймером; не запускайте Shevery через Dhizuku раньше самого Shevery.</string>
+
+    <string name="guide_security_title">Безопасность и аутентификация</string>
+    <string name="guide_security_overview">Защищает вход в Shevery и отдельные критичные операции через биометрию или PIN/пароль устройства с настраиваемым тайм-аутом сеанса.</string>
+    <string name="guide_security_instructions">В «Настройки → Безопасность» включите защиту, выберите время жизни сессии (сразу до 1 ч) и отметьте действия: вход, Device Owner, права приложений, запуск/остановка сервера и установка заглушек.</string>
+    <string name="guide_security_caution">По истечении тайм-аута в фоне Shevery блокируется при возврате и сбрасывает временные разрешения этого сеанса. На устройстве должна быть настроена блокировка экрана.</string>
+
+    <string name="guide_compat_stubs_title">Заглушки совместимости</string>
+    <string name="guide_compat_stubs_overview">Устанавливает лёгкие APK-мосты (moe.shizuku.privileged.api и com.rosan.dhizuku), чтобы старые приложения с проверкой имени пакета работали с Shevery.</string>
+    <string name="guide_compat_stubs_instructions">Откройте «Настройки → Приложение → Заглушки совместимости» и нажмите «Установить». StubManager по очереди пробует Device Owner, сервер Shevery, Root и локальный ADB.</string>
+    <string name="guide_compat_stubs_caution">Заглушки используют оригинальные ID пакетов, поэтому их нельзя установить рядом с оригинальными Shizuku или Dhizuku. Установку и удаление заглушек можно защитить в «Настройки → Безопасность».</string>
+
+    <string name="guide_stealth_title">Генератор Stealth Edition</string>
+    <string name="guide_stealth_overview">Встроенный пересборщик APK (Android 10+), клонирующий шаблон со случайным ID пакета com.&lt;8&gt;.&lt;8&gt; и произвольным именем ярлыка.</string>
+    <string name="guide_stealth_instructions">Сделайте резервную копию в «Настройки → Резервные копии», откройте «Настройки → Приложение → Скрытая версия», задайте имя и сохраните APK в Downloads/, затем удалите обычный Shevery и установите скрытый.</string>
+    <string name="guide_stealth_caution">Скрытый APK сохраняет провайдеры Shevery, поэтому обычный Shevery нужно удалить перед установкой копии из Downloads/. Бэкап позволит восстановить настройки, права и модули за одно нажатие.</string>
+
+    <string name="guide_error_protect_title">Сторож ErrorProtect</string>
+    <string name="guide_error_protect_overview">Отслеживает пульс главного потока сервера (каждые 5 с, порог зависания 60 с) и падения системных биндеров (package, activity, user, appops) для автовосстановления.</string>
+    <string name="guide_error_protect_instructions">ErrorProtect включён по умолчанию в «Настройки → Приложение». При сбое системной службы переподключает её с задержкой 5–60 с (до 10 попыток) либо перезапускает shizuku_server через фоновый starter.</string>
+    <string name="guide_error_protect_caution">Защита от циклов падения останавливается после 5 быстрых сбоев подряд (счётчик сбрасывается через 60 с стабильной работы). Отключайте ErrorProtect только при ручном управлении сервером.</string>
+
+    <string name="guide_developer_options_title">Скрытие параметров разработчика</string>
+    <string name="guide_developer_options_overview">Временно выключает глобальный переключатель параметров разработчика, пока выбранное приложение открыто на экране, и восстанавливает его потом.</string>
+    <string name="guide_developer_options_instructions">Откройте инструмент в Дополнительно/Lab, выдайте доступ к статистике использования (PACKAGE_USAGE_STATS), запустите Shevery или Device Owner и отметьте нужные приложения.</string>
+    <string name="guide_developer_options_caution">Настройка действует на всю систему. Если Shevery принудительно остановить во время работы функции, откройте его снова для восстановления исходного состояния.</string>
+
+    <string name="guide_usb_debugging_title">Скрытие USB-отладки</string>
+    <string name="guide_usb_debugging_overview">Проверяет активное приложение каждую секунду при разблокированном экране и скрывает Settings.Global.ADB_ENABLED от банков, платёжных и DRM-приложений.</string>
+    <string name="guide_usb_debugging_instructions">Выдайте доступ к статистике использования, запустите Shevery или настройте Device Owner (WRITE_SECURE_SETTINGS) и выберите приложения. Значение ADB_ENABLED восстанавливается при выходе или блокировке экрана.</string>
+    <string name="guide_usb_debugging_caution">Отключение ADB_ENABLED затрагивает всё устройство и может прервать активную USB/ADB-сессию, пока открыто выбранное приложение. После принудительной остановки откройте Shevery заново.</string>
+
+    <string name="guide_firewall_title">Сетевой экран</string>
+    <string name="guide_firewall_overview">Блокирует доступ к сети отдельным приложениям без занятия слота VPN, управляя встроенной цепочкой eBPF connectivity chain3 через сервер Shevery.</string>
+    <string name="guide_firewall_instructions">Требуется Android 13+ с поддержкой chain3 и запущенный сервер Shevery. Переключите блокировку у приложения — экран проверит фактическое состояние :deny/:allow через cmd connectivity.</string>
+    <string name="guide_firewall_caution">Системная цепочка chain3 общая: её активация может включить правила других приложений, а блокировка пакета влияет на все приложения с тем же UID Android.</string>
+
+    <string name="guide_connectors_title">Коннекторы Shevery</string>
+    <string name="guide_connectors_overview">Управляет доступом к провайдеру content://moe.shizuku.privileged.api.connector для локальных активаторов и ко всем входящим Intent автоматизации Tasker/MacroDroid.</string>
+    <string name="guide_connectors_instructions">Включите «Коннекторы Shevery» в «Настройки → Автоматизация», подтвердив предупреждение. Активаторы читают столбец command, а статус коннекторов виден на главном экране в разделе Intent.</string>
+    <string name="guide_connectors_caution">По умолчанию коннекторы выключены. Пока они активны, любое приложение со знанием команды или токена может управлять сервером — отключайте их, если автоматизация не нужна.</string>
+
+    <string name="guide_authorization_title">Авторизация приложений</string>
+    <string name="guide_authorization_overview">Определяет, какие сторонние приложения могут вызывать привилегированный Binder IPC через RequestPermissionActivity и флаги FLAG_ALLOWED/FLAG_DENIED.</string>
+    <string name="guide_authorization_instructions">Запустите сервер, подтверждайте или отклоняйте запросы доступа в диалоге и управляйте выданными правами в разделе «Управление приложениями» на главном экране.</string>
+    <string name="guide_authorization_caution">Выдавайте доступ только доверенным приложениям. Отзыв блокирует новые вызовы API, но не отменяет сделанные изменения. На Android 8.0+ ADB фоновым приложениям нужна однократная Activity для доставки биндера.</string>
+
+    <string name="guide_tasker_title">Tasker и MacroDroid</string>
+    <string name="guide_tasker_overview">Автоматизирует запуск, остановку, перезапуск и переключение сервера, а также проверку «Сервер запущен» через плагин Locale/Tasker или прямые broadcast-команды.</string>
+    <string name="guide_tasker_instructions">Включите коннекторы в «Настройки → Автоматизация». В Tasker используйте плагин Shevery Tasker, а в MacroDroid или Termux отправляйте явный broadcast в com.hamondev.shevery / PluginReceiver с параметром auth=&lt;токен&gt;.</string>
+    <string name="guide_tasker_caution">Без коннекторов или с неверным токеном возвращается RESULT_CANCELED и показывается уведомление. Смена токена требует обновить все макросы; запуск без root требует включённого ADB по TCP.</string>
+
+    <string name="guide_intents_title">Intent и диплинки</string>
+    <string name="guide_intents_overview">Справочник публичных команд автоматизации, запроса прав, ярлыка Специальных возможностей, диплинков WebUI модулей (shevery://module/&lt;id&gt;) и приёма ZIP через VIEW/SEND.</string>
+    <string name="guide_intents_instructions">Копируйте готовые команды am broadcast в «Настройки → Автоматизация» или с главного экрана («Посмотреть Intent»). WebUI открывается по shevery://module/&lt;id&gt; или OPEN_WEBUI, а менеджер спец. возможностей — по ACCESSIBILITY_MANAGER.</string>
+    <string name="guide_intents_caution">Внутренние действия SheveryControlReceiver не экспортированы и не работают из adb shell. ModuleWebViewActivity не имеет BROWSABLE для защиты от веб-фреймов и проверяет защиту APP_OPEN.</string>
+
+    <string name="guide_settings_title">Настройки</string>
+    <string name="guide_settings_overview">Объединяет 11 разделов: Приложение, Оформление, Безопасность, Владелец устройства, Модули, Обновления, ИИ, Резервные копии, Автоматизация, Дополнительно и О приложении.</string>
+    <string name="guide_settings_instructions">Настройте автозапуск, ErrorProtect и TCP-порт в «Приложение»; чёрную тему и классическую панель в «Оформление»; экспорт/восстановление ZIP в «Резервные копии»; закрепление спец. возможностей в «Дополнительно».</string>
+    <string name="guide_settings_caution">Архивы резервных копий содержат настройки, разрешения приложений, параметры ИИ и установленные модули — храните их в защищённом месте.</string>
+
+    <string name="guide_module_policy_title">Политика доступа модулей</string>
+    <string name="guide_module_policy_overview">Контролирует доступ модулей к Action-скриптам, фоновому service.sh, JS-мосту WebUI, интернету в WebView и загрузкам из WebUI (режимы SAFE / CUSTOM / FULL).</string>
+    <string name="guide_module_policy_instructions">Оставьте SAFE (только ручные Action) по умолчанию или выберите CUSTOM в «Настройки → Модули» для точечных прав. Долгое нажатие по карточке модуля открывает выдачу/отзыв «Полного доверия».</string>
+    <string name="guide_module_policy_caution">Интернет в WebView запрещён даже в FULL (нужен CUSTOM или доверие). «Полное доверие» привязано к файлам модуля и автоматически сбрасывается при его замене; держите ReCommand включённым.</string>
+
+    <string name="guide_lab_title">Lab и жесты</string>
+    <string name="guide_lab_overview">Содержит калибровку чувствительности встряхивания со счётчиком срабатываний, чистую чёрную тему, режим снижения анимаций и снимок IPC-биндеров.</string>
+    <string name="guide_lab_instructions">Откройте «Настройки → Lab», выберите пресет чувствительности (Низкая/Средняя/Высокая), запустите тест встряхивания, настройте чёрную тему или снимите текущий статус биндеров Shizuku/Shevery/Connectors.</string>
+    <string name="guide_lab_caution">Во время активного теста калибровки автоматическое открытие гайда по встряхиванию временно ставится на паузу. Экспорт IPC-снимка содержит только статус без логов logcat.</string>
+
+    <string name="guide_faq_title">FAQ и решение проблем</string>
+    <string name="guide_faq_overview">Ответы про конфликт пакетов с Shizuku, сбои беспроводного сопряжения, остановки сервера, поддельные клоны, ошибки модулей и Smart Logs.</string>
+    <string name="guide_faq_instructions">При ошибке сопряжения проверьте оба поля (порт и код). От выгрузок спасают ErrorProtect и исключение из оптимизации батареи. Для логов используйте Smart Logs на главном экране, а для системной диагностики — Action модуля ShizuConfig из каталога.</string>
+    <string name="guide_faq_caution">Shevery полностью бесплатен — остерегайтесь платных загрузчиков и неофициальных переименований вроде Shizako+. Перед публикацией логов на GitHub удаляйте токены и личные данные.</string>
+
+    <string name="guide_how_it_works_title">Как работает Shevery</string>
+    <string name="guide_how_it_works_overview">Передаёт вызовы системных API приложений через Binder IPC (transactRemote) поверх привилегированного сервера вместо медленного запуска su-процессов на каждую команду.</string>
+    <string name="guide_how_it_works_instructions">Запустите shizuku_server через ADB или root, чтобы BinderSender доставлял биндер приложениям, и используйте ShizukuBinderWrapper с адаптацией Android17Compat для изменений Android 15–17.</string>
+    <string name="guide_how_it_works_caution">Доступные права ограничены UID сервера (shell для ADB или root для su). На Android 9+ приложениям по-прежнему нужен обход ограничений скрытых API.</string>
+
+    <string name="guide_publish_module_title">Публикация модуля</string>
+    <string name="guide_publish_module_overview">Любой публичный репозиторий GitHub с module.prop и тегом shevery-modules автоматически попадает в каталог Shevery в течение 6-часового окна кэша.</string>
+    <string name="guide_publish_module_instructions">Разместите module.prop в корне (или валидной подпапке), добавьте тег shevery-modules в GitHub, при необходимости укажите updateJson и приложите ZIP с ID модуля в Release.</string>
+    <string name="guide_publish_module_caution">Не меняйте ID модуля, увеличивайте versionCode в каждом релизе, соблюдайте лимит до 4 модулей от одного автора и оставляйте скрипты открытыми для проверки.</string>
+
+    <string name="guide_build_title">Сборка из исходников</string>
+    <string name="guide_build_overview">Сборка Compose-менеджера, нативных компонентов Rust/NDK, сервера, starter и заглушек совместимости из репозитория HmnDev-Tech/shevery.</string>
+    <string name="guide_build_instructions">Выполните git clone --recurse-submodules, подготовьте JDK 21, Android SDK, NDK и цели Rust, затем запустите ./gradlew :manager:assembleDebug или :manager:assembleRelease.</string>
+    <string name="guide_build_caution">Клонирование без --recurse-submodules приведёт к ошибке сборки. Debug-сборка включает отладку shizuku_server; обновление поверх установленного APK требует совпадающего ключа подписи и соблюдения прав на бренд Shevery (Apache 2.0).</string>
+</resources>

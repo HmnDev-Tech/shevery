@@ -130,29 +130,42 @@ pub fn start(tty: jbyte, stdin_pipe: jint, stdout_pipe: jint, stderr_pipe: jint)
         );
     }
 
-    // Initialize winch pipe once
-    WINCH_PIPE.get_or_init(|| {
+    if tty_fd == -1 {
+        return -1;
+    }
+
+    let pipe = WINCH_PIPE.get_or_init(|| {
         let mut fds = [-1; 2];
-        // Safety: Creating pipe2 with O_CLOEXEC and O_NONBLOCK for signal self-pipe.
+        // The signal handler must never block. The reader waits for the next signal.
         unsafe {
-            if libc::pipe2(fds.as_mut_ptr(), libc::O_CLOEXEC | libc::O_NONBLOCK) == 0 {
-                fds
-            } else {
-                [-1, -1]
+            if libc::pipe2(fds.as_mut_ptr(), libc::O_CLOEXEC) != 0 {
+                return [-1, -1];
             }
+            if libc::fcntl(fds[1], libc::F_SETFL, libc::O_NONBLOCK) == -1 {
+                libc::close(fds[0]);
+                libc::close(fds[1]);
+                return [-1, -1];
+            }
+            fds
         }
     });
 
-    // Safety: Installing SIGWINCH signal handler and unblocking SIGWINCH after WINCH_PIPE is ready.
-    // Invariant: sigwinch_handler is async-signal-safe, writing only to the non-blocking pipe.
     unsafe {
-        libc::signal(libc::SIGWINCH, sigwinch_handler as *const () as usize);
+        if pipe[0] != -1 {
+            libc::signal(libc::SIGWINCH, sigwinch_handler as *const () as usize);
+        }
+        // prepare() may have blocked SIGWINCH even if pipe initialization failed.
         let mut winch: libc::sigset_t = std::mem::zeroed();
         libc::sigemptyset(&mut winch);
         libc::sigaddset(&mut winch, libc::SIGWINCH);
         libc::pthread_sigmask(libc::SIG_UNBLOCK, &winch, std::ptr::null_mut());
     }
 
+    if pipe[0] == -1 {
+        return -1;
+    }
+    // Send the initial size before waiting for the first real resize.
+    sigwinch_handler(libc::SIGWINCH);
     tty_fd
 }
 

@@ -98,15 +98,15 @@ class PluginReceiver : BroadcastReceiver() {
     }
 
     private fun handleDirect(context: Context, command: Command) {
-        executeCommand(context, command)
+        // RESTART can call goAsync(), which transfers the broadcast result.
         resultCode = Activity.RESULT_OK
+        executeCommand(context, command)
     }
 
     private fun handleFire(context: Context, intent: Intent) {
         if (!isExplicit(intent)) return
         val command = parseCommand(intent.getBundleExtra(PluginContract.EXTRA_BUNDLE)) ?: return
-        executeCommand(context, command)
-        resultCode = Activity.RESULT_OK
+        handleDirect(context, command)
     }
 
     private fun executeCommand(context: Context, command: Command) {

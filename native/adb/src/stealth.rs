@@ -236,103 +236,6 @@ pub fn patch_manifest_label(axml: &[u8], app_name: &str) -> Vec<u8> {
     out
 }
 
-/// Pure-Rust RFC 3174 SHA-1 implementation for DEX header signature recalculation.
-pub fn sha1_digest(data: &[u8]) -> [u8; 20] {
-    let mut h0: u32 = 0x67452301;
-    let mut h1: u32 = 0xEFCDAB89;
-    let mut h2: u32 = 0x98BADCFE;
-    let mut h3: u32 = 0x10325476;
-    let mut h4: u32 = 0xC3D2E1F0;
-
-    let bit_len = (data.len() as u64).wrapping_mul(8);
-    let mut padded = Vec::with_capacity((data.len() + 72) & !63);
-    padded.extend_from_slice(data);
-    padded.push(0x80);
-    while (padded.len() % 64) != 56 {
-        padded.push(0);
-    }
-    padded.extend_from_slice(&bit_len.to_be_bytes());
-
-    let mut w = [0u32; 80];
-    for chunk in padded.chunks_exact(64) {
-        for i in 0..16 {
-            let j = i * 4;
-            w[i] = u32::from_be_bytes([chunk[j], chunk[j + 1], chunk[j + 2], chunk[j + 3]]);
-        }
-        for i in 16..80 {
-            w[i] = (w[i - 3] ^ w[i - 8] ^ w[i - 14] ^ w[i - 16]).rotate_left(1);
-        }
-
-        let mut a = h0;
-        let mut b = h1;
-        let mut c = h2;
-        let mut d = h3;
-        let mut e = h4;
-
-        for i in 0..80 {
-            let (f, k) = match i {
-                0..=19 => ((b & c) | ((!b) & d), 0x5A827999u32),
-                20..=39 => (b ^ c ^ d, 0x6ED9EBA1u32),
-                40..=59 => ((b & c) | (b & d) | (c & d), 0x8F1BBCDCu32),
-                _ => (b ^ c ^ d, 0xCA62C1D6u32),
-            };
-            let temp = a
-                .rotate_left(5)
-                .wrapping_add(f)
-                .wrapping_add(e)
-                .wrapping_add(k)
-                .wrapping_add(w[i]);
-            e = d;
-            d = c;
-            c = b.rotate_left(30);
-            b = a;
-            a = temp;
-        }
-
-        h0 = h0.wrapping_add(a);
-        h1 = h1.wrapping_add(b);
-        h2 = h2.wrapping_add(c);
-        h3 = h3.wrapping_add(d);
-        h4 = h4.wrapping_add(e);
-    }
-
-    let mut out = [0u8; 20];
-    out[0..4].copy_from_slice(&h0.to_be_bytes());
-    out[4..8].copy_from_slice(&h1.to_be_bytes());
-    out[8..12].copy_from_slice(&h2.to_be_bytes());
-    out[12..16].copy_from_slice(&h3.to_be_bytes());
-    out[16..20].copy_from_slice(&h4.to_be_bytes());
-    out
-}
-
-/// Pure-Rust RFC 1950 Adler-32 implementation for DEX header checksum recalculation.
-pub fn adler32_checksum(data: &[u8]) -> u32 {
-    const MOD_ADLER: u32 = 65521;
-    let mut a: u32 = 1;
-    let mut b: u32 = 0;
-    for chunk in data.chunks(5552) {
-        for &byte in chunk {
-            a += byte as u32;
-            b += a;
-        }
-        a %= MOD_ADLER;
-        b %= MOD_ADLER;
-    }
-    (b << 16) | a
-}
-
-pub fn fix_dex_header(dex: &[u8]) -> Vec<u8> {
-    if dex.len() < 32 || &dex[0..4] != b"dex\n" {
-        return dex.to_vec();
-    }
-    let mut out = dex.to_vec();
-    let sig = sha1_digest(&out[32..]);
-    out[12..32].copy_from_slice(&sig);
-    let checksum = adler32_checksum(&out[12..]);
-    out[8..12].copy_from_slice(&checksum.to_le_bytes());
-    out
-}
-
 pub fn crc32_ieee(data: &[u8]) -> u32 {
     let mut crc: u32 = 0xFFFF_FFFF;
     for &byte in data {
@@ -413,14 +316,7 @@ mod tests {
     }
 
     #[test]
-    fn digests_and_dex_header_fix_match_standard_vectors() {
-        assert_eq!(
-            sha1_digest(b"abc"),
-            [
-                0xa9, 0x99, 0x3e, 0x36, 0x47, 0x06, 0x81, 0x6a, 0xba, 0x3e,
-                0x25, 0x71, 0x78, 0x50, 0xc2, 0x6c, 0x9c, 0xd0, 0xd8, 0x9d,
-            ]
-        );
+    fn digests_match_standard_vectors() {
         assert_eq!(
             sha256_digest(b"abc"),
             [
@@ -428,17 +324,7 @@ mod tests {
                 0xb0, 0x03, 0x61, 0xa3, 0x96, 0x17, 0x7a, 0x9c, 0xb4, 0x10, 0xff, 0x61, 0xf2, 0x00, 0x15, 0xad,
             ]
         );
-        assert_eq!(adler32_checksum(b""), 1);
-        assert_eq!(adler32_checksum(b"ab"), 0x0126_00C4);
         assert_eq!(crc32_ieee(b"123456789"), 0xCBF4_3926);
-
-        let mut dex = vec![0u8; 64];
-        dex[0..8].copy_from_slice(b"dex\n039\0");
-        dex[32..].fill(0x42);
-        let fixed = fix_dex_header(&dex);
-        assert_eq!(&fixed[12..32], sha1_digest(&fixed[32..]).as_slice());
-        let csum = u32::from_le_bytes(fixed[8..12].try_into().unwrap());
-        assert_eq!(csum, adler32_checksum(&fixed[12..]));
 
         let top1 = compute_apk_v2_top_digest(b"sec1", b"sec2", b"eocd");
         let top2 = compute_apk_v2_top_digest(b"sec1", b"secX", b"eocd");

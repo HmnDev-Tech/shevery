@@ -1,4 +1,4 @@
-@file:OptIn(androidx.compose.material3.ExperimentalMaterial3Api::class)
+@file:OptIn(androidx.compose.material3.ExperimentalMaterial3Api::class, androidx.compose.material3.ExperimentalMaterial3ExpressiveApi::class)
 
 package moe.shizuku.manager.settings
 
@@ -12,9 +12,6 @@ import androidx.annotation.DrawableRes
 import androidx.annotation.StringRes
 import androidx.compose.foundation.lazy.LazyListScope
 import androidx.compose.foundation.text.KeyboardOptions
-import androidx.compose.material.icons.Icons
-import androidx.compose.material.icons.rounded.ChevronRight
-import androidx.compose.material.icons.rounded.Refresh
 import androidx.compose.material3.Icon
 import androidx.compose.material3.IconButton
 import androidx.compose.ui.text.input.KeyboardType
@@ -25,7 +22,6 @@ import android.os.Build
 import android.text.TextUtils
 import androidx.appcompat.app.AppCompatDelegate
 import androidx.compose.animation.AnimatedContent
-import androidx.compose.animation.core.tween
 import androidx.compose.animation.fadeIn
 import androidx.compose.animation.fadeOut
 import androidx.compose.animation.slideInHorizontally
@@ -73,15 +69,22 @@ import androidx.compose.ui.Modifier
 import androidx.compose.ui.platform.LocalContext
 import androidx.compose.ui.platform.LocalLifecycleOwner
 import androidx.compose.ui.res.stringArrayResource
+import androidx.compose.ui.res.painterResource
 import androidx.compose.ui.res.stringResource
 import androidx.compose.ui.unit.dp
 import kotlinx.coroutines.delay
 import moe.shizuku.manager.R
+import moe.shizuku.manager.lab.LabContent
+import moe.shizuku.manager.ui.compose.ExpressiveSegmentedItem
+import moe.shizuku.manager.ui.compose.ExpressiveSegmentedSection
+import moe.shizuku.manager.ui.compose.ExpressiveSegmentedToggle
+import moe.shizuku.manager.guide.GuideTopic
+import moe.shizuku.manager.guide.ShakeGuideHost
+import moe.shizuku.manager.guide.rememberShakeGuideEnabled
 import moe.shizuku.manager.ShizukuSettings
 import moe.shizuku.manager.ShizukuSettings.LANGUAGE
 import moe.shizuku.manager.ShizukuSettings.NIGHT_MODE
 import moe.shizuku.manager.app.ThemeHelper
-import moe.shizuku.manager.app.ThemeHelper.KEY_BLACK_NIGHT_THEME
 import moe.shizuku.manager.app.ThemeHelper.KEY_USE_SYSTEM_COLOR
 import moe.shizuku.manager.ktx.setComponentEnabled
 import moe.shizuku.manager.deviceowner.DeviceOwnerManager
@@ -100,7 +103,6 @@ import moe.shizuku.manager.service.WatchdogManager
 import moe.shizuku.manager.starter.StarterActivity
 import moe.shizuku.manager.utils.CustomTabsHelper
 import moe.shizuku.manager.utils.EnvironmentUtils
-import moe.shizuku.manager.ui.compose.ExpressiveSwitch
 import moe.shizuku.manager.ui.compose.GroupDivider
 import moe.shizuku.manager.ui.compose.MonospaceLog
 import moe.shizuku.manager.ui.compose.SectionHeader
@@ -109,7 +111,6 @@ import moe.shizuku.manager.ui.compose.SettingsRow
 import moe.shizuku.manager.ui.compose.ShizukuLazyScaffold
 import moe.shizuku.manager.ui.compose.SwitchSettingsRow
 import moe.shizuku.manager.ui.compose.htmlToPlainText
-import moe.shizuku.manager.home.SheverySmartLogsDialog
 import rikka.core.util.ResourceUtils
 import rikka.core.util.ClipboardUtils
 import rikka.material.app.LocaleDelegate
@@ -179,6 +180,7 @@ enum class SettingsSection(
         R.string.automation_section_summary,
         R.drawable.ic_outline_play_arrow_24
     ),
+    LAB(R.string.lab_title, R.string.lab_summary, R.drawable.ic_system_icon),
     EXTRAS(
         R.string.settings_extras_title,
         R.string.settings_section_extras_summary,
@@ -202,6 +204,25 @@ sealed interface SettingsNav {
     data object Recommendations : SettingsNav
 }
 
+
+internal fun SettingsNav.guideTopic(): GuideTopic? = when (this) {
+    SettingsNav.Hub, SettingsNav.ContributorsCredits, SettingsNav.Recommendations -> null
+    SettingsNav.UpdateSettings -> GuideTopic.UPDATES
+    SettingsNav.CompatStubs -> GuideTopic.COMPAT_STUBS
+    SettingsNav.DeviceOwnerTransfer, SettingsNav.DeviceOwnerDelegation -> GuideTopic.DEVICE_OWNER
+    is SettingsNav.Section -> when (section) {
+        SettingsSection.APPLICATION, SettingsSection.APPEARANCE, SettingsSection.BACKUPS -> GuideTopic.SETTINGS
+        SettingsSection.SECURITY -> GuideTopic.SECURITY
+        SettingsSection.DEVICE_OWNER -> GuideTopic.DEVICE_OWNER
+        SettingsSection.MODULES -> GuideTopic.MODULE_POLICY
+        SettingsSection.UPDATES -> GuideTopic.UPDATES
+        SettingsSection.AI -> GuideTopic.COMMANDIUM
+        SettingsSection.AUTOMATION -> GuideTopic.CONNECTORS
+        SettingsSection.LAB -> GuideTopic.LAB
+        SettingsSection.EXTRAS -> GuideTopic.FAQ
+        SettingsSection.ABOUT -> null
+    }
+}
 
 @Composable
 fun SettingsScreen(
@@ -286,9 +307,6 @@ fun SettingsScreen(
     var nightMode by remember {
         mutableIntStateOf(ShizukuSettings.getNightMode())
     }
-    var blackNightTheme by remember {
-        mutableStateOf(ThemeHelper.isBlackNightTheme(context))
-    }
     var useSystemColor by remember {
         mutableStateOf(ThemeHelper.isUsingSystemColor())
     }
@@ -314,7 +332,6 @@ fun SettingsScreen(
     var showNightDialog by remember { mutableStateOf(false) }
     var showModuleModeDialog by remember { mutableStateOf(false) }
     var showCustomPermissionsDialog by remember { mutableStateOf(false) }
-    var showDiagnosticsLogsDialog by remember { mutableStateOf(false) }
     var pendingTcpModeChange by remember { mutableStateOf<Boolean?>(null) }
 
     var moduleAccessMode by remember {
@@ -371,7 +388,6 @@ fun SettingsScreen(
     var expHaptics by remember { mutableStateOf(ModuleSettings.isServiceStateHapticsEnabled()) }
     var expUptime by remember { mutableStateOf(ModuleSettings.isServiceUptimeShown()) }
     var expKeepScreen by remember { mutableStateOf(ModuleSettings.isKeepScreenOnWhileStarting()) }
-    var showHomeDiagnostics by remember { mutableStateOf(ModuleSettings.isHomeDiagnosticsShown()) }
     var showUnsafeDialog by remember { mutableStateOf(false) }
     var showRevokeDialog by remember { mutableStateOf(false) }
     var recreateTick by remember { mutableIntStateOf(0) }
@@ -475,9 +491,9 @@ fun SettingsScreen(
                     } ?: error("Failed to open output stream")
                 }
             }.onSuccess {
-                Toast.makeText(context, "Backup completed successfully", Toast.LENGTH_SHORT).show()
+                Toast.makeText(context, R.string.settings_backup_done, Toast.LENGTH_SHORT).show()
             }.onFailure {
-                Toast.makeText(context, "Backup failed: ${it.message}", Toast.LENGTH_LONG).show()
+                Toast.makeText(context, context.getString(R.string.settings_backup_error, it.localizedMessage.orEmpty()), Toast.LENGTH_LONG).show()
             }
         }
     }
@@ -494,14 +510,14 @@ fun SettingsScreen(
                     } ?: error("Failed to open input stream")
                 }
             }.onSuccess {
-                Toast.makeText(context, "Restore completed successfully", Toast.LENGTH_SHORT).show()
+                Toast.makeText(context, R.string.settings_restore_done, Toast.LENGTH_SHORT).show()
                 startOnBoot = ShizukuSettings.getStartOnBoot()
                 adbStartOnBoot = ShizukuSettings.getStartOnBootAdb()
                 watchdog = ModuleSettings.isWatchdogEnabled()
                 notifyDeath = ModuleSettings.isNotifyOnServiceDeath()
                 languageTag = prefs.getString(LANGUAGE, "SYSTEM") ?: "SYSTEM"
                 nightMode = ShizukuSettings.getNightMode()
-                blackNightTheme = ThemeHelper.isBlackNightTheme(context)
+
                 useSystemColor = ThemeHelper.isUsingSystemColor()
                 moduleAccessMode = ModuleSettings.getAccessMode()
                 customPermissions = ModuleSettings.getCustomPermissions()
@@ -526,7 +542,6 @@ fun SettingsScreen(
                 expHaptics = ModuleSettings.isServiceStateHapticsEnabled()
                 expUptime = ModuleSettings.isServiceUptimeShown()
                 expKeepScreen = ModuleSettings.isKeepScreenOnWhileStarting()
-                showHomeDiagnostics = ModuleSettings.isHomeDiagnosticsShown()
                 tcpMode = ShizukuSettings.isTcpMode()
                 tcpModePort = ShizukuSettings.getTcpModePort()
                 tcpPortRandomized = ShizukuSettings.isTcpPortRandomized()
@@ -536,7 +551,7 @@ fun SettingsScreen(
                 agentAskModule = ModuleSettings.isAgentAskModuleService()
                 recreateTick++
             }.onFailure {
-                Toast.makeText(context, "Restore failed: ${it.message}", Toast.LENGTH_LONG).show()
+                Toast.makeText(context, context.getString(R.string.settings_restore_error, it.localizedMessage.orEmpty()), Toast.LENGTH_LONG).show()
             }
         }
     }
@@ -567,6 +582,15 @@ fun SettingsScreen(
         }
     }
 
+    var calibrating by remember { mutableStateOf(false) }
+    ShakeGuideHost(nav.guideTopic(), enabled = !calibrating)
+    LaunchedEffect(nav) { if (nav != SettingsNav.Section(SettingsSection.LAB)) calibrating = false }
+    val shakeGuideEnabled = rememberShakeGuideEnabled()
+    val hasAccelerometer = remember(packageManager) {
+        packageManager.hasSystemFeature(PackageManager.FEATURE_SENSOR_ACCELEROMETER)
+    }
+
+    val motion = MaterialTheme.motionScheme
     AnimatedContent(
         targetState = nav,
         transitionSpec = {
@@ -588,18 +612,18 @@ fun SettingsScreen(
                 else -> true
             }
             if (forward) {
-                (slideInHorizontally(animationSpec = tween(300)) { fullWidth -> fullWidth } +
-                    fadeIn(animationSpec = tween(300)))
+                (slideInHorizontally(animationSpec = motion.defaultSpatialSpec()) { fullWidth -> fullWidth } +
+                    fadeIn(animationSpec = motion.defaultEffectsSpec()))
                     .togetherWith(
-                        slideOutHorizontally(animationSpec = tween(300)) { fullWidth -> -fullWidth / 4 } +
-                            fadeOut(animationSpec = tween(300))
+                        slideOutHorizontally(animationSpec = motion.defaultSpatialSpec()) { fullWidth -> -fullWidth / 4 } +
+                            fadeOut(animationSpec = motion.defaultEffectsSpec())
                     )
             } else {
-                (slideInHorizontally(animationSpec = tween(300)) { fullWidth -> -fullWidth / 4 } +
-                    fadeIn(animationSpec = tween(300)))
+                (slideInHorizontally(animationSpec = motion.defaultSpatialSpec()) { fullWidth -> -fullWidth / 4 } +
+                    fadeIn(animationSpec = motion.defaultEffectsSpec()))
                     .togetherWith(
-                        slideOutHorizontally(animationSpec = tween(300)) { fullWidth -> fullWidth } +
-                            fadeOut(animationSpec = tween(300))
+                        slideOutHorizontally(animationSpec = motion.defaultSpatialSpec()) { fullWidth -> fullWidth } +
+                            fadeOut(animationSpec = motion.defaultEffectsSpec())
                     )
             }
         },
@@ -748,19 +772,10 @@ fun SettingsScreen(
                         SettingsSection.APPEARANCE -> appearanceSectionContent(
                             languageSummary = languageSummary,
                             nightSummary = nightSummary,
-                            nightMode = nightMode,
-                            blackNightTheme = blackNightTheme,
                             useSystemColor = useSystemColor,
                             classicNav = classicNav,
                             onLanguageClick = { showLanguageDialog = true },
                             onNightClick = { showNightDialog = true },
-                            onBlackNightChange = { enabled ->
-                                prefs.edit().putBoolean(KEY_BLACK_NIGHT_THEME, enabled).apply()
-                                blackNightTheme = enabled
-                                if (ResourceUtils.isNightMode(context.resources.configuration)) {
-                                    recreateTick++
-                                }
-                            },
                             onUseSystemColorChange = { enabled ->
                                 prefs.edit().putBoolean(KEY_USE_SYSTEM_COLOR, enabled).apply()
                                 useSystemColor = enabled
@@ -882,6 +897,9 @@ fun SettingsScreen(
                                 Toast.makeText(context, R.string.automation_copied_to_clipboard, Toast.LENGTH_SHORT).show()
                             }
                         )
+                        SettingsSection.LAB -> item {
+                            LabContent(calibrating, onCalibratingChange = { calibrating = it })
+                        }
                         SettingsSection.EXTRAS -> extrasSectionContent(
                             context = context,
                             notifyRecovery = notifyRecovery,
@@ -891,7 +909,6 @@ fun SettingsScreen(
                             expHaptics = expHaptics,
                             expUptime = expUptime,
                             expKeepScreen = expKeepScreen,
-                            showHomeDiagnostics = showHomeDiagnostics,
                             onNotifyRecoveryChange = { value ->
                                 notifyRecovery = value
                                 ModuleSettings.setNotifyOnRecovery(value)
@@ -920,21 +937,16 @@ fun SettingsScreen(
                                 expKeepScreen = value
                                 ModuleSettings.setKeepScreenOnWhileStarting(value)
                             },
-                            onShowHomeDiagnosticsChange = { value ->
-                                showHomeDiagnostics = value
-                                ModuleSettings.setHomeDiagnosticsShown(value)
-                            },
-                            onOpenDiagnosticsLogs = { showDiagnosticsLogsDialog = true },
                             onOpenAccessibility = {
                                 context.startActivity(Intent(context, AccessibilityManagerActivity::class.java))
                             },
                             onRestartService = {
                                 WatchdogManager.attemptRestart(context, force = true)
-                                Toast.makeText(context, "Restart requested", Toast.LENGTH_SHORT).show()
+                                Toast.makeText(context, R.string.settings_restart_requested, Toast.LENGTH_SHORT).show()
                             },
                             onClearUpdateBanner = {
                                 ModuleSettings.clearPendingUpdate()
-                                Toast.makeText(context, "Update banner dismissed", Toast.LENGTH_SHORT).show()
+                                Toast.makeText(context, R.string.settings_banner_dismissed, Toast.LENGTH_SHORT).show()
                             },
                             onRevokeTrusted = { showRevokeDialog = true }
                         )
@@ -961,9 +973,25 @@ fun SettingsScreen(
                 ) {
                     item {
                         SettingsGroup(title = "") {
+                            SwitchSettingsRow(
+                                icon = R.drawable.ic_help_outline_24dp,
+                                title = stringResource(R.string.shake_for_guide_title),
+                                summary = stringResource(
+                                    if (hasAccelerometer) R.string.shake_for_guide_summary
+                                    else R.string.guide_shake_unavailable
+                                ),
+                                checked = shakeGuideEnabled,
+                                enabled = hasAccelerometer || shakeGuideEnabled,
+                                onCheckedChange = ShizukuSettings::setShakeForGuideEnabled
+                            )
+                        }
+                    }
+                    item {
+                        ExpressiveSegmentedSection(title = "") {
                             SettingsSection.entries.forEachIndexed { index, section ->
-                                if (index > 0) GroupDivider()
-                                SettingsRow(
+                                ExpressiveSegmentedItem(
+                                    index = index,
+                                    count = SettingsSection.entries.size,
                                     icon = section.iconRes,
                                     title = stringResource(section.titleRes),
                                     summary = stringResource(section.summaryRes),
@@ -990,13 +1018,6 @@ fun SettingsScreen(
                                         } else {
                                             nav = SettingsNav.Section(section)
                                         }
-                                    },
-                                    trailing = {
-                                        Icon(
-                                            imageVector = Icons.Rounded.ChevronRight,
-                                            contentDescription = null,
-                                            tint = MaterialTheme.colorScheme.onSurfaceVariant
-                                        )
                                     }
                                 )
                             }
@@ -1005,12 +1026,6 @@ fun SettingsScreen(
                 }
             }
         }
-    }
-
-    if (showDiagnosticsLogsDialog) {
-        SheverySmartLogsDialog(
-            onDismiss = { showDiagnosticsLogsDialog = false }
-        )
     }
 
     if (showLanguageDialog) {
@@ -1135,7 +1150,7 @@ fun SettingsScreen(
                                 }
                             ) {
                                 Icon(
-                                    imageVector = Icons.Rounded.Refresh,
+                                    painter = painterResource(R.drawable.ic_server_restart),
                                     contentDescription = stringResource(R.string.settings_tcp_port_randomize_action)
                                 )
                             }
@@ -1432,7 +1447,7 @@ fun SettingsScreen(
                     onClick = {
                         showRevokeDialog = false
                         ModuleSettings.clearTrustedModules()
-                        Toast.makeText(context, "Trusted modules revoked", Toast.LENGTH_SHORT).show()
+                        Toast.makeText(context, R.string.settings_trust_revoked, Toast.LENGTH_SHORT).show()
                     }
                 ) {
                     Text(stringResource(android.R.string.ok))
@@ -1573,13 +1588,10 @@ private fun LazyListScope.applicationSectionContent(
 private fun LazyListScope.appearanceSectionContent(
     languageSummary: String,
     nightSummary: String,
-    nightMode: Int,
-    blackNightTheme: Boolean,
     useSystemColor: Boolean,
     classicNav: Boolean,
     onLanguageClick: () -> Unit,
     onNightClick: () -> Unit,
-    onBlackNightChange: (Boolean) -> Unit,
     onUseSystemColorChange: (Boolean) -> Unit,
     onClassicNavChange: (Boolean) -> Unit,
     swipeBetweenTabs: Boolean,
@@ -1594,8 +1606,9 @@ private fun LazyListScope.appearanceSectionContent(
     onAutoscaleAppChange: (Boolean) -> Unit
 ) {
     item {
-        SettingsGroup(title = stringResource(R.string.settings_language)) {
-            SettingsRow(
+        ExpressiveSegmentedSection(title = stringResource(R.string.settings_language)) {
+            ExpressiveSegmentedItem(
+                index = 0, count = 1,
                 icon = R.drawable.ic_outline_translate_24,
                 title = stringResource(R.string.settings_language),
                 summary = languageSummary,
@@ -1604,58 +1617,63 @@ private fun LazyListScope.appearanceSectionContent(
         }
     }
     item {
-        SettingsGroup(title = stringResource(R.string.settings_appearance)) {
-            SettingsRow(
+        ExpressiveSegmentedSection(title = stringResource(R.string.settings_appearance)) {
+            val dynamicColorAvailable = Build.VERSION.SDK_INT >= Build.VERSION_CODES.S
+            val count = if (dynamicColorAvailable) 6 else 5
+            val offset = if (dynamicColorAvailable) 1 else 0
+            ExpressiveSegmentedItem(
+                index = 0, count = count,
                 icon = R.drawable.ic_outline_dark_mode_24,
                 title = stringResource(rikka.core.R.string.dark_theme),
                 summary = nightSummary,
                 onClick = onNightClick
             )
-            if (nightMode != AppCompatDelegate.MODE_NIGHT_NO) {
-                GroupDivider()
-                SwitchSettingsRow(
-                    icon = R.drawable.ic_outline_dark_mode_24,
-                    title = stringResource(R.string.settings_black_night_theme),
-                    summary = stringResource(R.string.settings_black_night_theme_summary),
-                    checked = blackNightTheme,
-                    onCheckedChange = onBlackNightChange
-                )
-            }
-            if (Build.VERSION.SDK_INT >= Build.VERSION_CODES.S) {
-                GroupDivider()
-                SwitchSettingsRow(
+            if (dynamicColorAvailable) {
+                ExpressiveSegmentedToggle(
+                    index = 1, count = count,
                     icon = R.drawable.ic_settings_outline_24dp,
                     title = stringResource(R.string.settings_use_system_color),
                     checked = useSystemColor,
                     onCheckedChange = onUseSystemColorChange
                 )
             }
-            GroupDivider()
-            SwitchSettingsRow(
+            ExpressiveSegmentedToggle(
+                index = 1 + offset, count = count,
                 icon = R.drawable.ic_system_icon,
                 title = stringResource(R.string.settings_classic_nav),
                 summary = stringResource(R.string.settings_classic_nav_summary),
                 checked = classicNav,
                 onCheckedChange = onClassicNavChange
             )
-            GroupDivider()
-            SwitchSettingsRow(
+            ExpressiveSegmentedToggle(
+                index = 2 + offset, count = count,
                 icon = R.drawable.ic_outline_play_arrow_24,
                 title = stringResource(R.string.settings_swipe_between_tabs),
                 summary = stringResource(R.string.settings_swipe_between_tabs_summary),
                 checked = swipeBetweenTabs,
                 onCheckedChange = onSwipeBetweenTabsChange
             )
-            GroupDivider()
-            SwitchSettingsRow(
+            ExpressiveSegmentedToggle(
+                index = 3 + offset, count = count,
                 icon = R.drawable.ic_code_24dp,
                 title = stringResource(R.string.settings_motion_blur),
                 summary = stringResource(R.string.settings_motion_blur_summary),
                 checked = motionBlur,
                 onCheckedChange = onMotionBlurChange
             )
-            if (motionBlur) {
-                GroupDivider()
+            ExpressiveSegmentedToggle(
+                index = 4 + offset, count = count,
+                icon = R.drawable.ic_system_icon,
+                title = stringResource(R.string.settings_autoscale_app),
+                summary = stringResource(R.string.settings_autoscale_app_summary),
+                checked = autoscaleApp,
+                onCheckedChange = onAutoscaleAppChange
+            )
+        }
+    }
+    if (motionBlur) {
+        item {
+            SettingsGroup(title = stringResource(R.string.settings_motion_blur)) {
                 MotionBlurSliderRow(
                     icon = R.drawable.ic_code_24dp,
                     title = stringResource(R.string.settings_motion_blur_intensity),
@@ -1672,14 +1690,6 @@ private fun LazyListScope.appearanceSectionContent(
                     onValueChange = onMotionBlurStrengthChange
                 )
             }
-            GroupDivider()
-            SwitchSettingsRow(
-                icon = R.drawable.ic_system_icon,
-                title = stringResource(R.string.settings_autoscale_app),
-                summary = stringResource(R.string.settings_autoscale_app_summary),
-                checked = autoscaleApp,
-                onCheckedChange = onAutoscaleAppChange
-            )
         }
     }
 }
@@ -1730,40 +1740,43 @@ private fun LazyListScope.modulesSectionContent(
     onRecommandActionChange: (Boolean) -> Unit
 ) {
     item {
-        SettingsGroup(title = stringResource(R.string.modules_settings_title)) {
-            SettingsRow(
+        ExpressiveSegmentedSection(title = stringResource(R.string.modules_settings_title)) {
+            val custom = moduleAccessMode == ModuleSettings.AccessMode.CUSTOM
+            val count = if (custom) 5 else 4
+            ExpressiveSegmentedItem(
+                index = 0, count = count,
                 icon = R.drawable.ic_settings_outline_24dp,
                 title = stringResource(R.string.modules_access_mode),
                 summary = stringResource(moduleAccessMode.labelRes),
                 onClick = onAccessModeClick
             )
-            if (moduleAccessMode == ModuleSettings.AccessMode.CUSTOM) {
-                GroupDivider()
-                SettingsRow(
+            if (custom) {
+                ExpressiveSegmentedItem(
+                    index = 1, count = count,
                     icon = R.drawable.ic_add_24,
                     title = stringResource(R.string.modules_custom_permissions),
                     summary = stringResource(R.string.modules_custom_permissions_summary),
                     onClick = onCustomPermissionsClick
                 )
             }
-            GroupDivider()
-            SwitchSettingsRow(
+            ExpressiveSegmentedToggle(
+                index = 1 + if (custom) 1 else 0, count = count,
                 icon = R.drawable.ic_outline_play_arrow_24,
                 title = stringResource(R.string.modules_background_actions),
                 summary = stringResource(R.string.modules_background_actions_summary),
                 checked = moduleBackground,
                 onCheckedChange = onBackgroundChange
             )
-            GroupDivider()
-            SwitchSettingsRow(
+            ExpressiveSegmentedToggle(
+                index = 2 + if (custom) 1 else 0, count = count,
                 icon = R.drawable.ic_warning_24,
                 title = stringResource(R.string.modules_recommand_webui),
                 summary = stringResource(R.string.modules_recommand_webui_summary),
                 checked = recommandWebUi,
                 onCheckedChange = onRecommandWebUiChange
             )
-            GroupDivider()
-            SwitchSettingsRow(
+            ExpressiveSegmentedToggle(
+                index = 3 + if (custom) 1 else 0, count = count,
                 icon = R.drawable.ic_warning_24,
                 title = stringResource(R.string.modules_recommand_action),
                 summary = stringResource(R.string.modules_recommand_action_summary),
@@ -1778,8 +1791,9 @@ private fun LazyListScope.updatesSectionContent(
     onUpdateSettingsClick: () -> Unit
 ) {
     item {
-        SettingsGroup(title = stringResource(R.string.settings_update_group_title)) {
-            SettingsRow(
+        ExpressiveSegmentedSection(title = stringResource(R.string.settings_update_group_title)) {
+            ExpressiveSegmentedItem(
+                index = 0, count = 1,
                 icon = R.drawable.ic_settings_outline_24dp,
                 title = stringResource(R.string.update_settings_title),
                 summary = stringResource(R.string.update_settings_catalog_enabled_summary),
@@ -1808,8 +1822,9 @@ private fun LazyListScope.aiSectionContent(
     onAgentAskModuleChange: (Boolean) -> Unit
 ) {
     item {
-        SettingsGroup(title = stringResource(R.string.comput_settings)) {
-            SettingsRow(
+        ExpressiveSegmentedSection(title = stringResource(R.string.comput_settings)) {
+            ExpressiveSegmentedItem(
+                index = 0, count = 2,
                 icon = R.drawable.ic_code_24dp,
                 title = stringResource(R.string.comput_ai_provider_title),
                 summary = aiProvidersVersion.let {
@@ -1822,8 +1837,8 @@ private fun LazyListScope.aiSectionContent(
                 },
                 onClick = onOpenAiManager
             )
-            GroupDivider()
-            SwitchSettingsRow(
+            ExpressiveSegmentedToggle(
+                index = 1, count = 2,
                 icon = R.drawable.ic_warning_24,
                 title = stringResource(R.string.comput_recommand_title),
                 summary = stringResource(R.string.comput_recommand_summary),
@@ -1880,15 +1895,16 @@ private fun LazyListScope.backupsSectionContent(
     onRestore: () -> Unit
 ) {
     item {
-        SettingsGroup(title = stringResource(R.string.backup_section_title)) {
-            SettingsRow(
+        ExpressiveSegmentedSection(title = stringResource(R.string.backup_section_title)) {
+            ExpressiveSegmentedItem(
+                index = 0, count = 2,
                 icon = R.drawable.ic_backup_24dp,
                 title = stringResource(R.string.backup_title),
                 summary = stringResource(R.string.backup_summary),
                 onClick = onBackup
             )
-            GroupDivider()
-            SettingsRow(
+            ExpressiveSegmentedItem(
+                index = 1, count = 2,
                 icon = R.drawable.ic_settings_backup_restore_24dp,
                 title = stringResource(R.string.restore_title),
                 summary = stringResource(R.string.restore_summary),
@@ -1910,8 +1926,9 @@ private fun LazyListScope.automationSectionContent(
     val shellCommand = "am broadcast -a com.hamondev.shevery.action.START_SERVER -p ${context.packageName} -e auth $authToken"
 
     item {
-        SettingsGroup(title = stringResource(R.string.shizuku_connectors_title)) {
-            SwitchSettingsRow(
+        ExpressiveSegmentedSection(title = stringResource(R.string.shizuku_connectors_title)) {
+            ExpressiveSegmentedToggle(
+                index = 0, count = 1,
                 icon = R.drawable.ic_baseline_link_24,
                 title = stringResource(R.string.shizuku_connectors_title),
                 summary = stringResource(R.string.shizuku_connectors_summary),
@@ -2008,7 +2025,6 @@ private fun LazyListScope.extrasSectionContent(
     expHaptics: Boolean,
     expUptime: Boolean,
     expKeepScreen: Boolean,
-    showHomeDiagnostics: Boolean,
     onNotifyRecoveryChange: (Boolean) -> Unit,
     onAutoRefreshChange: (Boolean) -> Unit,
     onVerboseLoggingChange: (Boolean) -> Unit,
@@ -2016,16 +2032,15 @@ private fun LazyListScope.extrasSectionContent(
     onExpHapticsChange: (Boolean) -> Unit,
     onExpUptimeChange: (Boolean) -> Unit,
     onExpKeepScreenChange: (Boolean) -> Unit,
-    onShowHomeDiagnosticsChange: (Boolean) -> Unit,
-    onOpenDiagnosticsLogs: () -> Unit,
     onOpenAccessibility: () -> Unit,
     onRestartService: () -> Unit,
     onClearUpdateBanner: () -> Unit,
     onRevokeTrusted: () -> Unit
 ) {
     item {
-        SettingsGroup(title = stringResource(R.string.accessibility_manager_lab_group)) {
-            SettingsRow(
+        ExpressiveSegmentedSection(title = stringResource(R.string.accessibility_manager_lab_group)) {
+            ExpressiveSegmentedItem(
+                index = 0, count = 1,
                 icon = R.drawable.ic_system_icon,
                 title = stringResource(R.string.accessibility_manager_lab_title),
                 summary = stringResource(R.string.accessibility_manager_lab_summary),
@@ -2035,16 +2050,17 @@ private fun LazyListScope.extrasSectionContent(
     }
 
     item {
-        SettingsGroup(title = stringResource(R.string.lab_service_behavior_title)) {
-            SwitchSettingsRow(
+        ExpressiveSegmentedSection(title = stringResource(R.string.lab_service_behavior_title)) {
+            ExpressiveSegmentedToggle(
+                index = 0, count = 2,
                 icon = R.drawable.ic_outline_notifications_active_24,
                 title = stringResource(R.string.lab_notify_recovery_title),
                 summary = stringResource(R.string.lab_notify_recovery_summary),
                 checked = notifyRecovery,
                 onCheckedChange = onNotifyRecoveryChange
             )
-            GroupDivider()
-            SwitchSettingsRow(
+            ExpressiveSegmentedToggle(
+                index = 1, count = 2,
                 icon = R.drawable.ic_server_restart,
                 title = stringResource(R.string.lab_auto_refresh_title),
                 summary = stringResource(R.string.lab_auto_refresh_summary),
@@ -2055,16 +2071,17 @@ private fun LazyListScope.extrasSectionContent(
     }
 
     item {
-        SettingsGroup(title = stringResource(R.string.lab_debugging_title)) {
-            SwitchSettingsRow(
+        ExpressiveSegmentedSection(title = stringResource(R.string.lab_debugging_title)) {
+            ExpressiveSegmentedToggle(
+                index = 0, count = 3,
                 icon = R.drawable.ic_adb_24dp,
                 title = stringResource(R.string.lab_verbose_logging_title),
                 summary = stringResource(R.string.lab_verbose_logging_summary),
                 checked = verboseLogging,
                 onCheckedChange = onVerboseLoggingChange
             )
-            GroupDivider()
-            SettingsRow(
+            ExpressiveSegmentedItem(
+                index = 1, count = 3,
                 icon = R.drawable.ic_adb_24dp,
                 title = stringResource(R.string.usb_debugging_hide_title),
                 summary = stringResource(R.string.usb_debugging_hide_open_summary),
@@ -2072,8 +2089,8 @@ private fun LazyListScope.extrasSectionContent(
                     context.startActivity(Intent(context, UsbDebuggingHideActivity::class.java))
                 }
             )
-            GroupDivider()
-            SettingsRow(
+            ExpressiveSegmentedItem(
+                index = 2, count = 3,
                 icon = R.drawable.ic_adb_24dp,
                 title = stringResource(R.string.developer_options_hide_title),
                 summary = stringResource(R.string.developer_options_hide_open_summary),
@@ -2085,8 +2102,9 @@ private fun LazyListScope.extrasSectionContent(
     }
 
     item {
-        SettingsGroup(title = stringResource(R.string.network_firewall_title)) {
-            SettingsRow(
+        ExpressiveSegmentedSection(title = stringResource(R.string.network_firewall_title)) {
+            ExpressiveSegmentedItem(
+                index = 0, count = 1,
                 icon = R.drawable.ic_security_24dp,
                 title = stringResource(R.string.network_firewall_title),
                 summary = stringResource(R.string.network_firewall_open_summary),
@@ -2098,8 +2116,9 @@ private fun LazyListScope.extrasSectionContent(
     }
 
     item {
-        SettingsGroup(title = stringResource(R.string.lab_ai_title)) {
-            SwitchSettingsRow(
+        ExpressiveSegmentedSection(title = stringResource(R.string.lab_ai_title)) {
+            ExpressiveSegmentedToggle(
+                index = 0, count = 1,
                 icon = R.drawable.ic_code_24dp,
                 title = stringResource(R.string.lab_ai_explain_title),
                 summary = stringResource(R.string.lab_ai_explain_summary),
@@ -2110,22 +2129,23 @@ private fun LazyListScope.extrasSectionContent(
     }
 
     item {
-        SettingsGroup(title = stringResource(R.string.lab_maintenance_title)) {
-            SettingsRow(
+        ExpressiveSegmentedSection(title = stringResource(R.string.lab_maintenance_title)) {
+            ExpressiveSegmentedItem(
+                index = 0, count = 3,
                 icon = R.drawable.ic_server_restart,
                 title = stringResource(R.string.lab_restart_service_title),
                 summary = stringResource(R.string.lab_restart_service_summary),
                 onClick = onRestartService
             )
-            GroupDivider()
-            SettingsRow(
+            ExpressiveSegmentedItem(
+                index = 1, count = 3,
                 icon = R.drawable.ic_outline_notifications_active_24,
                 title = stringResource(R.string.lab_clear_update_title),
                 summary = stringResource(R.string.lab_clear_update_summary),
                 onClick = onClearUpdateBanner
             )
-            GroupDivider()
-            SettingsRow(
+            ExpressiveSegmentedItem(
+                index = 2, count = 3,
                 icon = R.drawable.ic_warning_24,
                 title = stringResource(R.string.lab_revoke_trusted_title),
                 summary = stringResource(R.string.lab_revoke_trusted_summary),
@@ -2160,30 +2180,6 @@ private fun LazyListScope.extrasSectionContent(
                 checked = expKeepScreen,
                 onCheckedChange = onExpKeepScreenChange
             )
-            GroupDivider()
-            SettingsRow(
-                icon = R.drawable.ic_outline_info_24,
-                title = stringResource(R.string.lab_home_diagnostics_title),
-                summary = if (showHomeDiagnostics) {
-                    stringResource(R.string.lab_home_diagnostics_summary) + "\n" +
-                        stringResource(R.string.home_diagnostics_tap_hint)
-                } else {
-                    stringResource(R.string.lab_home_diagnostics_summary)
-                },
-                onClick = {
-                    if (showHomeDiagnostics) {
-                        onOpenDiagnosticsLogs()
-                    } else {
-                        onShowHomeDiagnosticsChange(true)
-                    }
-                },
-                trailing = {
-                    ExpressiveSwitch(
-                        checked = showHomeDiagnostics,
-                        onCheckedChange = onShowHomeDiagnosticsChange
-                    )
-                }
-            )
         }
     }
 }
@@ -2194,31 +2190,32 @@ private fun LazyListScope.aboutSectionContent(
     onOpenRecommendations: () -> Unit
 ) {
     item {
-        SettingsGroup(title = stringResource(R.string.action_about)) {
+        ExpressiveSegmentedSection(title = stringResource(R.string.action_about)) {
             val context = LocalContext.current
             val versionName = remember(context) {
                 try {
                     context.packageManager.getPackageInfo(context.packageName, 0).versionName ?: ""
                 } catch (e: Exception) { "" }
             }
-            SettingsRow(
+            ExpressiveSegmentedItem(
+                index = 0, count = 3,
                 icon = R.drawable.ic_outline_info_24,
                 title = stringResource(R.string.app_name),
                 summary = if (versionName.isNotBlank()) "v$versionName" else null,
                 onClick = onOpenAbout
             )
-            GroupDivider()
-            SettingsRow(
+            ExpressiveSegmentedItem(
+                index = 1, count = 3,
                 icon = R.drawable.ic_action_about_24dp,
-                title = "Contributors and Credits",
-                summary = "The people behind Shevery and the projects it is built on",
+                title = stringResource(R.string.settings_contributors_credits),
+                summary = stringResource(R.string.settings_contributors_summary),
                 onClick = onOpenContributorsCredits
             )
-            GroupDivider()
-            SettingsRow(
+            ExpressiveSegmentedItem(
+                index = 2, count = 3,
                 icon = R.drawable.ic_learn_more_24dp,
-                title = "Recommendations",
-                summary = "Shizuku-powered apps picked for Shevery",
+                title = stringResource(R.string.settings_recommendations),
+                summary = stringResource(R.string.settings_recommendations_summary),
                 onClick = onOpenRecommendations
             )
         }
@@ -2323,12 +2320,12 @@ private fun ContributorRow(contributor: Contributor) {
 @Composable
 private fun ContributorsCreditsScreen(onNavigateUp: () -> Unit) {
     ShizukuLazyScaffold(
-        title = "Contributors and Credits",
+        title = stringResource(R.string.settings_contributors_credits),
         onNavigateUp = onNavigateUp,
         bottomInset = 112.dp
     ) {
         item {
-            SettingsGroup(title = "Contributors") {
+            SettingsGroup(title = stringResource(R.string.settings_contributors)) {
                 contributors.forEachIndexed { index, contributor ->
                     if (index > 0) GroupDivider()
                     ContributorRow(contributor)
@@ -2336,7 +2333,7 @@ private fun ContributorsCreditsScreen(onNavigateUp: () -> Unit) {
             }
         }
         item {
-            SettingsGroup(title = "Credits") {
+            SettingsGroup(title = stringResource(R.string.about_credits)) {
                 Text(
                     text = "Projects this fork is built on — code and ideas taken over with thanks, " +
                         "their authors did not commit to this repository.",
@@ -2370,12 +2367,12 @@ private fun RecommendationsScreen(onNavigateUp: () -> Unit) {
     }
 
     ShizukuLazyScaffold(
-        title = "Recommendations",
+        title = stringResource(R.string.settings_recommendations),
         onNavigateUp = onNavigateUp,
         bottomInset = 112.dp
     ) {
         item {
-            SettingsGroup(title = "Recommendations") {
+            SettingsGroup(title = stringResource(R.string.settings_recommendations)) {
                 Text(
                     text = if (isLive) {
                         "Shizuku-powered apps from GitHub. Tap Refresh to reload the list."
@@ -2396,7 +2393,7 @@ private fun RecommendationsScreen(onNavigateUp: () -> Unit) {
                         onClick = { refreshTick++ },
                         enabled = !isLoading
                     ) {
-                        Text(if (isLoading) "Loading…" else "Refresh")
+                        Text(if (isLoading) stringResource(R.string.settings_loading) else stringResource(R.string.home_refresh))
                     }
                     if (isLoading) {
                         CircularProgressIndicator(modifier = Modifier.size(20.dp), strokeWidth = 2.dp)

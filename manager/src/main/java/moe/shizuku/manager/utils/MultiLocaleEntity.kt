@@ -34,7 +34,7 @@ class MultiLocaleEntity : LinkedHashMap<String, String>() {
             }
 
             for (l in keys) {
-                if (l.startsWith(langOnly)) {
+                if (langOnly.isNotEmpty() && l.replace('-', '_').startsWith("${langOnly}_")) {
                     return super.get(l)
                 }
             }

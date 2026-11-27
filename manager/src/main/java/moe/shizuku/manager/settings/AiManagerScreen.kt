@@ -28,6 +28,8 @@ import androidx.compose.ui.res.stringResource
 import androidx.compose.ui.unit.dp
 import kotlinx.coroutines.launch
 import moe.shizuku.manager.R
+import moe.shizuku.manager.guide.GuideTopic
+import moe.shizuku.manager.guide.ShakeGuideHost
 import moe.shizuku.manager.commandium.AiProvider
 import moe.shizuku.manager.commandium.AiProviderRepository
 import moe.shizuku.manager.ui.compose.GroupDivider
@@ -83,6 +85,7 @@ fun AiManagerScreen(
     }
 
     ShizukuExpressiveTheme {
+        ShakeGuideHost(GuideTopic.COMMANDIUM)
         ShizukuLazyScaffold(
             title = stringResource(R.string.comput_ai_manager_title),
             onNavigateUp = onNavigateUp,

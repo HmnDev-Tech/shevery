@@ -7,6 +7,7 @@ import com.hamondev.shevery.api.SheveryPrivilege
 import moe.shizuku.server.IShizukuService
 import rikka.shizuku.Shizuku
 import java.io.BufferedInputStream
+import java.io.ByteArrayOutputStream
 import java.io.File
 import java.security.MessageDigest
 import java.util.Locale
@@ -23,16 +24,20 @@ import kotlinx.coroutines.flow.MutableStateFlow
 import kotlinx.coroutines.flow.StateFlow
 import kotlinx.coroutines.flow.asStateFlow
 import moe.shizuku.manager.module.update.ModuleInstaller
+import moe.shizuku.manager.utils.copyZipBytesTo
+import moe.shizuku.manager.utils.copyVerifiedEntryTo
 import okhttp3.OkHttpClient
 import okhttp3.Request
-import java.util.concurrent.ConcurrentHashMap
 
 object AdbModuleManager {
 
     private const val MODULES_DIR = "adb_modules"
+    internal const val MODULES_RESTORE_BACKUP = ".modules-before-restore"
     private const val DISABLE_FILE = "disable"
     private const val MAX_OUTPUT_CHARS = 48 * 1024
     private const val MAX_EXTRACTED_BYTES = 32L * 1024L * 1024L
+    internal const val MAX_ARCHIVE_BYTES = 40L * 1024L * 1024L
+    private const val MAX_PROP_BYTES = 256L * 1024L
     private const val MAX_ENTRY_COUNT = 512
     private const val SCRIPT_TIMEOUT_SECONDS = 60L
     @Volatile
@@ -40,7 +45,7 @@ object AdbModuleManager {
 
     val idRegex = Regex("[A-Za-z][A-Za-z0-9._-]{1,63}")
     fun isValidModuleId(id: String): Boolean = idRegex.matches(id)
-    private val installMutexes = ConcurrentHashMap<String, Mutex>()
+    internal val storageMutex = Mutex()
 
     // Process-wide scope so downloads, ZIP installs, and module scripts are never
     // cancelled when a Composable dialog/screen leaves the composition.
@@ -53,12 +58,6 @@ object AdbModuleManager {
         _modulesReloadTick.value = _modulesReloadTick.value + 1
     }
 
-    fun cleanupStagingDirs(context: Context) {
-        modulesRoot(context).listFiles { file ->
-            file.isDirectory && file.name.startsWith(".") && file.name.endsWith(".installing")
-        }?.forEach { it.deleteRecursively() }
-    }
-
     enum class ConsoleKind {
         INSTALL,
         ACTION,
@@ -66,6 +65,15 @@ object AdbModuleManager {
     }
 
     // Live output for streaming module actions and installations (KernelSU Next style)
+    private val serviceProcesses = mutableMapOf<String, moe.shizuku.server.IRemoteProcess>()
+    private val _runningServices = MutableStateFlow(setOf<String>())
+    val runningServices = _runningServices.asStateFlow()
+
+    fun stopService(moduleId: String): Boolean {
+        val process = synchronized(serviceProcesses) { serviceProcesses[moduleId] } ?: return false
+        return runCatching { process.destroy() }.isSuccess
+    }
+
     private val _liveOutput = MutableStateFlow<LiveModuleOutput?>(null)
     val liveOutput: StateFlow<LiveModuleOutput?> = _liveOutput.asStateFlow()
     private val sessionLogLock = Any()
@@ -84,6 +92,7 @@ object AdbModuleManager {
         val module: AdbModule? = null
     )
 
+    @Synchronized
     fun modulesRoot(context: Context): File {
         val filesDir = context.filesDir
         // Shell (uid 2000) must be able to traverse to the modules directory, but it
@@ -96,6 +105,10 @@ object AdbModuleManager {
             setExecutable(true, false)
         }
         return File(filesDir, MODULES_DIR).apply {
+            val backup = File(filesDir, MODULES_RESTORE_BACKUP)
+            if (!exists() && backup.exists()) {
+                check(backup.renameTo(this)) { "Unable to recover the previous modules directory." }
+            }
             mkdirs()
             setReadable(true, false)
             setExecutable(true, false)
@@ -103,11 +116,13 @@ object AdbModuleManager {
     }
 
     suspend fun listModules(context: Context): List<AdbModule> = withContext(Dispatchers.IO) {
-        modulesRoot(context)
-            .listFiles { file -> file.isDirectory && !file.name.startsWith(".") }
-            ?.mapNotNull(::readModule)
-            ?.sortedWith(compareBy<AdbModule> { !it.enabled }.thenBy { it.name.lowercase(Locale.ROOT) })
-            .orEmpty()
+        storageMutex.withLock {
+            modulesRoot(context)
+                .listFiles { file -> file.isDirectory && !file.name.startsWith(".") }
+                ?.mapNotNull(::readModule)
+                ?.sortedWith(compareBy<AdbModule> { !it.enabled }.thenBy { it.name.lowercase(Locale.ROOT) })
+                .orEmpty()
+        }
     }
 
     suspend fun install(
@@ -116,7 +131,6 @@ object AdbModuleManager {
         onLog: (String) -> Unit = {},
         onProgress: (Float?) -> Unit = {}
     ): AdbModule = withContext(Dispatchers.IO) {
-        cleanupStagingDirs(context)
         val temp = File.createTempFile("adb_module_", ".zip", context.cacheDir)
         try {
             onLog("- Copying archive to staging cache...")
@@ -126,10 +140,11 @@ object AdbModuleManager {
                 context.contentResolver.openInputStream(uri)
             }
             inputStream?.use { input ->
-                temp.outputStream().use { output -> input.copyTo(output) }
+                temp.outputStream().use { output -> input.copyZipBytesTo(output, MAX_ARCHIVE_BYTES) }
             } ?: error("Unable to read selected ZIP file.")
 
             ZipFile(temp).use { zip ->
+                require(zip.size() <= MAX_ENTRY_COUNT) { "Module ZIP has too many files." }
                 val allEntries = zip.entries().asSequence().toList()
                 onLog("- Opening ZIP archive (${allEntries.size} entries)...")
                 val propEntry = allEntries.firstOrNull {
@@ -146,7 +161,9 @@ object AdbModuleManager {
                     propPath.removeSuffix("module.prop")
                 }
 
-                val props = zip.getInputStream(propEntry).use { parseModuleProp(it.bufferedReader().readText()) }
+                val propBytes = ByteArrayOutputStream()
+                zip.copyVerifiedEntryTo(propEntry, propBytes, MAX_PROP_BYTES)
+                val props = parseModuleProp(propBytes.toString("UTF-8"))
                 val id = props["id"]?.trim().orEmpty()
                 require(idRegex.matches(id)) { "Invalid module id: $id" }
                 val propName = props["name"]?.trim().takeUnless { it.isNullOrEmpty() } ?: id
@@ -162,90 +179,86 @@ object AdbModuleManager {
                 onLog("*********************************************************")
                 onProgress(0.80f)
 
-                val installedModule = installMutexes.getOrPut(id) { Mutex() }.withLock {
+                val installedModule = storageMutex.withLock {
                     val modulesDir = modulesRoot(context)
                     val target = File(modulesDir, id)
                     val staging = File(modulesDir, ".$id.installing")
+                    val backup = File(modulesDir, ".$id.old")
+                    if (!target.exists() && backup.exists()) {
+                        check(backup.renameTo(target)) { "Unable to recover the previous module." }
+                    }
                     val wasTrusted = ModuleSettings.isModuleTrusted(id)
                     val previousFingerprint = if (wasTrusted) moduleFingerprint(target) else null
                     staging.deleteRecursively()
-                    staging.mkdirs()
-                    onLog("- Preparing staging directory .${id}.installing...")
+                    check(staging.mkdir()) { "Unable to create the module staging directory." }
+                    try {
+                        onLog("- Preparing staging directory .${id}.installing...")
 
-                    var entryCount = 0
-                    var extractedBytes = 0L
-                    val totalEntries = allEntries.size.coerceAtLeast(1)
-                    allEntries.forEachIndexed { idx, entry ->
-                        val normalizedName = entry.name.replace('\\', '/').trim('/')
-                        if (normalizedName.isBlank()) return@forEachIndexed
-                        val relativeName = if (rootPrefix.isNotEmpty()) {
-                            if (!normalizedName.startsWith(rootPrefix)) return@forEachIndexed
-                            normalizedName.removePrefix(rootPrefix).trimStart('/')
-                        } else {
-                            normalizedName
-                        }
-                        if (relativeName.isBlank()) return@forEachIndexed
-
-                        entryCount++
-                        require(entryCount <= MAX_ENTRY_COUNT) { "Module ZIP has too many files." }
-                        val cleanName = cleanZipName(relativeName)
-                        val outFile = File(staging, cleanName)
-                        ensureInside(staging, outFile)
-                        if (entry.isDirectory) {
-                            outFile.mkdirs()
-                        } else {
-                            outFile.parentFile?.mkdirs()
-                            var fileBytes = 0L
-                            BufferedInputStream(zip.getInputStream(entry)).use { input ->
-                                outFile.outputStream().use { output ->
-                                    val buffer = ByteArray(8192)
-                                    while (true) {
-                                        val read = input.read(buffer)
-                                        if (read <= 0) break
-                                        extractedBytes += read.toLong()
-                                        fileBytes += read.toLong()
-                                        require(extractedBytes <= MAX_EXTRACTED_BYTES) { "Module ZIP is too large." }
-                                        output.write(buffer, 0, read)
-                                    }
-                                }
+                        val extractedPaths = mutableSetOf<String>()
+                        var extractedBytes = 0L
+                        val totalEntries = allEntries.size.coerceAtLeast(1)
+                        allEntries.forEachIndexed { idx, entry ->
+                            val normalizedName = entry.name.replace('\\', '/').trim('/')
+                            if (normalizedName.isBlank()) return@forEachIndexed
+                            val relativeName = if (rootPrefix.isNotEmpty()) {
+                                if (!normalizedName.startsWith(rootPrefix)) return@forEachIndexed
+                                normalizedName.removePrefix(rootPrefix).trimStart('/')
+                            } else {
+                                normalizedName
                             }
-                            onLog("- Extracting: $cleanName (${formatBytes(fileBytes)})")
-                            onProgress(0.80f + ((idx + 1).toFloat() / totalEntries.toFloat()) * 0.16f)
+                            if (relativeName.isBlank()) return@forEachIndexed
+
+                            val cleanName = cleanZipName(relativeName)
+                            require(extractedPaths.add(cleanName)) { "Duplicate ZIP entry: $cleanName" }
+                            val outFile = File(staging, cleanName)
+                            ensureInside(staging, outFile)
+                            if (entry.isDirectory) {
+                                outFile.mkdirs()
+                            } else {
+                                outFile.parentFile?.mkdirs()
+                                val fileBytes = outFile.outputStream().use { output ->
+                                    zip.copyVerifiedEntryTo(entry, output, MAX_EXTRACTED_BYTES - extractedBytes)
+                                }
+                                extractedBytes += fileBytes
+                                onLog("- Extracting: $cleanName (${formatBytes(fileBytes)})")
+                                onProgress(0.80f + ((idx + 1).toFloat() / totalEntries.toFloat()) * 0.16f)
+                            }
                         }
-                    }
 
-                    // Preserve existing .source.prop across updates if not included in new ZIP
-                    val existingSourceProp = target.resolve(".source.prop")
-                    val stagingSourceProp = staging.resolve(".source.prop")
-                    if (existingSourceProp.isFile && !stagingSourceProp.exists()) {
-                        runCatching { existingSourceProp.copyTo(stagingSourceProp, overwrite = false) }
-                    }
+                        // Preserve existing .source.prop across updates if not included in new ZIP
+                        val existingSourceProp = target.resolve(".source.prop")
+                        val stagingSourceProp = staging.resolve(".source.prop")
+                        if (existingSourceProp.isFile && !stagingSourceProp.exists()) {
+                            runCatching { existingSourceProp.copyTo(stagingSourceProp, overwrite = false) }
+                        }
 
-                    onLog("- Setting executable permissions (chmod 0755) on scripts...")
-                    markScriptsExecutable(staging, props["action"])
-                    val newFingerprint = moduleFingerprint(staging)
-                    onLog("- Moving module into ${target.absolutePath}...")
-                    // Atomic-ish swap: keep the old tree until the new one is in place.
-                    val backup = File(modulesDir, ".$id.old")
-                    backup.deleteRecursively()
-                    if (target.exists()) {
-                        check(target.renameTo(backup)) { "Unable to move the existing module aside." }
+                        onLog("- Setting executable permissions (chmod 0755) on scripts...")
+                        markScriptsExecutable(staging, props["action"])
+                        check(readModule(staging)?.id == id) { "Installed module metadata is invalid." }
+                        onLog("- Moving module into ${target.absolutePath}...")
+                        // Atomic-ish swap: keep the old tree until the new one is in place.
+                        check(backup.deleteRecursively()) { "Unable to clear the old module staging directory." }
+                        if (wasTrusted && (previousFingerprint == null ||
+                                previousFingerprint != moduleFingerprint(staging))) {
+                            // Revoke before publishing the replacement directory.
+                            ModuleSettings.setModuleTrusted(id, false, persistNow = true)
+                            onLog("- Module content changed or could not be verified; Full Trust revoked.")
+                        }
+                        if (target.exists()) {
+                            check(target.renameTo(backup)) { "Unable to move the existing module aside." }
+                        }
+                        if (!staging.renameTo(target)) {
+                            check(!backup.exists() || backup.renameTo(target)) {
+                                "Unable to restore the previous module from ${backup.name}."
+                            }
+                            error("Unable to move module into storage.")
+                        }
+                        backup.deleteRecursively()
+                        onProgress(1.0f)
+                        readModule(target) ?: error("Installed module is unreadable.")
+                    } finally {
+                        staging.deleteRecursively()
                     }
-                    if (!staging.renameTo(target)) {
-                        if (backup.exists()) backup.renameTo(target)
-                        error("Unable to move module into storage.")
-                    }
-                    backup.deleteRecursively()
-                    if (wasTrusted && previousFingerprint != null &&
-                        newFingerprint != null && previousFingerprint != newFingerprint
-                    ) {
-                        // Trust belongs to the content the user approved, never to an id.
-                        ModuleSettings.setModuleTrusted(id, false)
-                        onLog("- Module content changed; Full Trust revoked.")
-                    }
-                    markScriptsExecutable(target, props["action"])
-                    onProgress(1.0f)
-                    readModule(target) ?: error("Installed module is unreadable.")
                 }
                 notifyModulesChanged()
                 installedModule
@@ -256,19 +269,23 @@ object AdbModuleManager {
     }
 
     suspend fun setEnabled(module: AdbModule, enabled: Boolean) = withContext(Dispatchers.IO) {
-        val disableFile = module.directory.resolve(DISABLE_FILE)
-        if (enabled) {
-            disableFile.delete()
-        } else {
-            disableFile.writeText("disabled")
+        storageMutex.withLock {
+            val disableFile = module.directory.resolve(DISABLE_FILE)
+            if (enabled) {
+                disableFile.delete()
+            } else {
+                disableFile.writeText("disabled")
+            }
+            notifyModulesChanged()
         }
-        notifyModulesChanged()
     }
 
     suspend fun delete(module: AdbModule) = withContext(Dispatchers.IO) {
-        ModuleSettings.setModuleTrusted(module.id, false)
-        module.directory.deleteRecursively()
-        notifyModulesChanged()
+        storageMutex.withLock {
+            ModuleSettings.setModuleTrusted(module.id, false)
+            module.directory.deleteRecursively()
+            notifyModulesChanged()
+        }
     }
 
     suspend fun runAction(module: AdbModule): ModuleActionResult = withContext(Dispatchers.IO) {
@@ -287,7 +304,7 @@ object AdbModuleManager {
         check(ModuleSettings.canRunService(module)) { "serviceScript is blocked by module access policy." }
         check(ModuleSettings.canRunBackground(module)) { "Background actions are disabled." }
         val script = module.serviceScript?.takeIf { it.isFile } ?: error("This module has no service script.")
-        runModuleScript(module, script, module.lastServiceLog)
+        runModuleScriptStreaming(module, script, module.lastServiceLog, kind = ConsoleKind.SERVICE)
     }
 
     suspend fun runServiceStreaming(module: AdbModule): ModuleActionResult = withContext(Dispatchers.IO) {
@@ -665,147 +682,158 @@ object AdbModuleManager {
             appendLine("cd \"\$MODDIR\" 2>/dev/null || cd /data/local/tmp 2>/dev/null || true")
             appendLine(scriptContent)
         }
-        val remote = service.newProcess(
-            arrayOf("sh", "-c", wrappedScript),
-            env,
-            "/data/local/tmp"
-        )
-
-        runCatching { ParcelFileDescriptor.AutoCloseOutputStream(remote.getOutputStream()).close() }
-        val stdoutPfd = remote.getInputStream()
-        val stderrPfd = remote.getErrorStream()
-        var stdout = ""
-        var stderr = ""
-        val stdoutThread = Thread {
-            if (live) {
-                val collected = StringBuilder()
-                try {
-                    ParcelFileDescriptor.AutoCloseInputStream(stdoutPfd).bufferedReader(Charsets.UTF_8).use { r ->
-                        val buffer = CharArray(256)
-                        while (true) {
-                            val read = r.read(buffer)
-                            if (read <= 0) break
-                            val chunk = String(buffer, 0, read)
-                            val snapshot = synchronized(streamingBuffer) {
-                                collected.appendBounded(chunk)
-                                streamingBuffer.appendBounded(chunk)
-                                stdout = collected.toString()
-                                streamingBuffer.toString()
-                            }
-                            updateLiveOutput(
-                                module = module,
-                                text = snapshot.takeLast(MAX_OUTPUT_CHARS),
-                                running = true,
-                                kind = kind,
-                                subtitle = script.name,
-                                succeeded = false,
-                                exitCode = null
-                            )
-                        }
-                    }
-                } catch (ignore: Exception) {
-                } finally {
-                    stdout = collected.toString()
-                }
-            } else {
-                try {
-                    stdout = ModuleNative.readPfdTail(stdoutPfd, MAX_OUTPUT_CHARS)
-                        ?: readStreamTail(ParcelFileDescriptor.AutoCloseInputStream(stdoutPfd))
-                } catch (ignore: Exception) { }
+        fun startProcess() = service.newProcess(arrayOf("sh", "-c", wrappedScript), env, "/data/local/tmp")
+        val isService = kind == ConsoleKind.SERVICE
+        val remote = if (isService) synchronized(serviceProcesses) {
+            check(module.id !in serviceProcesses) { "Module service is already running." }
+            startProcess().also {
+                serviceProcesses[module.id] = it
+                _runningServices.value = serviceProcesses.keys.toSet()
             }
-        }
-        val stderrThread = Thread {
-            if (live) {
-                val collected = StringBuilder()
-                try {
-                    ParcelFileDescriptor.AutoCloseInputStream(stderrPfd).bufferedReader(Charsets.UTF_8).use { r ->
-                        val buffer = CharArray(256)
-                        while (true) {
-                            val read = r.read(buffer)
-                            if (read <= 0) break
-                            val chunk = String(buffer, 0, read)
-                            val snapshot = synchronized(streamingBuffer) {
-                                collected.appendBounded(chunk)
-                                streamingBuffer.appendBounded(chunk)
-                                stderr = collected.toString()
-                                streamingBuffer.toString()
+        } else startProcess()
+        try {
+            runCatching { ParcelFileDescriptor.AutoCloseOutputStream(remote.getOutputStream()).close() }
+            val stdoutPfd = remote.getInputStream()
+            val stderrPfd = remote.getErrorStream()
+            var stdout = ""
+            var stderr = ""
+            val stdoutThread = Thread {
+                if (live) {
+                    val collected = StringBuilder()
+                    try {
+                        ParcelFileDescriptor.AutoCloseInputStream(stdoutPfd).bufferedReader(Charsets.UTF_8).use { r ->
+                            val buffer = CharArray(256)
+                            while (true) {
+                                val read = r.read(buffer)
+                                if (read <= 0) break
+                                val chunk = String(buffer, 0, read)
+                                val snapshot = synchronized(streamingBuffer) {
+                                    collected.appendBounded(chunk)
+                                    streamingBuffer.appendBounded(chunk)
+                                    stdout = collected.toString()
+                                    streamingBuffer.toString()
+                                }
+                                updateLiveOutput(
+                                    module = module,
+                                    text = snapshot.takeLast(MAX_OUTPUT_CHARS),
+                                    running = true,
+                                    kind = kind,
+                                    subtitle = script.name,
+                                    succeeded = false,
+                                    exitCode = null
+                                )
                             }
-                            updateLiveOutput(
-                                module = module,
-                                text = snapshot.takeLast(MAX_OUTPUT_CHARS),
-                                running = true,
-                                kind = kind,
-                                subtitle = script.name,
-                                succeeded = false,
-                                exitCode = null
-                            )
                         }
+                    } catch (ignore: Exception) {
+                    } finally {
+                        stdout = collected.toString()
                     }
-                } catch (ignore: Exception) {
-                } finally {
-                    stderr = collected.toString()
-                }
-            } else {
-                try {
-                    stderr = ModuleNative.readPfdTail(stderrPfd, MAX_OUTPUT_CHARS)
-                        ?: readStreamTail(ParcelFileDescriptor.AutoCloseInputStream(stderrPfd))
-                } catch (ignore: Exception) { }
-            }
-        }
-        stdoutThread.start()
-        stderrThread.start()
-        val finished = remote.waitForTimeout(SCRIPT_TIMEOUT_SECONDS, TimeUnit.SECONDS.name)
-        val exitCode = if (finished) {
-            remote.exitValue()
-        } else {
-            remote.destroy()
-            try { stdoutPfd.close() } catch (ignore: Exception) {}
-            try { stderrPfd.close() } catch (ignore: Exception) {}
-            124
-        }
-        stdoutThread.join(3000)
-        stderrThread.join(3000)
-
-        if (live) {
-            val footer = buildString {
-                if (streamingBuffer.isNotEmpty() && !streamingBuffer.endsWith("\n")) {
-                    appendLine()
-                }
-                if (stdout.isBlank() && stderr.isBlank()) {
-                    appendLine("(Process completed with no console output)")
-                }
-                appendLine("---------------------------------------------------------")
-                if (!finished) {
-                    appendLine("[!] Process timed out after ${SCRIPT_TIMEOUT_SECONDS}s (exit code 124)")
-                } else if (exitCode == 0) {
-                    appendLine("[✓] Process finished with exit code 0")
                 } else {
-                    appendLine("[!] Process exited with code $exitCode")
+                    try {
+                        stdout = ModuleNative.readPfdTail(stdoutPfd, MAX_OUTPUT_CHARS)
+                            ?: readStreamTail(ParcelFileDescriptor.AutoCloseInputStream(stdoutPfd))
+                    } catch (ignore: Exception) { }
                 }
-                appendLine("*********************************************************")
             }
-            val snapshot = synchronized(streamingBuffer) {
-                streamingBuffer.appendBounded(footer)
-                streamingBuffer.toString()
+            val stderrThread = Thread {
+                if (live) {
+                    val collected = StringBuilder()
+                    try {
+                        ParcelFileDescriptor.AutoCloseInputStream(stderrPfd).bufferedReader(Charsets.UTF_8).use { r ->
+                            val buffer = CharArray(256)
+                            while (true) {
+                                val read = r.read(buffer)
+                                if (read <= 0) break
+                                val chunk = String(buffer, 0, read)
+                                val snapshot = synchronized(streamingBuffer) {
+                                    collected.appendBounded(chunk)
+                                    streamingBuffer.appendBounded(chunk)
+                                    stderr = collected.toString()
+                                    streamingBuffer.toString()
+                                }
+                                updateLiveOutput(
+                                    module = module,
+                                    text = snapshot.takeLast(MAX_OUTPUT_CHARS),
+                                    running = true,
+                                    kind = kind,
+                                    subtitle = script.name,
+                                    succeeded = false,
+                                    exitCode = null
+                                )
+                            }
+                        }
+                    } catch (ignore: Exception) {
+                    } finally {
+                        stderr = collected.toString()
+                    }
+                } else {
+                    try {
+                        stderr = ModuleNative.readPfdTail(stderrPfd, MAX_OUTPUT_CHARS)
+                            ?: readStreamTail(ParcelFileDescriptor.AutoCloseInputStream(stderrPfd))
+                    } catch (ignore: Exception) { }
+                }
             }
-            updateLiveOutput(
-                module = module,
-                text = snapshot.takeLast(MAX_OUTPUT_CHARS),
-                running = false,
-                kind = kind,
-                subtitle = script.name,
-                succeeded = finished && exitCode == 0,
-                exitCode = exitCode
-            )
-        }
+            stdoutThread.start()
+            stderrThread.start()
+            val finished = remote.waitForTimeout(SCRIPT_TIMEOUT_SECONDS, TimeUnit.SECONDS.name)
+            val exitCode = if (finished) {
+                remote.exitValue()
+            } else {
+                remote.destroy()
+                try { stdoutPfd.close() } catch (ignore: Exception) {}
+                try { stderrPfd.close() } catch (ignore: Exception) {}
+                124
+            }
+            stdoutThread.join(3000)
+            stderrThread.join(3000)
 
-        val result = ModuleActionResult(
-            exitCode = exitCode,
-            stdout = stdout.takeLast(MAX_OUTPUT_CHARS),
-            stderr = stderr.takeLast(MAX_OUTPUT_CHARS)
-        )
-        writeLastLog(logFile, module, script, result, finished)
-        return result
+            if (live) {
+                val footer = buildString {
+                    if (streamingBuffer.isNotEmpty() && !streamingBuffer.endsWith("\n")) {
+                        appendLine()
+                    }
+                    if (stdout.isBlank() && stderr.isBlank()) {
+                        appendLine("(Process completed with no console output)")
+                    }
+                    appendLine("---------------------------------------------------------")
+                    if (!finished) {
+                        appendLine("[!] Process timed out after ${SCRIPT_TIMEOUT_SECONDS}s (exit code 124)")
+                    } else if (exitCode == 0) {
+                        appendLine("[✓] Process finished with exit code 0")
+                    } else {
+                        appendLine("[!] Process exited with code $exitCode")
+                    }
+                    appendLine("*********************************************************")
+                }
+                val snapshot = synchronized(streamingBuffer) {
+                    streamingBuffer.appendBounded(footer)
+                    streamingBuffer.toString()
+                }
+                updateLiveOutput(
+                    module = module,
+                    text = snapshot.takeLast(MAX_OUTPUT_CHARS),
+                    running = false,
+                    kind = kind,
+                    subtitle = script.name,
+                    succeeded = finished && exitCode == 0,
+                    exitCode = exitCode
+                )
+            }
+
+            val result = ModuleActionResult(
+                exitCode = exitCode,
+                stdout = stdout.takeLast(MAX_OUTPUT_CHARS),
+                stderr = stderr.takeLast(MAX_OUTPUT_CHARS)
+            )
+            writeLastLog(logFile, module, script, result, finished)
+            return result
+        } finally {
+            if (isService) synchronized(serviceProcesses) {
+                serviceProcesses.remove(module.id)
+                _runningServices.value = serviceProcesses.keys.toSet()
+            }
+            runCatching { remote.destroy() }
+        }
     }
 
     private fun beginConsoleSession(
@@ -920,26 +948,29 @@ object AdbModuleManager {
     private fun moduleFingerprint(directory: File): String? {
         if (!directory.isDirectory) return null
         if (ModuleNative.isAvailable) {
-            ModuleNative.nativeModuleFingerprint(directory.absolutePath)?.let { return it }
+            return ModuleNative.nativeModuleFingerprint(directory.absolutePath)
         }
         return try {
             val digest = MessageDigest.getInstance("SHA-256")
+            val fileDigest = MessageDigest.getInstance("SHA-256")
+            val buffer = ByteArray(8192)
             val files = directory.walkTopDown()
-                .filter { it.isFile && it.name != DISABLE_FILE && it.name != ".source.prop" }
+                .onFail { _, exception -> throw exception }
+                .filter { it.isFile }
                 .sortedBy { it.relativeTo(directory).invariantSeparatorsPath }
             for (file in files) {
                 val relative = file.relativeTo(directory).invariantSeparatorsPath
+                ensureInside(directory, file)
                 digest.update(relative.toByteArray(Charsets.UTF_8))
                 digest.update(0)
                 BufferedInputStream(file.inputStream()).use { input ->
-                    val buffer = ByteArray(8192)
                     while (true) {
                         val read = input.read(buffer)
                         if (read <= 0) break
-                        digest.update(buffer, 0, read)
+                        fileDigest.update(buffer, 0, read)
                     }
                 }
-                digest.update(0)
+                digest.update(fileDigest.digest())
             }
             digest.digest().joinToString("") { "%02x".format(it) }
         } catch (_: Exception) {
@@ -949,7 +980,7 @@ object AdbModuleManager {
 
     fun readModule(directory: File): AdbModule? {
         val propFile = directory.resolve("module.prop")
-        if (!propFile.isFile) return null
+        if (!propFile.isFile || propFile.length() > MAX_PROP_BYTES) return null
 
         val props = parseModuleProp(propFile.readText())
         val id = props["id"]?.trim().orEmpty()
@@ -1062,7 +1093,7 @@ object AdbModuleManager {
         }
     }
 
-    private fun markScriptsExecutable(directory: File, customAction: String?) {
+    internal fun markScriptsExecutable(directory: File, customAction: String?) {
         val declared = customAction?.trim()?.trim('/')
         directory.walkTopDown().forEach { file ->
             file.setReadable(true, false)

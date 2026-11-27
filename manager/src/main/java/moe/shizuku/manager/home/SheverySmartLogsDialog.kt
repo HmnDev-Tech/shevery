@@ -25,9 +25,6 @@ import androidx.compose.foundation.rememberScrollState
 import androidx.compose.foundation.shape.RoundedCornerShape
 import androidx.compose.foundation.text.selection.SelectionContainer
 import androidx.compose.foundation.verticalScroll
-import androidx.compose.material.icons.Icons
-import androidx.compose.material.icons.rounded.ContentCopy
-import androidx.compose.material.icons.rounded.Download
 import androidx.compose.material3.AlertDialog
 import androidx.compose.material3.Button
 import androidx.compose.material3.CircularProgressIndicator
@@ -49,6 +46,7 @@ import androidx.compose.runtime.setValue
 import androidx.compose.ui.Alignment
 import androidx.compose.ui.Modifier
 import androidx.compose.ui.platform.LocalContext
+import androidx.compose.ui.res.painterResource
 import androidx.compose.ui.res.stringResource
 import androidx.compose.ui.text.font.FontFamily
 import androidx.compose.ui.unit.dp
@@ -58,6 +56,8 @@ import kotlinx.coroutines.launch
 import kotlinx.coroutines.withContext
 import moe.shizuku.manager.BuildConfig
 import moe.shizuku.manager.R
+import moe.shizuku.manager.guide.GuideTopic
+import moe.shizuku.manager.guide.ShakeGuideHost
 import moe.shizuku.manager.ShizukuSettings
 import moe.shizuku.manager.module.ModuleSettings
 import moe.shizuku.manager.ui.compose.ShizukuIcon
@@ -92,8 +92,8 @@ internal fun collectSheverySmartLogs(
 ): String {
     val timestamp = SimpleDateFormat("yyyy-MM-dd HH:mm:ss.SSS Z", Locale.US).format(Date())
     val versionName = runCatching {
-        context.packageManager.getPackageInfo(context.packageName, 0).versionName ?: "unknown"
-    }.getOrDefault("unknown")
+        context.packageManager.getPackageInfo(context.packageName, 0).versionName ?: BuildConfig.VERSION_NAME
+    }.getOrDefault(BuildConfig.VERSION_NAME)
 
     val myPid = Process.myPid().toString()
     val myUid = Process.myUid()
@@ -241,6 +241,7 @@ private fun extractWarningsAndErrors(lines: List<String>): List<String> {
 @Composable
 fun SheverySmartLogsDialog(
     diagnosticsSummary: String? = null,
+    snapshotOnly: Boolean = false,
     onDismiss: () -> Unit
 ) {
     val context = LocalContext.current
@@ -249,10 +250,10 @@ fun SheverySmartLogsDialog(
     var isLoading by remember { mutableStateOf(true) }
     var logsText by remember { mutableStateOf("") }
 
-    LaunchedEffect(refreshTick, diagnosticsSummary) {
+    LaunchedEffect(refreshTick, diagnosticsSummary, snapshotOnly) {
         isLoading = true
         logsText = withContext(Dispatchers.IO) {
-            collectSheverySmartLogs(context, diagnosticsSummary)
+            if (snapshotOnly) diagnosticsSummary.orEmpty() else collectSheverySmartLogs(context, diagnosticsSummary)
         }
         isLoading = false
     }
@@ -297,10 +298,10 @@ fun SheverySmartLogsDialog(
                 verticalAlignment = Alignment.CenterVertically
             ) {
                 Text(
-                    text = stringResource(R.string.home_diagnostics_smart_logs_title),
+                    text = stringResource(if (snapshotOnly) R.string.lab_ipc_title else R.string.home_diagnostics_smart_logs_title),
                     modifier = Modifier.weight(1f)
                 )
-                IconButton(
+                if (!snapshotOnly) IconButton(
                     onClick = { refreshTick++ },
                     enabled = !isLoading
                 ) {
@@ -312,12 +313,13 @@ fun SheverySmartLogsDialog(
             }
         },
         text = {
+            ShakeGuideHost(GuideTopic.FAQ)
             Column(
                 modifier = Modifier.fillMaxWidth(),
                 verticalArrangement = Arrangement.spacedBy(10.dp)
             ) {
                 Text(
-                    text = stringResource(R.string.home_diagnostics_smart_logs_subtitle),
+                    text = stringResource(if (snapshotOnly) R.string.lab_ipc_summary else R.string.home_diagnostics_smart_logs_subtitle),
                     style = MaterialTheme.typography.bodySmall,
                     color = MaterialTheme.colorScheme.onSurfaceVariant
                 )
@@ -379,7 +381,7 @@ fun SheverySmartLogsDialog(
                     }
                 ) {
                     Icon(
-                        imageVector = Icons.Rounded.Download,
+                        painter = painterResource(R.drawable.ic_symbol_download_24),
                         contentDescription = null,
                         modifier = Modifier.size(16.dp)
                     )
@@ -398,7 +400,7 @@ fun SheverySmartLogsDialog(
                     }
                 ) {
                     Icon(
-                        imageVector = Icons.Rounded.ContentCopy,
+                        painter = painterResource(R.drawable.ic_content_copy_24),
                         contentDescription = null,
                         modifier = Modifier.size(16.dp)
                     )

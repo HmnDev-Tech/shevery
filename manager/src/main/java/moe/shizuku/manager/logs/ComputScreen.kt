@@ -138,6 +138,8 @@ import kotlinx.coroutines.isActive
 import kotlinx.coroutines.launch
 import kotlinx.coroutines.withContext
 import moe.shizuku.manager.R
+import moe.shizuku.manager.guide.GuideTopic
+import moe.shizuku.manager.guide.ShakeGuideHost
 import moe.shizuku.manager.comput.agent.AgentModuleInfo
 import moe.shizuku.manager.module.AdbModuleManager
 import moe.shizuku.manager.module.ModuleSettings
@@ -231,6 +233,8 @@ fun ComputScreen(
         AiManagerScreen(onNavigateUp = { showAiManager = false }, onChanged = {})
         return
     }
+
+    ShakeGuideHost(GuideTopic.COMPUT)
 
     var isRecording by remember { mutableStateOf(false) }
     val recordedCommands = remember { mutableStateListOf<String>() }
@@ -636,10 +640,6 @@ fun ComputScreen(
                 .fillMaxSize()
                 .padding(innerPadding)
         ) {
-            SnackbarHost(
-                hostState = snackbarHostState,
-                modifier = Modifier.align(Alignment.BottomCenter)
-            )
             LazyColumn(
                 state = listState,
                 modifier = Modifier
@@ -1073,6 +1073,18 @@ fun ComputScreen(
                 )
             }
         }
+            SnackbarHost(
+                hostState = snackbarHostState,
+                modifier = Modifier
+                    .align(Alignment.BottomCenter)
+                    .padding(
+                        bottom = if (navBarState.value) {
+                            88.dp + WindowInsets.navigationBars.asPaddingValues().calculateBottomPadding()
+                        } else {
+                            0.dp
+                        }
+                    )
+            )
     }
 
     // Modal BottomSheet for Commandium AI Studio

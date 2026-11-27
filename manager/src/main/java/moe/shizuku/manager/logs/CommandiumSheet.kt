@@ -64,6 +64,8 @@ import kotlinx.coroutines.CoroutineScope
 import kotlinx.coroutines.Job
 import kotlinx.coroutines.launch
 import moe.shizuku.manager.R
+import moe.shizuku.manager.guide.GuideTopic
+import moe.shizuku.manager.guide.ShakeGuideHost
 import moe.shizuku.manager.commandium.AiModelSwitcherSheet
 import moe.shizuku.manager.module.ModuleSettings
 import moe.shizuku.manager.utils.AiExplainUtil
@@ -125,6 +127,7 @@ fun CommandiumSheet(
             }
         },
         text = {
+            ShakeGuideHost(GuideTopic.COMMANDIUM)
             val scrollState = rememberScrollState()
             Column(
             modifier = Modifier

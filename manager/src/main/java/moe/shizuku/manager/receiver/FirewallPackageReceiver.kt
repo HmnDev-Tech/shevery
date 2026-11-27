@@ -4,6 +4,7 @@ import android.content.BroadcastReceiver
 import android.content.Context
 import android.content.Intent
 import android.os.Build
+import android.os.Process
 import kotlinx.coroutines.CoroutineScope
 import kotlinx.coroutines.Dispatchers
 import kotlinx.coroutines.launch
@@ -21,6 +22,8 @@ class FirewallPackageReceiver : BroadcastReceiver() {
 
         val packageName = intent.data?.schemeSpecificPart ?: return
         if (packageName == context.packageName) return
+        val uid = intent.getIntExtra(Intent.EXTRA_UID, -1)
+        if (uid >= 0 && (uid % 100000) < Process.FIRST_APPLICATION_UID) return
 
         val pendingResult = goAsync()
         CoroutineScope(Dispatchers.IO).launch {

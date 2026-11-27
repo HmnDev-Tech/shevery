@@ -5,6 +5,10 @@ import moe.shizuku.manager.utils.MultiLocaleEntity
 /** Localized documentation and help URLs used throughout the manager UI. */
 object Helps {
 
+    const val SHEVERY_WIKI = "https://github.com/HmnDev-Tech/shevery/wiki"
+
+    fun wiki(page: String): String = "$SHEVERY_WIKI/$page"
+
     @JvmField
     val ADB = MultiLocaleEntity()
 

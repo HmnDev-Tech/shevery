@@ -2,9 +2,9 @@ name: Build Android APK
 
 on:
   push:
-    branches: [ "main", "dev", "nightly" ]
+    branches: [ "main", "dev", "nightly", "feat/expressive-home" ]
   pull_request:
-    branches: [ "main", "dev", "nightly" ]
+    branches: [ "main", "dev", "nightly", "feat/expressive-home" ]
   workflow_dispatch:
 
 # Every run builds and uploads BOTH artifacts: a debug APK and a release APK.
@@ -89,10 +89,12 @@ jobs:
         uses: actions/upload-artifact@v7
         with:
           name: shevery-debug
-          path: manager/build/outputs/apk/debug/*.apk
+          path: out/apk/shevery-v*-debug.apk
+          if-no-files-found: error
 
       - name: Upload release APK Artifact
         uses: actions/upload-artifact@v7
         with:
           name: shevery-release
-          path: manager/build/outputs/apk/release/*.apk
+          path: out/apk/shevery-v*-release.apk
+          if-no-files-found: error

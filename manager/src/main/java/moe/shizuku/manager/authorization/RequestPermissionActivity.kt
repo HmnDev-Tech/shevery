@@ -32,6 +32,8 @@ import com.rosan.dhizuku.shared.DhizukuVariables
 import kotlinx.coroutines.delay
 import moe.shizuku.manager.Helps
 import moe.shizuku.manager.R
+import moe.shizuku.manager.guide.GuideTopic
+import moe.shizuku.manager.guide.ShakeGuideHost
 import moe.shizuku.manager.ShizukuSettings
 import moe.shizuku.manager.app.AppActivity
 import moe.shizuku.manager.deviceowner.DeviceOwnerManager
@@ -625,6 +627,7 @@ class RequestPermissionActivity : AppActivity() {
                         )
                     },
                     text = {
+                        ShakeGuideHost(GuideTopic.AUTHORIZATION)
                         val scopeDesc = if (isDhizuku) {
                             stringResource(R.string.dhizuku_permission_group_description)
                         } else {

@@ -2,7 +2,7 @@ package rikka.shizuku.server;
 
 import android.content.pm.PackageInfo;
 import android.content.pm.PackageManager;
-import android.os.Build;
+import android.os.RemoteException;
 import android.util.AtomicFile;
 
 import androidx.annotation.Nullable;
@@ -16,10 +16,9 @@ import java.io.FileNotFoundException;
 import java.io.FileOutputStream;
 import java.io.IOException;
 import java.io.InputStreamReader;
-import java.util.ArrayList;
-import java.util.LinkedHashSet;
+import java.util.Arrays;
+import java.util.Collections;
 import java.util.List;
-import java.util.Set;
 
 import moe.shizuku.common.util.InstalledPackagesCompat;
 import rikka.hidden.compat.PackageManagerApis;
@@ -92,7 +91,9 @@ public class ShizukuConfigManager extends ConfigManager {
 
         @Override
         public void run() {
-            write(config);
+            synchronized (ShizukuConfigManager.this) {
+                write(config);
+            }
         }
     };
 
@@ -101,56 +102,15 @@ public class ShizukuConfigManager extends ConfigManager {
     public ShizukuConfigManager() {
         this.config = load();
 
-        boolean changed = false;
-
-        if (config.packages == null) {
-            config.packages = new ArrayList<>();
-            changed = true;
-        }
-
-        for (ShizukuConfig.PackageEntry entry : new ArrayList<>(config.packages)) {
-            if (entry.packages == null) {
-                entry.packages = new ArrayList<>();
+        boolean changed = config.reconcilePackages(uid -> {
+            try {
+                String[] packages = PackageManagerApis.getPackagesForUid(uid);
+                return packages == null ? Collections.emptyList() : Arrays.asList(packages);
+            } catch (RemoteException | RuntimeException e) {
+                LOGGER.w(e, "package lookup unavailable for uid %d", uid);
+                return null;
             }
-
-            List<String> packages = PackageManagerApis.getPackagesForUidNoThrow(entry.uid);
-            if (packages.isEmpty()) {
-                LOGGER.i("remove config for uid %d since it has gone", entry.uid);
-                config.packages.remove(entry);
-                changed = true;
-                continue;
-            }
-
-            if (entry.packages.isEmpty()) {
-                entry.packages.addAll(packages);
-                changed = true;
-                continue;
-            }
-
-            boolean packagesChanged = true;
-
-            for (String packageName : entry.packages) {
-                if (packages.contains(packageName)) {
-                    packagesChanged = false;
-                    break;
-                }
-            }
-
-            final int rawSize = entry.packages.size();
-            Set<String> s = new LinkedHashSet<>(entry.packages);
-            entry.packages.clear();
-            entry.packages.addAll(s);
-            final int shrunkSize = entry.packages.size();
-            if (shrunkSize < rawSize) {
-                LOGGER.w("entry.packages has duplicate! Shrunk. (%d -> %d)", rawSize, shrunkSize);
-            }
-
-            if (packagesChanged) {
-                LOGGER.i("remove config for uid %d since the packages for it changed", entry.uid);
-                config.packages.remove(entry);
-                changed = true;
-            }
-        }
+        });
 
         for (int userId : UserManagerApis.getUserIdsNoThrow()) {
             for (PackageInfo pi : InstalledPackagesCompat.getInstalledPackagesNoThrow(PackageManager.GET_PERMISSIONS, userId)) {
@@ -174,17 +134,17 @@ public class ShizukuConfigManager extends ConfigManager {
                     continue;
                 }
 
-                List<String> packages = new ArrayList<>();
-                packages.add(pi.packageName);
-
                 // CRITICAL: NEVER revoke an existing grant during startup reconciliation.
                 // Shevery manages client app grants internally via Application Management (shizuku.json).
                 // checkPermission returns PERMISSION_DENIED for standard third-party apps because
                 // PRIVILEGED_API is a signature-level permission.
                 // Only grant if the system permission is actually held (e.g. system signature app).
                 if (allowed) {
-                    updateLocked(uid, packages, ConfigManager.MASK_PERMISSION, ConfigManager.FLAG_ALLOWED);
-                    changed = true;
+                    List<String> packages = PackageManagerApis.getPackagesForUidNoThrow(uid);
+                    if (!packages.contains(pi.packageName)) {
+                        continue;
+                    }
+                    changed |= updateLocked(uid, packages, ConfigManager.MASK_PERMISSION, ConfigManager.FLAG_ALLOWED);
                 }
             }
         }
@@ -212,37 +172,65 @@ public class ShizukuConfigManager extends ConfigManager {
     @Nullable
     public ShizukuConfig.PackageEntry find(int uid) {
         synchronized (this) {
-            return findLocked(uid);
+            ShizukuConfig.PackageEntry entry = findLocked(uid);
+            if (entry == null) {
+                return null;
+            }
+
+            // An installed package can reuse an uninstalled package's UID while the server runs.
+            List<String> currentPackages = PackageManagerApis.getPackagesForUidNoThrow(uid);
+            if (currentPackages.isEmpty()) {
+                return null;
+            }
+            if (Collections.disjoint(entry.packages, currentPackages)) {
+                LOGGER.i("remove config for uid %d since the packages for it changed", uid);
+                removeLocked(uid);
+                return null;
+            }
+            return entry;
         }
     }
 
-    private void updateLocked(int uid, List<String> packages, int mask, int values) {
+    private boolean updateLocked(int uid, List<String> packages, int mask, int values) {
         ShizukuConfig.PackageEntry entry = findLocked(uid);
+        if (packages == null || packages.isEmpty()) {
+            // Refuse to create or grant an entry with no confirmed package identity.
+            if (entry == null || (mask & values & FLAG_ALLOWED) != 0) {
+                return false;
+            }
+            packages = Collections.emptyList();
+        } else if (entry != null && Collections.disjoint(entry.packages, packages)) {
+            config.packages.remove(entry);
+            entry = null;
+        }
+        boolean changed = false;
         if (entry == null) {
             entry = new ShizukuConfig.PackageEntry(uid, mask & values);
             config.packages.add(entry);
+            changed = true;
         } else {
             int newValue = (entry.flags & ~mask) | (mask & values);
-            if (newValue == entry.flags) {
-                return;
-            }
-            entry.flags = newValue;
-        }
-        if (packages != null) {
-            for (String packageName : packages) {
-                if (entry.packages.contains(packageName)) {
-                    continue;
-                }
-                entry.packages.add(packageName);
+            if (newValue != entry.flags) {
+                entry.flags = newValue;
+                changed = true;
             }
         }
-        scheduleWriteLocked();
+        for (String packageName : packages) {
+            if (entry.packages.contains(packageName)) {
+                continue;
+            }
+            entry.packages.add(packageName);
+            changed = true;
+        }
+        return changed;
     }
 
     @Override
     public void update(int uid, List<String> packages, int mask, int values) {
         synchronized (this) {
-            updateLocked(uid, packages, mask, values);
+            if (updateLocked(uid, packages, mask, values)) {
+                scheduleWriteLocked();
+            }
         }
     }
 

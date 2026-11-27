@@ -1,14 +1,20 @@
 package moe.shizuku.manager.module
 
-import android.app.Activity
+import android.app.AlertDialog
 import android.content.Intent
 import android.net.Uri
 import android.os.Build
 import android.os.Bundle
 import android.widget.Toast
+import androidx.activity.ComponentActivity
+import androidx.lifecycle.lifecycleScope
+import kotlinx.coroutines.Dispatchers
+import kotlinx.coroutines.launch
+import kotlinx.coroutines.withContext
 import moe.shizuku.manager.MainActivity
 import moe.shizuku.manager.R
 import moe.shizuku.manager.home.HomeActivity
+import moe.shizuku.manager.utils.copyZipBytesTo
 import java.io.File
 
 /**
@@ -19,7 +25,7 @@ import java.io.File
  * copied into our own cache first, then the main screen is opened on the ADB
  * Modules tab with the cached path.
  */
-class InstallZipModuleActivity : Activity() {
+class InstallZipModuleActivity : ComponentActivity() {
 
     override fun onCreate(savedInstanceState: Bundle?) {
         super.onCreate(savedInstanceState)
@@ -30,28 +36,39 @@ class InstallZipModuleActivity : Activity() {
             return
         }
 
-        val cached = copyToCache(source)
-        if (cached == null) {
-            Toast.makeText(
-                this,
-                getString(R.string.modules_install_failed, getString(R.string.modules_zip_unreadable)),
-                Toast.LENGTH_LONG
-            ).show()
-            finish()
-            return
-        }
+        AlertDialog.Builder(this)
+            .setMessage(R.string.modules_install_zip_module)
+            .setPositiveButton(R.string.modules_install_zip) { _, _ -> installFrom(source) }
+            .setNegativeButton(android.R.string.cancel) { _, _ -> finish() }
+            .setOnCancelListener { finish() }
+            .show()
+    }
 
-        startActivity(
-            Intent(this, MainActivity::class.java).apply {
-                putExtra(HomeActivity.EXTRA_ZIP_PATH, cached.absolutePath)
-                addFlags(
-                    Intent.FLAG_ACTIVITY_NEW_TASK or
-                        Intent.FLAG_ACTIVITY_CLEAR_TOP or
-                        Intent.FLAG_ACTIVITY_SINGLE_TOP
-                )
+    private fun installFrom(source: Uri) {
+        lifecycleScope.launch {
+            val cached = withContext(Dispatchers.IO) { copyToCache(source) }
+            if (cached == null) {
+                Toast.makeText(
+                    this@InstallZipModuleActivity,
+                    getString(R.string.modules_install_failed, getString(R.string.modules_zip_unreadable)),
+                    Toast.LENGTH_LONG
+                ).show()
+                finish()
+                return@launch
             }
-        )
-        finish()
+            confirmedArchives.add(cached.absolutePath)
+            startActivity(
+                Intent(this@InstallZipModuleActivity, MainActivity::class.java).apply {
+                    putExtra(HomeActivity.EXTRA_ZIP_PATH, cached.absolutePath)
+                    addFlags(
+                        Intent.FLAG_ACTIVITY_NEW_TASK or
+                            Intent.FLAG_ACTIVITY_CLEAR_TOP or
+                            Intent.FLAG_ACTIVITY_SINGLE_TOP
+                    )
+                }
+            )
+            finish()
+        }
     }
 
     private fun resolveZipUri(intent: Intent?): Uri? {
@@ -84,7 +101,6 @@ class InstallZipModuleActivity : Activity() {
     }
 
     private fun copyToCache(uri: Uri): File? {
-        val target = File(cacheDir, "shared_module_${System.currentTimeMillis()}.zip")
         return try {
             val input = if (uri.scheme.equals("file", ignoreCase = true)) {
                 uri.path?.let { File(it).inputStream() }
@@ -93,15 +109,19 @@ class InstallZipModuleActivity : Activity() {
             } ?: return null
 
             input.use { source ->
-                target.outputStream().use { output -> source.copyTo(output) }
+                val target = File.createTempFile(CACHE_PREFIX, ".zip", cacheDir)
+                try {
+                    target.outputStream().use { output ->
+                        source.copyZipBytesTo(output, AdbModuleManager.MAX_ARCHIVE_BYTES)
+                    }
+                    check(isLikelyZipFile(target))
+                    target
+                } catch (_: Exception) {
+                    target.delete()
+                    null
+                }
             }
-            if (!isLikelyZipFile(target)) {
-                target.delete()
-                return null
-            }
-            target
-        } catch (ignore: Exception) {
-            target.delete()
+        } catch (_: Exception) {
             null
         }
     }
@@ -120,5 +140,15 @@ class InstallZipModuleActivity : Activity() {
         } catch (ignore: Exception) {
             false
         }
+    }
+
+    companion object {
+        private const val CACHE_PREFIX = "shared_module_"
+        // Both activities hand off on the main thread. An exported launcher intent cannot
+        // supply an arbitrary file to the installer's delete-on-completion path.
+        private val confirmedArchives = mutableSetOf<String>()
+
+        internal fun takeConfirmedArchive(path: String): File? =
+            if (confirmedArchives.remove(path)) File(path) else null
     }
 }

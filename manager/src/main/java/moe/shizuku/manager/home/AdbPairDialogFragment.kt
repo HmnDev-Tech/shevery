@@ -23,6 +23,7 @@ import androidx.compose.material3.Button
 import androidx.compose.material3.Icon
 import androidx.compose.material3.LoadingIndicator
 import androidx.compose.material3.MaterialTheme
+import androidx.compose.material3.OutlinedButton
 import androidx.compose.material3.OutlinedTextField
 import androidx.compose.material3.Text
 import androidx.compose.material3.TextButton
@@ -45,13 +46,17 @@ import kotlinx.coroutines.Dispatchers
 import kotlinx.coroutines.launch
 import kotlinx.coroutines.withContext
 import moe.shizuku.manager.R
+import moe.shizuku.manager.guide.GuideTopic
+import moe.shizuku.manager.guide.ShakeGuideHost
 import moe.shizuku.manager.ShizukuSettings
 import moe.shizuku.manager.adb.AdbInvalidPairingCodeException
 import moe.shizuku.manager.adb.AdbKey
 import moe.shizuku.manager.adb.AdbKeyException
 import moe.shizuku.manager.adb.AdbMdns
 import moe.shizuku.manager.adb.AdbPairingClient
+import moe.shizuku.manager.adb.AdbPairingService
 import moe.shizuku.manager.adb.PreferenceAdbKeyStore
+import moe.shizuku.manager.utils.SettingsHelper
 import java.net.ConnectException
 
 @RequiresApi(Build.VERSION_CODES.R)
@@ -59,7 +64,8 @@ import java.net.ConnectException
 fun AdbPairDialog(
     inPairingWindow: Boolean,
     onDismissRequest: () -> Unit,
-    onPairSuccess: () -> Unit
+    onPairSuccess: () -> Unit,
+    allowManualInput: Boolean = false
 ) {
     val context = LocalContext.current
     val scope = rememberCoroutineScope()
@@ -70,13 +76,14 @@ fun AdbPairDialog(
     var portError by remember { mutableStateOf<String?>(null) }
     var pairingCodeError by remember { mutableStateOf<String?>(null) }
     var isPairing by remember { mutableStateOf(false) }
+    var manualInputMode by remember { mutableStateOf(allowManualInput) }
 
     DisposableEffect(inPairingWindow) {
         if (!inPairingWindow) return@DisposableEffect onDispose {}
 
         val adbMdns = AdbMdns(context, AdbMdns.TLS_PAIRING) { port ->
             discoveredPort = port
-            if (port in 1..65535) {
+            if (port in 1..65535 && portText.isBlank()) {
                 portText = port.toString()
                 portError = null
             }
@@ -101,12 +108,13 @@ fun AdbPairDialog(
             Text(
                 when {
                     !inPairingWindow -> stringResource(R.string.adb_pairing_requires_multi_window)
-                    discoveredPort !in 1..65535 -> stringResource(R.string.dialog_adb_pairing_discovery)
+                    !manualInputMode && discoveredPort !in 1..65535 -> stringResource(R.string.dialog_adb_pairing_discovery)
                     else -> stringResource(R.string.dialog_adb_pairing_title)
                 }
             )
         },
         text = {
+            ShakeGuideHost(GuideTopic.WIRELESS_DEBUGGING)
             Column(
                 modifier = Modifier
                     .fillMaxWidth()
@@ -121,7 +129,7 @@ fun AdbPairDialog(
                         color = MaterialTheme.colorScheme.onSurfaceVariant,
                         modifier = Modifier.fillMaxWidth()
                     )
-                } else if (discoveredPort !in 1..65535) {
+                } else if (!manualInputMode && discoveredPort !in 1..65535) {
                     Text(
                         text = stringResource(R.string.dialog_adb_pairing_message),
                         style = MaterialTheme.typography.bodyMedium,
@@ -179,17 +187,13 @@ fun AdbPairDialog(
                     Button(onClick = onDismissRequest) {
                         Text(stringResource(android.R.string.ok))
                     }
-                } else if (discoveredPort !in 1..65535) {
+                } else if (!manualInputMode && discoveredPort !in 1..65535) {
+                    OutlinedButton(onClick = { manualInputMode = true }) {
+                        Text(stringResource(R.string.adb_pairing_manual_input))
+                    }
                     Button(
                         onClick = {
-                            val intent = Intent(Settings.ACTION_APPLICATION_DEVELOPMENT_SETTINGS).apply {
-                                flags = Intent.FLAG_ACTIVITY_NEW_TASK or Intent.FLAG_ACTIVITY_CLEAR_TASK
-                                putExtra(":settings:fragment_args_key", "toggle_adb_wireless")
-                            }
-                            try {
-                                context.startActivity(intent)
-                            } catch (_: ActivityNotFoundException) {
-                            }
+                            SettingsHelper.launchWirelessDebugging(context)
                         }
                     ) {
                         Text(stringResource(R.string.development_settings))
@@ -219,13 +223,14 @@ fun AdbPairDialog(
                                 }
 
                                 val result = runCatching {
-                                    AdbPairingClient(host, port, pairingCode, key).start()
+                                    AdbPairingClient(host, port, pairingCode, key).use { it.start() }
                                 }
 
                                 withContext(Dispatchers.Main) {
                                     isPairing = false
                                     result.onSuccess { success ->
                                         if (success) {
+                                            runCatching { context.startService(AdbPairingService.stopIntent(context)) }
                                             onPairSuccess()
                                         }
                                     }.onFailure { err ->
