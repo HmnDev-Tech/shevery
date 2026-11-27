@@ -46,5 +46,5 @@ try {
 
 ext {
     versionCode = gitCommitCount
-    versionName = "15.0"
+    versionName = "15.0.r${gitCommitCount}"
 }
